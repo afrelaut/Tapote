@@ -38,6 +38,7 @@ function mapOrder(row) {
     payment: row.payment_status,
     channel: row.channel,
     created: formatShortDate(row.ordered_on),
+    orderedOn: row.ordered_on,
     due: formatShortDate(row.due_on),
     dueDate: row.due_on,
     priority: row.priority,
@@ -64,6 +65,30 @@ function mapInventory(row) {
     incoming: row.incoming_quantity,
     eta: formatShortDate(row.eta_date),
     etaDate: row.eta_date,
+  };
+}
+
+function mapEncodedProduct(row) {
+  const link = Array.isArray(row.tapote_links) ? row.tapote_links[0] : row.tapote_links;
+  return {
+    id: row.id,
+    orderId: row.order_id || null,
+    clientId: row.client_id || null,
+    serialNumber: row.serial_number,
+    supportType: row.support_type,
+    chipType: row.chip_type,
+    chipBatch: row.chip_batch || "—",
+    label: row.label,
+    status: row.status,
+    shortCode: link?.short_code || "",
+    targetUrl: link?.target_url || "",
+    iphoneTest: row.iphone_test,
+    androidTest: row.android_test,
+    qrTest: row.qr_test,
+    encodedAt: row.encoded_at,
+    testedAt: row.tested_at,
+    lockedAt: row.locked_at,
+    createdAt: row.created_at,
   };
 }
 
@@ -135,14 +160,23 @@ export async function getManagementAccess(user) {
 
 export async function loadManagementData(organizationId) {
   const client = assertClient();
-  const [clientsResult, ordersResult, inventoryResult, storefrontResult, activityResult] = await Promise.all([
+  const [clientsResult, ordersResult, inventoryResult, storefrontResult, activityResult, settingsResult] = await Promise.all([
     client.from("management_clients").select("*").eq("organization_id", organizationId).is("archived_at", null).order("name"),
     client.from("management_orders").select("*").eq("organization_id", organizationId).order("ordered_on", { ascending: false }).order("created_at", { ascending: false }),
     client.from("management_inventory_items").select("*").eq("organization_id", organizationId).is("archived_at", null).order("name"),
     client.from("management_storefront_products").select("*").eq("organization_id", organizationId).order("name"),
     client.from("management_activity").select("*").eq("organization_id", organizationId).order("created_at", { ascending: false }).limit(12),
+    client.from("management_settings").select("order_prefix, currency, timezone, low_stock_notifications, shipping_cutoff").eq("organization_id", organizationId).maybeSingle(),
   ]);
-  [clientsResult, ordersResult, inventoryResult, storefrontResult, activityResult].forEach((result) => throwIfError(result.error));
+  [clientsResult, ordersResult, inventoryResult, storefrontResult, activityResult, settingsResult].forEach((result) => throwIfError(result.error));
+
+  const encodedResult = await client
+    .from("management_product_units")
+    .select("*, tapote_links(short_code, target_url)")
+    .eq("organization_id", organizationId)
+    .order("created_at", { ascending: false });
+  const encodingTableUnavailable = ["42P01", "PGRST205"].includes(encodedResult.error?.code);
+  if (encodedResult.error && !encodingTableUnavailable) throw encodedResult.error;
 
   const orders = ordersResult.data.map(mapOrder);
   const clientMetrics = orders.reduce((totals, order) => {
@@ -174,10 +208,49 @@ export async function loadManagementData(organizationId) {
       online: row.online,
       stockId: row.inventory_item_id,
       sales: row.sales_count,
+      conversionRate: row.conversion_rate === null ? null : Number(row.conversion_rate),
       conversion: row.conversion_rate === null ? "—" : `${Number(row.conversion_rate).toLocaleString("fr-FR")} %`,
     })),
     activity: activityResult.data.map((row) => ({ id: String(row.id), icon: row.kind, text: row.description, time: formatRelativeTime(row.created_at) })),
+    encodedProducts: (encodedResult.data || []).map(mapEncodedProduct),
+    settings: {
+      orderPrefix: settingsResult.data?.order_prefix || "TPT",
+      currency: settingsResult.data?.currency || "EUR",
+      timezone: settingsResult.data?.timezone || "Europe/Paris",
+      lowStockNotifications: settingsResult.data?.low_stock_notifications ?? true,
+      shippingCutoff: String(settingsResult.data?.shipping_cutoff || "16:00").slice(0, 5),
+    },
   };
+}
+
+export async function createManagementEncodedProduct(organizationId, form) {
+  const { data, error } = await assertClient().rpc("create_management_encoded_product", {
+    target_organization_id: organizationId,
+    target_order_id: form.orderId || null,
+    target_client_id: form.clientId || null,
+    target_support_type: form.supportType,
+    target_chip_type: form.chipType,
+    target_chip_batch: form.chipBatch.trim() || null,
+    target_label: form.label.trim(),
+    target_url: form.targetUrl.trim(),
+    target_notes: form.notes.trim() || null,
+  });
+  throwIfError(error);
+  return data;
+}
+
+export async function advanceManagementEncodedProduct(organizationId, product, nextStatus, tests = {}) {
+  const { data, error } = await assertClient().rpc("advance_management_encoded_product", {
+    target_organization_id: organizationId,
+    target_product_unit_id: product.id,
+    expected_status: product.status,
+    target_status: nextStatus,
+    target_iphone_test: Boolean(tests.iphone),
+    target_android_test: Boolean(tests.android),
+    target_qr_test: Boolean(tests.qr),
+  });
+  throwIfError(error);
+  return data;
 }
 
 async function recordActivity(organizationId, kind, description, metadata = {}) {
@@ -243,17 +316,13 @@ export async function createManagementInventoryItem(organizationId, form) {
 }
 
 export async function updateManagementOrderStatus(organizationId, order, nextStatus, trackingNumber) {
-  const updates = {
-    status: nextStatus,
-    tracking_number: trackingNumber || null,
-    shipped_at: nextStatus === "shipped" ? new Date().toISOString() : null,
-  };
-  const { data, error } = await assertClient().from("management_orders")
-    .update(updates)
-    .eq("organization_id", organizationId)
-    .eq("id", order.recordId)
-    .select("*")
-    .single();
+  const { data, error } = await assertClient().rpc("advance_management_order", {
+    target_organization_id: organizationId,
+    target_order_id: order.recordId,
+    expected_status: order.status,
+    target_status: nextStatus,
+    target_tracking_number: trackingNumber || null,
+  });
   throwIfError(error);
   await recordActivity(organizationId, nextStatus === "shipped" ? "ship" : "order", `${order.id} est passée au statut « ${nextStatus} »`, { order_id: order.recordId, status: nextStatus });
   return {
@@ -274,12 +343,11 @@ export async function updateManagementOrderStatus(organizationId, order, nextSta
 
 export async function receiveManagementStock(organizationId, item, amount) {
   const quantity = Number(amount);
-  const { data, error } = await assertClient().from("management_inventory_items")
-    .update({ stock_quantity: item.stock + quantity, incoming_quantity: Math.max(0, item.incoming - quantity) })
-    .eq("organization_id", organizationId)
-    .eq("id", item.id)
-    .select("*")
-    .single();
+  const { data, error } = await assertClient().rpc("receive_management_stock", {
+    target_organization_id: organizationId,
+    target_inventory_item_id: item.id,
+    target_quantity: quantity,
+  });
   throwIfError(error);
   await recordActivity(organizationId, "stock", `${quantity} unités de ${item.name} réceptionnées`, { inventory_item_id: item.id, quantity });
   return mapInventory(data);
@@ -295,7 +363,7 @@ export async function setStorefrontProductOnline(organizationId, productId, onli
 
 export function subscribeToManagement(organizationId, onChange) {
   const client = assertClient();
-  const tables = ["management_clients", "management_orders", "management_inventory_items", "management_storefront_products", "management_activity"];
+  const tables = ["management_clients", "management_orders", "management_inventory_items", "management_storefront_products", "management_product_units", "management_activity"];
   let channel = client.channel(`management:${organizationId}`);
   tables.forEach((table) => {
     channel = channel.on("postgres_changes", { event: "*", schema: "public", table, filter: `organization_id=eq.${organizationId}` }, onChange);

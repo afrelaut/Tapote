@@ -1,0 +1,17 @@
+{
+  "name": "Tapote",
+  "short_name": "Tapote",
+  "description": "Objets NFC + QR personnalisés et prêts à poser pour les commerces.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F4EFE6",
+  "theme_color": "#161310",
+  "icons": [
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

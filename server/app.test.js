@@ -28,6 +28,10 @@ const cart = [{
   quantity: 1,
   brandName: "Café Test",
   theme: "blue",
+  targetId: "cafe",
+  designStyle: "signature",
+  customHeadline: "Votre avis nous aide.",
+  destinationUrl: "https://example.com/avis-comptoir",
   brandLogoId: "",
   logoFileName: "",
 }];
@@ -93,6 +97,25 @@ describe("API Tapote", () => {
     expect(second.status).toBe(200);
     expect(stripe.checkout.sessions.create).toHaveBeenCalledTimes(1);
     expect(stripe.checkout.sessions.retrieve).toHaveBeenCalledTimes(1);
+  });
+
+  it("facture la livraison sous 59 € et la recalcule côté serveur", async () => {
+    const stripe = {
+      checkout: { sessions: {
+        create: vi.fn(async () => ({ id: "cs_test_shipping", url: "https://checkout.stripe.test/shipping" })),
+        retrieve: vi.fn(),
+      } },
+    };
+    const { app } = makeContext({}, stripe);
+    const body = checkoutBody("aa58b0a4-0c28-4a1b-a2c4-40fc8dc87a59");
+    body.items = [{ ...cart[0], productId: "carte" }];
+
+    const response = await request(app).post("/api/checkout").send(body);
+
+    expect(response.status).toBe(200);
+    const checkout = stripe.checkout.sessions.create.mock.calls[0][0];
+    expect(checkout.line_items[0].price_data.unit_amount).toBe(2990);
+    expect(checkout.shipping_options[0].shipping_rate_data.fixed_amount.amount).toBe(490);
   });
 
   it("déduplique les événements Stripe signés", async () => {
@@ -188,6 +211,8 @@ describe("API Tapote", () => {
     const ok = await request(context.app).post("/api/uploads/logo").attach("logo", validPng, { filename: "logo.png", contentType: "image/png" });
     expect(ok.status).toBe(201);
     expect(ok.body.uploadId).toMatch(/^[0-9a-f-]{36}$/);
+    const alias = await request(context.app).post("/api/uploads/logo").attach("logo", validPng, { filename: "logo.png", contentType: "image/x-png" });
+    expect(alias.status).toBe(201);
     const fake = await request(context.app).post("/api/uploads/logo").attach("logo", Buffer.from("not an image"), { filename: "logo.png", contentType: "image/png" });
     expect(fake.status).toBe(400);
   });

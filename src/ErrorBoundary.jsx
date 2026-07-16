@@ -15,7 +15,7 @@ export default class ErrorBoundary extends Component {
     if (this.state.failed) {
       return (
         <main className="fatal-error">
-          <strong className="fatal-brand">tapote.</strong>
+          <img className="fatal-logo" src="/brand/tapote-logo.svg" alt="Tapote" />
           <h1>Tapote a besoin d’être rechargé.</h1>
           <p>Aucune commande n’a été débitée depuis cet écran.</p>
           <button className="button button-primary" onClick={() => window.location.reload()}><span>Recharger la page</span></button>

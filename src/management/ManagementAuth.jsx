@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, KeyRound, LoaderCircle, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, KeyRound, LoaderCircle, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
 import { sendManagerPasswordReset, signInManager, updateManagerPassword } from "./repository.js";
 
 function authMessage(error) {
@@ -10,10 +10,15 @@ function authMessage(error) {
   return message || "Connexion impossible pour le moment.";
 }
 
+function AuthBrand() {
+  return <div className="management-auth-brand"><img src="/brand/tapote-logo.svg" alt="tapote." /><small>GESTION PRIVÉE</small></div>;
+}
+
 export default function ManagementAuth({ unauthorized = false }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState(unauthorized ? "Ce compte n’est pas autorisé à accéder à TAPOTE Gestion." : "");
   const [resetSent, setResetSent] = useState(false);
 
@@ -51,7 +56,7 @@ export default function ManagementAuth({ unauthorized = false }) {
   return (
     <main className="management-auth-shell">
       <section className="management-auth-card">
-        <div className="management-auth-brand"><span>tAPOTE.</span><small>GESTION PRIVÉE</small></div>
+        <AuthBrand />
         <div className="management-auth-icon"><LockKeyhole size={28} /></div>
         <div className="management-auth-copy">
           <span>ESPACE GÉRANTS</span>
@@ -60,7 +65,7 @@ export default function ManagementAuth({ unauthorized = false }) {
         </div>
         <form onSubmit={submit} className="management-auth-form">
           <label htmlFor="management-email"><span>Adresse e-mail</span><div><Mail size={18} /><input id="management-email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="prenom@tapote.fr" required /></div></label>
-          <label htmlFor="management-password"><span>Mot de passe</span><div><KeyRound size={18} /><input id="management-password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="••••••••••••" minLength="8" required /></div></label>
+          <label htmlFor="management-password"><span>Mot de passe</span><div><KeyRound size={18} /><input id="management-password" type={showPassword ? "text" : "password"} autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="••••••••••••" minLength="8" required /><button type="button" className="management-password-toggle" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div></label>
           {message && <div className={`management-auth-message ${resetSent ? "is-success" : ""}`} role="status">{message}</div>}
           <button className="pilot-primary management-auth-submit" type="submit" disabled={loading}>{loading ? <LoaderCircle className="is-spinning" size={18} /> : <ShieldCheck size={18} />}{loading ? "Vérification…" : "Ouvrir la gestion"}<ArrowRight size={17} /></button>
           <button className="management-auth-reset" type="button" onClick={resetPassword} disabled={loading}>Mot de passe oublié ?</button>
@@ -75,6 +80,7 @@ export function ManagementPasswordSetup({ onComplete }) {
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState("");
 
   const submit = async (event) => {
@@ -102,12 +108,12 @@ export function ManagementPasswordSetup({ onComplete }) {
   return (
     <main className="management-auth-shell">
       <section className="management-auth-card">
-        <div className="management-auth-brand"><span>tAPOTE.</span><small>GESTION PRIVÉE</small></div>
+        <AuthBrand />
         <div className="management-auth-icon"><KeyRound size={28} /></div>
         <div className="management-auth-copy"><span>PREMIÈRE CONNEXION</span><h1>Définir votre mot de passe</h1><p>Crée un mot de passe personnel d’au moins 12 caractères. Il ne sera jamais visible par les autres gérants.</p></div>
         <form onSubmit={submit} className="management-auth-form">
-          <label htmlFor="management-new-password"><span>Nouveau mot de passe</span><div><KeyRound size={18} /><input id="management-new-password" type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} minLength="12" required /></div></label>
-          <label htmlFor="management-confirm-password"><span>Confirmer le mot de passe</span><div><ShieldCheck size={18} /><input id="management-confirm-password" type="password" autoComplete="new-password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} minLength="12" required /></div></label>
+          <label htmlFor="management-new-password"><span>Nouveau mot de passe</span><div><KeyRound size={18} /><input id="management-new-password" type={showPassword ? "text" : "password"} autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} minLength="12" required /><button type="button" className="management-password-toggle" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "Masquer les mots de passe" : "Afficher les mots de passe"}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div></label>
+          <label htmlFor="management-confirm-password"><span>Confirmer le mot de passe</span><div><ShieldCheck size={18} /><input id="management-confirm-password" type={showPassword ? "text" : "password"} autoComplete="new-password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} minLength="12" required /></div></label>
           {message && <div className="management-auth-message" role="alert">{message}</div>}
           <button className="pilot-primary management-auth-submit" type="submit" disabled={loading}>{loading ? <LoaderCircle className="is-spinning" size={18} /> : <ShieldCheck size={18} />}{loading ? "Sécurisation…" : "Enregistrer et continuer"}<ArrowRight size={17} /></button>
         </form>

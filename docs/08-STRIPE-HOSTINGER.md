@@ -15,7 +15,7 @@ Ce guide correspond au dépôt actuel. Il ne propose pas trois hébergements : u
 
 Le port Node `3001` reste uniquement dans le réseau Docker. Seuls `80` et `443` sont ouverts sur Internet. Caddy obtient et renouvelle automatiquement les certificats TLS lorsque les DNS pointent vers le VPS et que ces ports sont ouverts ([documentation Caddy](https://caddyserver.com/docs/automatic-https)).
 
-> Important — l’interface Gestion actuelle est encore une maquette locale sans authentification applicative ni base métier. La configuration fournie la cache derrière deux accès HTTP individuels et bloque `/gestion` sur `tapote.fr`. Elle peut être montrée à Jules et Aymeric, mais il ne faut pas encore y saisir de vraies données clients. Le chantier suivant est Supabase Auth + table de collaborateurs + rôles/RLS.
+> Important — Gestion utilise maintenant Supabase Auth, des comptes individuels et des politiques RLS par organisation. La Basic Auth Caddy reste une barrière réseau supplémentaire pendant le lancement et `/gestion` demeure bloqué sur le domaine public. N’y saisir des données réelles qu’après la recette des comptes de production, des sauvegardes et des droits Jules/Aymeric.
 
 ## Ce qui est déjà prêt dans le code
 
@@ -90,7 +90,7 @@ Stripe peut livrer un événement plusieurs fois et ne garantit pas l’ordre ; 
 
 ## 2. Préparer Supabase pour le domaine final
 
-Le projet Tapote est déjà connecté et les migrations sont appliquées. Il reste à renseigner les valeurs de production :
+Le projet Tapote est déjà connecté. Avant chaque déploiement, compare l’historique distant au dossier `supabase/migrations`, applique uniquement les migrations versionnées encore absentes, puis relance les Advisors sécurité et performance. Il reste ensuite à renseigner les valeurs de production :
 
 1. dans **Connect**, copie la chaîne **Session pooler** adaptée à une application Node persistante dans `DATABASE_URL` ;
 2. place l’URL du projet dans `SUPABASE_URL` et une **secret key** dans `SUPABASE_SECRET_KEY` ;
@@ -98,6 +98,8 @@ Le projet Tapote est déjà connecté et les migrations sont appliquées. Il res
 4. vérifie que `tapote-order-assets` est privé ;
 5. dans **Authentication / URL Configuration**, définis le site sur `https://tapote.fr` et ajoute exactement `https://tapote.fr/pilot` aux Redirect URLs ;
 6. invite les premiers utilisateurs Pilot avec `npm run pilot:invite -- adresse@client.fr` depuis un environnement disposant de la secret key.
+
+Au 16 juillet 2026, la migration `20260716182509_align_storefront_pack_fulfillment.sql` doit encore être appliquée avant d’activer de nouvelles commandes réelles. Elle aligne les packs vendus avec leur création dans Gestion et Pilot.
 
 La clé publique est compilée dans le frontend ; la secret key contourne les contrôles utilisateur et ne doit jamais être incluse dans le build. Voir les [types de connexions Postgres](https://supabase.com/docs/guides/database/connecting-to-postgres) et les [Redirect URLs Auth](https://supabase.com/docs/guides/auth/redirect-urls).
 
@@ -333,6 +335,6 @@ Le KVM 2 est adapté pour démarrer cette architecture légère parce que Postgr
 - [ ] tarifs, TVA, livraison et e-mails cohérents ;
 - [ ] Pilot testé avec un utilisateur invité et RLS ;
 - [ ] Gestion inaccessible sans les identifiants individuels ;
-- [ ] aucune donnée réelle encore dans Gestion avant l’auth applicative ;
+- [ ] comptes Gestion de production, rôles/RLS et sauvegardes testés avant toute donnée réelle ;
 - [ ] textes juridiques validés et `LEGAL_READY=true` ;
 - [ ] sauvegardes, alertes et procédure de mise à jour testées.

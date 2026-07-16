@@ -11,7 +11,7 @@ import Stripe from "stripe";
 import { randomUUID } from "node:crypto";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { ACTIONS, PRODUCTS } from "../shared/catalog.js";
+import { ACTIONS, calculateShipping, PRODUCTS } from "../shared/catalog.js";
 import { getProductionChecks } from "./config.js";
 import { checkoutSchema, checkoutStatusSchema, leadSchema, parseRequest, tapoteRedirectSchema } from "./validation.js";
 
@@ -23,6 +23,16 @@ const allowedImageTypes = new Map([
   ["image/jpeg", "jpg"],
   ["image/webp", "webp"],
 ]);
+const imageTypeAliases = new Map([
+  ["image/png", "image/png"],
+  ["image/x-png", "image/png"],
+  ["image/jpeg", "image/jpeg"],
+  ["image/jpg", "image/jpeg"],
+  ["image/pjpeg", "image/jpeg"],
+  ["image/webp", "image/webp"],
+]);
+
+const canonicalImageType = (mimeType) => imageTypeAliases.get(String(mimeType || "").toLowerCase()) || "";
 
 const limiter = (windowMs, limit, message) => rateLimit({
   windowMs,
@@ -41,7 +51,7 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 2 * 1024 * 1024, files: 1, fields: 0 },
   fileFilter: (_request, file, callback) => {
-    if (!allowedImageTypes.has(file.mimetype)) return callback(new Error("TYPE_FICHIER_INVALIDE"));
+    if (!canonicalImageType(file.mimetype)) return callback(new Error("TYPE_FICHIER_INVALIDE"));
     return callback(null, true);
   },
 });
@@ -280,7 +290,8 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
         return response.status(503).json({ error: "Le stockage des logos n’est pas encore configuré." });
       }
       const detected = await fileTypeFromBuffer(request.file.buffer);
-      if (!detected || !allowedImageTypes.has(detected.mime) || detected.mime !== request.file.mimetype) {
+      const declaredMimeType = canonicalImageType(request.file.mimetype);
+      if (!detected || !allowedImageTypes.has(detected.mime) || detected.mime !== declaredMimeType) {
         return response.status(400).json({ error: "Le contenu du fichier ne correspond pas à une image PNG, JPG ou WebP valide." });
       }
       const id = randomUUID();
@@ -329,6 +340,10 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
           customization: {
             brandName: item.brandName,
             theme: item.theme,
+            targetId: item.targetId,
+            designStyle: item.designStyle,
+            customHeadline: item.customHeadline,
+            destinationUrl: item.destinationUrl || customer.destinationUrl,
             brandLogoId: item.brandLogoId || null,
             logoFileName: item.logoFileName,
           },
@@ -342,6 +357,8 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
         unitAmount: product.price,
         customization,
       }));
+      const subtotal = validItems.reduce((sum, { product, quantity }) => sum + product.price * quantity, 0);
+      const shippingAmount = calculateShipping(subtotal);
       const pendingOrder = await repository.createPendingOrder({
         orderToken: attemptId,
         customer,
@@ -384,6 +401,8 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
               actionId: action.id,
               brandName: customization.brandName || customer.businessName,
               theme: customization.theme,
+              targetId: customization.targetId,
+              designStyle: customization.designStyle,
               brandLogoId: customization.brandLogoId || "none",
             },
           },
@@ -402,8 +421,10 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
         shipping_options: [{
           shipping_rate_data: {
             type: "fixed_amount",
-            fixed_amount: { amount: 0, currency: "eur" },
-            display_name: "Livraison standard France métropolitaine incluse",
+            fixed_amount: { amount: shippingAmount, currency: "eur" },
+            display_name: shippingAmount === 0
+              ? "Livraison standard France métropolitaine offerte"
+              : "Livraison standard France métropolitaine",
             delivery_estimate: {
               minimum: { unit: "business_day", value: 4 },
               maximum: { unit: "business_day", value: 6 },

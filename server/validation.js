@@ -1,9 +1,11 @@
 import { z } from "zod";
-import { ACTIONS, PRODUCTS } from "../shared/catalog.js";
+import { ACTIONS, DESIGN_STYLES, PRODUCTS, TARGETS } from "../shared/catalog.js";
 
 const productIds = Object.keys(PRODUCTS);
 const actionIds = Object.keys(ACTIONS);
-const themes = ["blue", "rose", "green"];
+const themes = ["blue", "rose", "green", "sand", "mono"];
+const targetIds = Object.keys(TARGETS);
+const designStyleIds = Object.keys(DESIGN_STYLES);
 
 const requiredText = (maximum) => z.string().trim().min(1).max(maximum);
 const optionalText = (maximum) => z.string().trim().max(maximum).optional().default("");
@@ -23,6 +25,10 @@ const cartItemSchema = z.object({
   quantity: z.coerce.number().int().min(1).max(50),
   brandName: optionalText(60),
   theme: z.enum(themes).optional().default("blue"),
+  targetId: z.enum(targetIds).optional().default("cafe"),
+  designStyle: z.enum(designStyleIds).optional().default("signature"),
+  customHeadline: optionalText(64),
+  destinationUrl: optionalHttpsUrl,
   brandLogoId: z.uuid().optional().or(z.literal("")),
   logoFileName: optionalText(120),
 }).strict();

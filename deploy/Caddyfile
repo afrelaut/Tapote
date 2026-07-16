@@ -25,7 +25,8 @@ gestion.tapote.fr {
 	log
 	encode zstd gzip
 
-	# Barrière de lancement temporaire. À remplacer par Supabase Auth + rôles/RLS.
+	# Barrière réseau supplémentaire au lancement. L'application conserve en plus
+	# son authentification Supabase et ses rôles/RLS métier.
 	basic_auth {
 		aymeric {$GESTION_AYMERIC_PASSWORD_HASH}
 		jules {$GESTION_JULES_PASSWORD_HASH}
