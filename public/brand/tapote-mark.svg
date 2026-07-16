@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Symbole Tapote</title>
+  <rect width="64" height="64" rx="20" fill="#2458FF"/>
+  <path d="M32 10l3.7 9.9 9.9 3.7-9.9 3.7L32 37l-3.7-9.7-9.9-3.7 9.9-3.7L32 10Z" fill="#F7C85D"/>
+  <path d="M17 46c8.3-7.3 21.7-7.3 30 0" fill="none" stroke="#FFFDF8" stroke-width="4" stroke-linecap="round"/>
+</svg>

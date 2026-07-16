@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 310 72" role="img" aria-labelledby="title">
+  <title id="title">Logo Tapote clair</title>
+  <rect x="4" y="4" width="64" height="64" rx="20" fill="#2458FF"/>
+  <path d="M36 14l3.5 9.4 9.4 3.5-9.4 3.5-3.5 9.4-3.5-9.4-9.4-3.5 9.4-3.5L36 14Z" fill="#F7C85D"/>
+  <path d="M22 52c7.7-6.7 20.3-6.7 28 0" fill="none" stroke="#FFFDF8" stroke-width="4" stroke-linecap="round"/>
+  <text x="84" y="53" fill="#FFFDF8" font-family="Archivo Black, Arial Black, sans-serif" font-size="48" font-weight="900" letter-spacing="-3">tapote.</text>
+</svg>

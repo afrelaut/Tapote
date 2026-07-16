@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="105mm" height="148mm" viewBox="0 0 1050 1480" role="img" aria-labelledby="title desc">
+  <title id="title">Gabarit A6 Tapote — Avis</title>
+  <desc id="desc">Gabarit de production à personnaliser avec la marque du client.</desc>
+  <rect width="1050" height="1480" rx="0" fill="#111319"/>
+  <circle cx="525" cy="135" r="48" fill="none" stroke="#F7F1E7" stroke-width="4"/>
+  <text x="525" y="151" text-anchor="middle" fill="#F7F1E7" font-family="Archivo Black, Arial Black, sans-serif" font-size="42">C</text>
+  <text x="525" y="224" text-anchor="middle" fill="#F7F1E7" font-family="Archivo, Arial, sans-serif" font-size="30" font-weight="700" letter-spacing="8">NOM DU CLIENT</text>
+  <text x="525" y="470" text-anchor="middle" fill="#F7F1E7" font-family="Archivo Black, Arial Black, sans-serif" font-size="100" letter-spacing="-4">Votre avis</text>
+  <text x="525" y="575" text-anchor="middle" fill="#F7F1E7" font-family="Archivo Black, Arial Black, sans-serif" font-size="100" letter-spacing="-4">compte.</text>
+  <text x="525" y="660" text-anchor="middle" fill="#F7F1E7" opacity=".7" font-family="Archivo, Arial, sans-serif" font-size="31">30 secondes suffisent</text>
+  <rect x="115" y="805" width="820" height="465" rx="48" fill="#2458FF"/>
+  <path d="M457 990a96 96 0 0 1 136 0M482 1015a61 61 0 0 1 86 0M510 1042a22 22 0 0 1 30 0" fill="none" stroke="#FFF" stroke-width="18" stroke-linecap="round"/>
+  <circle cx="525" cy="1062" r="10" fill="#FFF"/>
+  <text x="525" y="1140" text-anchor="middle" fill="#FFF" font-family="Archivo Black, Arial Black, sans-serif" font-size="43">Posez votre téléphone ici</text>
+  <text x="525" y="1200" text-anchor="middle" fill="#FFF" opacity=".78" font-family="Archivo, Arial, sans-serif" font-size="24">Sans application · Sans contact</text>
+  <g transform="translate(845 1190)" fill="#FFF" opacity=".72">
+    <rect width="54" height="54" rx="4" fill="none" stroke="#FFF" stroke-width="4"/>
+    <rect x="8" y="8" width="13" height="13"/><rect x="33" y="8" width="13" height="13"/><rect x="8" y="33" width="13" height="13"/>
+    <rect x="29" y="29" width="7" height="7"/><rect x="39" y="31" width="7" height="15"/><rect x="27" y="41" width="8" height="6"/>
+  </g>
+  <text x="525" y="1405" text-anchor="middle" fill="#F7F1E7" opacity=".62" font-family="Archivo, Arial, sans-serif" font-size="17" font-weight="700" letter-spacing="7">✦ TAPOTE ✦</text>
+</svg>

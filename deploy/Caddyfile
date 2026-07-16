@@ -1,0 +1,51 @@
+(app_proxy) {
+	encode zstd gzip
+	reverse_proxy app:3001
+}
+
+tapote.fr {
+	log
+
+	# L'outil interne n'est jamais exposé sur le domaine public.
+	@gestion path /gestion /gestion/*
+	respond @gestion 404
+
+	import app_proxy
+}
+
+www.tapote.fr {
+	redir https://tapote.fr{uri} permanent
+}
+
+pilot.tapote.fr {
+	redir https://tapote.fr/pilot permanent
+}
+
+gestion.tapote.fr {
+	log
+	encode zstd gzip
+
+	# Barrière de lancement temporaire. À remplacer par Supabase Auth + rôles/RLS.
+	basic_auth {
+		aymeric {$GESTION_AYMERIC_PASSWORD_HASH}
+		jules {$GESTION_JULES_PASSWORD_HASH}
+	}
+
+	@root path /
+	redir @root /gestion 302
+	reverse_proxy app:3001
+}
+
+t.tapote.fr {
+	log
+	encode zstd gzip
+
+	# Ce domaine court ne sert que les redirections NFC/QR et le contrôle de vie.
+	@redirects path /a/* /api/health
+	handle @redirects {
+		reverse_proxy app:3001
+	}
+	handle {
+		respond 404
+	}
+}
