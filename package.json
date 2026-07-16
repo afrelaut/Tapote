@@ -19,8 +19,10 @@
     "supabase:migrate": "supabase db push",
     "supabase:provision-storage": "node scripts/provision-storage.js",
     "pilot:invite": "node scripts/invite-pilot-user.js",
+    "pilot:activate-order": "node scripts/activate-pilot-order.js",
     "management:invite": "node scripts/invite-management-user.js",
-    "management:verify": "node scripts/verify-management-supabase.js"
+    "management:verify": "node scripts/verify-management-supabase.js",
+    "platform:verify": "node scripts/verify-platform-supabase.js"
   },
   "dependencies": {
     "@sentry/node": "10.65.0",

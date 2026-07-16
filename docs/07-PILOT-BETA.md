@@ -4,13 +4,15 @@ Pilot est l’espace client privé disponible sur `/pilot`. Il affiche les produ
 
 ## État Supabase vérifié le 16 juillet 2026
 
-- Le projet Tapote est actif et les sept migrations locales correspondent à l’historique distant.
-- La base Pilot, ses politiques RLS et ses droits minimaux sont appliqués ; l’audit de sécurité Supabase ne remonte aucune alerte.
+- Le projet Tapote est actif et les neuf migrations locales correspondent à l’historique distant.
+- La base Pilot, ses politiques RLS et ses droits minimaux sont appliqués ; l’audit ne remonte aucune alerte liée au schéma ou aux politiques.
 - Le navigateur peut uniquement lire les tables Pilot autorisées et modifier les colonnes `target_url` et `active` d’un lien, sous contrôle RLS.
-- La base est volontairement vide : aucun utilisateur, commerce, établissement, produit ou événement n’a encore été créé.
+- Le flux boutique → Gestion → Pilot est actif et idempotent. Un tenant de démonstration isolé contient sept supports et des interactions de test.
+- Pilot accepte le mot de passe ou un lien sécurisé, toujours sans inscription publique dans l’interface.
 - L’inscription publique Supabase est encore activée dans Auth. Elle doit être désactivée dans le tableau de bord avant toute invitation client.
-- La `Site URL` Auth vaut encore `http://localhost:3000` et aucune URL de redirection n’est autorisée. Il faut la remplacer par `https://tapote.fr` et autoriser au minimum `https://tapote.fr/pilot` et `http://localhost:5173/pilot`.
+- La `Site URL` et les URL de redirection doivent être vérifiées dans Auth avant déploiement. Autoriser au minimum `https://tapote.fr/pilot`, `https://tapote.fr/gestion`, `http://localhost:5173/pilot` et `http://localhost:5173/gestion`.
 - Le SMTP personnalisé est désactivé. Il faut le configurer, puis vérifier la réception réelle des e-mails avant l’ouverture.
+- La protection contre les mots de passe compromis doit être activée dans Auth > Password Security.
 
 Pilot est donc connecté à sa vraie base et prêt à être provisionné, mais il ne faut pas encore inviter un client tant que les trois réglages Auth ci-dessus ne sont pas validés.
 
@@ -54,7 +56,15 @@ npm run pilot:invite -- \
   --target "https://g.page/r/exemple/review"
 ```
 
-Options facultatives : `--serial TAP-CAFE-0001`, `--product`, `--action`, `--label` et `--location`. Le produit reçoit sinon un numéro de série unique.
+Options facultatives : `--serial TAP-CAFE-0001`, `--product`, `--action`, `--label`, `--location` et `--password`. Le produit reçoit sinon un numéro de série unique. Un mot de passe fourni doit contenir au moins 12 caractères.
+
+Pour une commande réellement payée sur tapote.fr, utiliser le chemin intégré afin de conserver toutes les relations :
+
+```powershell
+npm run pilot:activate-order -- --order WEB-XXXXXXXXXX --operator-email aymeric@tapote.fr --operator-password "..." --location "Établissement principal"
+```
+
+Le script invite le client (ou fixe le mot de passe avec `--password`), vérifie l’opérateur Gestion, puis crée le tenant, l’établissement, les liens et chaque support physique du pack.
 
 ## Redirecteur
 

@@ -27,9 +27,11 @@ const displayName = required(args.name, "--name");
 const requestedRole = String(args.role || "manager").toLowerCase();
 const organizationName = String(args.organization || "TAPOTE Gestion").trim();
 const shouldSeed = String(args.seed || "true").toLowerCase() !== "false";
+const password = String(args.password || "");
 
 if (!/^\S+@\S+\.\S+$/.test(email)) throw new Error("Adresse e-mail invalide.");
 if (!["owner", "admin", "manager"].includes(requestedRole)) throw new Error("--role doit valoir owner, admin ou manager.");
+if (password && password.length < 12) throw new Error("--password doit contenir au moins 12 caractères.");
 
 const supabaseUrl = required(process.env.SUPABASE_URL, "SUPABASE_URL");
 const supabaseSecretKey = required(process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY, "SUPABASE_SECRET_KEY");
@@ -46,11 +48,24 @@ for (let page = 1; page <= 10 && !user; page += 1) {
 }
 
 let invitationSent = false;
+let userCreated = false;
 if (!user) {
-  const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, { redirectTo: `${publicUrl}/gestion` });
+  const operation = password
+    ? supabase.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { display_name: displayName } })
+    : supabase.auth.admin.inviteUserByEmail(email, { redirectTo: `${publicUrl}/gestion` });
+  const { data, error } = await operation;
   if (error) throw error;
   user = data.user;
-  invitationSent = true;
+  invitationSent = !password;
+  userCreated = true;
+} else if (password) {
+  const { data, error } = await supabase.auth.admin.updateUserById(user.id, {
+    password,
+    email_confirm: true,
+    user_metadata: { ...user.user_metadata, display_name: displayName },
+  });
+  if (error) throw error;
+  user = data.user;
 }
 if (!user?.id) throw new Error("Impossible d’obtenir l’identifiant du compte Supabase.");
 
@@ -108,6 +123,12 @@ try {
     [organizationId, user.id, displayName, role === "owner" ? "Propriétaire" : role === "admin" ? "Administrateur" : "Gérant"],
   );
   await database.query("insert into public.management_settings (organization_id) values ($1) on conflict do nothing", [organizationId]);
+  await database.query(
+    `insert into public.platform_settings (id, management_organization_id)
+     values (true, $1)
+     on conflict (id) do update set management_organization_id = excluded.management_organization_id`,
+    [organizationId],
+  );
 
   const existing = await database.query("select count(*)::integer as count from public.management_clients where organization_id = $1", [organizationId]);
   if (shouldSeed && existing.rows[0].count === 0) {
@@ -177,10 +198,10 @@ try {
     );
   }
   await database.query("commit");
-  process.stdout.write(`${invitationSent ? "Invitation envoyée" : "Compte existant autorisé"} : ${email} · rôle ${role} · espace ${organizationName}.\n`);
+  process.stdout.write(`${invitationSent ? "Invitation envoyée" : userCreated ? "Compte créé" : "Compte existant autorisé"} : ${email} · rôle ${role} · espace ${organizationName}.\n`);
 } catch (error) {
   await database.query("rollback");
-  if (invitationSent) {
+  if (userCreated) {
     const { error: cleanupError } = await supabase.auth.admin.deleteUser(user.id);
     if (cleanupError) error.message = `${error.message} Le compte invité n’a pas pu être nettoyé automatiquement : ${cleanupError.message}`;
   }

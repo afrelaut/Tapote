@@ -109,6 +109,33 @@
   max-width: 650px;
 }
 
+.pilot-auth-methods {
+  width: fit-content;
+  margin: 0 0 22px;
+  padding: 4px;
+  display: flex;
+  gap: 4px;
+  background: #e9e6de;
+  border-radius: 999px;
+}
+
+.pilot-auth-methods button {
+  min-height: 38px;
+  padding: 0 16px;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.pilot-auth-methods button.is-active {
+  color: #fff;
+  background: var(--ink);
+}
+
 .pilot-login-form > label {
   display: block;
   margin-bottom: 10px;
@@ -121,6 +148,15 @@
   display: grid;
   grid-template-columns: 1fr auto;
   border-bottom: 2px solid var(--ink);
+}
+
+.pilot-login-inputs {
+  min-width: 0;
+  display: grid;
+}
+
+.pilot-login-inputs input + input {
+  border-top: 1px solid var(--line);
 }
 
 .pilot-login-form input {
@@ -1786,6 +1822,14 @@
     grid-template-columns: 1fr;
     gap: 10px;
     border-bottom: 0;
+  }
+
+  .pilot-login-inputs {
+    gap: 10px;
+  }
+
+  .pilot-login-inputs input + input {
+    border-top: 1px solid var(--line);
   }
 
   .pilot-login-form input {

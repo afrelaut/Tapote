@@ -40,8 +40,8 @@ server/repository.js persistance PostgreSQL et outbox durable
 server/storage.js    stockage privé des logos dans Supabase Storage
 server/notifications.js notifications Resend avec reprises idempotentes
 shared/catalog.js    catalogue et prix de référence côté serveur
-supabase/migrations/ schéma SQL, RLS et fondations Tapote Pilot
-scripts/             provisionnement du bucket et invitations Pilot
+supabase/migrations/ schéma SQL, RLS et orchestration boutique/Gestion/Pilot
+scripts/             provisionnement, invitations, activation et vérifications
 public/assets/       visuels WebP responsifs
 docs/                marque, marché, exploitation, sécurité et mise en ligne
 ```
@@ -67,6 +67,10 @@ Ne passe `LEGAL_READY=true` qu’après validation humaine du contenu juridique.
 
 La bêta client est disponible sur `/pilot`. Sans clés Supabase, le développement affiche un workspace de démonstration. L’activation des invitations, des données réelles, du redirecteur et du DNS est détaillée dans le [guide Pilot](docs/07-PILOT-BETA.md). L’offre reste volontairement absente du paiement.
 
+## Plateforme unifiée
+
+Les trois surfaces partagent un seul projet Supabase multi-tenant. Stripe alimente `orders`; une commande payée est synchronisée dans TAPOTE Gestion; l’activation crée ensuite un tenant Pilot client isolé et un lien permanent par support physique. Le statut remonte dans les deux sens et toutes les opérations sensibles restent côté serveur. Le [rapport SaaS](docs/10-PLATEFORME-SAAS.md) décrit l’état vérifié et les actions externes restantes.
+
 ## Documents
 
 - [Charte de marque](docs/01-CHARTE-DE-MARQUE.md)
@@ -76,3 +80,4 @@ La bêta client est disponible sur `/pilot`. Sans clés Supabase, le développem
 - [Tutoriel de mise en production](docs/06-MISE-EN-PRODUCTION.md)
 - [Activation de la bêta Pilot](docs/07-PILOT-BETA.md)
 - [Stripe et déploiement Hostinger](docs/08-STRIPE-HOSTINGER.md)
+- [Rapport plateforme SaaS](docs/10-PLATEFORME-SAAS.md)

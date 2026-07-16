@@ -151,6 +151,8 @@ function PilotLogo({ dark = false }) {
 
 function PilotLogin({ onDemo }) {
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [method, setMethod] = useState("password");
   const [status, setStatus] = useState("idle");
   const [message, setMessage] = useState("");
   const [cooldown, setCooldown] = useState(0);
@@ -165,18 +167,25 @@ function PilotLogin({ onDemo }) {
     event.preventDefault();
     setStatus("loading");
     setMessage("");
-    const { error } = await pilotSupabase.auth.signInWithOtp({
-      email: email.trim().toLowerCase(),
-      options: { shouldCreateUser: false, emailRedirectTo: `${window.location.origin}/pilot` },
-    });
+    const normalizedEmail = email.trim().toLowerCase();
+    const { error } = method === "password"
+      ? await pilotSupabase.auth.signInWithPassword({ email: normalizedEmail, password })
+      : await pilotSupabase.auth.signInWithOtp({
+        email: normalizedEmail,
+        options: { shouldCreateUser: false, emailRedirectTo: `${window.location.origin}/pilot` },
+      });
     if (error) {
       setStatus("error");
-      setMessage("Impossible d’envoyer le lien. Vérifie que cette adresse a bien été invitée.");
+      setMessage(method === "password"
+        ? "E-mail ou mot de passe incorrect, ou compte non encore activé."
+        : "Impossible d’envoyer le lien. Vérifie que cette adresse a bien été invitée.");
       return;
     }
-    setStatus("sent");
-    setCooldown(60);
-    setMessage("Le lien de connexion vient de partir. Il reste valable pour une seule connexion.");
+    if (method === "magic") {
+      setStatus("sent");
+      setCooldown(60);
+      setMessage("Le lien de connexion vient de partir. Il reste valable pour une seule connexion.");
+    }
   };
 
   return (
@@ -188,18 +197,25 @@ function PilotLogin({ onDemo }) {
           <h1>Vos produits.<br /><em>Le bon lien.</em></h1>
           <p>Suivez les interactions et changez une destination sans réimprimer vos supports.</p>
         </div>
+        <div className="pilot-auth-methods" role="group" aria-label="Mode de connexion">
+          <button type="button" className={method === "password" ? "is-active" : ""} aria-pressed={method === "password"} onClick={() => { setMethod("password"); setMessage(""); setStatus("idle"); }}>Mot de passe</button>
+          <button type="button" className={method === "magic" ? "is-active" : ""} aria-pressed={method === "magic"} onClick={() => { setMethod("magic"); setMessage(""); setStatus("idle"); }}>Lien sécurisé</button>
+        </div>
         <form onSubmit={submit} className="pilot-login-form">
           <label htmlFor="pilot-email">Adresse e-mail invitée</label>
-          <div>
-            <input id="pilot-email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="vous@commerce.fr" required autoComplete="email" aria-describedby={message ? "pilot-login-message" : undefined} />
+          <div className="pilot-login-entry">
+            <div className="pilot-login-inputs">
+              <input id="pilot-email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="vous@commerce.fr" required autoComplete="email" aria-describedby={message ? "pilot-login-message" : undefined} />
+              {method === "password" && <input id="pilot-password" aria-label="Mot de passe" type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Mot de passe" required minLength={8} autoComplete="current-password" />}
+            </div>
             <button type="submit" disabled={status === "loading" || cooldown > 0}>
               {status === "loading" ? <LoaderCircle className="pilot-spin" size={18} /> : <ArrowRight size={18} />}
-              <span>{cooldown > 0 ? `Renvoyer dans ${cooldown} s` : "Recevoir mon lien"}</span>
+              <span>{method === "password" ? "Ouvrir Pilot" : cooldown > 0 ? `Renvoyer dans ${cooldown} s` : "Recevoir mon lien"}</span>
             </button>
           </div>
           {message && <p id="pilot-login-message" className={`pilot-form-message pilot-form-${status}`} role={status === "error" ? "alert" : "status"}>{message}</p>}
         </form>
-        <small>Accès sur invitation uniquement. Aucun mot de passe à retenir.</small>
+        <small>Accès sur invitation uniquement. Le lien sécurisé reste disponible sans mot de passe.</small>
         {onDemo && <button className="pilot-demo-access" type="button" onClick={onDemo}><Sparkles size={17} />Explorer la démonstration</button>}
       </section>
       <aside className="pilot-login-visual" aria-hidden="true">
