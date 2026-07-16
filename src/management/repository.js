@@ -45,6 +45,10 @@ function mapOrder(row) {
     destination: row.destination || "—",
     tracking: row.tracking_number || "",
     note: row.note || "Aucune note atelier.",
+    sourceOrderId: row.source_order_id || null,
+    pilotStatus: row.pilot_status || null,
+    pilotOrganizationId: row.pilot_organization_id || null,
+    pilotActivatedAt: row.pilot_activated_at || null,
   };
 }
 
@@ -247,7 +251,20 @@ export async function updateManagementOrderStatus(organizationId, order, nextSta
     .single();
   throwIfError(error);
   await recordActivity(organizationId, nextStatus === "shipped" ? "ship" : "order", `${order.id} est passée au statut « ${nextStatus} »`, { order_id: order.recordId, status: nextStatus });
-  return mapOrder(data);
+  return {
+    ...mapOrder(data),
+    pilotStatus: order.pilotStatus === "active"
+      ? "active"
+      : nextStatus === "ready"
+        ? "ready_for_activation"
+        : nextStatus === "shipped"
+          ? "shipped"
+          : data.source_order_id
+            ? "in_production"
+            : null,
+    pilotOrganizationId: order.pilotOrganizationId || null,
+    pilotActivatedAt: order.pilotActivatedAt || null,
+  };
 }
 
 export async function receiveManagementStock(organizationId, item, amount) {

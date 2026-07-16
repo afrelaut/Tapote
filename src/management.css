@@ -1025,6 +1025,12 @@
 .pilot-drawer-client small { overflow: hidden; color: #89857d; font-size: 7px; text-overflow: ellipsis; white-space: nowrap; }
 .pilot-drawer-client button { padding: 7px; background: transparent; color: #8f8b82; }
 .pilot-drawer-status { display: flex; align-items: center; justify-content: space-between; padding: 14px 23px; background: #f7f4ee; border-bottom: 1px solid var(--pilot-line); }
+.pilot-integration-state { display: flex; align-items: flex-start; gap: 11px; padding: 14px 23px; border-bottom: 1px solid #d9e1f6; background: #f0f4ff; color: #2458ff; }
+.pilot-integration-state > div { display: grid; gap: 3px; }
+.pilot-integration-state b { font-size: 11px; }
+.pilot-integration-state span { color: #64708d; font-size: 9px; line-height: 1.45; }
+.pilot-integration-active { border-color: #cce2d5; background: #edf8f2; color: #23704d; }
+.pilot-integration-active span { color: #557064; }
 .pilot-drawer-status > span { color: #7e7a72; font-size: 8px; }
 .pilot-drawer-section { padding: 20px 23px; border-bottom: 1px solid var(--pilot-line); }
 .pilot-drawer-section dl { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 25px; margin: 16px 0 0; }

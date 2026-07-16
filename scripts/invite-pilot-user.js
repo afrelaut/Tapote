@@ -34,11 +34,13 @@ const productType = String(args.product || "comptoir").trim();
 const actionId = String(args.action || "avis").trim();
 const productLabel = String(args.label || PRODUCTS[productType]?.name || "Produit Tapote").trim();
 const serialNumber = String(args.serial || `TAP-${Date.now().toString(36).toUpperCase()}-${randomBytes(3).toString("hex").toUpperCase()}`).trim();
+const password = String(args.password || "");
 
 if (!/^\S+@\S+\.\S+$/.test(email)) throw new Error("L’adresse e-mail n’est pas valide.");
 if (!PRODUCTS[productType]) throw new Error(`Produit inconnu : ${productType}.`);
 if (!ACTIONS[actionId]) throw new Error(`Action inconnue : ${actionId}.`);
 if (!/^TAP-[A-Z0-9-]{6,40}$/.test(serialNumber)) throw new Error("Le numéro de série doit suivre le format TAP-XXXXXXXX.");
+if (password && password.length < 12) throw new Error("--password doit contenir au moins 12 caractères.");
 let targetUrl;
 try {
   const parsedTarget = new URL(targetUrlInput);
@@ -57,11 +59,30 @@ const supabase = createClient(supabaseUrl, supabaseSecretKey, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 
-const { data: invitation, error: invitationError } = await supabase.auth.admin.inviteUserByEmail(email, {
-  redirectTo: `${publicUrl}/pilot`,
-});
-if (invitationError) throw invitationError;
-if (!invitation.user?.id) throw new Error("Supabase n’a pas renvoyé l’identifiant de l’utilisateur invité.");
+let user = null;
+for (let page = 1; page <= 10 && !user; page += 1) {
+  const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 100 });
+  if (error) throw error;
+  user = data.users.find((candidate) => candidate.email?.toLowerCase() === email) || null;
+  if (data.users.length < 100) break;
+}
+let userCreated = false;
+let invitationSent = false;
+if (!user) {
+  const operation = password
+    ? supabase.auth.admin.createUser({ email, password, email_confirm: true })
+    : supabase.auth.admin.inviteUserByEmail(email, { redirectTo: `${publicUrl}/pilot` });
+  const { data, error } = await operation;
+  if (error) throw error;
+  user = data.user;
+  userCreated = true;
+  invitationSent = !password;
+} else if (password) {
+  const { data, error } = await supabase.auth.admin.updateUserById(user.id, { password, email_confirm: true });
+  if (error) throw error;
+  user = data.user;
+}
+if (!user?.id) throw new Error("Supabase n’a pas renvoyé l’identifiant de l’utilisateur.");
 
 const database = new Client({
   connectionString: databaseUrl,
@@ -76,7 +97,7 @@ try {
     `insert into organizations (name, created_by)
      values ($1, $2)
      returning id`,
-    [organizationName, invitation.user.id],
+    [organizationName, user.id],
   );
   const organizationId = organization.rows[0].id;
   const location = await database.query(
@@ -100,12 +121,14 @@ try {
     [organizationId, locationId, link.rows[0].id, productType, actionId, productLabel, serialNumber],
   );
   await database.query("commit");
-  process.stdout.write(`Invitation envoyée à ${email}. Produit ${serialNumber} créé avec le lien ${link.rows[0].short_code}.\n`);
+  process.stdout.write(`${invitationSent ? "Invitation envoyée" : userCreated ? "Compte créé" : "Compte existant autorisé"} pour ${email}. Produit ${serialNumber} créé avec le lien ${link.rows[0].short_code}.\n`);
 } catch (error) {
   await database.query("rollback");
-  const { error: cleanupError } = await supabase.auth.admin.deleteUser(invitation.user.id);
-  if (cleanupError) {
-    error.message = `${error.message} L’utilisateur invité n’a pas pu être nettoyé automatiquement : ${cleanupError.message}`;
+  if (userCreated) {
+    const { error: cleanupError } = await supabase.auth.admin.deleteUser(user.id);
+    if (cleanupError) {
+      error.message = `${error.message} L’utilisateur créé n’a pas pu être nettoyé automatiquement : ${cleanupError.message}`;
+    }
   }
   throw error;
 } finally {

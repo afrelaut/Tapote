@@ -14,7 +14,7 @@ Les rôles Pilot `member` et `viewer` n’ont aucun accès aux données Gestion.
 
 ## Domaine de données
 
-Les migrations `tapote_management_private` et `management_performance_indexes` créent :
+Les migrations Gestion et les migrations de convergence créent :
 
 - clients et commandes ;
 - inventaire et catalogue e-commerce ;
@@ -24,6 +24,8 @@ Les migrations `tapote_management_private` et `management_performance_indexes` c
 - activité temps réel et audit privé ;
 - réglages d’organisation ;
 - bucket Storage privé `tapote-management-private` pour BAT, PDF et étiquettes.
+- liaison idempotente de chaque commande Stripe vers le client, la production et l’activation Pilot ;
+- état Pilot visible directement dans la fiche de commande Gestion.
 
 Toutes les tables exposées ont RLS actif. Les pièces Storage doivent être rangées sous le préfixe `{organization_id}/...`.
 
@@ -60,6 +62,8 @@ Puis inviter chaque personne avec un compte individuel :
 npm run management:invite -- --email jules@tapote.fr --name "Jules" --role manager --seed false
 ```
 
+Pour un compte de test localement confirmé, ajouter `--password "mot-de-passe-de-12-caracteres-minimum"`. Ne jamais utiliser cette option dans un terminal partagé ni conserver le mot de passe dans l’historique de commandes.
+
 Ne jamais partager un compte. Pour retirer un accès, supprimer la ligne correspondante dans `organization_members` ou supprimer l’utilisateur après révocation de ses sessions.
 
 ## Vérification
@@ -68,9 +72,12 @@ Une fois les secrets serveur présents :
 
 ```powershell
 npm run management:verify
+npm run platform:verify
 ```
 
 Le script crée un compte technique localement confirmé, vérifie l’isolation anonyme, RLS, la lecture et la création transactionnelle d’une commande, puis supprime automatiquement le compte et son organisation de test.
+
+`platform:verify` utilise quatre variables `TEST_*` non commitées et contrôle le parcours complet : authentification des deux apps, isolation croisée, commande web liée, sept produits du pack, permissions de colonnes et agrégats Pilot.
 
 Vérifications applicatives :
 

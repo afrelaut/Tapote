@@ -29,6 +29,7 @@ import {
   PackageCheck,
   PackageOpen,
   Plus,
+  Radio,
   RefreshCw,
   Search,
   Settings2,
@@ -525,6 +526,7 @@ function OrderDrawer({ order, client, onClose, advanceOrder }) {
         <header><div><span>COMMANDE</span><h2 id="pilot-order-title">{order.id}</h2></div><button onClick={onClose} aria-label="Fermer"><X size={20} /></button></header>
         <div className="pilot-drawer-client"><span>{initials(client.name)}</span><div><b>{client.name}</b><small>{client.contact} · {client.email}</small></div><button aria-label="Ouvrir le client"><ExternalLink size={15} /></button></div>
         <div className="pilot-drawer-status"><StatusBadge status={order.status} /><span>Échéance <b>{order.due}</b></span></div>
+        {order.sourceOrderId && <div className={`pilot-integration-state pilot-integration-${order.pilotStatus || "paid"}`}><Radio size={17} /><div><b>{order.pilotStatus === "active" ? "Pilot activé" : order.pilotStatus === "ready_for_activation" ? "Pilot prêt à activer" : "Commande web synchronisée"}</b><span>{order.pilotStatus === "active" ? "Le client dispose de son espace et de ses liens actifs." : "Le suivi tapote.fr → production → Pilot est relié automatiquement."}</span></div></div>}
         <section className="pilot-drawer-section"><span>DÉTAILS</span><dl><div><dt>Produit</dt><dd>{order.product}</dd></div><div><dt>Quantité</dt><dd>{order.quantity}</dd></div><div><dt>Destination</dt><dd>{order.destination}</dd></div><div><dt>Montant</dt><dd>{formatEuro(order.total)}</dd></div><div><dt>Responsable</dt><dd>{order.owner}</dd></div><div><dt>Canal</dt><dd>{order.channel}</dd></div></dl></section>
         <section className="pilot-drawer-section"><span>AVANCEMENT</span><div className="pilot-timeline">
           {statusFlow.map((status, index) => <div key={status} className={cx(index <= currentIndex && "is-done", index === currentIndex && "is-current")}><i>{index < currentIndex ? <Check size={12} /> : null}</i><p><b>{statusMeta[status].label}</b><small>{index < currentIndex ? "Terminé" : index === currentIndex ? "Étape actuelle" : "À venir"}</small></p></div>)}
