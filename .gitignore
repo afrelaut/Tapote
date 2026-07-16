@@ -16,3 +16,5 @@ coverage/
 .playwright-cli/
 .playwright-mcp/
 output/
+tmp/
+public/assets/tapote-hero-counter-v2.png
