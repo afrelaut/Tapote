@@ -43,7 +43,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import ManagementAuth from "./management/ManagementAuth.jsx";
+import ManagementAuth, { ManagementPasswordSetup } from "./management/ManagementAuth.jsx";
 import {
   createManagementClient,
   createManagementInventoryItem,
@@ -582,6 +582,7 @@ export default function TapoteManagementApp() {
   const [session, setSession] = useState(null);
   const [sessionReady, setSessionReady] = useState(false);
   const [authState, setAuthState] = useState(isManagementConfigured ? "loading" : "configuration");
+  const [passwordRecovery, setPasswordRecovery] = useState(false);
   const [access, setAccess] = useState(null);
   const [syncing, setSyncing] = useState(false);
   const [search, setSearch] = useState("");
@@ -617,10 +618,11 @@ export default function TapoteManagementApp() {
         setSessionReady(true);
         setAuthState("signedOut");
       });
-    const unsubscribe = onManagementAuthChange((nextSession) => {
+    const unsubscribe = onManagementAuthChange((nextSession, event) => {
       if (!active) return;
       setSession(nextSession);
       setSessionReady(true);
+      if (event === "PASSWORD_RECOVERY") setPasswordRecovery(true);
     });
     return () => {
       active = false;
@@ -857,6 +859,9 @@ export default function TapoteManagementApp() {
     showToast("Export CSV généré.");
   };
 
+  if (passwordRecovery && session) {
+    return <ManagementPasswordSetup onComplete={() => setPasswordRecovery(false)} />;
+  }
   if (authState === "configuration") {
     return <main className="management-state"><Brand /><AlertTriangle size={30} /><h1>Configuration Supabase requise</h1><p>Ajoute VITE_SUPABASE_URL et VITE_SUPABASE_PUBLISHABLE_KEY à l’environnement de déploiement.</p></main>;
   }

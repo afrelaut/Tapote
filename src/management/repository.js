@@ -79,7 +79,7 @@ export async function getManagementSession() {
 
 export function onManagementAuthChange(callback) {
   const client = assertClient();
-  const { data } = client.auth.onAuthStateChange((_event, session) => callback(session));
+  const { data } = client.auth.onAuthStateChange((event, session) => callback(session, event));
   return () => data.subscription.unsubscribe();
 }
 
@@ -92,6 +92,11 @@ export async function signInManager(email, password) {
 export async function sendManagerPasswordReset(email) {
   const redirectTo = `${window.location.origin}/gestion`;
   const { error } = await assertClient().auth.resetPasswordForEmail(email, { redirectTo });
+  throwIfError(error);
+}
+
+export async function updateManagerPassword(password) {
+  const { error } = await assertClient().auth.updateUser({ password });
   throwIfError(error);
 }
 
