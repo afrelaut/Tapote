@@ -1,55 +1,62 @@
-# TAPOTE - BAT PROTOTYPES
+# Tapote — impressions des 4 produits — version du 18/07/2026
 
-Fichiers prêts à imprimer avec fond perdu et traits de coupe. Imprimer à 100 %, sans ajuster à la page.
+Ce dossier remplace intégralement l'ancien lot `designs/print-ready`.
 
-## 1. Chevalet A6
+## Contenu
 
-- Format fini : 105 x 148 mm.
-- Fichier : 111 x 154 mm, soit 3 mm de fond perdu par côté.
-- Support : papier mat ou satiné 250 à 300 g/m2, sans pelliculage pour le premier test.
-- Découpe : droite au format fini.
-- NFC : carte NTAG215 placée derrière l'impression, côté gauche du bloc bleu, puis essai dans le chevalet avant fermeture.
+Les quatre familles de produits sont déclinées en neuf fichiers prêts à contrôler :
 
-## 2. Carte NFC
+1. Chevalets : avis Google et menu
+2. Plaques : avis Google et réservation
+3. Vitrines : avis Google et Instagram
+4. Cartes : recto avis Google, recto contact et verso universel
 
-- Carte physique : 85 x 54 mm.
-- Fichier adhésif : 89 x 58 mm, soit 2 mm de fond perdu par côté.
-- Découpe finie : 85 x 54 mm, angles rayon 3 mm.
-- Support : vinyle blanc permanent, pelliculage mat anti-rayure à froid.
-- Fichiers séparés recto et verso pour chaque version.
-- Poser les adhésifs sans bulle, puis tester le NFC avant toute série.
+Chaque déclinaison est fournie dans les formats suivants :
 
-## 3. Plaque
+- `pdf/` : PDF à transmettre à l'imprimeur, à imprimer à 100 %
+- `svg/` : source vectorielle modifiable
+- `html/` : source de régénération et impression navigateur
+- `previews/` : aperçu PNG à 300 dpi
+- `scripts/` : scripts Python ayant servi à construire le lot
 
-- Format fini : 120 x 120 mm.
-- Fichier : 126 x 126 mm, soit 3 mm de fond perdu par côté.
-- Support : PMMA blanc opaque 3 mm recommandé, ou PVC expansé blanc 3 mm pour le prototype rapide.
-- Coins finis : rayon 7 mm environ.
-- Finition : vinyle imprimé contrecollé + pelliculage mat anti-rayure.
-- NFC : carte NTAG215 au dos, centrée derrière la zone bleue de gauche. Ne pas utiliser de plaque métallique.
+L'image `apercu-impressions-4-produits-v3-2026-07-18.png` réunit les neuf faces sur une seule planche de contrôle.
 
-## 4. Vitrine
+## Dimensions d'impression
 
-- Format fini : 90 x 90 mm.
-- Fichier : 96 x 96 mm, soit 3 mm de fond perdu par côté.
-- Pose : à l'intérieur de la vitre, lecture depuis l'extérieur.
-- Demander à l'imprimeur une impression miroir / seconde surface avec blanc de soutien si son procédé l'exige.
-- Finition : vinyle polymère pour vitrage, laminé et résistant aux UV.
-- NFC : carte NTAG215 derrière la zone bleue de gauche pour le prototype. Éviter le cadre métallique et tester sur la vitre réelle.
+| Produit | Fichier livré | Format fini | Fond perdu / remarques |
+| --- | ---: | ---: | --- |
+| Chevalet | 105 × 148 mm | 105 × 148 mm | Format exact, sans traits de coupe, prévu pour tirage photo |
+| Plaque | 126 × 126 mm | 120 × 120 mm | Fond perdu de 3 mm sur chaque côté |
+| Vitrine | 96 × 96 mm | 90 × 90 mm | Fond perdu de 3 mm sur chaque côté |
+| Carte | 89 × 58 mm | 85 × 54 mm, coins R3 | Fond perdu de 2 mm sur chaque côté, recto et verso |
 
-## QR et NFC du prototype
+Pour les vitrines, le bloc d'action est volontairement très proche du bord de coupe. La tolérance de placement attendue est de ± 0,5 mm. Si l'imprimeur déconseille cette proximité, utiliser un format fini de 100 × 100 mm plutôt que de déformer le dessin.
 
-- Version claire Services : QR vers `https://www.google.com`.
-- Version sombre Avis : QR vers `https://maps.google.com`.
-- Encoder les puces NFC vers la même destination que le QR de la version choisie.
-- Ne pas verrouiller les puces pendant la phase prototype.
-- Les QR sont dimensionnés à 26 mm sur l'A6, 19 mm sur la carte, 38 mm sur la plaque et 36 mm sur la vitrine.
-- Remplacer ces liens de démonstration par les liens courts Tapote avant toute vente client.
+## Supports et montage recommandés pour les prototypes
 
-## Contrôle avant fabrication
+- Chevalet : papier mat ou satiné de 250 à 300 g/m². Tester la puce derrière la zone NFC avant fermeture.
+- Plaque : PMMA blanc opaque de 3 mm, ou PVC expansé blanc de 3 mm pour un prototype rapide ; vinyle imprimé et pelliculage mat anti-rayure. Éviter un support métallique.
+- Vitrine : vinyle polymère résistant aux UV, posé à l'intérieur et lisible depuis l'extérieur. Confirmer avec l'imprimeur si une impression miroir avec blanc de soutien est nécessaire.
+- Carte : vinyle blanc permanent avec pelliculage mat anti-rayure à froid. Poser les adhésifs sans bulle et tester le NFC avant une série.
 
-- Vérifier que les fichiers sont imprimés à 100 %.
-- Vérifier la netteté du logo, les noirs, le bleu et les traits de coupe.
-- Scanner chaque QR sur iPhone et Android depuis la distance d'usage.
-- Tester chaque puce seule, puis une fois montée.
-- Aucun logo Google n'est utilisé ; les étoiles sont décoratives et ne demandent pas un avis positif.
+La puce NFC doit être testée seule, après montage, puis sur le support réel avec un iPhone et un téléphone Android. Ne pas verrouiller les puces pendant la phase prototype.
+
+## Point critique avant une fabrication client
+
+Les QR codes de ce lot prototype renvoient vers `https://tapote.fr`. Ils sont adaptés aux prototypes et aux démonstrations génériques, mais pas à la livraison personnalisée d'un client.
+
+Pour une commande client définitive, le QR code et la puce NFC doivent tous les deux renvoyer vers la même URL Tapote dédiée, au format `https://t.tapote.fr/a/<shortcode>`, générée et vérifiée depuis Tapote Gestion avant l'envoi en production.
+
+## Contrôles effectués
+
+- présence des neuf variantes dans les quatre formats
+- contrôle visuel de la planche complète
+- contrôle des neuf PDF et de leurs dimensions physiques
+- absence de formulaire, de JavaScript ou d'annotation dans les PDF
+- conservation des scripts de génération pour la traçabilité
+
+## Provenance
+
+- Source reçue : `tapote-persos-v3 (1) (1).zip`
+- SHA-256 de la source : `22C9C1BD4BCCF011FE04859DD355820F359F617CA46AB93FAE15D906E14FB720`
+- Désignation source : série personnalisée v3 / métriques v3.1
