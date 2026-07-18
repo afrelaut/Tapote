@@ -1,0 +1,60 @@
+# Surcharge pour un VPS qui possède déjà Traefik avec le provider Docker.
+# À combiner avec docker-compose.shared-vps.yml.
+services:
+  app:
+    init: true
+    labels:
+      traefik.enable: "true"
+
+      traefik.http.services.tapote.loadbalancer.server.port: "3001"
+      traefik.http.services.tapote.loadbalancer.server.scheme: "http"
+
+      traefik.http.routers.tapote-public.rule: "Host(`tapote.fr`)"
+      traefik.http.routers.tapote-public.entrypoints: "websecure"
+      traefik.http.routers.tapote-public.tls: "true"
+      traefik.http.routers.tapote-public.tls.certresolver: "letsencrypt"
+      traefik.http.routers.tapote-public.service: "tapote"
+      traefik.http.routers.tapote-public.middlewares: "tapote-hide-management"
+
+      traefik.http.middlewares.tapote-hide-management.redirectregex.regex: "^https://tapote[.]fr/gestion(?:/.*)?$"
+      traefik.http.middlewares.tapote-hide-management.redirectregex.replacement: "https://tapote.fr/"
+      traefik.http.middlewares.tapote-hide-management.redirectregex.permanent: "true"
+
+      traefik.http.routers.tapote-www.rule: "Host(`www.tapote.fr`)"
+      traefik.http.routers.tapote-www.entrypoints: "websecure"
+      traefik.http.routers.tapote-www.tls: "true"
+      traefik.http.routers.tapote-www.tls.certresolver: "letsencrypt"
+      traefik.http.routers.tapote-www.service: "tapote"
+      traefik.http.routers.tapote-www.middlewares: "tapote-www-redirect"
+
+      traefik.http.middlewares.tapote-www-redirect.redirectregex.regex: "^https://www[.]tapote[.]fr/(.*)"
+      traefik.http.middlewares.tapote-www-redirect.redirectregex.replacement: "https://tapote.fr/$${1}"
+      traefik.http.middlewares.tapote-www-redirect.redirectregex.permanent: "true"
+
+      traefik.http.routers.tapote-pilot.rule: "Host(`pilot.tapote.fr`)"
+      traefik.http.routers.tapote-pilot.entrypoints: "websecure"
+      traefik.http.routers.tapote-pilot.tls: "true"
+      traefik.http.routers.tapote-pilot.tls.certresolver: "letsencrypt"
+      traefik.http.routers.tapote-pilot.service: "tapote"
+      traefik.http.routers.tapote-pilot.middlewares: "tapote-pilot-redirect"
+
+      traefik.http.middlewares.tapote-pilot-redirect.redirectregex.regex: "^https://pilot[.]tapote[.]fr/?(.*)"
+      traefik.http.middlewares.tapote-pilot-redirect.redirectregex.replacement: "https://tapote.fr/pilot/$${1}"
+      traefik.http.middlewares.tapote-pilot-redirect.redirectregex.permanent: "true"
+
+      traefik.http.routers.tapote-management.rule: "Host(`gestion.tapote.fr`)"
+      traefik.http.routers.tapote-management.entrypoints: "websecure"
+      traefik.http.routers.tapote-management.tls: "true"
+      traefik.http.routers.tapote-management.tls.certresolver: "letsencrypt"
+      traefik.http.routers.tapote-management.service: "tapote"
+      traefik.http.routers.tapote-management.middlewares: "tapote-management-root"
+
+      traefik.http.middlewares.tapote-management-root.redirectregex.regex: "^https://gestion[.]tapote[.]fr/?$"
+      traefik.http.middlewares.tapote-management-root.redirectregex.replacement: "https://gestion.tapote.fr/gestion"
+      traefik.http.middlewares.tapote-management-root.redirectregex.permanent: "false"
+
+      traefik.http.routers.tapote-links.rule: "Host(`t.tapote.fr`) && (PathPrefix(`/a/`) || Path(`/api/health`))"
+      traefik.http.routers.tapote-links.entrypoints: "websecure"
+      traefik.http.routers.tapote-links.tls: "true"
+      traefik.http.routers.tapote-links.tls.certresolver: "letsencrypt"
+      traefik.http.routers.tapote-links.service: "tapote"
