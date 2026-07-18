@@ -1,0 +1,50 @@
+.access-body { background: #f4efe6; }
+.access-shell { min-height: 100svh; color: #11110f; background: #f4efe6; }
+.access-shell :where(a, button):focus-visible { outline: 3px solid #f2a91c; outline-offset: 4px; }
+.access-header { min-height: 82px; padding: 0 clamp(22px, 5.5vw, 96px); display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(17, 17, 15, .22); }
+.access-header img { width: 154px; display: block; }
+.access-header > a:last-child { display: inline-flex; align-items: center; gap: 8px; color: #5d584f; font-size: 13px; font-weight: 800; text-decoration: none; }
+.access-intro { min-height: 390px; padding: clamp(64px, 8vw, 124px) clamp(22px, 6.7vw, 118px) clamp(52px, 6vw, 90px); display: grid; grid-template-columns: 1.2fr .8fr; align-items: end; border-bottom: 1px solid #11110f; }
+.access-intro > span { grid-column: 1 / -1; align-self: start; color: #2946f5; font-size: 11px; font-weight: 850; letter-spacing: .14em; }
+.access-intro h1 { margin: 22px 0 0; font-family: var(--font-display); font-size: clamp(54px, 7.6vw, 118px); line-height: .86; letter-spacing: -.065em; }
+.access-intro h1 em { color: #2946f5; font-style: normal; }
+.access-intro > p { max-width: 550px; justify-self: end; margin: 0; color: #5d584f; font-size: clamp(15px, 1.3vw, 19px); line-height: 1.65; }
+.access-trust { grid-column: 2; justify-self: end; margin-top: 28px; display: flex; align-items: center; gap: 8px 16px; color: #46423c; font-size: 12px; font-weight: 750; }
+.access-trust svg { color: #2946f5; }
+.access-destinations { display: grid; grid-template-columns: 1fr 1fr; }
+.access-destination { min-height: 460px; padding: clamp(30px, 4.2vw, 68px); display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto 1fr auto auto; gap: 24px 30px; color: inherit; border-right: 1px solid #11110f; border-bottom: 1px solid #11110f; text-decoration: none; transition: background .2s ease, color .2s ease; }
+.access-destination:last-child { border-right: 0; }
+.access-destination > .access-index { grid-column: 1 / -1; color: currentColor; font-size: 11px; font-weight: 850; opacity: .55; }
+.access-destination > i { width: 58px; height: 58px; display: grid; place-items: center; border: 1px solid currentColor; border-radius: 50%; }
+.access-destination > div small { font-size: 10px; font-weight: 850; letter-spacing: .13em; }
+.access-destination h2 { margin: 10px 0 14px; font-family: var(--font-display); font-size: clamp(38px, 4vw, 62px); line-height: .92; letter-spacing: -.05em; }
+.access-destination p { max-width: 560px; margin: 0; color: inherit; font-size: 15px; line-height: 1.65; opacity: .72; }
+.access-destination > strong { grid-column: 2; align-self: end; font-size: 12px; font-weight: 750; opacity: .7; overflow-wrap: anywhere; }
+.access-destination > b { grid-column: 2; display: inline-flex; align-items: center; gap: 12px; font-size: 14px; }
+.access-destination:hover { color: #fff; background: #2946f5; }
+.access-destination-management:hover { color: #fff; background: #11110f; }
+.access-destination:hover > b svg { transform: translateX(4px); }
+.access-destination > b svg { transition: transform .18s ease; }
+.access-footer { min-height: 82px; padding: 20px clamp(22px, 5.5vw, 96px); display: flex; align-items: center; justify-content: center; gap: 10px; color: #6b655b; font-size: 11px; text-align: center; }
+
+@media (max-width: 900px) {
+  .access-intro { grid-template-columns: 1fr; }
+  .access-intro > p, .access-trust { grid-column: 1; justify-self: start; margin-top: 30px; }
+  .access-destinations { grid-template-columns: 1fr; }
+  .access-destination { min-height: 390px; border-right: 0; }
+}
+
+@media (max-width: 600px) {
+  .access-header { min-height: 68px; padding-inline: 18px; }
+  .access-header img { width: 126px; }
+  .access-header > a:last-child { font-size: 12px; }
+  .access-intro { min-height: 0; padding: 58px 20px 48px; }
+  .access-intro h1 { font-size: 54px; }
+  .access-intro > p { font-size: 15px; }
+  .access-trust { display: grid; grid-template-columns: auto 1fr; }
+  .access-destination { min-height: 430px; padding: 30px 20px; grid-template-columns: 48px 1fr; gap: 18px; }
+  .access-destination > i { width: 48px; height: 48px; }
+  .access-destination h2 { font-size: 40px; }
+  .access-destination p { font-size: 14px; }
+  .access-footer { align-items: flex-start; text-align: left; }
+}

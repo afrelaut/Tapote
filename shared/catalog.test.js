@@ -20,7 +20,7 @@ describe("catalogue Tapote", () => {
     expect(ACTIONS.reservation.name).toBe("Réservation");
     expect(PILOT_PLANS.pilot.price).toBe(900);
     expect(PILOT_PLANS.annual.price).toBe(8900);
-    expect(formatMoney(5900)).toContain("59");
+    expect(formatMoney(4900)).toContain("49");
   });
 
   it("couvre les nouveaux supports et scénarios métier", () => {
@@ -32,11 +32,15 @@ describe("catalogue Tapote", () => {
   });
 
   it("applique la gamme de packs et la livraison validées", () => {
+    expect(PRODUCTS.comptoir.price).toBe(4900);
+    expect(PRODUCTS.plaque.price).toBe(3900);
+    expect(PRODUCTS.carte.price).toBe(2990);
     expect(PRODUCTS.pack_essentiel.price).toBe(5900);
-    expect(PRODUCTS.pack_commerce.price).toBe(13900);
-    expect(PRODUCTS.pack_resto.price).toBe(18900);
-    expect(PRODUCTS.pack_salon.price).toBe(10900);
-    expect(PRODUCTS.pack_equipe.price).toBeLessThan(PRODUCTS.pack_equipe.value);
+    expect(PRODUCTS.pack_visibilite.price).toBe(8900);
+    expect(PRODUCTS.pack_commerce).toMatchObject({ price: 14900, value: 17770 });
+    expect(PRODUCTS.pack_resto).toMatchObject({ price: 19900, value: 21790 });
+    expect(PRODUCTS.pack_salon).toMatchObject({ price: 8900, value: 9800 });
+    expect(PRODUCTS.pack_equipe).toMatchObject({ price: 16900, value: 20930 });
     expect(PRODUCTS.sticker.price).toBe(2990);
     expect(calculateShipping(5899)).toBe(490);
     expect(calculateShipping(5900)).toBe(0);

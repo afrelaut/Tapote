@@ -1,6 +1,6 @@
 # Tapote — Manuel de gestion A à Z pour Aymeric
 
-Version 1.0 — 15 juillet 2026
+Version 1.1 — 17 juillet 2026
 
 > Manuel opérationnel de lancement. Les décisions juridiques, fiscales, comptables, sociales et contractuelles doivent être validées avec un expert-comptable et, selon le sujet, un avocat. Les seuils cités sont ceux vérifiés à la date du document.
 
@@ -91,15 +91,20 @@ Maintenir un tableau de trésorerie sur 13 semaines : solde initial, encaissemen
 
 ### Catalogue de lancement
 
-1. **Le Comptoir A6 — 59 € TTC** : produit signature.
-2. **Les Chevalets A6 ×6 — 139 € TTC** : restauration et lieux multi-zones.
-3. **La Carte — 39 € TTC** : pros mobiles.
-4. **La Vitrine — 29 € TTC** : action hors horaires.
-5. **Pack Restaurant — 179 € TTC**.
-6. **Pack Salon — 109 € TTC**.
-7. **Pack Équipe — 219 € TTC**.
-8. **Pilot — 9 €/mois**, 30 jours offerts.
-9. **Pilot+ — 19 €/mois**, seulement quand la valeur additionnelle est réellement livrée.
+1. **Le Comptoir A6 — 49 € TTC** : produit signature.
+2. **La Plaque 12 × 12 — 39 € TTC** : comptoir ou mur.
+3. **Le Mini Comptoir — 34 € TTC** : petit espace.
+4. **Les Chevalets A6 ×6 — 139 € TTC** : restauration et lieux multi-zones.
+5. **La Carte — 29,90 € TTC** : pros mobiles.
+6. **La Vitrine — 29,90 € TTC** : action hors horaires.
+7. **Pack Essentiel — 59 € TTC**.
+8. **Pack Visibilité — 89 € TTC**.
+9. **Pack Commerce — 149 € TTC**.
+10. **Pack Restaurant — 199 € TTC**.
+11. **Pack Salon — 89 € TTC**.
+12. **Pack Équipe — 169 € TTC**.
+13. **Pilot — 9 €/mois**, 30 jours offerts.
+14. **Pilot+ — 19 €/mois**, seulement quand la valeur additionnelle est réellement livrée.
 
 ### Ce qui est inclus
 
@@ -428,12 +433,14 @@ Cette URL redirige vers Google, Planity, le menu, etc. Le tag ne contient jamais
 1. Scanner le numéro commande.
 2. Créer l’objet dans Pilot.
 3. Associer action et destination.
-4. Écrire l’URL courte en NDEF URI.
+4. Dans Gestion, ouvrir **Création & encodage** puis utiliser **Encoder sur Android** depuis Chrome Android en HTTPS, ou écrire manuellement l’URL courte en NDEF URI avec une application NFC.
 5. Lire immédiatement le tag.
 6. Vérifier la redirection.
 7. Générer le QR de la même URL.
 8. Imprimer et tester.
 9. Verrouiller le tag en lecture seule seulement si le redirecteur est validé et la procédure de remplacement prévue.
+
+Une puce NFC passive ne peut pas être écrite réellement « à distance » : le téléphone doit être physiquement proche de la puce. En revanche, Tapote écrit une URL courte stable. La destination derrière cette URL peut ensuite être modifiée à distance dans Pilot sans réencoder le support. L’écriture intégrée à Gestion utilise Web NFC, disponible sur Chrome Android en contexte HTTPS ; le bouton de confirmation manuelle reste prévu pour les autres appareils.
 
 ### Compatibilité
 

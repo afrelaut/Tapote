@@ -18,4 +18,14 @@ export const pilotSupabase = isPilotConfigured
   })
   : null;
 
+export async function getPilotSession() {
+  if (!pilotSupabase) return null;
+  const { data: sessionData, error: sessionError } = await pilotSupabase.auth.getSession();
+  if (sessionError) throw sessionError;
+  if (!sessionData.session) return null;
+  const { data: userData, error: userError } = await pilotSupabase.auth.getUser();
+  if (userError) throw userError;
+  return userData.user ? { ...sessionData.session, user: userData.user } : null;
+}
+
 export const redirectBaseUrl = String(import.meta.env.VITE_REDIRECT_BASE_URL || "https://t.tapote.fr").replace(/\/$/, "");

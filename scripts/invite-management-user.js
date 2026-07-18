@@ -2,6 +2,7 @@ import "dotenv/config";
 import process from "node:process";
 import pg from "pg";
 import { createClient } from "@supabase/supabase-js";
+import { PRODUCTS } from "../shared/catalog.js";
 
 const { Client } = pg;
 
@@ -175,10 +176,10 @@ try {
       }
     }
     const products = [
-      ["Le Comptoir A6", 5900, true, "SUP-A6-CLR", 24, 4.8],
-      ["Pack Restaurant ×6", 24900, true, "SUP-A6-CLR", 9, 2.9],
-      ["Carte NFC", 2900, true, "CARD-PVC-W", 18, 5.2],
-      ["Sticker NFC", 3500, false, "STK-EXT-MAT", 12, 3.6],
+      [PRODUCTS.comptoir.name, PRODUCTS.comptoir.price, true, "SUP-A6-CLR", 24, 4.8],
+      [PRODUCTS.pack_resto.name, PRODUCTS.pack_resto.price, true, "SUP-A6-CLR", 9, 2.9],
+      [PRODUCTS.carte.name, PRODUCTS.carte.price, true, "CARD-PVC-W", 18, 5.2],
+      [PRODUCTS.sticker.name, PRODUCTS.sticker.price, true, "STK-EXT-MAT", 12, 3.6],
     ];
     for (const product of products) {
       await database.query(

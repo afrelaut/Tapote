@@ -37,7 +37,7 @@ const PRODUCTS = {
     id: "comptoir",
     name: "Le Comptoir A6",
     shortName: "Comptoir A6",
-    price: 5900,
+    price: 4900,
     description: "Chevalet plexiglas transparent, insert client et NFC dissimulé.",
     format: "Plexiglas L · insert A6 105 × 148 mm",
   },
@@ -53,7 +53,7 @@ const PRODUCTS = {
     id: "carte",
     name: "La Carte",
     shortName: "Carte",
-    price: 3900,
+    price: 2990,
     description: "Pour les artisans, agents et pros qui bougent.",
     format: "Format portefeuille · 85 × 54 mm",
   },
@@ -61,7 +61,7 @@ const PRODUCTS = {
     id: "sticker",
     name: "La Vitrine",
     shortName: "Vitrine",
-    price: 2900,
+    price: 2990,
     description: "Un sticker NFC + QR qui agit même après la fermeture.",
     format: "Sticker résistant · 9 × 9 cm",
   },
@@ -69,15 +69,15 @@ const PRODUCTS = {
     id: "pack_resto",
     name: "Pack Restaurant",
     shortName: "Pack Restaurant",
-    price: 17900,
-    description: "Un Comptoir + six Tables, configurés et prêts à poser.",
-    format: "7 objets · économie de 19 €",
+    price: 19900,
+    description: "Un Comptoir, six Tables et une Vitrine, configurés et prêts à poser.",
+    format: "8 objets · installation complète",
   },
   pack_salon: {
     id: "pack_salon",
     name: "Pack Salon",
     shortName: "Pack Salon",
-    price: 10900,
+    price: 8900,
     description: "Deux Comptoirs : avis et réservation.",
     format: "2 objets · économie de 9 €",
   },
@@ -85,9 +85,9 @@ const PRODUCTS = {
     id: "pack_equipe",
     name: "Pack Équipe",
     shortName: "Pack Équipe",
-    price: 21900,
+    price: 16900,
     description: "Six Cartes + une Vitrine pour une équipe mobile.",
-    format: "7 objets · économie de 44 €",
+    format: "7 objets · économie de 40,30 €",
   },
 };
 
@@ -751,7 +751,7 @@ a { color: inherit; }
 
 import TapoteManagementApp from "./ManagementApp.jsx";
 
-const productOrder = ["comptoir", "table6", "carte", "sticker"];
+const productOrder = ["comptoir", "table6", "carte"];
 const packOrder = ["pack_resto", "pack_salon", "pack_equipe"];
 const actionOrder = ["avis", "menu", "reservation", "fidelite", "pourboire", "instagram", "wifi", "autre"];
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -1030,7 +1030,7 @@ function Hero() {
         </div>
       </div>
       <div className="hero-caption">
-        <span>Aperçu en situation</span><span>59 € TTC</span>
+        <span>Aperçu en situation</span><span>49 € TTC</span>
         <strong>Le Comptoir A6 personnalisé</strong>
         <span>NFC + QR · prêt à poser</span><span>Livraison incluse</span>
       </div>

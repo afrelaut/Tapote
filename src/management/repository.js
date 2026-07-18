@@ -132,28 +132,37 @@ export async function signOutManager() {
 
 export async function getManagementAccess(user) {
   const client = assertClient();
+  const { data: profile, error: profileError } = await client
+    .from("management_profiles")
+    .select("organization_id, display_name, job_title")
+    .eq("user_id", user.id)
+    .limit(1)
+    .maybeSingle();
+  throwIfError(profileError);
+  if (!profile) return null;
+
   const { data: membership, error: membershipError } = await client
     .from("organization_members")
     .select("organization_id, role")
     .eq("user_id", user.id)
+    .eq("organization_id", profile.organization_id)
     .in("role", managementRoles)
-    .limit(1)
     .maybeSingle();
   throwIfError(membershipError);
   if (!membership) return null;
 
-  const [{ data: organization, error: organizationError }, { data: profile, error: profileError }] = await Promise.all([
-    client.from("organizations").select("id, name").eq("id", membership.organization_id).single(),
-    client.from("management_profiles").select("display_name, job_title").eq("organization_id", membership.organization_id).eq("user_id", user.id).maybeSingle(),
-  ]);
+  const { data: organization, error: organizationError } = await client
+    .from("organizations")
+    .select("id, name")
+    .eq("id", membership.organization_id)
+    .single();
   throwIfError(organizationError);
-  throwIfError(profileError);
   return {
     organizationId: membership.organization_id,
     organizationName: organization.name,
     role: membership.role,
-    displayName: profile?.display_name || user.email?.split("@")[0] || "Gérant TAPOTE",
-    jobTitle: profile?.job_title || ({ owner: "Propriétaire", admin: "Administrateur", manager: "Gérant" }[membership.role]),
+    displayName: profile.display_name || user.email?.split("@")[0] || "Gérant TAPOTE",
+    jobTitle: profile.job_title || ({ owner: "Propriétaire", admin: "Administrateur", manager: "Gérant" }[membership.role]),
     email: user.email,
   };
 }

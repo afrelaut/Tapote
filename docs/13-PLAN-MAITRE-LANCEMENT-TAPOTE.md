@@ -1,12 +1,12 @@
 # Plan maître de lancement Tapote
 
-Date : 16 juillet 2026
+Date : 17 juillet 2026 — tarifs alignés sur le catalogue en production
 
 ## 1. Décision de positionnement
 
 Tapote ne doit pas être vendu comme une collection de gadgets NFC. La promesse est : **un objet physique premium, placé au bon moment, qui ouvre la bonne action sans application**.
 
-Le produit d'entrée est le **Comptoir A6 à 59 € TTC**. Les packs servent à augmenter la couverture d'un commerce. Les produits à l'unité sont des compléments. Tapote Pilot apporte la destination dynamique et les mesures. Tapote Gestion reste l'outil interne de production, d'encodage, de contrôle et d'expédition.
+Le produit d'entrée est le **Comptoir A6 à 49 € TTC**. Les packs servent à augmenter la couverture d'un commerce. Les produits à l'unité sont des compléments. Tapote Pilot apporte la destination dynamique et les mesures. Tapote Gestion reste l'outil interne de production, d'encodage, de contrôle et d'expédition.
 
 ### Ce que l'audit ChatGPT a correctement identifié
 
@@ -27,7 +27,7 @@ Le produit d'entrée est le **Comptoir A6 à 59 € TTC**. Les packs servent à 
 
 Objectif mobile : moins de 11 500 px avant ouverture des détails, corps de texte à 15–17 px et texte fonctionnel à 12 px minimum.
 
-1. Hero : Comptoir A6, prix 59 €, promesse, CTA « Créer mon Tapote ».
+1. Hero : Comptoir A6, prix 49 €, promesse, CTA « Créer mon Tapote ».
 2. Démonstration de huit secondes : téléphone, NFC, QR et page ouverte.
 3. Trois choix : Comptoir A6, Pack Commerce, Pack Restaurant.
 4. Preuve produit : matière, taille réelle, série pilote reçue, contrôle NFC + QR et BAT.
@@ -170,7 +170,7 @@ Une fiche suiveuse avec cases et signature de contrôle accompagne chaque comman
 
 Pour le lancement, utiliser Colissimo en ligne ou un agrégateur avec suivi. Les tarifs publics 2026 observés sont notamment de 5,49 € jusqu'à 250 g et 7,59 € jusqu'à 500 g à domicile ; le point retrait est légèrement moins cher. Un contrat entreprise devient pertinent lorsque le volume et le processus de collecte le justifient.
 
-Le prix de 59 € avec livraison offerte reste viable seulement si le coût variable complet du Comptoir A6 — support, impression, NFC, temps d'assemblage, emballage, paiement et transport — reste idéalement sous 22 € TTC.
+Au tarif actuel de 49 €, la boutique facture 4,90 € de livraison sous 59 €. Avec le coût variable complet estimé à 19,68 €, transport inclus, la marge contributive indicative est d’environ 56 % du revenu HT facturé. Offrir la livraison sur cette commande unitaire ferait tomber l’estimation autour de 52 %, sous la cible de 55 % : ne pas le faire sans réduire le coût rendu.
 
 ### Procédure d'expédition
 
@@ -209,9 +209,9 @@ Commerces indépendants avec passage physique et action simple : boulangeries, c
 
 ### Offre de lancement
 
-- Comptoir A6 : 59 € TTC, BAT et préparation inclus.
-- Installation commerce : Pack Commerce 139 € TTC.
-- Installation restaurant : Pack Restaurant 189 € TTC.
+- Comptoir A6 : 49 € TTC, BAT et préparation inclus ; livraison 4,90 €.
+- Installation commerce : Pack Commerce 149 € TTC.
+- Installation restaurant : Pack Restaurant 199 € TTC.
 - Série pilote : cinq commerces maximum, contre entretien de retour, photos et autorisation d'utiliser les résultats.
 
 ### Séquence terrain

@@ -64,13 +64,36 @@ describe("API Tapote", () => {
   });
 
   it("autorise explicitement une démo locale et vérifie son statut", async () => {
-    const { app } = makeContext({ ALLOW_DEMO_CHECKOUT: "true" });
-    const checkout = await request(app).post("/api/checkout").send(checkoutBody());
+    const { app } = makeContext({ ALLOW_DEMO_CHECKOUT: "true", PUBLIC_URL: "http://localhost:5175" });
+    const checkout = await request(app)
+      .post("/api/checkout")
+      .set("Origin", "http://localhost:5173")
+      .send(checkoutBody());
     expect(checkout.status).toBe(200);
     expect(checkout.body.demo).toBe(true);
+    expect(new URL(checkout.body.url).origin).toBe("http://localhost:5173");
     const sessionId = new URL(checkout.body.url).searchParams.get("session_id");
     const status = await request(app).get(`/api/checkout/status?session_id=${encodeURIComponent(sessionId)}`);
     expect(status.body).toEqual({ status: "demo" });
+  });
+
+  it("renvoie Stripe vers l’origine active du storefront en développement", async () => {
+    const stripe = {
+      checkout: { sessions: {
+        create: vi.fn(async () => ({ id: "cs_test_return_url", url: "https://checkout.stripe.test/return-url" })),
+        retrieve: vi.fn(),
+      } },
+    };
+    const { app } = makeContext({ PUBLIC_URL: "http://localhost:5175" }, stripe);
+    const response = await request(app)
+      .post("/api/checkout")
+      .set("Origin", "http://localhost:5173")
+      .send(checkoutBody("ca58b0a4-0c28-4a1b-a2c4-40fc8dc87a61"));
+
+    expect(response.status).toBe(200);
+    const checkout = stripe.checkout.sessions.create.mock.calls[0][0];
+    expect(checkout.success_url).toBe("http://localhost:5173/?commande=confirmee&session_id={CHECKOUT_SESSION_ID}");
+    expect(checkout.cancel_url).toBe("http://localhost:5173/?commande=annulee");
   });
 
   it("refuse les URL non HTTPS et l’absence d’acceptation des CGV", async () => {
@@ -115,6 +138,22 @@ describe("API Tapote", () => {
     expect(response.status).toBe(200);
     const checkout = stripe.checkout.sessions.create.mock.calls[0][0];
     expect(checkout.line_items[0].price_data.unit_amount).toBe(2990);
+    expect(checkout.shipping_options[0].shipping_rate_data.fixed_amount.amount).toBe(490);
+  });
+
+  it("facture le Comptoir A6 à 49 € et conserve la livraison sous 59 €", async () => {
+    const stripe = {
+      checkout: { sessions: {
+        create: vi.fn(async () => ({ id: "cs_test_comptoir_price", url: "https://checkout.stripe.test/comptoir" })),
+        retrieve: vi.fn(),
+      } },
+    };
+    const { app } = makeContext({}, stripe);
+    const response = await request(app).post("/api/checkout").send(checkoutBody("ba58b0a4-0c28-4a1b-a2c4-40fc8dc87a60"));
+
+    expect(response.status).toBe(200);
+    const checkout = stripe.checkout.sessions.create.mock.calls[0][0];
+    expect(checkout.line_items[0].price_data.unit_amount).toBe(4900);
     expect(checkout.shipping_options[0].shipping_rate_data.fixed_amount.amount).toBe(490);
   });
 

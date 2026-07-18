@@ -1836,6 +1836,10 @@
 .pilot-encoding-checks span { padding: 5px 7px; border: 1px solid #e2ddd5; border-radius: 999px; background: #f7f4ef; color: #918b82; font-size: 9px; font-weight: 800; }
 .pilot-encoding-checks span.is-ok { border-color: #b8dccb; background: #eaf6f0; color: #287153; }
 .pilot-encoding-row .pilot-secondary { min-height: 38px; justify-content: center; padding: 0 11px; font-size: 10px; white-space: nowrap; }
+.pilot-encoding-actions { display: grid; gap: 7px !important; }
+.pilot-encoding-actions .pilot-link-action { width: fit-content; padding: 0; border: 0; background: transparent; color: #6d675f; font-size: 10px; font-weight: 750; text-align: left; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.pilot-encoding-actions .pilot-link-action:hover { color: #315ed6; }
+.pilot-encoding-row .pilot-nfc-action { border-color: #afc2f2; background: #eef3ff; color: #315ed6; }
 .pilot-encoding-done { display: inline-flex; align-items: center; gap: 6px; color: #287153; font-size: 11px; font-weight: 800; }
 .pilot-encoding-modal { width: min(760px, 100%); }
 .pilot-form-grid textarea { width: 100%; min-height: 88px; resize: vertical; padding: 13px 14px; border: 1px solid #d8d3ca; border-radius: 10px; background: #fff; color: #2c2c28; font: inherit; font-size: 13px; line-height: 1.45; outline: 0; }
@@ -1844,6 +1848,20 @@
 .pilot-encoding-rule svg { flex: 0 0 auto; color: #315ed6; }
 .pilot-encoding-rule p { margin: 0; font-size: 12px; line-height: 1.5; }
 .pilot-test-modal { width: min(600px, 100%); }
+.pilot-nfc-modal { width: min(650px, 100%); }
+.pilot-nfc-body { display: grid; gap: 17px; padding: 24px 29px 12px; }
+.pilot-nfc-url { display: grid; gap: 8px; padding: 15px; border: 1px solid #c9d6fa; border-radius: 11px; background: #eef3ff; }
+.pilot-nfc-url span { color: #5c6f9f; font-size: 9px; font-weight: 850; letter-spacing: 0.8px; }
+.pilot-nfc-url code { overflow-wrap: anywhere; color: #244aab; font-size: 13px; font-weight: 800; }
+.pilot-nfc-body ol { display: grid; gap: 10px; margin: 0; padding-left: 22px; color: #59554f; font-size: 12px; line-height: 1.5; }
+.pilot-nfc-support,
+.pilot-nfc-message { display: flex; align-items: flex-start; gap: 10px; margin: 0; padding: 13px 14px; border: 1px solid #e2d6b5; border-radius: 10px; background: #fff9e9; color: #755e22; font-size: 11px; line-height: 1.45; }
+.pilot-nfc-support svg,
+.pilot-nfc-message svg { flex: 0 0 auto; margin-top: 1px; }
+.pilot-nfc-message.pilot-nfc-writing,
+.pilot-nfc-message.pilot-nfc-written { border-color: #b8dccb; background: #eaf6f0; color: #287153; }
+.pilot-nfc-message.pilot-nfc-error { border-color: #efbdb5; background: #fff0ed; color: #a33d2f; }
+.pilot-nfc-message .is-spinning { animation: pilot-spin 0.8s linear infinite; }
 .pilot-test-checklist { display: grid; gap: 10px; padding: 24px 29px 14px; }
 .pilot-test-checklist label { min-height: 76px; display: grid; grid-template-columns: 24px 24px 1fr 20px; align-items: center; gap: 12px; padding: 13px 15px; border: 1px solid #dfdad1; border-radius: 12px; background: #faf8f4; cursor: pointer; }
 .pilot-test-checklist label.is-checked { border-color: #9fcdb9; background: #eef8f3; }
@@ -1872,7 +1890,9 @@
   .pilot-encoding-checks { grid-template-columns: minmax(112px, 0.52fr) repeat(3, auto) !important; }
   .pilot-encoding-checks::before { grid-row: auto !important; }
   .pilot-encoding-row .pilot-secondary { width: 100%; }
+  .pilot-encoding-actions .pilot-link-action { width: 100%; text-align: center; }
   .pilot-encoding-rule { margin-right: 19px; margin-left: 19px; }
+  .pilot-nfc-body { padding-right: 19px; padding-left: 19px; }
   .pilot-test-checklist { padding-right: 19px; padding-left: 19px; }
   .pilot-test-modal > .pilot-form-help { margin-right: 19px; margin-left: 19px; }
 }

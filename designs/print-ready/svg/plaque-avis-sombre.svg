@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="126mm" height="126mm" viewBox="0 0 1260 1260">
+  <style>@page { size: 126mm 126mm; margin: 0; }</style>
+  <defs><clipPath id="trim"><rect x="30" y="30" width="1200" height="1200" rx="70"/></clipPath></defs>
+  <g clip-path="url(#trim)">
+    <rect width="1260" height="1260" fill="#141414"/>
+    <image href="../../../public/brand/tapote-logo-light.svg" x="420" y="82" width="420" height="106"/>
+    <text x="630" y="305" text-anchor="middle" fill="#F4EFE5" font-family="Arial Black,Arial,sans-serif" font-size="86" font-weight="900" letter-spacing="-4">Votre avis compte.</text>
+    <text x="630" y="370" text-anchor="middle" fill="#F4EFE5" opacity=".7" font-family="Arial,sans-serif" font-size="28">30 secondes suffisent</text>
+    <text x="630" y="430" text-anchor="middle" fill="#F7C85D" font-family="Arial,sans-serif" font-size="42" letter-spacing="9">★★★★★</text>
+    <rect x="100" y="480" width="1060" height="610" rx="60" fill="#2458FF"/>
+    <line x1="650" y1="545" x2="650" y2="1030" stroke="#FFFFFF" stroke-opacity=".25" stroke-width="2"/>
+    <g transform="translate(235 580) scale(10.5)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <rect width="7" height="12" x="2" y="6" rx="1.2" stroke="#FFFDF8" stroke-width="1.6"/>
+      <path d="M13 8.3a7.4 7.4 0 0 1 0 7.4M16.5 6.2a11.8 11.8 0 0 1 0 11.6M20 4.1a15.9 15.9 0 0 1 0 15.8" stroke="#F7C85D" stroke-width="1.6"/>
+    </g>
+    <text x="365" y="925" text-anchor="middle" fill="#FFFFFF" font-family="Arial Black,Arial,sans-serif" font-size="39" font-weight="900">APPROCHEZ</text>
+    <text x="365" y="973" text-anchor="middle" fill="#FFFFFF" font-family="Arial Black,Arial,sans-serif" font-size="39" font-weight="900">VOTRE TÉLÉPHONE</text>
+    <text x="365" y="1025" text-anchor="middle" fill="#FFFFFF" opacity=".75" font-family="Arial,sans-serif" font-size="22">NFC · sans application</text>
+    <image href="../assets/qr-demo-avis.svg" x="720" y="555" width="380" height="380"/>
+    <text x="910" y="990" text-anchor="middle" fill="#FFFFFF" font-family="Arial Black,Arial,sans-serif" font-size="31" font-weight="900">OU SCANNEZ</text>
+    <text x="910" y="1032" text-anchor="middle" fill="#FFFFFF" opacity=".72" font-family="Arial,sans-serif" font-size="19">QR DÉMO</text>
+    <text x="630" y="1175" text-anchor="middle" fill="#F4EFE5" opacity=".6" font-family="Arial,sans-serif" font-size="17" font-weight="700" letter-spacing="5">TAPOTE · PROTOTYPE · 12 × 12 CM</text>
+  </g>
+  <g fill="none" stroke="#141414" stroke-width="1"><path d="M10 30h15M30 10v15M1235 30h15M1230 10v15M10 1230h15M30 1235v15M1235 1230h15M1230 1235v15"/></g>
+</svg>

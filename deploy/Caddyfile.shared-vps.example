@@ -1,0 +1,46 @@
+# À fusionner dans le Caddyfile DÉJÀ ACTIF sur l'hôte.
+# Ne lance pas un second Caddy sur les ports 80/443.
+
+(tapote_shared_proxy) {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:3010
+}
+
+tapote.fr {
+	log
+	@gestion path /gestion /gestion/*
+	respond @gestion 404
+	import tapote_shared_proxy
+}
+
+www.tapote.fr {
+	redir https://tapote.fr{uri} permanent
+}
+
+pilot.tapote.fr {
+	redir https://tapote.fr/pilot permanent
+}
+
+gestion.tapote.fr {
+	log
+	encode zstd gzip
+	basic_auth {
+		aymeric {$GESTION_AYMERIC_PASSWORD_HASH}
+		jules {$GESTION_JULES_PASSWORD_HASH}
+	}
+	@root path /
+	redir @root /gestion 302
+	reverse_proxy 127.0.0.1:3010
+}
+
+t.tapote.fr {
+	log
+	encode zstd gzip
+	@redirects path /a/* /api/health
+	handle @redirects {
+		reverse_proxy 127.0.0.1:3010
+	}
+	handle {
+		respond 404
+	}
+}

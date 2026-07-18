@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDown,
   ArrowRight,
@@ -15,6 +15,7 @@ import {
   Grid2X2,
   HandCoins,
   Link2,
+  LogIn,
   Mail,
   Menu,
   MessageCircle,
@@ -45,8 +46,7 @@ import {
   SHIPPING,
   TARGETS,
 } from "../shared/catalog.js";
-
-const TapoteManagementApp = lazy(() => import("./ManagementApp.jsx"));
+import { DEVICE_THEMES } from "./deviceThemes.js";
 
 const storefrontProductOrder = ["plaque", "comptoir", "carte", "sticker"];
 const configuratorProductOrder = ["plaque", "comptoir", "mini", "carte", "sticker", "table6"];
@@ -57,6 +57,8 @@ const targetOrder = ["cafe", "restaurant", "salon", "boutique", "hotel", "artisa
 const designStyleOrder = ["signature", "platform", "editorial", "minimal"];
 const themeOrder = ["blue", "rose", "green", "sand", "mono"];
 const themeLabels = { blue: "Signature", rose: "Douce", green: "Profonde", sand: "Naturelle", mono: "Monochrome" };
+const MAX_ITEM_QUANTITY = 50;
+const normalizeQuantity = (value) => Math.max(1, Math.min(MAX_ITEM_QUANTITY, Math.floor(Number(value) || 1)));
 const actionIcons = {
   star: Star,
   message: MessageCircle,
@@ -201,8 +203,8 @@ function loadCart() {
     const parsed = JSON.parse(localStorage.getItem("tapote-cart") || "[]");
     if (!Array.isArray(parsed)) return [];
     return parsed.flatMap((item) => {
-      if (!item || !PRODUCTS[item.productId] || !ACTIONS[item.actionId]) return [];
-      const quantity = Math.max(1, Math.min(50, Math.floor(Number(item.quantity) || 1)));
+      if (!item || !PRODUCTS[item.productId] || PRODUCTS[item.productId].availableStandalone === false || !ACTIONS[item.actionId]) return [];
+      const quantity = normalizeQuantity(item.quantity);
       return [{
         productId: item.productId,
         actionId: item.actionId,
@@ -245,7 +247,7 @@ const faqs = [
   ],
   [
     "Et pour un réseau ou une franchise ?",
-    "Le pack multi-site prévoit une production en série, un gabarit de marque partagé et un tableau de bord par établissement. Le devis dépend du volume et du niveau de personnalisation.",
+    "Les tarifs multi-sites couvrent la production en série, le gabarit de marque partagé et l’adaptation par établissement. Tapote Pilot, proposé en option, ajoute le tableau de bord et les changements de destination.",
   ],
 ];
 
@@ -361,7 +363,7 @@ function PreviewInsert({ action, brandName, brandLogo, colors, productId, design
   const tapLabel = productId === "sticker" ? "Approchez ici" : "Approchez votre téléphone";
   const headline = customHeadline.trim() || action.headline;
   return (
-    <div className={`printed-insert insert-style-${designStyle} insert-action-${action.id}`} style={{ "--insert-paper": colors.paper, "--insert-ink": colors.ink, "--insert-accent": colors.accent }}>
+    <div className={`printed-insert insert-style-${designStyle} insert-action-${action.id}`} style={{ "--insert-paper": colors.paper, "--insert-ink": colors.ink, "--insert-accent": colors.accent, "--insert-accent-ink": colors.accentInk }}>
       <div className={`customer-brand ${brandLogo ? "customer-brand-has-logo" : ""}`}>
         {brandLogo ? <img src={brandLogo} alt="Logo client importé" /> : <span>{(brandName || "V").slice(0, 1).toUpperCase()}</span>}
         {(brandName || !brandLogo) && <b>{brandName || "VOTRE MARQUE"}</b>}
@@ -380,14 +382,7 @@ function PreviewInsert({ action, brandName, brandLogo, colors, productId, design
 
 function DevicePreview({ productId = "comptoir", actionId = "avis", compact = false, brandName = "CAFÉ NOMA", brandLogo = "", theme = "blue", designStyle = "signature", customHeadline = "" }) {
   const action = ACTIONS[actionId];
-  const themes = {
-    blue: { paper: "#161310", ink: "#f4efe6", accent: "#2946f5" },
-    rose: { paper: "#f0d6d3", ink: "#5a2d3c", accent: "#5a2d3c" },
-    green: { paper: "#173b32", ink: "#f7edcf", accent: "#d88a20" },
-    sand: { paper: "#efe5d2", ink: "#402d24", accent: "#bd5a35" },
-    mono: { paper: "#f4f1e9", ink: "#111111", accent: "#111111" },
-  };
-  const colors = themes[theme] || themes.blue;
+  const colors = DEVICE_THEMES[theme] || DEVICE_THEMES.blue;
   const product = PRODUCTS[productId] || PRODUCTS.comptoir;
   return (
     <div className={`device-preview device-preview-canonical device-preview-${productId} ${compact ? "device-preview-compact" : ""}`} aria-label={`Aperçu de ${product.name} pour ${action.name}`}>
@@ -414,8 +409,10 @@ function Header({ cartCount, onCart, mobileOpen, setMobileOpen }) {
         <a href="#packs" onClick={() => setMobileOpen(false)}>Les packs</a>
         <a href="#objets" onClick={() => setMobileOpen(false)}>À l’unité</a>
         <a href="#pilot" onClick={() => setMobileOpen(false)}>Pilot</a>
+        <a href="#devis" onClick={() => setMobileOpen(false)}>Devis</a>
       </nav>
       <div className="header-actions">
+        <a className="header-access" href="/connexion" aria-label="Se connecter à un espace Tapote"><LogIn size={17} aria-hidden="true" /><span>Connexion</span></a>
         <a className="button button-primary header-cta" href="#configurateur"><span>Créer mon Tapote</span><ArrowRight size={16} aria-hidden="true" /></a>
         <button className="cart-trigger" onClick={onCart} aria-label={`Ouvrir le panier, ${cartCount} article(s)`}>
           <ShoppingBag size={18} />
@@ -433,11 +430,8 @@ function Header({ cartCount, onCart, mobileOpen, setMobileOpen }) {
 function Hero() {
   return (
     <section className="hero" id="top">
-      <img className="hero-background" src="/assets/tapote-hero-bakery-v3.webp" alt="" fetchPriority="high" />
+      <img className="hero-background" src="/assets/tapote-hero-nfc-counter.webp" alt="Une personne approche son téléphone du chevalet NFC Tapote posé sur un comptoir" fetchPriority="high" />
       <div className="hero-shade" />
-      <div className="hero-product-stage" aria-label="Chevalet Tapote A6 posé sur le comptoir, avec NFC et QR code bien visibles">
-        <DevicePreview productId="comptoir" actionId="avis" brandName="MAISON GRAIN" theme="blue" designStyle="signature" />
-      </div>
       <div className="hero-copy">
         <div className="eyebrow hero-enter hero-enter-1"><Sparkles size={14} fill="currentColor" /> 6 chevalets reçus · série pilote</div>
         <h1 className="hero-enter hero-enter-2">
@@ -446,13 +440,16 @@ function Hero() {
         </h1>
         <p className="hero-enter hero-enter-3">Un chevalet A6 à votre image qui ouvre le bon lien par NFC ou QR, sans application.</p>
         <div className="hero-ctas hero-enter hero-enter-4">
-          <a className="button button-primary" href="#configurateur"><span>Créer mon Tapote</span><ArrowDown size={17} /></a>
+          <div className="hero-action-row">
+            <a className="button button-primary" href="#configurateur"><span>Créer mon Tapote</span><ArrowDown size={17} /></a>
+            <a className="button button-secondary" href="#devis"><span>Obtenir un devis</span><ArrowRight size={17} /></a>
+          </div>
           <a className="hero-demo-link" href="#demo"><i><Play size={11} fill="currentColor" /></i><span>Voir le geste<small>8 secondes</small></span></a>
-          <span>Comptoir A6 59 € TTC · BAT inclus · contrôle NFC + QR avant envoi</span>
+          <span>Comptoir A6 49 € TTC · BAT inclus · contrôle NFC + QR avant envoi</span>
         </div>
       </div>
       <div className="hero-caption">
-        <span>Premier lot reçu · tests terrain en cours</span><span>59 € TTC</span>
+        <span>Premier lot reçu · tests terrain en cours</span><span>49 € TTC</span>
         <strong>Le Comptoir A6 · Avis</strong>
         <span>NFC centré + QR visible</span><span>BAT inclus</span>
       </div>
@@ -487,7 +484,10 @@ function TapDemo() {
           <div><span>02</span><p><strong>Deux accès</strong> Téléphone NFC centré ou QR code agrandi.</p></div>
           <div><span>03</span><p><strong>La bonne page</strong> Avis, menu ou réservation s’ouvre directement.</p></div>
         </div>
-        <a className="button button-primary" href="#configurateur"><span>Créer mon Tapote</span><ArrowRight size={17} /></a>
+        <div className="section-action-row">
+          <a className="button button-primary" href="#configurateur"><span>Créer mon Tapote</span><ArrowRight size={17} /></a>
+          <a className="button button-secondary" href="#devis"><span>Demander un devis</span><ArrowRight size={17} /></a>
+        </div>
       </Reveal>
       <Reveal className="tap-demo-stage" delay={120}>
         <div className="demo-scene" key={cycle} aria-label="Démonstration animée d’un client approchant son téléphone d’un chevalet Tapote">
@@ -554,34 +554,31 @@ function OfferFinder({ onAdd }) {
 function ProductSection({ onSelect }) {
   return (
     <section className="section products-section" id="objets">
-      <details className="catalog-disclosure">
-        <summary>
-          <div><span className="kicker">05 · COMPLÉMENTS À L’UNITÉ</span><h2>Ajouter un autre<br />point de contact.</h2></div>
-          <p>La plaque, la carte et la vitrine complètent l’installation principale. Ouvrez pour comparer les formats et les prix.</p>
-          <span className="catalog-disclosure-action">Voir les produits <ArrowDown size={18} /></span>
-        </summary>
-        <div className="product-list">
-          {storefrontProductOrder.map((id, index) => {
-            const product = PRODUCTS[id];
-            return (
-              <Reveal key={id} delay={index * 80}>
-                <button className="product-row" onClick={() => onSelect(id)}>
-                  <span className="product-index">0{index + 1}</span>
-                  <ProductSilhouette productId={id} />
-                  <span className="product-copy">
-                    <span className="product-meta"><b>{product.badge}</b><i>{product.recommendedFor}</i></span>
-                    <strong>{product.name}</strong>
-                    <small>{product.description}</small>
-                    <em>{product.format}</em>
-                  </span>
-                  <span className="product-price">{formatMoney(product.price)}<small>TTC · {formatMoney(Math.round(product.price / 1.2))} HT</small></span>
-                  <span className="product-arrow"><ArrowRight /></span>
-                </button>
-              </Reveal>
-            );
-          })}
-        </div>
-      </details>
+      <div className="catalog-heading">
+        <div><span className="kicker">04 · COMPLÉMENTS À L’UNITÉ</span><h2>Ajouter un autre<br />point de contact.</h2></div>
+        <p>La plaque, la carte et la vitrine complètent l’installation principale.</p>
+      </div>
+      <div className="product-list">
+        {storefrontProductOrder.map((id, index) => {
+          const product = PRODUCTS[id];
+          return (
+            <Reveal key={id} delay={index * 80}>
+              <button className="product-row" onClick={() => onSelect(id)}>
+                <span className="product-index">0{index + 1}</span>
+                <ProductSilhouette productId={id} />
+                <span className="product-copy">
+                  <span className="product-meta"><b>{product.badge}</b><i>{product.recommendedFor}</i></span>
+                  <strong>{product.name}</strong>
+                  <small>{product.description}</small>
+                  <em>{product.format}</em>
+                </span>
+                <span className="product-price">{formatMoney(product.price)}<small>TTC · {formatMoney(Math.round(product.price / 1.2))} HT</small></span>
+                <span className="product-arrow"><ArrowRight /></span>
+              </button>
+            </Reveal>
+          );
+        })}
+      </div>
     </section>
   );
 }
@@ -591,6 +588,7 @@ export function Configurator({ initialProduct, onAdd }) {
   const [actionId, setActionId] = useState("avis");
   const [actionCategory, setActionCategory] = useState("confiance");
   const [targetId, setTargetId] = useState("cafe");
+  const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
   const [brandName, setBrandName] = useState("CAFÉ NOMA");
   const [theme, setTheme] = useState("blue");
@@ -633,7 +631,7 @@ export function Configurator({ initialProduct, onAdd }) {
 
   const add = () => {
     if (logoPending || logoStatus === "loading" || destinationInvalid) return;
-    onAdd({ productId, actionId, quantity: 1, brandName, theme, targetId, designStyle, customHeadline, destinationUrl, brandLogoId, logoFileName });
+    onAdd({ productId, actionId, quantity, brandName, theme, targetId, designStyle, customHeadline, destinationUrl, brandLogoId, logoFileName });
     setAdded(true);
     window.setTimeout(() => setAdded(false), 1800);
   };
@@ -715,8 +713,11 @@ export function Configurator({ initialProduct, onAdd }) {
             })}
           </div>
           <div className="config-recommendation"><Check size={15} /><span>Support recommandé</span><strong>{product.name}</strong><small>{product.format}</small></div>
-          <details className="config-advanced">
-            <summary>Choisir un autre support <ArrowDown size={15} /></summary>
+          <div className="config-options" aria-labelledby="support-options-title">
+            <div className="config-options-heading">
+              <strong id="support-options-title">Choisissez votre support</strong>
+              <small>Le support recommandé est déjà sélectionné.</small>
+            </div>
             <div className="choice-grid product-choice-grid">
               {configuratorProductOrder.map((id) => (
                 <button key={id} aria-pressed={productId === id} className={productId === id ? "choice-active" : ""} onClick={() => setProductId(id)}>
@@ -724,7 +725,7 @@ export function Configurator({ initialProduct, onAdd }) {
                 </button>
               ))}
             </div>
-          </details>
+          </div>
         </fieldset>
         <fieldset>
           <legend>2. Quelle action doit s’ouvrir ?</legend>
@@ -757,8 +758,11 @@ export function Configurator({ initialProduct, onAdd }) {
             <button type="button" className="logo-remove" onClick={removeLogo} aria-label="Supprimer le logo"><X size={14} /></button>
           </div>}
           {(logoStatus === "success" || logoError) && <p className={`logo-status logo-status-${logoStatus}`} role="status" aria-live="polite">{logoError || "Le logo est enregistré avec la configuration et apparaîtra sur le BAT final."}</p>}
-          <details className="config-advanced">
-            <summary>Ajuster le style, l’accroche et la palette <ArrowDown size={15} /></summary>
+          <div className="config-options config-style-options" aria-labelledby="style-options-title">
+            <div className="config-options-heading">
+              <strong id="style-options-title">Style, accroche et palette</strong>
+              <small>Chaque option met l’aperçu à jour immédiatement.</small>
+            </div>
             <div className="design-style-grid">
               {designStyleOrder.map((id) => <button key={id} aria-pressed={designStyle === id} className={designStyle === id ? "design-style-active" : ""} onClick={() => setDesignStyle(id)}><span className={`design-swatch design-swatch-${id}`} aria-hidden="true" /><strong>{DESIGN_STYLES[id].name}</strong><small>{DESIGN_STYLES[id].description}</small></button>)}
             </div>
@@ -767,28 +771,40 @@ export function Configurator({ initialProduct, onAdd }) {
               {themeOrder.map((id) => <button key={id} aria-label={`Palette ${themeLabels[id]}`} aria-pressed={theme === id} className={`${id} ${theme === id ? "theme-active" : ""}`} onClick={() => setTheme(id)}><i /><span>{themeLabels[id]}</span></button>)}
               <small>Palette affinée au BAT</small>
             </div>
-          </details>
+          </div>
         </fieldset>
         <div className="config-guarantees"><span><Check size={13} /> NFC + QR testés</span><span><Check size={13} /> BAT avant impression</span><span><Check size={13} /> Aucun abonnement imposé</span></div>
         <div className="config-summary">
           <div><span>{product.name}</span><small>{TARGETS[targetId].name} · {ACTIONS[actionId].name} · style {DESIGN_STYLES[designStyle].name.toLowerCase()}</small></div>
-          <strong>{formatMoney(product.price)}<small> TTC</small></strong>
+          <label className="config-quantity">
+            <span>Quantité</span>
+            <span className="config-quantity-control">
+              <button type="button" onClick={() => setQuantity((current) => normalizeQuantity(current - 1))} disabled={quantity <= 1} aria-label="Diminuer la quantité"><Minus size={14} aria-hidden="true" /></button>
+              <input type="number" min="1" max={MAX_ITEM_QUANTITY} step="1" inputMode="numeric" value={quantity} onChange={(event) => setQuantity(normalizeQuantity(event.target.value))} aria-label="Quantité de Tapote" />
+              <button type="button" onClick={() => setQuantity((current) => normalizeQuantity(current + 1))} disabled={quantity >= MAX_ITEM_QUANTITY} aria-label="Augmenter la quantité"><Plus size={14} aria-hidden="true" /></button>
+            </span>
+          </label>
+          <strong aria-live="polite">{formatMoney(product.price * quantity)}<small>{quantity > 1 ? `${quantity} × ${formatMoney(product.price)} TTC` : "TTC"}</small></strong>
         </div>
         <Button className={added ? "button-success" : ""} onClick={add} disabled={logoStatus === "loading" || logoPending || destinationInvalid}>
-          {logoStatus === "loading" ? "Envoi du logo…" : logoPending ? "Finaliser l’envoi du logo" : destinationInvalid ? "Vérifier le lien" : added ? "Ajouté au panier" : "Ajouter au panier"}
+          {logoStatus === "loading" ? "Envoi du logo…" : logoPending ? "Finaliser l’envoi du logo" : destinationInvalid ? "Vérifier le lien" : added ? `${quantity} ajouté${quantity > 1 ? "s" : ""} au panier` : quantity > 1 ? `Ajouter ${quantity} au panier` : "Ajouter au panier"}
         </Button>
         <p className="micro-copy"><Check size={14} /> Prix TTC · livraison offerte dès {formatMoney(SHIPPING.freeThreshold)} · paiement sécurisé</p>
+        <div className="config-quote-link">
+          <span><strong>Plusieurs supports ou un besoin particulier ?</strong><small>Décrivez votre projet, nous préparons une proposition adaptée.</small></span>
+          <a href="#devis">Demander un devis <ArrowRight size={15} /></a>
+        </div>
       </div>
     </section>
   );
 }
 
 function ProductShowcaseSection() {
-  const moments = [
-    ["cafe", "comptoir", "avis", "blue", "CAFÉ NOMA", "APRÈS LE PAIEMENT", "Collecter un avis", "Le client est encore là, satisfait et disponible."],
-    ["salon", "comptoir", "reservation", "rose", "STUDIO LUNE", "AVANT DE REPARTIR", "Prendre le prochain rendez-vous", "La prochaine visite se réserve avant même de quitter le salon."],
-    ["restaurant", "comptoir", "menu", "green", "L’ATELIER 21", "À TABLE", "Ouvrir un menu à jour", "La carte change. Le support reste en place."],
-    ["vitrine", "sticker", "instagram", "blue", "MAISON ÉCLAT", "MÊME FERMÉ", "Garder le lien actif", "La vitrine continue d’orienter, même après la fermeture."],
+  const journey = [
+    ["01", HandCoins, "Vous proposez", "Juste après le paiement, quand l’échange est encore naturel."],
+    ["02", SmartphoneNfc, "Le client approche", "Un téléphone sur la zone NFC, ou un scan du QR. Rien à installer."],
+    ["03", Globe2, "La page s’ouvre", "Avis, réservation, menu ou fidélité apparaît directement."],
+    ["04", Link2, "Vous gardez la main", "La destination peut évoluer dans Pilot, sans réimprimer le support."],
   ];
   const facts = [
     ["01", FileCheck2, "BAT avant production", "Le visuel final est validé avec le client avant impression ou fabrication."],
@@ -797,15 +813,33 @@ function ProductShowcaseSection() {
   ];
   return (
     <section className="product-showcase" id="personnalisation">
-      <div className="showcase-heading">
-        <div><span>04 · LES BONS MOMENTS</span><h2>Chaque passage peut<br />devenir une action.</h2></div>
-        <p>Tapote ne remplit pas un comptoir. Il intervient précisément là où un client peut donner son avis, réserver, consulter ou revenir.</p>
-      </div>
-      <div className="product-gallery">
-        {moments.map(([id, productId, actionId, theme, brandName, label, title, text]) => <figure className={`use-case use-case-${id}`} key={id}>
-          <div className="use-case-visual"><DevicePreview productId={productId} actionId={actionId} theme={theme} brandName={brandName} compact /></div>
-          <figcaption><span>{label}</span><strong>{title}</strong><p>{text}</p></figcaption>
-        </figure>)}
+      <div className="customer-journey">
+        <Reveal className="journey-heading">
+          <span>05 · LE PARCOURS CLIENT</span>
+          <h2>Le bon geste.<br /><em>Au bon moment.</em></h2>
+          <p>Tapote prolonge l’échange au moment où l’attention est la plus forte&nbsp;: juste avant que le client ne reparte.</p>
+        </Reveal>
+        <div className="journey-story">
+          <Reveal className="journey-product-wrap">
+            <figure className="journey-product">
+              <img src="/assets/tapote-restaurant-a6.webp" alt="Un client approche son téléphone d’un chevalet Tapote dans un restaurant" loading="lazy" />
+              <span className="journey-photo-tag"><SmartphoneNfc size={17} aria-hidden="true" /> NFC + QR</span>
+              <figcaption>
+                <span>EN SITUATION</span>
+                <strong>Un geste, rien de plus.</strong>
+                <small>Chevalet A6 · posé au point de décision</small>
+              </figcaption>
+            </figure>
+          </Reveal>
+          <Reveal className="journey-steps-wrap" delay={100}>
+            <ol className="journey-steps">
+              {journey.map(([number, Icon, title, text], index) => <li key={number} style={{ "--step-index": index }}>
+                <span>{number}</span><div><strong>{title}</strong><p>{text}</p></div><i aria-hidden="true"><Icon size={20} /></i>
+              </li>)}
+            </ol>
+          </Reveal>
+        </div>
+        <Reveal className="journey-result" delay={160}><span>RÉSULTAT</span><strong>Le client agit pendant que l’intention est encore fraîche.</strong><a href="#configurateur">Créer mon parcours <ArrowRight size={17} /></a></Reveal>
       </div>
       <div className="product-facts" id="controle-qualite">
         {facts.map(([number, Icon, title, text]) => <div key={number}>
@@ -877,7 +911,7 @@ function PilotSection() {
             <div><strong>Gratuit<small> en bêta</small></strong><span>Pour les premiers commerces pilotes</span></div>
             <div><strong>{formatMoney(PILOT_PLANS.pilot.price)}<small>/mois ensuite</small></strong><span>{formatMoney(PILOT_PLANS.annual.price)} / an · sans engagement</span></div>
           </div>
-          <a href="#devis" className="text-link">Rejoindre la liste d’attente <ArrowRight size={16} /></a>
+          <div className="pilot-access-actions"><a href="/pilot" className="button button-primary"><span>Ouvrir Tapote Pilot</span><ArrowRight size={16} /></a><a href="#devis" className="text-link">Rejoindre la bêta <ArrowRight size={16} /></a></div>
         </Reveal>
       </div>
       <Reveal className="pilot-interface">
@@ -905,8 +939,8 @@ function Packs({ onAdd }) {
         <div><span className="kicker">03 · TOUTES LES OFFRES</span><h2>Besoin d’aller<br />plus loin ?</h2></div>
         <p>Les packs spécialisés, les volumes et le multisite restent disponibles sans encombrer le choix principal.</p>
       </Reveal>
-      <details className="packs-disclosure">
-        <summary><span><strong>Comparer les six offres Tapote</strong><small>Essentiel, Commerce, Restaurant, Visibilité, Salon et Équipe</small></span><ArrowDown size={20} /></summary>
+      <div className="packs-catalog">
+        <div className="packs-catalog-head"><span><strong>Comparer les six offres Tapote</strong><small>Essentiel, Commerce, Restaurant, Visibilité, Salon et Équipe</small></span><b>Toutes les offres sont affichées</b></div>
         <div className="pack-swipe-hint" aria-hidden="true"><span>Faites glisser pour comparer</span><ArrowRight size={15} /></div>
         <div className="pack-grid">
         {packOrder.map((id, index) => {
@@ -974,14 +1008,14 @@ function Packs({ onAdd }) {
         })}
       </Reveal>
       <Reveal className="multisite-offer" delay={140}>
-        <div className="multisite-intro"><span>MULTI-ÉTABLISSEMENTS</span><h3>Une marque.<br />Plusieurs adresses.</h3><p>Design centralisé, adaptation par site, QR et NFC distincts, destination modifiable et contrôle avant expédition.</p></div>
+        <div className="multisite-intro"><span>MULTI-ÉTABLISSEMENTS</span><h3>Une marque.<br />Plusieurs adresses.</h3><p>Design centralisé, adaptation par site, QR et NFC distincts, contrôle avant expédition et destinations modifiables avec Pilot en option.</p></div>
         <div className="multisite-tiers">
           {MULTISITE_TIERS.map((tier) => <div key={tier.quantity}><span>{tier.quantity} plaques</span><strong>{formatMoney(tier.price)}</strong><small>{formatMoney(Math.round(tier.price / tier.quantity))} / plaque</small></div>)}
-          <div><span>25 plaques et +</span><strong>Sur devis</strong><small>Selon le projet</small></div>
+          <div><span>11 plaques et +</span><strong>Sur devis</strong><small>Selon le projet</small></div>
         </div>
         <a className="button button-primary" href="#devis"><span>Parler de mon réseau</span><ArrowRight size={17} /></a>
       </Reveal>
-      </details>
+      </div>
     </section>
   );
 }
@@ -1021,8 +1055,8 @@ function QuoteSection() {
     <section className="quote-section" id="devis">
       <Reveal className="quote-intro">
         <span className="kicker">09 · SUR MESURE</span>
-        <h2>Plusieurs lieux ?<br />Décrivez le terrain.</h2>
-        <p>Réseaux, franchises, hôtels et équipes : indiquez les moments, les lieux et les volumes. Nous construisons le kit.</p>
+        <h2>Un besoin précis ?<br />Décrivez le projet.</h2>
+        <p>Commerce indépendant, équipe ou réseau : indiquez l’usage, les lieux et les volumes. Nous préparons une proposition claire et adaptée.</p>
       </Reveal>
       <Reveal>
         <form className="quote-form" onSubmit={submit}>
@@ -1092,14 +1126,9 @@ function LegalDialog({ page, onClose }) {
 function Footer({ setLegal }) {
   return (
     <footer className="footer">
-      <div className="footer-top">
-        <BrandMark light />
-        <h2>Le bon geste.<br /><span>Au bon moment.</span></h2>
-        <a className="button button-primary" href="#configurateur"><span>Créer mon Tapote</span><ArrowRight size={17} /></a>
-      </div>
       <div className="footer-bottom">
         <span>© {new Date().getFullYear()} Tapote · {legalReady ? legalDetails.company : "Pré-lancement — vente réelle verrouillée"}</span>
-        <div><button onClick={() => setLegal("legal")}>Mentions légales</button><button onClick={() => setLegal("cgv")}>CGV</button><button onClick={() => setLegal("privacy")}>Confidentialité</button><a href="#devis">Contact pro</a></div>
+        <div><button onClick={() => setLegal("legal")}>Mentions légales</button><button onClick={() => setLegal("cgv")}>CGV</button><button onClick={() => setLegal("privacy")}>Confidentialité</button><a href="/connexion">Espace Tapote</a><a href="#devis">Contact pro</a></div>
       </div>
     </footer>
   );
@@ -1107,20 +1136,21 @@ function Footer({ setLegal }) {
 
 function CartDrawer({ open, onClose, cart, setCart, onCheckout }) {
   const dialogRef = useModalA11y(open, onClose);
+  const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = cartSubtotal(cart);
   const shipping = calculateShipping(subtotal);
   const total = subtotal + shipping;
 
   const changeQuantity = (index, delta) => {
     setCart((current) => current
-      .map((item, itemIndex) => itemIndex === index ? { ...item, quantity: item.quantity + delta } : item)
+      .map((item, itemIndex) => itemIndex === index ? { ...item, quantity: Math.min(MAX_ITEM_QUANTITY, item.quantity + delta) } : item)
       .filter((item) => item.quantity > 0));
   };
 
   return (
     <div className={`drawer-backdrop ${open ? "drawer-backdrop-open" : ""}`} aria-hidden={!open} onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <aside ref={dialogRef} className={`cart-drawer ${open ? "cart-drawer-open" : ""}`} role="dialog" aria-modal="true" aria-labelledby="cart-title" tabIndex="-1" inert={!open ? true : undefined}>
-        <div className="drawer-header"><div><span id="cart-title">Ton panier</span><small>{cart.length} référence{cart.length > 1 ? "s" : ""}</small></div><button onClick={onClose} aria-label="Fermer le panier"><X /></button></div>
+        <div className="drawer-header"><div><span id="cart-title">Ton panier</span><small>{itemCount} article{itemCount > 1 ? "s" : ""} · {cart.length} référence{cart.length > 1 ? "s" : ""}</small></div><button onClick={onClose} aria-label="Fermer le panier"><X /></button></div>
         <div className="drawer-content">
           {cart.length === 0 ? <div className="empty-cart"><ShoppingBag size={34} /><h3>Rien ici, pour l’instant.</h3><p>Choisis un objet et son action dans le configurateur.</p><a href="#configurateur" onClick={onClose}>Commencer <ArrowRight size={16} /></a></div> : cart.map((item, index) => {
             const product = PRODUCTS[item.productId];
@@ -1129,8 +1159,8 @@ function CartDrawer({ open, onClose, cart, setCart, onCheckout }) {
             return (
               <div className="cart-item" key={`${item.productId}-${item.actionId}-${index}`}>
                 <div className="cart-item-art"><DevicePreview productId={previewProductId} actionId={item.actionId} brandName={item.brandName} theme={item.theme} designStyle={item.designStyle} customHeadline={item.customHeadline} compact /></div>
-                <div className="cart-item-copy"><strong>{product.name}</strong><span>{product.kind === "pack" ? product.format : `${action.name} · ${DESIGN_STYLES[item.designStyle]?.name || "Signature"}${item.brandLogoId ? " · logo transmis" : ""}`}</span><small>{product.kind === "pack" ? "Personnalisation et liens confirmés au BAT" : item.destinationUrl ? "Lien individuel configuré" : "Lien à confirmer au paiement"} · {formatMoney(product.price)} TTC</small></div>
-                <div className="quantity"><button onClick={() => changeQuantity(index, -1)} aria-label="Retirer une unité"><Minus size={13} /></button><b>{item.quantity}</b><button onClick={() => changeQuantity(index, 1)} aria-label="Ajouter une unité"><Plus size={13} /></button></div>
+                <div className="cart-item-copy"><strong>{product.name}</strong><span>{product.kind === "pack" ? product.format : `${action.name} · ${DESIGN_STYLES[item.designStyle]?.name || "Signature"}${item.brandLogoId ? " · logo transmis" : ""}`}</span><small>{product.kind === "pack" ? "Personnalisation et liens confirmés au BAT" : item.destinationUrl ? "Lien individuel configuré" : "Lien à confirmer au paiement"} · {item.quantity > 1 ? `${formatMoney(product.price * item.quantity)} TTC (${formatMoney(product.price)} / unité)` : `${formatMoney(product.price)} TTC`}</small></div>
+                <div className="quantity"><button onClick={() => changeQuantity(index, -1)} aria-label={`Diminuer la quantité de ${product.name}`}><Minus size={13} /></button><b>{item.quantity}</b><button onClick={() => changeQuantity(index, 1)} disabled={item.quantity >= MAX_ITEM_QUANTITY} aria-label={`Augmenter la quantité de ${product.name}`}><Plus size={13} /></button></div>
               </div>
             );
           })}
@@ -1295,17 +1325,18 @@ function StorefrontApp() {
   const cartCount = useMemo(() => cart.reduce((sum, item) => sum + item.quantity, 0), [cart]);
   const addToCart = (item) => {
     setCart((current) => {
-      const existing = current.findIndex((entry) => entry.productId === item.productId
-        && entry.actionId === item.actionId
-        && entry.brandName === item.brandName
-        && entry.theme === item.theme
-        && entry.targetId === item.targetId
-        && entry.designStyle === item.designStyle
-        && entry.customHeadline === item.customHeadline
-        && entry.destinationUrl === item.destinationUrl
-        && entry.brandLogoId === item.brandLogoId);
-      if (existing < 0) return [...current, item];
-      return current.map((entry, index) => index === existing ? { ...entry, quantity: entry.quantity + item.quantity } : entry);
+      const normalizedItem = { ...item, quantity: normalizeQuantity(item.quantity) };
+      const existing = current.findIndex((entry) => entry.productId === normalizedItem.productId
+        && entry.actionId === normalizedItem.actionId
+        && entry.brandName === normalizedItem.brandName
+        && entry.theme === normalizedItem.theme
+        && entry.targetId === normalizedItem.targetId
+        && entry.designStyle === normalizedItem.designStyle
+        && entry.customHeadline === normalizedItem.customHeadline
+        && entry.destinationUrl === normalizedItem.destinationUrl
+        && entry.brandLogoId === normalizedItem.brandLogoId);
+      if (existing < 0) return [...current, normalizedItem];
+      return current.map((entry, index) => index === existing ? { ...entry, quantity: Math.min(MAX_ITEM_QUANTITY, entry.quantity + normalizedItem.quantity) } : entry);
     });
     setCartOpen(true);
   };
@@ -1341,8 +1372,8 @@ function StorefrontApp() {
         <TapDemo />
         <OfferFinder onAdd={addToCart} />
         <Packs onAdd={addToCart} />
-        <ProductShowcaseSection />
         <ProductSection onSelect={selectProduct} />
+        <ProductShowcaseSection />
         <Configurator key={selectedProduct} initialProduct={selectedProduct} onAdd={addToCart} />
         <HowItWorks />
         <PilotSection />
@@ -1358,6 +1389,5 @@ function StorefrontApp() {
 }
 
 export default function App() {
-  const isManagementRoute = window.location.pathname === "/gestion" || window.location.pathname.startsWith("/gestion/");
-  return isManagementRoute ? <Suspense fallback={<main className="route-loading" role="status"><span>Ouverture de la gestion…</span></main>}><TapoteManagementApp /></Suspense> : <StorefrontApp />;
+  return <StorefrontApp />;
 }

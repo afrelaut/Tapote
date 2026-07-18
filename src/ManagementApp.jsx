@@ -43,6 +43,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
+import { PRODUCTS } from "../shared/catalog.js";
 import ManagementAuth, { ManagementPasswordSetup } from "./management/ManagementAuth.jsx";
 import {
   advanceManagementEncodedProduct,
@@ -64,6 +65,18 @@ import { isManagementConfigured } from "./management/supabase.js";
 import "./management.css";
 
 const statusFlow = ["paid", "bat", "supply", "assembly", "quality", "ready", "shipped"];
+const tapoteShortCodePattern = /^[a-f0-9]{10}$/i;
+const tapoteRedirectBaseUrl = String(import.meta.env.VITE_REDIRECT_BASE_URL || "https://t.tapote.fr").trim().replace(/\/$/, "");
+
+function tapoteShortUrl(shortCode) {
+  if (!tapoteShortCodePattern.test(shortCode || "")) return "";
+  try {
+    const url = new URL(`/a/${shortCode.toLowerCase()}`, `${tapoteRedirectBaseUrl}/`);
+    return url.protocol === "https:" ? url.href : "";
+  } catch {
+    return "";
+  }
+}
 
 const statusMeta = {
   paid: { label: "Payée", tone: "blue", action: "Préparer le BAT" },
@@ -86,10 +99,18 @@ const encodingStatusMeta = {
 };
 
 const productPrices = {
-  "Comptoir A6": 59,
-  "Pack Restaurant": 189,
-  "Carte NFC": 29.9,
-  "Vitrine NFC": 29.9,
+  "Plaque 12 × 12": PRODUCTS.plaque.price / 100,
+  "Comptoir A6": PRODUCTS.comptoir.price / 100,
+  "Chevalets A6 ×6": PRODUCTS.table6.price / 100,
+  "Carte NFC": PRODUCTS.carte.price / 100,
+  "Vitrine NFC": PRODUCTS.sticker.price / 100,
+  "Mini Comptoir": PRODUCTS.mini.price / 100,
+  "Pack Essentiel": PRODUCTS.pack_essentiel.price / 100,
+  "Pack Visibilité": PRODUCTS.pack_visibilite.price / 100,
+  "Pack Commerce": PRODUCTS.pack_commerce.price / 100,
+  "Pack Restaurant": PRODUCTS.pack_resto.price / 100,
+  "Pack Salon": PRODUCTS.pack_salon.price / 100,
+  "Pack Équipe": PRODUCTS.pack_equipe.price / 100,
 };
 
 const initialData = {
@@ -101,13 +122,13 @@ const initialData = {
     { id: "c5", name: "Atelier Grain", contact: "Noé Dupont", email: "noe@ateliergrain.fr", phone: "07 42 18 22 06", city: "Nantes", segment: "Boutique", orders: 1, revenue: 35, joined: "11 juil. 2026", health: "Nouveau" },
   ],
   orders: [
-    { id: "TPT-1048", clientId: "c1", product: "Pack Restaurant ×6", quantity: 1, total: 249, status: "assembly", payment: "Payé", channel: "Boutique", created: "15 juil.", due: "18 juil.", priority: "Haute", owner: "Aymeric", destination: "Avis Google", tracking: "", note: "6 chevalets, visuel terracotta validé." },
-    { id: "TPT-1047", clientId: "c2", product: "Comptoir A6", quantity: 2, total: 118, status: "bat", payment: "Payé", channel: "Boutique", created: "15 juil.", due: "19 juil.", priority: "Normale", owner: "Rico", destination: "Réservation", tracking: "", note: "En attente de confirmation du rose de marque." },
-    { id: "TPT-1046", clientId: "c3", product: "Pack Restaurant ×6", quantity: 1, total: 249, status: "quality", payment: "Payé", channel: "Devis", created: "14 juil.", due: "17 juil.", priority: "Haute", owner: "Aymeric", destination: "Menu", tracking: "", note: "Contrôler les 6 QR avant emballage." },
-    { id: "TPT-1045", clientId: "c4", product: "Comptoir A6", quantity: 1, total: 59, status: "ready", payment: "Payé", channel: "Boutique", created: "13 juil.", due: "17 juil.", priority: "Normale", owner: "Rico", destination: "Instagram", tracking: "", note: "Colis prêt, étiquette à imprimer." },
-    { id: "TPT-1044", clientId: "c5", product: "Sticker NFC", quantity: 1, total: 35, status: "supply", payment: "Payé", channel: "Boutique", created: "12 juil.", due: "18 juil.", priority: "Normale", owner: "Aymeric", destination: "Avis Google", tracking: "", note: "Réserver un sticker extérieur mat." },
-    { id: "TPT-1043", clientId: "c1", product: "Carte NFC", quantity: 2, total: 58, status: "shipped", payment: "Payé", channel: "Boutique", created: "10 juil.", due: "15 juil.", priority: "Normale", owner: "Rico", destination: "Fidélité", tracking: "1K02840173012", note: "Remis à La Poste." },
-    { id: "TPT-1042", clientId: "c3", product: "Pack Restaurant ×6", quantity: 1, total: 249, status: "shipped", payment: "Payé", channel: "Devis", created: "08 juil.", due: "14 juil.", priority: "Normale", owner: "Aymeric", destination: "Avis Google", tracking: "1K02840172991", note: "Livré le 14 juillet." },
+    { id: "TPT-1048", clientId: "c1", product: "Pack Restaurant", quantity: 1, total: 199, status: "assembly", payment: "Payé", channel: "Boutique", created: "15 juil.", due: "18 juil.", priority: "Haute", owner: "Aymeric", destination: "Avis Google", tracking: "", note: "6 chevalets et Vitrine, visuel terracotta validé." },
+    { id: "TPT-1047", clientId: "c2", product: "Comptoir A6", quantity: 2, total: 98, status: "bat", payment: "Payé", channel: "Boutique", created: "15 juil.", due: "19 juil.", priority: "Normale", owner: "Rico", destination: "Réservation", tracking: "", note: "En attente de confirmation du rose de marque." },
+    { id: "TPT-1046", clientId: "c3", product: "Pack Restaurant", quantity: 1, total: 199, status: "quality", payment: "Payé", channel: "Devis", created: "14 juil.", due: "17 juil.", priority: "Haute", owner: "Aymeric", destination: "Menu", tracking: "", note: "Contrôler les 8 supports et QR avant emballage." },
+    { id: "TPT-1045", clientId: "c4", product: "Comptoir A6", quantity: 1, total: 49, status: "ready", payment: "Payé", channel: "Boutique", created: "13 juil.", due: "17 juil.", priority: "Normale", owner: "Rico", destination: "Instagram", tracking: "", note: "Colis prêt, étiquette à imprimer." },
+    { id: "TPT-1044", clientId: "c5", product: "Vitrine NFC", quantity: 1, total: 29.9, status: "supply", payment: "Payé", channel: "Boutique", created: "12 juil.", due: "18 juil.", priority: "Normale", owner: "Aymeric", destination: "Avis Google", tracking: "", note: "Réserver un sticker extérieur mat." },
+    { id: "TPT-1043", clientId: "c1", product: "Carte NFC", quantity: 2, total: 59.8, status: "shipped", payment: "Payé", channel: "Boutique", created: "10 juil.", due: "15 juil.", priority: "Normale", owner: "Rico", destination: "Fidélité", tracking: "1K02840173012", note: "Remis à La Poste." },
+    { id: "TPT-1042", clientId: "c3", product: "Pack Restaurant", quantity: 1, total: 199, status: "shipped", payment: "Payé", channel: "Devis", created: "08 juil.", due: "14 juil.", priority: "Normale", owner: "Aymeric", destination: "Avis Google", tracking: "1K02840172991", note: "Livré le 14 juillet." },
   ],
   inventory: [
     { id: "s1", sku: "SUP-A6-CLR", name: "Chevalet plexi A6", category: "Support", stock: 18, reserved: 9, threshold: 12, incoming: 30, eta: "22 juil." },
@@ -117,10 +138,10 @@ const initialData = {
     { id: "s5", sku: "BOX-A6-KRAFT", name: "Étui kraft A6", category: "Packaging", stock: 23, reserved: 8, threshold: 20, incoming: 0, eta: "—" },
   ],
   storefront: [
-    { id: "p1", name: "Le Comptoir A6", price: 59, online: true, stockId: "s1", sales: 24, conversion: "4,8 %" },
-    { id: "p2", name: "Pack Restaurant ×6", price: 249, online: true, stockId: "s1", sales: 9, conversion: "2,9 %" },
-    { id: "p3", name: "Carte NFC", price: 29, online: true, stockId: "s3", sales: 18, conversion: "5,2 %" },
-    { id: "p4", name: "Sticker NFC", price: 35, online: false, stockId: "s4", sales: 12, conversion: "3,6 %" },
+    { id: "p1", name: PRODUCTS.comptoir.name, price: PRODUCTS.comptoir.price / 100, online: true, stockId: "s1", sales: 24, conversion: "4,8 %" },
+    { id: "p2", name: PRODUCTS.pack_resto.name, price: PRODUCTS.pack_resto.price / 100, online: true, stockId: "s1", sales: 9, conversion: "2,9 %" },
+    { id: "p3", name: PRODUCTS.carte.name, price: PRODUCTS.carte.price / 100, online: true, stockId: "s3", sales: 18, conversion: "5,2 %" },
+    { id: "p4", name: PRODUCTS.sticker.name, price: PRODUCTS.sticker.price / 100, online: true, stockId: "s4", sales: 12, conversion: "3,6 %" },
   ],
   activity: [
     { id: "a1", icon: "order", text: "La commande TPT-1048 est passée en assemblage", time: "Il y a 12 min" },
@@ -528,7 +549,7 @@ function EncodingStatusBadge({ status }) {
   return <span className={`pilot-status pilot-status-${meta.tone}`}><i />{meta.label}</span>;
 }
 
-function EncodingView({ data, clientMap, search, onCreate, onAdvance, onTest }) {
+function EncodingView({ data, clientMap, search, onCreate, onAdvance, onEncode, onTest }) {
   const products = (data.encodedProducts || []).filter((product) => (
     `${product.serialNumber} ${product.label} ${product.supportType} ${product.chipType} ${product.chipBatch} ${clientMap[product.clientId]?.name || ""}`
       .toLowerCase()
@@ -575,10 +596,10 @@ function EncodingView({ data, clientMap, search, onCreate, onAdvance, onTest }) 
               <article className="pilot-encoding-row" role="row" key={product.id}>
                 <div data-label="Produit"><b>{product.label}</b><code>{product.serialNumber}</code><small>{product.supportType}</small></div>
                 <div data-label="Client / commande"><b>{client?.name || "Stock non affecté"}</b><small>{order?.id || "Sans commande liée"}</small></div>
-                <div data-label="Lien & puce"><a href={`https://t.tapote.fr/a/${product.shortCode}`} target="_blank" rel="noreferrer">t.tapote.fr/a/{product.shortCode || "…"} <ExternalLink size={12} /></a><small>{product.chipType} · lot {product.chipBatch}</small></div>
+                <div data-label="Lien & puce"><a href={tapoteShortUrl(product.shortCode)} target="_blank" rel="noreferrer">t.tapote.fr/a/{product.shortCode || "…"} <ExternalLink size={12} /></a><small>{product.chipType} · lot {product.chipBatch}</small></div>
                 <div data-label="Contrôle" className="pilot-encoding-checks" aria-label="État des tests"><span className={product.iphoneTest ? "is-ok" : ""}>iPhone</span><span className={product.androidTest ? "is-ok" : ""}>Android</span><span className={product.qrTest ? "is-ok" : ""}>QR</span></div>
                 <div data-label="Statut"><EncodingStatusBadge status={product.status} /></div>
-                <div data-label="Action">{meta.action ? <button className="pilot-secondary" onClick={() => act(product)}>{meta.next === "tested" ? <ScanLine size={15} /> : <ArrowRight size={15} />}{meta.action}</button> : <span className="pilot-encoding-done"><CheckCircle2 size={15} />Terminé</span>}</div>
+                <div data-label="Action">{product.status === "draft" ? <div className="pilot-encoding-actions"><button className="pilot-secondary pilot-nfc-action" onClick={() => onEncode(product)}><SmartphoneNfc size={15} />Encoder sur Android</button><button className="pilot-link-action" onClick={() => act(product)}>Confirmer manuellement</button></div> : meta.action ? <button className="pilot-secondary" onClick={() => act(product)}>{meta.next === "tested" ? <ScanLine size={15} /> : <ArrowRight size={15} />}{meta.action}</button> : <span className="pilot-encoding-done"><CheckCircle2 size={15} />Terminé</span>}</div>
               </article>
             );
           })}
@@ -586,6 +607,56 @@ function EncodingView({ data, clientMap, search, onCreate, onAdvance, onTest }) 
         </div>
       </section>
     </div>
+  );
+}
+
+function MobileNfcEncodingModal({ product, onClose, onEncoded }) {
+  const [status, setStatus] = useState("idle");
+  const [message, setMessage] = useState("");
+  const shortUrl = tapoteShortUrl(product.shortCode);
+  const supported = typeof window !== "undefined" && "NDEFReader" in window;
+
+  const writeTag = async () => {
+    if (!supported || !shortUrl) {
+      setStatus("error");
+      setMessage(!shortUrl
+        ? "L’URL courte de ce produit n’est pas valide. Synchronise Gestion avant de continuer."
+        : "Web NFC n’est pas disponible ici. Utilise Chrome sur un téléphone Android récent, depuis le site HTTPS Gestion.");
+      return;
+    }
+
+    setStatus("writing");
+    setMessage("Approche le haut du téléphone de la puce et garde-le immobile.");
+    try {
+      const writer = new window.NDEFReader();
+      await writer.write({ records: [{ recordType: "url", data: shortUrl }] }, { overwrite: true });
+      setStatus("written");
+      setMessage("URL écrite dans la puce. Enregistrement de l’étape dans Supabase…");
+      const recorded = await onEncoded(product);
+      if (!recorded) {
+        setStatus("warning");
+        setMessage("La puce a bien été écrite, mais Gestion n’a pas confirmé l’étape. Utilise « Confirmer manuellement » après la resynchronisation.");
+      }
+    } catch (error) {
+      const denied = error?.name === "NotAllowedError";
+      setStatus("error");
+      setMessage(denied
+        ? "Permission NFC refusée. Autorise le NFC pour ce site dans Chrome puis réessaie."
+        : "Écriture impossible. Vérifie que le NFC est activé, que la puce est NDEF et qu’elle n’est pas déjà verrouillée.");
+    }
+  };
+
+  return (
+    <div className="pilot-modal-layer"><button className="pilot-modal-backdrop" onClick={onClose} aria-label="Fermer" /><section className="pilot-modal pilot-nfc-modal" role="dialog" aria-modal="true" aria-labelledby="pilot-mobile-nfc-title">
+      <header><div><span>ENCODAGE MOBILE HTTPS</span><h2 id="pilot-mobile-nfc-title">Encoder depuis Android</h2><p>{product.serialNumber} · {product.label}</p></div><button type="button" onClick={onClose} aria-label="Fermer"><X size={20} /></button></header>
+      <div className="pilot-nfc-body">
+        <div className="pilot-nfc-url"><span>URL À ÉCRIRE</span><code>{shortUrl || "URL courte indisponible"}</code></div>
+        <ol><li>Ouvre cette page dans Chrome sur Android, en HTTPS.</li><li>Active le NFC et appuie sur le bouton ci-dessous.</li><li>Approche la puce du haut du téléphone jusqu’à la vibration.</li></ol>
+        {!supported && <p className="pilot-nfc-support"><AlertTriangle size={17} /><span><b>Ce navigateur ne propose pas Web NFC.</b> L’écriture directe fonctionne avec Chrome sur Android. iPhone reste prévu pour le test de lecture.</span></p>}
+        {message && <p className={`pilot-nfc-message pilot-nfc-${status}`} role={status === "error" ? "alert" : "status"}>{status === "writing" ? <LoaderCircle className="is-spinning" size={17} /> : status === "written" ? <CheckCircle2 size={17} /> : <AlertTriangle size={17} />}<span>{message}</span></p>}
+      </div>
+      <footer><button type="button" className="pilot-secondary" onClick={onClose}>Fermer</button><button type="button" className="pilot-primary" onClick={writeTag} disabled={status === "writing" || status === "written"}>{status === "writing" || status === "written" ? <LoaderCircle className="is-spinning" size={16} /> : <SmartphoneNfc size={16} />}{status === "writing" ? "En attente de la puce…" : status === "written" ? "Synchronisation…" : "Écrire l’URL dans la puce"}</button></footer>
+    </section></div>
   );
 }
 
@@ -862,6 +933,7 @@ export default function TapoteManagementApp() {
   const [newClientOpen, setNewClientOpen] = useState(false);
   const [newInventoryOpen, setNewInventoryOpen] = useState(false);
   const [newEncodedProductOpen, setNewEncodedProductOpen] = useState(false);
+  const [mobileEncodingProduct, setMobileEncodingProduct] = useState(null);
   const [encodingTestProduct, setEncodingTestProduct] = useState(null);
   const [shippingOrder, setShippingOrder] = useState(null);
   const [stockReceipt, setStockReceipt] = useState(null);
@@ -945,7 +1017,7 @@ export default function TapoteManagementApp() {
     return () => window.clearTimeout(timer);
   }, [toast]);
   useEffect(() => {
-    if (!selectedOrder && !newOrderOpen && !newClientOpen && !newInventoryOpen && !newEncodedProductOpen && !encodingTestProduct && !shippingOrder && !stockReceipt && !settingsOpen) return undefined;
+    if (!selectedOrder && !newOrderOpen && !newClientOpen && !newInventoryOpen && !newEncodedProductOpen && !mobileEncodingProduct && !encodingTestProduct && !shippingOrder && !stockReceipt && !settingsOpen) return undefined;
     const onKeyDown = (event) => {
       if (event.key !== "Escape") return;
       setSelectedOrder(null);
@@ -953,6 +1025,7 @@ export default function TapoteManagementApp() {
       setNewClientOpen(false);
       setNewInventoryOpen(false);
       setNewEncodedProductOpen(false);
+      setMobileEncodingProduct(null);
       setEncodingTestProduct(null);
       setShippingOrder(null);
       setStockReceipt(null);
@@ -964,7 +1037,7 @@ export default function TapoteManagementApp() {
       document.body.style.overflow = "";
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [encodingTestProduct, newClientOpen, newEncodedProductOpen, newInventoryOpen, newOrderOpen, selectedOrder, settingsOpen, shippingOrder, stockReceipt]);
+  }, [encodingTestProduct, mobileEncodingProduct, newClientOpen, newEncodedProductOpen, newInventoryOpen, newOrderOpen, selectedOrder, settingsOpen, shippingOrder, stockReceipt]);
 
   const refreshData = useCallback(async ({ quiet = false } = {}) => {
     if (!access) return;
@@ -1144,17 +1217,20 @@ export default function TapoteManagementApp() {
     }
   };
   const advanceEncodedProduct = async (product, nextStatus, tests = {}) => {
-    if (!access) return;
+    if (!access) return false;
     setSyncing(true);
     try {
       await advanceManagementEncodedProduct(access.organizationId, product, nextStatus, tests);
       await refreshData({ quiet: true });
+      if (nextStatus === "encoded") setMobileEncodingProduct(null);
       setEncodingTestProduct(null);
       const message = { encoded: "Encodage enregistré.", tested: "Tests iPhone, Android et QR validés.", locked: "Fiche atelier verrouillée.", assigned: "Produit affecté au client." }[nextStatus];
       showToast(message || "Produit mis à jour.");
+      return true;
     } catch (error) {
       showToast(toUserMessage(error, "L’étape d’encodage n’a pas pu être validée."));
       await refreshData({ quiet: true });
+      return false;
     } finally {
       setSyncing(false);
     }
@@ -1213,7 +1289,7 @@ export default function TapoteManagementApp() {
           {view === "orders" && <OrdersView {...viewProps} exportOrders={exportOrders} />}
           {view === "clients" && <ClientsView {...viewProps} selectedClient={selectedClient} setSelectedClient={setSelectedClient} clientOrders={(id) => data.orders.filter((item) => item.clientId === id)} onNewClient={() => setNewClientOpen(true)} />}
           {view === "production" && <ProductionView {...viewProps} />}
-          {view === "encoding" && <EncodingView {...viewProps} onCreate={() => setNewEncodedProductOpen(true)} onAdvance={advanceEncodedProduct} onTest={setEncodingTestProduct} />}
+          {view === "encoding" && <EncodingView {...viewProps} onCreate={() => setNewEncodedProductOpen(true)} onAdvance={advanceEncodedProduct} onEncode={setMobileEncodingProduct} onTest={setEncodingTestProduct} />}
           {view === "supply" && <SupplyView {...viewProps} adjustStock={requestStockReceipt} onNewInventory={() => setNewInventoryOpen(true)} />}
           {view === "shipping" && <ShippingView {...viewProps} markShipped={markShipped} />}
           {view === "ecommerce" && <EcommerceView {...viewProps} toggleProduct={toggleProduct} refreshData={refreshData} syncing={syncing} lastSyncedAt={lastSyncedAt} />}
@@ -1224,6 +1300,7 @@ export default function TapoteManagementApp() {
       {newClientOpen && <NewClientModal onClose={() => setNewClientOpen(false)} onCreate={createClient} />}
       {newInventoryOpen && <NewInventoryModal onClose={() => setNewInventoryOpen(false)} onCreate={createInventory} />}
       {newEncodedProductOpen && <NewEncodedProductModal clients={data.clients} orders={data.orders} onClose={() => setNewEncodedProductOpen(false)} onCreate={createEncodedProduct} />}
+      {mobileEncodingProduct && <MobileNfcEncodingModal product={mobileEncodingProduct} onClose={() => setMobileEncodingProduct(null)} onEncoded={(product) => advanceEncodedProduct(product, "encoded")} />}
       {encodingTestProduct && <EncodingTestModal product={encodingTestProduct} onClose={() => setEncodingTestProduct(null)} onValidate={(tests) => advanceEncodedProduct(encodingTestProduct, "tested", tests)} />}
       {shippingOrder && <ShipmentModal order={data.orders.find((item) => item.id === shippingOrder)} client={clientMap[data.orders.find((item) => item.id === shippingOrder)?.clientId]} onClose={() => setShippingOrder(null)} onShip={(tracking) => advanceOrder(shippingOrder, tracking)} />}
       {stockReceipt && data.inventory.some((item) => item.id === stockReceipt.stockId) && <StockReceiptModal item={data.inventory.find((item) => item.id === stockReceipt.stockId)} suggestedQuantity={stockReceipt.suggestedQuantity} onClose={() => setStockReceipt(null)} onReceive={(quantity) => receiveStock(stockReceipt.stockId, quantity)} />}

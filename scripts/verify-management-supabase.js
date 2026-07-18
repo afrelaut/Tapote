@@ -3,6 +3,7 @@ import { randomBytes } from "node:crypto";
 import process from "node:process";
 import pg from "pg";
 import { createClient } from "@supabase/supabase-js";
+import { PRODUCTS } from "../shared/catalog.js";
 
 dotenv.config({ path: ".env" });
 dotenv.config({ path: ".env.local", override: false });
@@ -70,7 +71,7 @@ try {
     target_client_id: client.rows[0].id,
     target_product_name: "Comptoir A6",
     target_quantity: 1,
-    target_total_cents: 5900,
+    target_total_cents: PRODUCTS.comptoir.price,
     target_due_on: "2026-07-22",
     target_channel: "Vérification",
     target_destination: "Avis Google",

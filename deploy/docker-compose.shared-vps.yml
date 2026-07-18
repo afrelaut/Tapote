@@ -1,0 +1,45 @@
+name: tapote
+
+# Variante sûre quand un autre site utilise déjà les ports 80/443 du VPS.
+# Elle ne lance pas de second reverse proxy et publie Tapote uniquement sur
+# la boucle locale du serveur. Le proxy HTTPS existant reste l'unique porte
+# d'entrée publique et doit transférer les domaines Tapote vers 127.0.0.1:3010.
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:?VITE_SUPABASE_URL manquant}
+        VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY:?VITE_SUPABASE_PUBLISHABLE_KEY manquant}
+        VITE_PILOT_DEMO: ${VITE_PILOT_DEMO:-false}
+        VITE_REDIRECT_BASE_URL: ${VITE_REDIRECT_BASE_URL:-https://t.tapote.fr}
+        VITE_LEGAL_COMPANY: ${VITE_LEGAL_COMPANY:?VITE_LEGAL_COMPANY manquant}
+        VITE_LEGAL_CAPITAL: ${VITE_LEGAL_CAPITAL:?VITE_LEGAL_CAPITAL manquant}
+        VITE_LEGAL_ADDRESS: ${VITE_LEGAL_ADDRESS:?VITE_LEGAL_ADDRESS manquant}
+        VITE_LEGAL_REGISTRATION: ${VITE_LEGAL_REGISTRATION:?VITE_LEGAL_REGISTRATION manquant}
+        VITE_LEGAL_VAT: ${VITE_LEGAL_VAT:?VITE_LEGAL_VAT manquant}
+        VITE_LEGAL_DIRECTOR: ${VITE_LEGAL_DIRECTOR:?VITE_LEGAL_DIRECTOR manquant}
+        VITE_LEGAL_CONTACT: ${VITE_LEGAL_CONTACT:?VITE_LEGAL_CONTACT manquant}
+        VITE_LEGAL_HOST: ${VITE_LEGAL_HOST:?VITE_LEGAL_HOST manquant}
+        VITE_LEGAL_MEDIATOR: ${VITE_LEGAL_MEDIATOR:?VITE_LEGAL_MEDIATOR manquant}
+        VITE_LEGAL_PRIVACY_CONTACT: ${VITE_LEGAL_PRIVACY_CONTACT:?VITE_LEGAL_PRIVACY_CONTACT manquant}
+        VITE_LEGAL_RETURNS_ADDRESS: ${VITE_LEGAL_RETURNS_ADDRESS:?VITE_LEGAL_RETURNS_ADDRESS manquant}
+        VITE_LEGAL_VERSION: ${VITE_LEGAL_VERSION:?VITE_LEGAL_VERSION manquant}
+    env_file:
+      - ../.env.production
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${TAPOTE_HOST_PORT:-3010}:3001"
+    networks:
+      - tapote
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+networks:
+  tapote:

@@ -34,6 +34,16 @@ const imageTypeAliases = new Map([
 
 const canonicalImageType = (mimeType) => imageTypeAliases.get(String(mimeType || "").toLowerCase()) || "";
 
+function checkoutReturnUrl(request, config) {
+  if (config.isProduction) return config.publicUrl;
+  const origin = String(request.headers.origin || "").trim();
+  try {
+    const parsed = new URL(origin);
+    if (["http:", "https:"].includes(parsed.protocol)) return parsed.origin;
+  } catch { /* use the configured development fallback */ }
+  return config.publicUrl;
+}
+
 const limiter = (windowMs, limit, message) => rateLimit({
   windowMs,
   limit,
@@ -322,6 +332,7 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
     const parsed = parseRequest(checkoutSchema, request.body);
     if (parsed.error) return response.status(400).json({ error: parsed.error });
     const { attemptId, customer, termsAccepted, items } = parsed.data;
+    const returnUrl = checkoutReturnUrl(request, config);
     void termsAccepted;
 
     try {
@@ -333,6 +344,9 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
         }
         const product = PRODUCTS[item.productId];
         const action = ACTIONS[item.actionId];
+        if (product.availableStandalone === false) {
+          return response.status(400).json({ error: `${product.name} est disponible uniquement dans les packs Tapote.` });
+        }
         validItems.push({
           product,
           action,
@@ -375,7 +389,7 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
         if (!config.allowDemoCheckout) return response.status(503).json({ error: "Le paiement n’est pas encore disponible." });
         const demoId = `demo_${randomUUID()}`;
         await repository.markDemoOrder(attemptId, demoId);
-        return response.json({ demo: true, url: `${config.publicUrl}/?commande=demo&session_id=${encodeURIComponent(demoId)}` });
+        return response.json({ demo: true, url: `${returnUrl}/?commande=demo&session_id=${encodeURIComponent(demoId)}` });
       }
 
       const readiness = getProductionChecks(config, { repository, storage });
@@ -435,8 +449,8 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
         phone_number_collection: { enabled: true },
         automatic_tax: { enabled: config.stripeAutomaticTax },
         payment_intent_data: { metadata: { orderToken: attemptId } },
-        success_url: `${config.publicUrl}/?commande=confirmee&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${config.publicUrl}/?commande=annulee`,
+        success_url: `${returnUrl}/?commande=confirmee&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${returnUrl}/?commande=annulee`,
         metadata: { orderToken: attemptId, businessName: customer.businessName },
         custom_text: {
           shipping_address: { message: "Votre objet sera personnalisé, configuré et testé avant expédition." },

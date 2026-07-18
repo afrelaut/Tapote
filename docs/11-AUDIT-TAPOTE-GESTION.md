@@ -28,6 +28,7 @@ L’organisation privée ne contient actuellement aucun client ni commande. C’
 | Identité | Marque texte et icône générique | Logos officiels `tapote-logo.svg`, `tapote-logo-light.svg` et `tapote-mark.svg` |
 | Lisibilité | Échelle faible sur certains breakpoints | Passe de lisibilité laptop/desktop/mobile et tableau atelier à cinq étapes |
 | Accessibilité | Plusieurs actions ambiguës ou mortes | Libellés explicites, états vides, focus visible, annonces de statut et réduction de mouvement |
+| Encodage NFC | Confirmation manuelle uniquement | Écriture directe de l'URL courte depuis Chrome Android en HTTPS, puis synchronisation de l'étape dans Supabase ; confirmation manuelle conservée |
 
 ## Audit Supabase
 

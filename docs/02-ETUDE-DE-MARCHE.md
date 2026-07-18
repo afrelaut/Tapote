@@ -1,6 +1,6 @@
 # Tapote — Étude de marché France
 
-Version 1.0 — 15 juillet 2026
+Version 1.1 — 17 juillet 2026
 
 Périmètre : supports physiques NFC + QR personnalisés et logiciel de pilotage pour commerces, établissements de services et réseaux.
 
@@ -15,7 +15,7 @@ Le terrain est favorable : la France comptait 6,29 millions d’établissements 
 ### Verdict
 
 - **Opportunité** : bonne pour une petite marque rentable, avec potentiel SaaS ; insuffisante pour une croissance forte si Tapote reste une simple plaque d’avis.
-- **Produit d’appel** : Le Comptoir A6 personnalisé à 59 €.
+- **Produit d’appel** : Le Comptoir A6 personnalisé à 49 €.
 - **Segment de départ recommandé** : salons de coiffure/beauté et restauration indépendante en Île-de-France, puis hôtellerie et réseaux.
 - **Différenciation à défendre** : “la marque du client devant, Tapote derrière”, gabarits métier, livraison prête à poser, redirecteur Pilot, SAV humain.
 - **Modèle** : marge sur objet + abonnement optionnel + packs multi-sites ; éviter l’abonnement obligatoire.
@@ -180,7 +180,7 @@ Conséquences produit :
 
 **Pourquoi** : rendez-vous récurrents, paiement en face-à-face, forte dépendance à la réservation et aux avis, décisionnaire souvent présent sur place, esthétique du support importante.
 
-**Offre** : Pack Salon à 109 €, un chevalet réservation et un chevalet avis ; mois Pilot offert.
+**Offre** : Pack Salon à 89 €, un chevalet réservation et un chevalet avis ; mois Pilot offert.
 
 **Canaux** : prospection locale, Instagram, partenariats formateurs/écoles, distributeurs de produits professionnels, communautés Planity.
 
@@ -218,7 +218,7 @@ Conséquences produit :
 
 ### Ancrage marché
 
-La fourchette publique observée de produits simples se situe principalement entre 25 et 40 €. Le prix Tapote de 59 € doit donc montrer : chevalet A6, maquette client, impression, NFC, QR, encodage, contrôle, emballage et support.
+La fourchette publique observée de produits simples se situe principalement entre 25 et 40 €. Le prix Tapote de 49 € reste premium et doit donc montrer : chevalet A6, maquette client, impression, NFC, QR, encodage, contrôle, emballage et support.
 
 ### Estimation de coût — unité A6
 
@@ -236,7 +236,7 @@ Les captures fournisseur transmises indiquent à titre de repère un lot de 6 ch
 | Paiement/incident | 2,00 € |
 | **Coût variable estimé** | **19,68 €** |
 
-À 59 € TTC, avec hypothèse de TVA 20 %, revenu HT 49,17 €. Marge contributive indicative avant acquisition et frais fixes : 29,49 €, soit environ **60 % du HT**. Si Tapote relève temporairement de la franchise en base, le calcul change ; ne pas piloter la marge en TTC.
+Au tarif actuel de 49 € TTC, la commande unitaire supporte 4,90 € de livraison, soit 53,90 € TTC facturés. Avec une hypothèse de TVA à 20 %, le revenu facturé est de 44,92 € HT. La marge contributive indicative avant acquisition et frais fixes est alors de 25,24 €, soit environ **56 % du HT**. Si la livraison était offerte sans réduction de coût, le produit seul dégagerait 21,15 €, soit environ **52 % du HT**, sous la cible de 55 %. Si Tapote relève temporairement de la franchise en base, le calcul change ; ne pas piloter la marge en TTC.
 
 ### Pack de 6
 
@@ -254,9 +254,9 @@ Coût estimé : 6 chevalets 17,52 €, 6 tags 0,96 €, impressions 3,60 €, co
 
 Tester sur trafic comparable :
 
-- 49 € : entrée rapide, marge plus faible.
-- 59 € : prix recommandé.
-- 69 € : maquette premium + seconde version incluse.
+- 49 € + 4,90 € de livraison : scénario de référence actuel.
+- 54,90 € + 4,90 € de livraison : test de valeur perçue et de marge.
+- 59 € avec livraison offerte : test d’un prix tout compris plus simple à communiquer.
 
 Ne pas faire de fausse promotion permanente. Tester plutôt “livraison incluse”, “maquette offerte” ou packs.
 

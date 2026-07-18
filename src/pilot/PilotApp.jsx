@@ -24,7 +24,7 @@ import {
   X,
 } from "lucide-react";
 import { createDemoWorkspace, loadPilotWorkspace, productName, updatePilotDestination } from "./pilotData.js";
-import { isPilotConfigured, isPilotDemo, pilotSupabase, redirectBaseUrl } from "./supabase.js";
+import { getPilotSession, isPilotConfigured, isPilotDemo, pilotSupabase, redirectBaseUrl } from "./supabase.js";
 import "./pilot.css";
 
 const DAY = 86_400_000;
@@ -559,9 +559,14 @@ export default function PilotApp() {
   useEffect(() => {
     if (demoMode || !pilotSupabase) return undefined;
     let active = true;
-    pilotSupabase.auth.getSession().then(({ data }) => {
+    getPilotSession().then((currentSession) => {
       if (active) {
-        setSession(data.session);
+        setSession(currentSession);
+        setAuthLoading(false);
+      }
+    }).catch(() => {
+      if (active) {
+        setSession(null);
         setAuthLoading(false);
       }
     });

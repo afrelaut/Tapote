@@ -28,14 +28,17 @@ import TapoteManagementApp from "./ManagementApp.jsx";
 const workspace = {
   clients: [{ id: "client-1", name: "Café Noma", contact: "Léa", email: "lea@example.com", phone: "0600000000", city: "Lyon", segment: "Café", orders: 3, revenue: 406, joined: "04 juin", health: "Actif" }],
   orders: [
-    { recordId: "row-ready", id: "TPT-1050", clientId: "client-1", product: "Comptoir A6", quantity: 1, total: 59, status: "ready", payment: "Payé", channel: "Boutique", created: "16 juil", orderedOn: "2026-07-16", due: "17 juil", dueDate: "2026-07-17", priority: "Haute", owner: "Aymeric", destination: "Avis Google", tracking: "", note: "Prête." },
-    { recordId: "row-shipped", id: "TPT-1049", clientId: "client-1", product: "Carte NFC", quantity: 2, total: 58, status: "shipped", payment: "Payé", channel: "Boutique", created: "15 juil", orderedOn: "2026-07-15", due: "16 juil", dueDate: "2026-07-16", priority: "Normale", owner: "Aymeric", destination: "Fidélité", tracking: "6A000000", note: "Expédiée." },
-    { recordId: "row-cancelled", id: "TPT-1048", clientId: "client-1", product: "Sticker NFC", quantity: 1, total: 35, status: "cancelled", payment: "En attente", channel: "Boutique", created: "14 juil", orderedOn: "2026-07-14", due: "15 juil", dueDate: "2026-07-15", priority: "Normale", owner: "Aymeric", destination: "Instagram", tracking: "", note: "Annulée." },
+    { recordId: "row-ready", id: "TPT-1050", clientId: "client-1", product: "Comptoir A6", quantity: 1, total: 49, status: "ready", payment: "Payé", channel: "Boutique", created: "16 juil", orderedOn: "2026-07-16", due: "17 juil", dueDate: "2026-07-17", priority: "Haute", owner: "Aymeric", destination: "Avis Google", tracking: "", note: "Prête." },
+    { recordId: "row-shipped", id: "TPT-1049", clientId: "client-1", product: "Carte NFC", quantity: 2, total: 59.8, status: "shipped", payment: "Payé", channel: "Boutique", created: "15 juil", orderedOn: "2026-07-15", due: "16 juil", dueDate: "2026-07-16", priority: "Normale", owner: "Aymeric", destination: "Fidélité", tracking: "6A000000", note: "Expédiée." },
+    { recordId: "row-cancelled", id: "TPT-1048", clientId: "client-1", product: "Vitrine NFC", quantity: 1, total: 29.9, status: "cancelled", payment: "En attente", channel: "Boutique", created: "14 juil", orderedOn: "2026-07-14", due: "15 juil", dueDate: "2026-07-15", priority: "Normale", owner: "Aymeric", destination: "Instagram", tracking: "", note: "Annulée." },
   ],
   inventory: [{ id: "stock-1", sku: "SUP-A6", name: "Chevalet A6", category: "Support", stock: 12, reserved: 2, threshold: 5, incoming: 0, eta: "—" }],
-  storefront: [{ id: "product-1", name: "Le Comptoir A6", price: 59, online: true, stockId: "stock-1", sales: 4, conversionRate: 3.2, conversion: "3,2 %" }],
+  storefront: [{ id: "product-1", name: "Le Comptoir A6", price: 49, online: true, stockId: "stock-1", sales: 4, conversionRate: 3.2, conversion: "3,2 %" }],
   activity: [],
-  encodedProducts: [{ id: "unit-1", orderId: "row-ready", clientId: "client-1", serialNumber: "TAP-6A2F91B8C440", supportType: "Comptoir A6", chipType: "NTAG213 · 38 mm", chipBatch: "N213-2607-A", label: "Café Noma · Avis", status: "encoded", shortCode: "4a8d22be71", targetUrl: "https://example.com/avis", iphoneTest: false, androidTest: false, qrTest: false, createdAt: "2026-07-16T09:30:00Z" }],
+  encodedProducts: [
+    { id: "unit-1", orderId: "row-ready", clientId: "client-1", serialNumber: "TAP-6A2F91B8C440", supportType: "Comptoir A6", chipType: "NTAG213 · 38 mm", chipBatch: "N213-2607-A", label: "Café Noma · Avis", status: "encoded", shortCode: "4a8d22be71", targetUrl: "https://example.com/avis", iphoneTest: false, androidTest: false, qrTest: false, createdAt: "2026-07-16T09:30:00Z" },
+    { id: "unit-2", orderId: "row-ready", clientId: "client-1", serialNumber: "TAP-8D10C39A4421", supportType: "Comptoir A6", chipType: "NTAG213 · 38 mm", chipBatch: "N213-2607-A", label: "Café Noma · Réservation", status: "draft", shortCode: "9b7c31da20", targetUrl: "https://example.com/reservation", iphoneTest: false, androidTest: false, qrTest: false, createdAt: "2026-07-16T10:00:00Z" },
+  ],
   settings: { orderPrefix: "TPT", currency: "EUR", timezone: "Europe/Paris", lowStockNotifications: true, shippingCutoff: "16:00" },
 };
 
@@ -52,14 +55,17 @@ beforeEach(() => {
   repository.createManagementEncodedProduct.mockResolvedValue({});
 });
 
-afterEach(() => cleanup());
+afterEach(() => {
+  cleanup();
+  delete window.NDEFReader;
+});
 
 describe("TAPOTE Gestion", () => {
   it("affiche uniquement des indicateurs calculés depuis les données réelles", async () => {
     render(<TapoteManagementApp />);
 
     expect(await screen.findByRole("heading", { name: "Vue d’ensemble" })).toBeInTheDocument();
-    expect(screen.getByText("117 €")).toBeInTheDocument();
+    expect(screen.getByText("109 €")).toBeInTheDocument();
     expect(screen.getByText("2 commandes payées")).toBeInTheDocument();
     expect(screen.queryByText("Aucune urgence ouverte")).not.toBeInTheDocument();
     expect(screen.queryByText("1 127 €")).not.toBeInTheDocument();
@@ -112,5 +118,32 @@ describe("TAPOTE Gestion", () => {
     fireEvent.click(screen.getByRole("button", { name: "Tester NFC + QR" }));
     expect(screen.getByRole("heading", { name: "Tester NFC + QR" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Valider les trois tests" })).toBeDisabled();
+  });
+
+  it("écrit l’URL courte avec Web NFC puis confirme l’encodage dans Supabase", async () => {
+    const write = vi.fn().mockResolvedValue(undefined);
+    window.NDEFReader = class NDEFReader {
+      write(...args) { return write(...args); }
+    };
+
+    render(<TapoteManagementApp />);
+    await screen.findByRole("heading", { name: "Vue d’ensemble" });
+    fireEvent.click(screen.getByRole("button", { name: /Création & encodage/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Encoder sur Android" }));
+
+    expect(screen.getByRole("heading", { name: "Encoder depuis Android" })).toBeInTheDocument();
+    expect(screen.getByText("https://t.tapote.fr/a/9b7c31da20")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Écrire l’URL dans la puce" }));
+
+    await waitFor(() => expect(write).toHaveBeenCalledWith(
+      { records: [{ recordType: "url", data: "https://t.tapote.fr/a/9b7c31da20" }] },
+      { overwrite: true },
+    ));
+    await waitFor(() => expect(repository.advanceManagementEncodedProduct).toHaveBeenCalledWith(
+      "org-1",
+      expect.objectContaining({ id: "unit-2", status: "draft" }),
+      "encoded",
+      {},
+    ));
   });
 });

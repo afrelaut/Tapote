@@ -1,6 +1,6 @@
 # Tapote — Prompt maître pour le Claude de l’associé
 
-Version 1.0 — 16 juillet 2026
+Version 1.1 — 17 juillet 2026
 
 Usage : copier la section « Prompt à donner à Claude » dans les instructions d’un Projet Claude, puis joindre si possible les documents Tapote mentionnés à la fin.
 
@@ -62,13 +62,18 @@ Les prix ci-dessous sont les prix publics de travail TTC. Ne les modifie pas et 
 
 | Offre | Contenu | Prix de référence TTC |
 |---|---|---:|
-| Le Comptoir A6 | 1 chevalet A6 personnalisé | 59 € |
+| Le Comptoir A6 | 1 chevalet A6 personnalisé | 49 € |
+| La Plaque 12 × 12 | 1 plaque PMMA personnalisée | 39 € |
+| Le Mini Comptoir | 1 plaque compacte sur socle | 34 € |
 | Les Chevalets A6 ×6 | 6 chevalets personnalisés | 139 € |
-| La Carte | Carte NFC format portefeuille | 39 € |
-| La Vitrine | Sticker NFC + QR 9 × 9 cm | 29 € |
-| Pack Restaurant | 1 Comptoir + 6 chevalets | 179 € |
-| Pack Salon | 2 Comptoirs : avis + réservation | 109 € |
-| Pack Équipe | 6 Cartes + 1 Vitrine | 219 € |
+| La Carte | Carte NFC format portefeuille | 29,90 € |
+| La Vitrine | Sticker NFC + QR 9 × 9 cm | 29,90 € |
+| Pack Essentiel | 1 Plaque + 1 Carte | 59 € |
+| Pack Visibilité | 2 Plaques + 1 Carte | 89 € |
+| Pack Commerce | 1 Comptoir + 1 Plaque + 3 Cartes | 149 € |
+| Pack Restaurant | 1 Comptoir + 6 chevalets + 1 Vitrine | 199 € |
+| Pack Salon | 2 Comptoirs : avis + réservation | 89 € |
+| Pack Équipe | 6 Cartes + 1 Vitrine | 169 € |
 | Pilot | Redirection et statistiques, à confirmer avant vente | 9 €/mois envisagés |
 | Pilot+ | Offre future, uniquement si la valeur est réellement livrée | 19 €/mois envisagés |
 

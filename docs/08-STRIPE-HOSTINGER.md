@@ -1,6 +1,6 @@
 # Stripe + Hostinger — déployer Tapote, Pilot et Gestion
 
-Ce guide correspond au dépôt actuel. Il ne propose pas trois hébergements : un seul VPS Hostinger exécute l’application Node/React et Caddy, tandis que Supabase, Stripe, Resend et Sentry restent des services externes.
+Ce guide correspond au dépôt actuel. Il ne propose pas trois hébergements : un seul VPS Hostinger exécute l’application Node/React, tandis que Supabase, Stripe, Resend et Sentry restent des services externes. Si le VPS est neuf, Tapote peut lancer son propre Caddy. Si un autre projet utilise déjà les ports 80/443, Tapote réutilise obligatoirement le reverse proxy existant.
 
 ## Architecture retenue
 
@@ -25,7 +25,8 @@ Le port Node `3001` reste uniquement dans le réseau Docker. Seuls `80` et `443`
 - Les commandes, lignes, événements Stripe, fichiers privés et e-mails sortants sont durables via Supabase.
 - Pilot utilise la clé Supabase publiable dans le navigateur ; la clé secrète reste exclusivement côté serveur.
 - `/api/health` contrôle le processus ; `/api/ready` contrôle Stripe, webhook, base, Storage, e-mail et juridique.
-- `Dockerfile`, `deploy/docker-compose.production.yml`, `deploy/Caddyfile` et `.env.production.example` sont prêts pour le VPS.
+- `Dockerfile`, `deploy/docker-compose.production.yml`, `deploy/Caddyfile` et `.env.production.example` sont prêts pour un VPS neuf.
+- `deploy/docker-compose.shared-vps.yml` et `deploy/Caddyfile.shared-vps.example` évitent tout conflit avec un autre projet déjà présent sur le VPS.
 
 ## 1. Préparer Stripe en sandbox
 
@@ -90,7 +91,7 @@ Stripe peut livrer un événement plusieurs fois et ne garantit pas l’ordre ; 
 
 ## 2. Préparer Supabase pour le domaine final
 
-Le projet Tapote est déjà connecté. Avant chaque déploiement, compare l’historique distant au dossier `supabase/migrations`, applique uniquement les migrations versionnées encore absentes, puis relance les Advisors sécurité et performance. Il reste ensuite à renseigner les valeurs de production :
+Le projet Tapote est déjà connecté. L'audit du 18 juillet 2026 confirme que les 16 migrations distantes correspondent aux 16 fichiers locaux, jusqu'à `20260717162034_align_current_storefront_pricing.sql`. Avant chaque déploiement, compare l’historique distant au dossier `supabase/migrations`, applique uniquement les migrations versionnées encore absentes, puis relance les Advisors sécurité et performance. Il reste ensuite à renseigner les valeurs de production :
 
 1. dans **Connect**, copie la chaîne **Session pooler** adaptée à une application Node persistante dans `DATABASE_URL` ;
 2. place l’URL du projet dans `SUPABASE_URL` et une **secret key** dans `SUPABASE_SECRET_KEY` ;
@@ -99,15 +100,31 @@ Le projet Tapote est déjà connecté. Avant chaque déploiement, compare l’hi
 5. dans **Authentication / URL Configuration**, définis le site sur `https://tapote.fr` et ajoute exactement `https://tapote.fr/pilot` aux Redirect URLs ;
 6. invite les premiers utilisateurs Pilot avec `npm run pilot:invite -- adresse@client.fr` depuis un environnement disposant de la secret key.
 
-Au 16 juillet 2026, la migration `20260716182509_align_storefront_pack_fulfillment.sql` doit encore être appliquée avant d’activer de nouvelles commandes réelles. Elle aligne les packs vendus avec leur création dans Gestion et Pilot.
-
 La clé publique est compilée dans le frontend ; la secret key contourne les contrôles utilisateur et ne doit jamais être incluse dans le build. Voir les [types de connexions Postgres](https://supabase.com/docs/guides/database/connecting-to-postgres) et les [Redirect URLs Auth](https://supabase.com/docs/guides/auth/redirect-urls).
 
 ## 3. Préparer le VPS Hostinger
 
-### 3.1 Installer le système
+### 3.0 Ne pas casser le projet déjà hébergé
 
-Dans hPanel, choisis le template **Ubuntu 24.04 avec Docker**. Hostinger indique que ce template installe Docker Engine et Docker Compose ; réinstaller un OS efface le contenu du VPS, donc fais-le avant d’y déposer des données ([template Docker Hostinger](https://support.hostinger.com/en/articles/8306612-how-to-use-the-docker-vps-template)).
+Ne réinstalle pas Ubuntu et ne lance pas encore `docker compose`. Connecte-toi d'abord en SSH et fais cet inventaire en lecture seule :
+
+```bash
+docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Ports}}'
+sudo ss -ltnp
+docker network ls
+```
+
+Interprétation :
+
+- rien n'écoute sur 80/443 : utilise `deploy/docker-compose.production.yml`, qui lance l'application et son Caddy ;
+- Caddy ou Nginx installé directement sur Ubuntu écoute déjà sur 80/443 : utilise `deploy/docker-compose.shared-vps.yml`, puis fusionne la configuration Tapote dans le proxy existant ;
+- un conteneur Caddy, Nginx, Traefik ou Nginx Proxy Manager écoute sur 80/443 : ne lance aucune des deux commandes au hasard. Il faut connecter Tapote au réseau Docker de ce proxy et adapter sa configuration. Sauvegarde la sortie des trois commandes ci-dessus avant de continuer.
+
+Dans tous les cas, crée d'abord un snapshot Hostinger du VPS. Un seul reverse proxy doit posséder les ports 80/443.
+
+### 3.1 Installer le système — seulement sur un VPS neuf
+
+Dans hPanel, choisis le template **Ubuntu 24.04 avec Docker** uniquement si le VPS est neuf. Hostinger indique que ce template installe Docker Engine et Docker Compose ; réinstaller un OS efface le contenu du VPS. Ne fais donc jamais cette étape sur ton VPS actuel sans migration et sauvegarde du projet existant ([template Docker Hostinger](https://support.hostinger.com/en/articles/8306612-how-to-use-the-docker-vps-template)).
 
 Connecte-toi en SSH, mets le système à jour et crée un utilisateur de déploiement :
 
@@ -209,6 +226,8 @@ Resolve-DnsName t.tapote.fr
 
 ## 6. Premier déploiement
 
+### Cas A — VPS neuf, aucun autre proxy
+
 Depuis `/opt/tapote` :
 
 ```bash
@@ -216,6 +235,29 @@ docker compose --env-file .env.production -f deploy/docker-compose.production.ym
 docker compose --env-file .env.production -f deploy/docker-compose.production.yml up -d --build --remove-orphans
 docker compose --env-file .env.production -f deploy/docker-compose.production.yml ps
 ```
+
+### Cas B — Caddy ou Nginx déjà installé directement sur Ubuntu
+
+Valide d'abord qu'aucun service n'utilise le port local `3010`, puis démarre uniquement l'application Tapote :
+
+```bash
+sudo ss -ltnp | grep ':3010 '
+docker compose --env-file .env.production -f deploy/docker-compose.shared-vps.yml config --quiet
+docker compose --env-file .env.production -f deploy/docker-compose.shared-vps.yml up -d --build
+curl -sS -i http://127.0.0.1:3010/api/health
+```
+
+La première commande ne doit rien retourner. La variante partagée lie le port à `127.0.0.1` : il n'est pas accessible depuis Internet. Pour Caddy installé sur Ubuntu :
+
+1. ouvre son Caddyfile actuel et sauvegarde-le ;
+2. fusionne les blocs de `deploy/Caddyfile.shared-vps.example` sans supprimer ceux de l'autre projet ;
+3. injecte les deux variables de hash Gestion dans le service Caddy existant ;
+4. vérifie avec `sudo caddy validate --config /etc/caddy/Caddyfile` ;
+5. recharge avec `sudo systemctl reload caddy`.
+
+Pour Nginx, le principe est identique — cinq hôtes HTTPS vers `http://127.0.0.1:3010`, `/gestion` refusé sur `tapote.fr`, Basic Auth sur `gestion.tapote.fr`, et seulement `/a/*` plus `/api/health` sur `t.tapote.fr` — mais ne copie pas une configuration Caddy dans Nginx.
+
+Si le proxy existant tourne lui-même dans Docker, `127.0.0.1` désigne le conteneur du proxy et non Ubuntu : arrête-toi avant cette étape et connecte Tapote au réseau Docker partagé du proxy.
 
 Utilise `config --quiet` : la variante sans `--quiet` affiche la configuration résolue, donc potentiellement les secrets dans le terminal.
 
@@ -296,6 +338,8 @@ docker compose --env-file .env.production -f deploy/docker-compose.production.ym
 docker compose --env-file .env.production -f deploy/docker-compose.production.yml ps
 curl -sS -i https://tapote.fr/api/ready
 ```
+
+Sur un VPS partagé, remplace simplement le nom du fichier Compose par `deploy/docker-compose.shared-vps.yml`. Le reverse proxy existant n'est pas redémarré lors d'une mise à jour normale de Tapote.
 
 Ne modifie jamais la base manuellement pour “aller vite” : ajoute une migration Supabase versionnée, vérifie les Advisors puis applique-la. Le déploiement du conteneur et les migrations doivent rester deux opérations visibles.
 
