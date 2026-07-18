@@ -36,7 +36,7 @@ describe("Espace Tapote", () => {
     render(<AccessApp />);
 
     expect(screen.getByRole("link", { name: /Tapote Pilot/ })).toHaveAttribute("href", "/pilot");
-    expect(screen.getByRole("link", { name: /Tapote Gestion/ })).toHaveAttribute("href", "/gestion");
+    expect(screen.getByRole("link", { name: /Tapote Gestion/ })).toHaveAttribute("href", "https://gestion.tapote.fr/gestion");
     await waitFor(() => expect(screen.getByText("Connexion par e-mail ou lien sécurisé")).toBeInTheDocument());
     expect(screen.getByText("Accès interne sur invitation")).toBeInTheDocument();
   });

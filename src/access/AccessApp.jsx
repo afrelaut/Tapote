@@ -68,7 +68,7 @@ export default function AccessApp() {
           <b>{pilotActive ? "Continuer vers Pilot" : "Se connecter à Pilot"}<ArrowRight size={19} /></b>
         </a>
 
-        <a className="access-destination access-destination-management" href="/gestion">
+        <a className="access-destination access-destination-management" href="https://gestion.tapote.fr/gestion">
           <span className="access-index">02</span>
           <i aria-hidden="true"><LockKeyhole size={26} /></i>
           <div><small>POUR L’ÉQUIPE TAPOTE</small><h2>Tapote Gestion</h2><p>Commandes, encodage, contrôle qualité, stock et expéditions au même endroit.</p></div>

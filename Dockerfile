@@ -37,6 +37,10 @@ COPY --from=build --chown=tapote:tapote /app/dist ./dist
 COPY --chown=tapote:tapote package.json ./package.json
 COPY --chown=tapote:tapote server ./server
 COPY --chown=tapote:tapote shared ./shared
+# Supabase signe les connexions Postgres avec sa propre autorité racine.
+# Node conserve ainsi rejectUnauthorized=true tout en validant cette chaîne.
+COPY --chown=tapote:tapote deploy/certs/supabase-root-2021.crt ./certs/supabase-root-2021.crt
+ENV NODE_EXTRA_CA_CERTS=/app/certs/supabase-root-2021.crt
 USER tapote
 EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 CMD node -e "fetch('http://127.0.0.1:'+(process.env.API_PORT||process.env.PORT||3001)+'/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"

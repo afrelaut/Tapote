@@ -14,11 +14,11 @@ services:
       traefik.http.routers.tapote-public.tls: "true"
       traefik.http.routers.tapote-public.tls.certresolver: "letsencrypt"
       traefik.http.routers.tapote-public.service: "tapote"
-      traefik.http.routers.tapote-public.middlewares: "tapote-hide-management"
+      traefik.http.routers.tapote-public.middlewares: "tapote-management-canonical"
 
-      traefik.http.middlewares.tapote-hide-management.redirectregex.regex: "^https://tapote[.]fr/gestion(?:/.*)?$"
-      traefik.http.middlewares.tapote-hide-management.redirectregex.replacement: "https://tapote.fr/"
-      traefik.http.middlewares.tapote-hide-management.redirectregex.permanent: "true"
+      traefik.http.middlewares.tapote-management-canonical.redirectregex.regex: "^https://tapote[.]fr/gestion(?:/(.*))?$"
+      traefik.http.middlewares.tapote-management-canonical.redirectregex.replacement: "https://gestion.tapote.fr/gestion/$${1}"
+      traefik.http.middlewares.tapote-management-canonical.redirectregex.permanent: "false"
 
       traefik.http.routers.tapote-www.rule: "Host(`www.tapote.fr`)"
       traefik.http.routers.tapote-www.entrypoints: "websecure"
