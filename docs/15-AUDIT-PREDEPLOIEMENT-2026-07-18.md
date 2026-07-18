@@ -16,6 +16,23 @@ Le chemin recommandé aujourd'hui est le VPS Hostinger existant, en conservant s
 | Tapote Pilot | Connexion mot de passe ou lien magique, produits, destinations, statistiques et export | Compte client Supabase séparé, créé ou invité après la commande | Recetter un vrai client et l'isolation entre deux organisations |
 | Tapote Gestion | Auth privée, rôles/RLS, commandes, clients, stock, production, encodage, tests et expédition | Comptes internes individuels uniquement | Nettoyer les démos si souhaité et recetter les deux comptes de production |
 
+## État des environnements et domaines
+
+| Environnement | État au 18 juillet 2026 |
+| --- | --- |
+| Développement local | Frontend Supabase configuré ; secrets serveur et Postgres absents ; `/api/ready` reste volontairement fermé |
+| Supabase distant | Projet actif mais utilisé à la fois pour la démonstration et les futurs comptes réels ; aucun projet staging séparé |
+| Préproduction | Aucun environnement ni domaine dédié détecté |
+| Production VPS | `.env.production` absent du dépôt, ce qui est normal ; application pas encore déployée |
+
+Vérification DNS/HTTPS en lecture seule :
+
+- `tapote.fr` et `www.tapote.fr` ont un enregistrement A vers `213.186.33.5`, mais la connexion TLS échoue actuellement ;
+- `pilot.tapote.fr`, `gestion.tapote.fr` et `t.tapote.fr` renvoient `NXDOMAIN` ;
+- aucun des cinq domaines ne sert donc Tapote pour le moment.
+
+Au déploiement, remplacer les deux enregistrements A existants et créer les trois sous-domaines vers l'IPv4 du VPS. Ne le faire qu'après avoir identifié le reverse proxy existant et préparé sa configuration ; sinon le projet déjà présent sur le VPS peut être interrompu.
+
 ### Décision sur le compte client
 
 Le client **n'a pas besoin de créer un compte pour commander et payer**. Stripe crée un objet Customer côté paiement, mais cela ne constitue pas un compte Tapote. Ce choix réduit la friction et évite de stocker un mot de passe sans bénéfice au moment de l'achat.
