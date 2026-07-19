@@ -125,6 +125,12 @@ const legalDetails = {
   version: import.meta.env.VITE_LEGAL_VERSION || "",
 };
 const legalReady = Object.values(legalDetails).every(Boolean);
+const stripeSandboxUi = import.meta.env.VITE_STRIPE_MODE !== "live";
+const vatExempt = /non applicable|franchise en base/i.test(legalDetails.vat);
+const priceTaxLabel = vatExempt ? "net de TVA" : "TTC";
+const priceTaxDetail = (price) => vatExempt
+  ? priceTaxLabel
+  : `TTC · ${formatMoney(Math.round(price / 1.2))} HT`;
 const logoMimeAliases = new Map([
   ["image/png", "image/png"],
   ["image/x-png", "image/png"],
@@ -252,7 +258,7 @@ const faqs = [
 
 function BrandMark({ light = false }) {
   return (
-    <a className={`brand ${light ? "brand-light" : ""}`} href="#top" aria-label="Tapote, retour en haut">
+    <a className={`brand ${light ? "brand-light" : ""}`} href="/" aria-label="Tapote, retour à l’accueil">
       <img className="brand-logo" src={light ? "/brand/tapote-logo-light.svg" : "/brand/tapote-logo.svg"} alt="" />
     </a>
   );
@@ -403,16 +409,16 @@ function Header({ cartCount, onCart, mobileOpen, setMobileOpen }) {
     <header className="site-header">
       <BrandMark />
       <nav id="main-navigation" className={`nav-links ${mobileOpen ? "nav-links-open" : ""}`} aria-label="Navigation principale">
-        <a href="#demo" onClick={() => setMobileOpen(false)}>Le geste</a>
-        <a href="#offres" onClick={() => setMobileOpen(false)}>Trouver mon offre</a>
-        <a href="#packs" onClick={() => setMobileOpen(false)}>Les packs</a>
-        <a href="#objets" onClick={() => setMobileOpen(false)}>À l’unité</a>
-        <a href="#pilot" onClick={() => setMobileOpen(false)}>Pilot</a>
-        <a href="#devis" onClick={() => setMobileOpen(false)}>Devis</a>
+        <a href="/#demo" onClick={() => setMobileOpen(false)}>Le geste</a>
+        <a href="/#offres" onClick={() => setMobileOpen(false)}>Trouver mon offre</a>
+        <a href="/#packs" onClick={() => setMobileOpen(false)}>Les packs</a>
+        <a href="/#objets" onClick={() => setMobileOpen(false)}>À l’unité</a>
+        <a href="/#pilot" onClick={() => setMobileOpen(false)}>Pilot</a>
+        <a href="/#devis" onClick={() => setMobileOpen(false)}>Devis</a>
       </nav>
       <div className="header-actions">
         <a className="header-access" href="/connexion" aria-label="Se connecter à un espace Tapote"><LogIn size={17} aria-hidden="true" /><span>Connexion</span></a>
-        <a className="button button-primary header-cta" href="#configurateur"><span>Créer mon Tapote</span><ArrowRight size={16} aria-hidden="true" /></a>
+        <a className="button button-primary header-cta" href="/#configurateur"><span>Créer mon Tapote</span><ArrowRight size={16} aria-hidden="true" /></a>
         <button className="cart-trigger" onClick={onCart} aria-label={`Ouvrir le panier, ${cartCount} article(s)`}>
           <ShoppingBag size={18} />
           <span>Panier</span>
@@ -444,11 +450,11 @@ function Hero() {
             <a className="button button-secondary" href="#devis"><span>Obtenir un devis</span><ArrowRight size={17} /></a>
           </div>
           <a className="hero-demo-link" href="#demo"><i><Play size={11} fill="currentColor" /></i><span>Voir le geste<small>8 secondes</small></span></a>
-          <span>Comptoir A6 49 € TTC · BAT inclus · contrôle NFC + QR avant envoi</span>
+          <span>Comptoir A6 49 € {priceTaxLabel} · BAT inclus · contrôle NFC + QR avant envoi</span>
         </div>
       </div>
       <div className="hero-caption">
-        <span>Premier lot reçu · tests terrain en cours</span><span>49 € TTC</span>
+        <span>Premier lot reçu · tests terrain en cours</span><span>49 € {priceTaxLabel}</span>
         <strong>Le Comptoir A6 · Avis</strong>
         <span>NFC centré + QR visible</span><span>BAT inclus</span>
       </div>
@@ -537,7 +543,7 @@ function OfferFinder({ onAdd }) {
               <small>{eyebrow}</small>
               <h3>{title}</h3>
               <p>{detail}</p>
-              <strong>{formatMoney(product.price)}<small> TTC</small></strong>
+              <strong>{formatMoney(product.price)}<small> {priceTaxLabel}</small></strong>
               {product.kind === "pack"
                 ? <button type="button" onClick={() => onAdd(createPackCartItem(product))}>Choisir ce pack <Plus size={16} /></button>
                 : <a href="#configurateur">Créer mon A6 <ArrowRight size={16} /></a>}
@@ -571,7 +577,7 @@ function ProductSection({ onSelect }) {
                   <small>{product.description}</small>
                   <em>{product.format}</em>
                 </span>
-                <span className="product-price">{formatMoney(product.price)}<small>TTC · {formatMoney(Math.round(product.price / 1.2))} HT</small></span>
+                <span className="product-price">{formatMoney(product.price)}<small>{priceTaxDetail(product.price)}</small></span>
                 <span className="product-arrow"><ArrowRight /></span>
               </button>
             </Reveal>
@@ -783,12 +789,12 @@ export function Configurator({ initialProduct, onAdd }) {
               <button type="button" onClick={() => setQuantity((current) => normalizeQuantity(current + 1))} disabled={quantity >= MAX_ITEM_QUANTITY} aria-label="Augmenter la quantité"><Plus size={14} aria-hidden="true" /></button>
             </span>
           </label>
-          <strong aria-live="polite">{formatMoney(product.price * quantity)}<small>{quantity > 1 ? `${quantity} × ${formatMoney(product.price)} TTC` : "TTC"}</small></strong>
+          <strong aria-live="polite">{formatMoney(product.price * quantity)}<small>{quantity > 1 ? `${quantity} × ${formatMoney(product.price)} ${priceTaxLabel}` : priceTaxLabel}</small></strong>
         </div>
         <Button className={added ? "button-success" : ""} onClick={add} disabled={logoStatus === "loading" || logoPending || destinationInvalid}>
           {logoStatus === "loading" ? "Envoi du logo…" : logoPending ? "Finaliser l’envoi du logo" : destinationInvalid ? "Vérifier le lien" : added ? `${quantity} ajouté${quantity > 1 ? "s" : ""} au panier` : quantity > 1 ? `Ajouter ${quantity} au panier` : "Ajouter au panier"}
         </Button>
-        <p className="micro-copy"><Check size={14} /> Prix TTC · livraison offerte dès {formatMoney(SHIPPING.freeThreshold)} · paiement sécurisé</p>
+        <p className="micro-copy"><Check size={14} /> Prix {priceTaxLabel} · livraison offerte dès {formatMoney(SHIPPING.freeThreshold)} · paiement sécurisé</p>
         <div className="config-quote-link">
           <span><strong>Plusieurs supports ou un besoin particulier ?</strong><small>Décrivez votre projet, nous préparons une proposition adaptée.</small></span>
           <a href="#devis">Demander un devis <ArrowRight size={15} /></a>
@@ -959,7 +965,7 @@ function Packs({ onAdd }) {
                   <span>{product.format}</span>
                   <div className="pack-value"><span>Valeur à l’unité {formatMoney(product.value)}</span><b>Économie {formatMoney(savings)}</b></div>
                   <div className="pack-buy">
-                    <strong>{formatMoney(product.price)}<small> TTC · {formatMoney(Math.round(product.price / 1.2))} HT</small></strong>
+                    <strong>{formatMoney(product.price)}<small> {priceTaxDetail(product.price)}</small></strong>
                     <button onClick={() => onAdd(createPackCartItem(product))}>Choisir ce pack <Plus size={16} /></button>
                   </div>
                 </div>
@@ -978,7 +984,7 @@ function Packs({ onAdd }) {
         </div>
         <div className="visibility-buy">
           <span>Valeur {formatMoney(visibility.value)} · économie {formatMoney(visibility.value - visibility.price)}</span>
-          <strong>{formatMoney(visibility.price)}<small> TTC</small></strong>
+          <strong>{formatMoney(visibility.price)}<small> {priceTaxLabel}</small></strong>
           <button onClick={() => onAdd(createPackCartItem(visibility))}>Ajouter au panier <Plus size={16} /></button>
         </div>
       </Reveal>
@@ -1000,7 +1006,7 @@ function Packs({ onAdd }) {
                 <p>{product.description}</p>
                 <strong>{product.format}</strong>
                 <small>Valeur {formatMoney(product.value)} · économie {formatMoney(product.value - product.price)}</small>
-                <div><b>{formatMoney(product.price)} TTC</b><button onClick={() => onAdd(createPackCartItem(product))}>Choisir <Plus size={15} /></button></div>
+                <div><b>{formatMoney(product.price)} {priceTaxLabel}</b><button onClick={() => onAdd(createPackCartItem(product))}>Choisir <Plus size={15} /></button></div>
               </div>
             </article>
           );
@@ -1110,7 +1116,7 @@ function LegalDialog({ page, onClose }) {
         {page === "cgv" && <>
           <p><strong>Champ d’application.</strong> Version <strong>{legalDetails.version || "à renseigner"}</strong>. La boutique Tapote est exclusivement réservée aux personnes agissant à des fins professionnelles. Toute commande passée en qualité de consommateur est interdite. Le client confirme son statut professionnel avant d’accéder au paiement.</p>
           <p><strong>Produits et commande.</strong> Les caractéristiques essentielles, quantités, personnalisations et prix sont récapitulés avant paiement. La commande devient ferme après paiement accepté par Stripe. Le BAT transmis après commande doit être validé avant production. Pilot n’est pas inclus dans l’achat des supports et ne fait l’objet d’aucun abonnement présélectionné.</p>
-          <p><strong>Prix et paiement.</strong> Les prix affichés sont en euros et présentés TTC. Le régime de TVA applicable figure dans les mentions légales. Le paiement par carte est exigible à la commande. Pour toute somme exceptionnellement facturée à échéance, un retard entraîne de plein droit les pénalités prévues par l’article L.441-10 du Code de commerce ainsi que l’indemnité forfaitaire de 40 € pour frais de recouvrement.</p>
+          <p><strong>Prix et paiement.</strong> Les prix affichés sont en euros et présentés {vatExempt ? "nets de TVA, celle-ci étant non applicable conformément au régime indiqué dans les mentions légales" : "TTC"}. Le paiement par carte est exigible à la commande. Pour toute somme exceptionnellement facturée à échéance, un retard entraîne de plein droit les pénalités prévues par l’article L.441-10 du Code de commerce ainsi que l’indemnité forfaitaire de 40 € pour frais de recouvrement.</p>
           <p><strong>Livraison.</strong> La livraison standard en France métropolitaine coûte {formatMoney(SHIPPING.standardPrice)} et devient offerte dès {formatMoney(SHIPPING.freeThreshold)}. Le délai indicatif est de 4 à 6 jours ouvrés après validation du BAT. Un retard raisonnable indépendant de Tapote ne permet pas d’annuler automatiquement la commande ; le client doit contacter Tapote afin de convenir d’une solution.</p>
           <p><strong>Personnalisation, annulation et conformité.</strong> Une demande d’annulation peut être adressée avant validation du BAT. Après validation du BAT ou lancement de la production, l’annulation n’est possible qu’avec l’accord écrit de Tapote. Le client doit vérifier le BAT, notamment les textes, liens et visuels. Toute non-conformité ou avarie apparente doit être signalée rapidement avec des justificatifs, sans priver le client de ses droits légaux applicables.</p>
           <p><strong>Réclamations et retours.</strong> Contact et adresse : <strong>{legalDetails.returnsAddress || "à renseigner"}</strong>. Les parties rechercheront d’abord une solution amiable. La médiation de la consommation et le droit de rétractation du Code de la consommation ne s’appliquent pas aux commandes conclues exclusivement entre professionnels.</p>
@@ -1133,9 +1139,245 @@ function Footer({ setLegal }) {
     <footer className="footer">
       <div className="footer-bottom">
         <span>© {new Date().getFullYear()} Tapote · {legalReady ? legalDetails.company : "Pré-lancement — vente réelle verrouillée"}</span>
-        <div><button onClick={() => setLegal("legal")}>Mentions légales</button><button onClick={() => setLegal("cgv")}>CGV</button><button onClick={() => setLegal("privacy")}>Confidentialité</button><a href="/connexion">Espace Tapote</a><a href="#devis">Contact pro</a></div>
+        <div><button onClick={() => setLegal("legal")}>Mentions légales</button><button onClick={() => setLegal("cgv")}>CGV</button><button onClick={() => setLegal("privacy")}>Confidentialité</button><a href="/connexion">Espace Tapote</a><a href="/#devis">Contact pro</a></div>
       </div>
     </footer>
+  );
+}
+
+const purchaseSteps = [
+  { id: "cart", label: "Panier" },
+  { id: "details", label: "Coordonnées" },
+  { id: "payment", label: "Paiement" },
+  { id: "confirmation", label: "Confirmation" },
+];
+
+function PurchaseSteps({ current }) {
+  const currentIndex = purchaseSteps.findIndex((step) => step.id === current);
+  return (
+    <nav className="purchase-steps" aria-label="Étapes de la commande">
+      {purchaseSteps.map((step, index) => (
+        <span className={index === currentIndex ? "is-current" : index < currentIndex ? "is-complete" : ""} key={step.id} aria-current={index === currentIndex ? "step" : undefined}>
+          <b>{index < currentIndex ? <Check size={13} /> : index + 1}</b>{step.label}
+        </span>
+      ))}
+    </nav>
+  );
+}
+
+function PurchaseLine({ item, index, onQuantity }) {
+  const product = PRODUCTS[item.productId];
+  const action = ACTIONS[item.actionId];
+  const previewProductId = packStories[item.productId]?.productId || item.productId;
+  return (
+    <article className="purchase-line">
+      <div className="purchase-line-art"><DevicePreview productId={previewProductId} actionId={item.actionId} brandName={item.brandName} theme={item.theme} designStyle={item.designStyle} customHeadline={item.customHeadline} compact /></div>
+      <div className="purchase-line-copy">
+        <span>{product.kind === "pack" ? "PACK PROFESSIONNEL" : "OBJET TAPOTE"}</span>
+        <h2>{product.name}</h2>
+        <p>{product.kind === "pack" ? product.format : `${action.name} · ${DESIGN_STYLES[item.designStyle]?.name || "Signature"}`}</p>
+        <small>{item.destinationUrl ? "Lien principal déjà configuré" : "Lien principal à confirmer avant le paiement"}{item.brandLogoId ? " · logo transmis" : ""}</small>
+      </div>
+      {onQuantity ? (
+        <div className="purchase-line-quantity" aria-label={`Quantité de ${product.name}`}>
+          <button type="button" onClick={() => onQuantity(index, -1)} aria-label={`Diminuer la quantité de ${product.name}`}><Minus size={14} /></button>
+          <b>{item.quantity}</b>
+          <button type="button" onClick={() => onQuantity(index, 1)} disabled={item.quantity >= MAX_ITEM_QUANTITY} aria-label={`Augmenter la quantité de ${product.name}`}><Plus size={14} /></button>
+        </div>
+      ) : <span className="purchase-line-static-quantity">× {item.quantity}</span>}
+      <strong className="purchase-line-price">{formatMoney(product.price * item.quantity)}<small>{priceTaxLabel}</small></strong>
+    </article>
+  );
+}
+
+function PurchaseSummary({ cart, action, actionLabel = "Continuer" }) {
+  const subtotal = cartSubtotal(cart);
+  const shipping = calculateShipping(subtotal);
+  const total = subtotal + shipping;
+  return (
+    <aside className="purchase-summary" aria-label="Récapitulatif de la commande">
+      <span className="kicker">RÉCAPITULATIF</span>
+      <dl>
+        <div><dt>Sous-total</dt><dd>{formatMoney(subtotal)}</dd></div>
+        <div><dt>Livraison France</dt><dd>{shipping === 0 ? "Offerte" : formatMoney(shipping)}</dd></div>
+        <div className="purchase-summary-total"><dt>Total {priceTaxLabel}</dt><dd>{formatMoney(total)}</dd></div>
+      </dl>
+      {vatExempt && <p>TVA non applicable selon le régime fiscal indiqué dans les mentions légales.</p>}
+      <ul>
+        <li><FileCheck2 size={17} /> BAT de validation avant production</li>
+        <li><PackageCheck size={17} /> NFC et QR contrôlés avant expédition</li>
+        <li><CreditCard size={17} /> Paiement traité par Stripe</li>
+      </ul>
+      {action && <Button onClick={action}>{actionLabel}</Button>}
+    </aside>
+  );
+}
+
+export function CartPage({ cart, setCart }) {
+  const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const changeQuantity = (index, delta) => {
+    setCart((current) => current
+      .map((item, itemIndex) => itemIndex === index ? { ...item, quantity: Math.min(MAX_ITEM_QUANTITY, item.quantity + delta) } : item)
+      .filter((item) => item.quantity > 0));
+  };
+  return (
+    <main className="purchase-page" id="main-content">
+      <PurchaseSteps current="cart" />
+      <header className="purchase-heading">
+        <span className="kicker">COMMANDE PROFESSIONNELLE</span>
+        <h1>Votre panier.</h1>
+        <p>{itemCount ? `${itemCount} objet${itemCount > 1 ? "s" : ""} prêt${itemCount > 1 ? "s" : ""} à être vérifié${itemCount > 1 ? "s" : ""}.` : "Votre sélection Tapote apparaîtra ici."}</p>
+      </header>
+      {!cart.length ? (
+        <section className="purchase-empty">
+          <ShoppingBag size={38} />
+          <h2>Le panier est vide.</h2>
+          <p>Configurez un objet ou choisissez un pack, puis revenez ici pour finaliser la commande.</p>
+          <a className="button button-primary" href="/#configurateur"><span>Créer mon Tapote</span><ArrowRight size={17} /></a>
+        </section>
+      ) : (
+        <div className="purchase-layout">
+          <section className="purchase-lines" aria-label="Articles du panier">
+            {cart.map((item, index) => <PurchaseLine key={`${item.productId}-${item.actionId}-${index}`} item={item} index={index} onQuantity={changeQuantity} />)}
+            <a className="purchase-back-link" href="/#configurateur"><Plus size={15} /> Ajouter un autre objet</a>
+          </section>
+          <PurchaseSummary cart={cart} action={() => window.location.assign("/commande")} actionLabel="Renseigner mes coordonnées" />
+        </div>
+      )}
+    </main>
+  );
+}
+
+export function CheckoutPage({ cart, onOpenLegal }) {
+  const [form, setForm] = useState({ businessName: "", email: "", destinationUrl: "", professionalCustomer: false, termsAccepted: false });
+  const [attemptId] = useState(() => window.crypto.randomUUID());
+  const [status, setStatus] = useState("idle");
+  const [error, setError] = useState("");
+  const cancelled = new URLSearchParams(window.location.search).get("commande") === "annulee";
+  const update = (event) => {
+    const { name, value, checked, type } = event.target;
+    setForm((current) => ({ ...current, [name]: type === "checkbox" ? checked : value }));
+  };
+  const submit = async (event) => {
+    event.preventDefault();
+    setStatus("loading");
+    setError("");
+    try {
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          attemptId,
+          items: cart,
+          customer: { businessName: form.businessName, email: form.email, destinationUrl: form.destinationUrl },
+          professionalCustomer: form.professionalCustomer,
+          termsAccepted: form.termsAccepted,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Paiement indisponible.");
+      window.location.assign(data.url);
+    } catch (requestError) {
+      setStatus("error");
+      setError(requestError.message);
+    }
+  };
+  if (!cart.length) return (
+    <main className="purchase-page" id="main-content">
+      <PurchaseSteps current="details" />
+      <section className="purchase-empty"><ShoppingBag size={38} /><h1>Votre panier est vide.</h1><p>Ajoutez un produit avant de renseigner les coordonnées de commande.</p><a className="button button-primary" href="/panier"><span>Voir le panier</span><ArrowRight size={17} /></a></section>
+    </main>
+  );
+  return (
+    <main className="purchase-page" id="main-content">
+      <PurchaseSteps current="details" />
+      <header className="purchase-heading">
+        <span className="kicker">ÉTAPE 2 · COORDONNÉES</span>
+        <h1>Préparons la commande.</h1>
+        <p>Vos informations professionnelles seront reprises dans Stripe et sur la facture.</p>
+      </header>
+      {cancelled && <div className="purchase-notice" role="status"><X size={18} /><span><b>Paiement annulé.</b> Aucun débit n’a été effectué et votre panier est conservé.</span></div>}
+      <div className="purchase-layout purchase-checkout-layout">
+        <section className="purchase-form-panel">
+          <form onSubmit={submit}>
+            <fieldset>
+              <legend>Votre entreprise</legend>
+              <label><span>Nom du commerce *</span><input name="businessName" value={form.businessName} onChange={update} required autoComplete="organization" placeholder="Ex. Café des Amis" /></label>
+              <label><span>E-mail de commande *</span><input type="email" name="email" value={form.email} onChange={update} required autoComplete="email" placeholder="vous@commerce.fr" /></label>
+              <label><span>Lien principal à ouvrir</span><input type="url" name="destinationUrl" value={form.destinationUrl} onChange={update} placeholder="https://…" pattern="https://.*" title="Le lien doit commencer par https://" inputMode="url" /></label>
+              <p>Stripe demandera ensuite l’adresse de facturation, l’adresse de livraison, le téléphone et, le cas échéant, le numéro de TVA.</p>
+            </fieldset>
+            <div className="checkout-pilot-beta"><b>Pilot est en bêta privée.</b><span>Cette commande porte uniquement sur les objets. Aucun abonnement n’est ajouté ou présélectionné.</span></div>
+            <label className="checkout-terms"><input type="checkbox" name="professionalCustomer" checked={form.professionalCustomer} onChange={update} required /><span>Je confirme commander exclusivement pour les besoins de mon activité professionnelle et ne pas agir en qualité de consommateur.</span></label>
+            <label className="checkout-terms"><input type="checkbox" name="termsAccepted" checked={form.termsAccepted} onChange={update} required /><span>J’ai lu et j’accepte les <button type="button" onClick={() => onOpenLegal("cgv")}>CGV</button> et la <button type="button" onClick={() => onOpenLegal("privacy")}>politique de confidentialité</button>{legalDetails.version ? ` — version ${legalDetails.version}` : ""}.</span></label>
+            <Button type="submit" disabled={status === "loading" || !attemptId}>{status === "loading" ? "Connexion à Stripe…" : stripeSandboxUi ? "Continuer vers Stripe Sandbox" : "Continuer vers le paiement sécurisé"}</Button>
+            <small className="purchase-stripe-note"><CreditCard size={14} /> {stripeSandboxUi ? "Le test Sandbox sera réalisé avec vous. Aucun paiement réel n’est activé à cette étape." : "Vous serez redirigé vers la page de paiement sécurisée Stripe."}</small>
+            {error && <p className="form-message form-error" role="alert">{error}</p>}
+          </form>
+        </section>
+        <div>
+          <section className="purchase-mini-lines">{cart.map((item, index) => <PurchaseLine key={`${item.productId}-${item.actionId}-${index}`} item={item} index={index} />)}</section>
+          <PurchaseSummary cart={cart} />
+          <a className="purchase-edit-cart" href="/panier">Modifier le panier</a>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function OrderStatusPage({ setCart }) {
+  const sessionId = new URLSearchParams(window.location.search).get("session_id") || "";
+  const [status, setStatus] = useState(sessionId ? "checking" : "error");
+  useEffect(() => {
+    if (!sessionId) return undefined;
+    let active = true;
+    let timer;
+    let attempts = 0;
+    const verify = async () => {
+      attempts += 1;
+      try {
+        const response = await fetch(`/api/checkout/status?session_id=${encodeURIComponent(sessionId)}`);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Vérification impossible.");
+        if (!active) return;
+        if (data.status === "processing" && attempts < 5) {
+          setStatus("processing");
+          timer = window.setTimeout(verify, 1_500);
+          return;
+        }
+        setStatus(["paid", "demo", "expired", "payment_failed"].includes(data.status) ? data.status : "processing");
+        if (["paid", "demo"].includes(data.status)) setCart([]);
+      } catch {
+        if (active) setStatus("error");
+      }
+    };
+    void verify();
+    return () => { active = false; window.clearTimeout(timer); };
+  }, [sessionId, setCart]);
+  const success = status === "paid" || status === "demo";
+  const content = {
+    checking: ["Nous vérifions le paiement.", "La confirmation Stripe est en cours."],
+    processing: ["Le paiement est en traitement.", "Cette page se met à jour automatiquement."],
+    paid: ["Commande confirmée.", "Le paiement a été vérifié. Vous allez recevoir un e-mail et la facture Stripe."],
+    demo: ["Commande de démonstration confirmée.", "Aucune somme n’a été débitée."],
+    expired: ["Session expirée.", "Votre panier est conservé : vous pouvez relancer la commande."],
+    payment_failed: ["Paiement non confirmé.", "Aucune commande ne partira en production."],
+    error: ["Confirmation indisponible.", "Ne relancez pas le paiement avant d’avoir vérifié votre e-mail ou contacté Tapote."],
+  }[status];
+  return (
+    <main className="purchase-page purchase-result-page" id="main-content">
+      <PurchaseSteps current="confirmation" />
+      <section className={`purchase-result ${success ? "is-success" : "is-pending"}`}>
+        <div className="purchase-result-icon">{success ? <Check size={34} /> : status === "checking" || status === "processing" ? <CreditCard size={34} /> : <X size={34} />}</div>
+        <span className="kicker">{success ? "PAIEMENT VÉRIFIÉ" : "STATUT DE LA COMMANDE"}</span>
+        <h1>{content[0]}</h1>
+        <p>{content[1]}</p>
+        <div className="purchase-result-actions">
+          {!success && <a className="button button-primary" href="/commande"><span>Revenir à la commande</span><ArrowRight size={17} /></a>}
+          <a className="button button-secondary" href="/"><span>Retour à l’accueil</span><ArrowRight size={17} /></a>
+        </div>
+      </section>
+    </main>
   );
 }
 
@@ -1164,80 +1406,14 @@ function CartDrawer({ open, onClose, cart, setCart, onCheckout }) {
             return (
               <div className="cart-item" key={`${item.productId}-${item.actionId}-${index}`}>
                 <div className="cart-item-art"><DevicePreview productId={previewProductId} actionId={item.actionId} brandName={item.brandName} theme={item.theme} designStyle={item.designStyle} customHeadline={item.customHeadline} compact /></div>
-                <div className="cart-item-copy"><strong>{product.name}</strong><span>{product.kind === "pack" ? product.format : `${action.name} · ${DESIGN_STYLES[item.designStyle]?.name || "Signature"}${item.brandLogoId ? " · logo transmis" : ""}`}</span><small>{product.kind === "pack" ? "Personnalisation et liens confirmés au BAT" : item.destinationUrl ? "Lien individuel configuré" : "Lien à confirmer au paiement"} · {item.quantity > 1 ? `${formatMoney(product.price * item.quantity)} TTC (${formatMoney(product.price)} / unité)` : `${formatMoney(product.price)} TTC`}</small></div>
+                <div className="cart-item-copy"><strong>{product.name}</strong><span>{product.kind === "pack" ? product.format : `${action.name} · ${DESIGN_STYLES[item.designStyle]?.name || "Signature"}${item.brandLogoId ? " · logo transmis" : ""}`}</span><small>{product.kind === "pack" ? "Personnalisation et liens confirmés au BAT" : item.destinationUrl ? "Lien individuel configuré" : "Lien à confirmer au paiement"} · {item.quantity > 1 ? `${formatMoney(product.price * item.quantity)} ${priceTaxLabel} (${formatMoney(product.price)} / unité)` : `${formatMoney(product.price)} ${priceTaxLabel}`}</small></div>
                 <div className="quantity"><button onClick={() => changeQuantity(index, -1)} aria-label={`Diminuer la quantité de ${product.name}`}><Minus size={13} /></button><b>{item.quantity}</b><button onClick={() => changeQuantity(index, 1)} disabled={item.quantity >= MAX_ITEM_QUANTITY} aria-label={`Augmenter la quantité de ${product.name}`}><Plus size={13} /></button></div>
               </div>
             );
           })}
         </div>
-        {cart.length > 0 && <div className="drawer-footer"><div><span>Total TTC</span><strong>{formatMoney(total)}</strong></div><small>Sous-total {formatMoney(subtotal)} · livraison {shipping === 0 ? "offerte" : formatMoney(shipping)} en France métropolitaine.</small><Button onClick={onCheckout}>Passer la commande</Button></div>}
+        {cart.length > 0 && <div className="drawer-footer"><div><span>Total {priceTaxLabel}</span><strong>{formatMoney(total)}</strong></div><small>Sous-total {formatMoney(subtotal)} · livraison {shipping === 0 ? "offerte" : formatMoney(shipping)} en France métropolitaine.</small><Button onClick={onCheckout}>Passer la commande</Button></div>}
       </aside>
-    </div>
-  );
-}
-
-function CheckoutDialog({ open, onClose, cart, onOpenLegal }) {
-  const dialogRef = useModalA11y(open, onClose);
-  const [form, setForm] = useState({ businessName: "", email: "", destinationUrl: "", professionalCustomer: false, termsAccepted: false });
-  const [attemptId] = useState(() => window.crypto.randomUUID());
-  const [status, setStatus] = useState("idle");
-  const [error, setError] = useState("");
-
-  const update = (event) => {
-    const { name, value, checked, type } = event.target;
-    setForm((current) => ({ ...current, [name]: type === "checkbox" ? checked : value }));
-  };
-  const subtotal = cartSubtotal(cart);
-  const shipping = calculateShipping(subtotal);
-  const total = subtotal + shipping;
-
-  const submit = async (event) => {
-    event.preventDefault();
-    setStatus("loading");
-    setError("");
-    try {
-      const response = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          attemptId,
-          items: cart,
-          customer: { businessName: form.businessName, email: form.email, destinationUrl: form.destinationUrl },
-          professionalCustomer: form.professionalCustomer,
-          termsAccepted: form.termsAccepted,
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Paiement indisponible.");
-      window.location.assign(data.url);
-    } catch (requestError) {
-      setStatus("error");
-      setError(requestError.message);
-    }
-  };
-
-  if (!open) return null;
-  return (
-    <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <section ref={dialogRef} className="checkout-dialog" role="dialog" aria-modal="true" aria-labelledby="checkout-title" aria-describedby="checkout-description" tabIndex="-1">
-        <button className="dialog-close" onClick={onClose} aria-label="Fermer"><X /></button>
-        <span className="kicker">COMMANDE PROFESSIONNELLE SÉCURISÉE</span>
-        <h2 id="checkout-title">On prépare<br />ton Tapote.</h2>
-        <p id="checkout-description">Ces informations lancent la préparation. Les liens multiples et les détails de personnalisation seront confirmés au BAT avant production.</p>
-        <form onSubmit={submit}>
-          <label><span>Nom du commerce *</span><input name="businessName" value={form.businessName} onChange={update} required placeholder="Ex. Café des Amis" /></label>
-          <label><span>E-mail de commande *</span><input type="email" name="email" value={form.email} onChange={update} required placeholder="aymeric@tapote.fr" /></label>
-          <label><span>Lien principal à ouvrir</span><input type="url" name="destinationUrl" value={form.destinationUrl} onChange={update} placeholder="https://…" pattern="https://.*" title="Le lien doit commencer par https://" /></label>
-          <div className="checkout-pilot-beta"><b>Pilot est en bêta privée.</b><span>Cette commande porte uniquement sur les objets : aucun abonnement n’est ajouté ni présélectionné.</span></div>
-          <label className="checkout-terms"><input type="checkbox" name="professionalCustomer" checked={form.professionalCustomer} onChange={update} required /><span>Je confirme passer cette commande exclusivement pour les besoins de mon activité professionnelle et ne pas agir en qualité de consommateur.</span></label>
-          <label className="checkout-terms"><input type="checkbox" name="termsAccepted" checked={form.termsAccepted} onChange={update} required /><span>J’ai lu et j’accepte les <button type="button" onClick={() => onOpenLegal("cgv")}>CGV</button> et la <button type="button" onClick={() => onOpenLegal("privacy")}>politique de confidentialité</button>{legalDetails.version ? ` — version ${legalDetails.version}` : ""}.</span></label>
-          <div className="checkout-costs"><span>Sous-total TTC <b>{formatMoney(subtotal)}</b></span><span>Livraison France <b>{shipping === 0 ? "Offerte" : formatMoney(shipping)}</b></span></div>
-          <div className="checkout-total"><span>Total à payer</span><strong>{formatMoney(total)} TTC</strong></div>
-          <Button type="submit" disabled={status === "loading" || !attemptId}>{status === "loading" ? "Connexion à Stripe…" : "Continuer vers le paiement sécurisé"}</Button>
-          {import.meta.env.DEV && <small>Mode développement : sans clés Stripe, aucune somme n’est débitée.</small>}
-          {error && <p className="form-message form-error" role="alert">{error}</p>}
-        </form>
-      </section>
     </div>
   );
 }
@@ -1311,17 +1487,16 @@ function StatusBanner() {
 function StorefrontApp() {
   const [cart, setCart] = useState(loadCart);
   const [cartOpen, setCartOpen] = useState(false);
-  const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState("comptoir");
   const [legal, setLegal] = useState(null);
-  const [returnToCheckout, setReturnToCheckout] = useState(false);
+  const path = window.location.pathname.replace(/\/+$/, "") || "/";
 
   useEffect(() => { localStorage.setItem("tapote-cart", JSON.stringify(cart)); }, [cart]);
   useEffect(() => {
-    document.body.classList.toggle("no-scroll", cartOpen || checkoutOpen || Boolean(legal) || mobileOpen);
+    document.body.classList.toggle("no-scroll", cartOpen || Boolean(legal) || mobileOpen);
     return () => document.body.classList.remove("no-scroll");
-  }, [cartOpen, checkoutOpen, legal, mobileOpen]);
+  }, [cartOpen, legal, mobileOpen]);
   useEffect(() => {
     if (!mobileOpen) return undefined;
     const closeOnEscape = (event) => event.key === "Escape" && setMobileOpen(false);
@@ -1352,27 +1527,33 @@ function StorefrontApp() {
     document.getElementById("configurateur")?.scrollIntoView({ behavior: "smooth" });
   };
   const openFooterLegal = (page) => {
-    setReturnToCheckout(false);
     setLegal(page);
   };
-  const openCheckoutLegal = (page) => {
-    setCheckoutOpen(false);
-    setReturnToCheckout(true);
-    setLegal(page);
-  };
-  const closeLegal = () => {
-    setLegal(null);
-    if (returnToCheckout) {
-      setReturnToCheckout(false);
-      setCheckoutOpen(true);
-    }
-  };
+  const closeLegal = () => setLegal(null);
+
+  const purchasePage = path === "/panier"
+    ? <CartPage cart={cart} setCart={setCart} />
+    : path === "/commande/confirmee"
+      ? <OrderStatusPage setCart={setCart} />
+      : path === "/commande"
+        ? <CheckoutPage cart={cart} onOpenLegal={setLegal} />
+        : null;
+
+  if (purchasePage) return (
+    <>
+      <a className="skip-link" href="#main-content">Aller au contenu principal</a>
+      <Header cartCount={cartCount} onCart={() => window.location.assign("/panier")} mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
+      {purchasePage}
+      <Footer setLegal={openFooterLegal} />
+      <LegalDialog page={legal} onClose={closeLegal} />
+    </>
+  );
 
   return (
     <>
       <a className="skip-link" href="#main-content">Aller au contenu principal</a>
       <StatusBanner />
-      <Header cartCount={cartCount} onCart={() => setCartOpen(true)} mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
+      <Header cartCount={cartCount} onCart={() => window.location.assign("/panier")} mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
       <main id="main-content">
         <Hero />
         <SignalBand />
@@ -1388,8 +1569,7 @@ function StorefrontApp() {
         <FAQ />
       </main>
       <Footer setLegal={openFooterLegal} />
-      <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} cart={cart} setCart={setCart} onCheckout={() => { setCartOpen(false); setCheckoutOpen(true); }} />
-      <CheckoutDialog open={checkoutOpen} onClose={() => setCheckoutOpen(false)} cart={cart} onOpenLegal={openCheckoutLegal} />
+      <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} cart={cart} setCart={setCart} onCheckout={() => window.location.assign("/commande")} />
       <LegalDialog page={legal} onClose={closeLegal} />
     </>
   );

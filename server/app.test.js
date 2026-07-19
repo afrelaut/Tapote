@@ -73,6 +73,7 @@ describe("API Tapote", () => {
     expect(checkout.status).toBe(200);
     expect(checkout.body.demo).toBe(true);
     expect(new URL(checkout.body.url).origin).toBe("http://localhost:5173");
+    expect(new URL(checkout.body.url).pathname).toBe("/commande/confirmee");
     const sessionId = new URL(checkout.body.url).searchParams.get("session_id");
     const status = await request(app).get(`/api/checkout/status?session_id=${encodeURIComponent(sessionId)}`);
     expect(status.body).toEqual({ status: "demo" });
@@ -93,8 +94,8 @@ describe("API Tapote", () => {
 
     expect(response.status).toBe(200);
     const checkout = stripe.checkout.sessions.create.mock.calls[0][0];
-    expect(checkout.success_url).toBe("http://localhost:5173/?commande=confirmee&session_id={CHECKOUT_SESSION_ID}");
-    expect(checkout.cancel_url).toBe("http://localhost:5173/?commande=annulee");
+    expect(checkout.success_url).toBe("http://localhost:5173/commande/confirmee?session_id={CHECKOUT_SESSION_ID}");
+    expect(checkout.cancel_url).toBe("http://localhost:5173/commande?commande=annulee");
   });
 
   it("refuse les URL non HTTPS, les particuliers et l’absence d’acceptation des CGV", async () => {

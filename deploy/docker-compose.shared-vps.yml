@@ -3,7 +3,7 @@ name: tapote
 # Variante sûre quand un autre site utilise déjà les ports 80/443 du VPS.
 # Elle ne lance pas de second reverse proxy et publie Tapote uniquement sur
 # la boucle locale du serveur. Le proxy HTTPS existant reste l'unique porte
-# d'entrée publique et doit transférer les domaines Tapote vers 127.0.0.1:3010.
+# d'entrée publique et doit transférer les domaines Tapote vers 127.0.0.1:3011.
 services:
   app:
     build:
@@ -14,6 +14,7 @@ services:
         VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY:?VITE_SUPABASE_PUBLISHABLE_KEY manquant}
         VITE_PILOT_DEMO: ${VITE_PILOT_DEMO:-false}
         VITE_REDIRECT_BASE_URL: ${VITE_REDIRECT_BASE_URL:-https://t.tapote.fr}
+        VITE_STRIPE_MODE: ${VITE_STRIPE_MODE:-sandbox}
         VITE_LEGAL_COMPANY: ${VITE_LEGAL_COMPANY:?VITE_LEGAL_COMPANY manquant}
         VITE_LEGAL_CAPITAL: ${VITE_LEGAL_CAPITAL:?VITE_LEGAL_CAPITAL manquant}
         VITE_LEGAL_ADDRESS: ${VITE_LEGAL_ADDRESS:?VITE_LEGAL_ADDRESS manquant}
@@ -29,7 +30,7 @@ services:
       - ../.env.production
     restart: unless-stopped
     ports:
-      - "127.0.0.1:${TAPOTE_HOST_PORT:-3010}:3001"
+      - "127.0.0.1:${TAPOTE_HOST_PORT:-3011}:3001"
     networks:
       - tapote
     security_opt:

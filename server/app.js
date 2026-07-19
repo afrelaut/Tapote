@@ -390,7 +390,7 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
         if (!config.allowDemoCheckout) return response.status(503).json({ error: "Le paiement n’est pas encore disponible." });
         const demoId = `demo_${randomUUID()}`;
         await repository.markDemoOrder(attemptId, demoId);
-        return response.json({ demo: true, url: `${returnUrl}/?commande=demo&session_id=${encodeURIComponent(demoId)}` });
+        return response.json({ demo: true, url: `${returnUrl}/commande/confirmee?session_id=${encodeURIComponent(demoId)}` });
       }
 
       const readiness = getProductionChecks(config, { repository, storage });
@@ -464,8 +464,8 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
         phone_number_collection: { enabled: true },
         automatic_tax: { enabled: config.stripeAutomaticTax },
         payment_intent_data: { metadata: { orderToken: attemptId } },
-        success_url: `${returnUrl}/?commande=confirmee&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${returnUrl}/?commande=annulee`,
+        success_url: `${returnUrl}/commande/confirmee?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${returnUrl}/commande?commande=annulee`,
         metadata: { orderToken: attemptId, businessName: customer.businessName, customerType: "business" },
         custom_text: {
           shipping_address: { message: "Commande professionnelle : votre objet sera personnalisé, configuré et testé avant expédition." },

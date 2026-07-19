@@ -2,7 +2,7 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { Configurator } from "./App.jsx";
+import { CartPage, CheckoutPage, Configurator } from "./App.jsx";
 import { DEVICE_THEMES } from "./deviceThemes.js";
 
 
@@ -118,5 +118,42 @@ describe("Configurateur Tapote", () => {
     expect(screen.getByLabelText("Aperçu de La Plaque 12 × 12 pour Réservation")).toBeInTheDocument();
     expect(screen.getByDisplayValue("STUDIO LUNE")).toBeInTheDocument();
     expect(screen.getByText("On se revoit quand ?")).toBeInTheDocument();
+  });
+});
+
+describe("Tunnel de commande B2B", () => {
+  const cart = [{
+    productId: "comptoir",
+    actionId: "avis",
+    quantity: 2,
+    brandName: "CAFÉ TEST",
+    theme: "blue",
+    targetId: "cafe",
+    designStyle: "signature",
+    customHeadline: "",
+    destinationUrl: "https://example.com",
+    brandLogoId: "",
+    logoFileName: "",
+  }];
+
+  it("affiche une vraie page panier avec récapitulatif et étape suivante", () => {
+    render(<CartPage cart={cart} setCart={vi.fn()} />);
+
+    expect(screen.getByRole("heading", { name: "Votre panier." })).toBeVisible();
+    expect(screen.getByText("Le Comptoir A6")).toBeVisible();
+    expect(screen.getByRole("button", { name: /Renseigner mes coordonnées/i })).toBeVisible();
+    expect(screen.getByRole("navigation", { name: "Étapes de la commande" })).toBeVisible();
+  });
+
+  it("prépare la commande sans appeler Stripe avant l’action explicite du client", () => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+    render(<CheckoutPage cart={cart} onOpenLegal={vi.fn()} />);
+
+    expect(screen.getByRole("heading", { name: "Préparons la commande." })).toBeVisible();
+    expect(screen.getByLabelText("Nom du commerce *")).toBeRequired();
+    expect(screen.getByLabelText(/exclusivement pour les besoins/i)).toBeRequired();
+    expect(screen.getByRole("button", { name: /Continuer vers Stripe Sandbox/i })).toBeVisible();
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 });
