@@ -120,7 +120,6 @@ const legalDetails = {
   director: import.meta.env.VITE_LEGAL_DIRECTOR || "",
   contact: import.meta.env.VITE_LEGAL_CONTACT || "",
   host: import.meta.env.VITE_LEGAL_HOST || "",
-  mediator: import.meta.env.VITE_LEGAL_MEDIATOR || "",
   privacyContact: import.meta.env.VITE_LEGAL_PRIVACY_CONTACT || "",
   returnsAddress: import.meta.env.VITE_LEGAL_RETURNS_ADDRESS || "",
   version: import.meta.env.VITE_LEGAL_VERSION || "",
@@ -1105,17 +1104,23 @@ function LegalDialog({ page, onClose }) {
         <h2 id="legal-title">{titles[page]}</h2>
         <div id="legal-content" className="legal-content">
         {page === "legal" && <>
-          <p>Éditeur : <strong>{legalDetails.company || "à renseigner"}</strong>, capital <strong>{legalDetails.capital || "à renseigner"}</strong>, siège <strong>{legalDetails.address || "à renseigner"}</strong>, SIREN/RCS/RNE <strong>{legalDetails.registration || "à renseigner"}</strong>, TVA <strong>{legalDetails.vat || "à renseigner"}</strong>.</p>
+          <p>Éditeur : <strong>{legalDetails.company || "à renseigner"}</strong>. Statut juridique : <strong>{legalDetails.capital || "à renseigner"}</strong>. Adresse professionnelle : <strong>{legalDetails.address || "à renseigner"}</strong>. Immatriculation SIREN/RCS/RNE : <strong>{legalDetails.registration || "à renseigner"}</strong>. Régime de TVA : <strong>{legalDetails.vat || "à renseigner"}</strong>.</p>
           <p>Direction de la publication : <strong>{legalDetails.director || "à renseigner"}</strong>. Contact : <strong>{legalDetails.contact || "à renseigner"}</strong>. Hébergeur : <strong>{legalDetails.host || "à renseigner"}</strong>.</p>
         </>}
         {page === "cgv" && <>
-          <p>Version des conditions : <strong>{legalDetails.version || "à renseigner"}</strong>. Les prix affichés sont TTC. La livraison standard en France métropolitaine coûte {formatMoney(SHIPPING.standardPrice)} et devient offerte dès {formatMoney(SHIPPING.freeThreshold)}. Le délai annoncé est de 4 à 6 jours ouvrés après validation du BAT, sous réserve des conditions définitives validées.</p>
-          <p>Adresse de retour et réclamations : <strong>{legalDetails.returnsAddress || "à renseigner"}</strong>. Médiateur de la consommation : <strong>{legalDetails.mediator || "à renseigner"}</strong>.</p>
-          <p>Les produits réellement personnalisés peuvent relever de l’exception légale au droit de rétractation. Les garanties légales, modalités de retour et responsabilités restent applicables selon les CGV validées.</p>
+          <p><strong>Champ d’application.</strong> Version <strong>{legalDetails.version || "à renseigner"}</strong>. La boutique Tapote est exclusivement réservée aux personnes agissant à des fins professionnelles. Toute commande passée en qualité de consommateur est interdite. Le client confirme son statut professionnel avant d’accéder au paiement.</p>
+          <p><strong>Produits et commande.</strong> Les caractéristiques essentielles, quantités, personnalisations et prix sont récapitulés avant paiement. La commande devient ferme après paiement accepté par Stripe. Le BAT transmis après commande doit être validé avant production. Pilot n’est pas inclus dans l’achat des supports et ne fait l’objet d’aucun abonnement présélectionné.</p>
+          <p><strong>Prix et paiement.</strong> Les prix affichés sont en euros et présentés TTC. Le régime de TVA applicable figure dans les mentions légales. Le paiement par carte est exigible à la commande. Pour toute somme exceptionnellement facturée à échéance, un retard entraîne de plein droit les pénalités prévues par l’article L.441-10 du Code de commerce ainsi que l’indemnité forfaitaire de 40 € pour frais de recouvrement.</p>
+          <p><strong>Livraison.</strong> La livraison standard en France métropolitaine coûte {formatMoney(SHIPPING.standardPrice)} et devient offerte dès {formatMoney(SHIPPING.freeThreshold)}. Le délai indicatif est de 4 à 6 jours ouvrés après validation du BAT. Un retard raisonnable indépendant de Tapote ne permet pas d’annuler automatiquement la commande ; le client doit contacter Tapote afin de convenir d’une solution.</p>
+          <p><strong>Personnalisation, annulation et conformité.</strong> Une demande d’annulation peut être adressée avant validation du BAT. Après validation du BAT ou lancement de la production, l’annulation n’est possible qu’avec l’accord écrit de Tapote. Le client doit vérifier le BAT, notamment les textes, liens et visuels. Toute non-conformité ou avarie apparente doit être signalée rapidement avec des justificatifs, sans priver le client de ses droits légaux applicables.</p>
+          <p><strong>Réclamations et retours.</strong> Contact et adresse : <strong>{legalDetails.returnsAddress || "à renseigner"}</strong>. Les parties rechercheront d’abord une solution amiable. La médiation de la consommation et le droit de rétractation du Code de la consommation ne s’appliquent pas aux commandes conclues exclusivement entre professionnels.</p>
+          <p><strong>Responsabilité et droit applicable.</strong> Tapote ne répond pas du contenu ou de la disponibilité des destinations externes choisies par le client. Sa responsabilité ne peut être engagée pour un usage non conforme des supports, sans exclure les responsabilités qui ne peuvent légalement être limitées. Les conditions sont régies par le droit français ; à défaut d’accord amiable, les juridictions compétentes sont déterminées selon les règles applicables.</p>
         </>}
         {page === "privacy" && <>
-          <p>Tapote collecte uniquement les informations nécessaires aux commandes, aux demandes de devis, à la sécurité et au support. Les prestataires techniques prévus sont Stripe pour le paiement, Supabase pour l’hébergement des données et Resend pour les notifications opérationnelles.</p>
-          <p>Pour exercer un droit d’accès, de rectification, d’effacement ou d’opposition : <strong>{legalDetails.privacyContact || "à renseigner"}</strong>. Les durées de conservation et éventuels transferts internationaux doivent être détaillés dans la politique validée avant ouverture.</p>
+          <p><strong>Responsable et finalités.</strong> <strong>{legalDetails.company || "Tapote"}</strong> traite les coordonnées professionnelles, données de commande, personnalisations, fichiers transmis et données techniques nécessaires à l’exécution des commandes, au support, à la sécurité, à la facturation et au respect de ses obligations légales.</p>
+          <p><strong>Bases et destinataires.</strong> Les traitements reposent selon le cas sur l’exécution du contrat, les obligations légales et l’intérêt légitime de sécuriser et gérer le service. Les données sont accessibles aux seules personnes habilitées et aux prestataires nécessaires : Stripe pour le paiement, Supabase pour les données et fichiers, Resend pour les notifications, et l’hébergeur du service.</p>
+          <p><strong>Conservation.</strong> Les pièces de commande et de facturation sont conservées pendant les durées légales applicables, notamment jusqu’à dix ans pour les documents comptables. Les demandes commerciales sans commande sont conservées au maximum trois ans après le dernier contact. Les journaux de sécurité sont conservés pendant une durée proportionnée, au maximum douze mois sauf incident ou obligation légale. Les fichiers de personnalisation sont conservés le temps nécessaire à la production, au support et à la défense des droits de Tapote.</p>
+          <p><strong>Droits et transferts.</strong> Pour exercer un droit d’accès, de rectification, d’effacement, de limitation ou d’opposition, ou poser une question : <strong>{legalDetails.privacyContact || "à renseigner"}</strong>. Une réclamation peut être adressée à la CNIL. Certains prestataires peuvent traiter des données hors de l’Espace économique européen selon les garanties prévues par la réglementation et leurs engagements contractuels.</p>
         </>}
         </div>
       </section>
@@ -1173,7 +1178,7 @@ function CartDrawer({ open, onClose, cart, setCart, onCheckout }) {
 
 function CheckoutDialog({ open, onClose, cart, onOpenLegal }) {
   const dialogRef = useModalA11y(open, onClose);
-  const [form, setForm] = useState({ businessName: "", email: "", destinationUrl: "", termsAccepted: false });
+  const [form, setForm] = useState({ businessName: "", email: "", destinationUrl: "", professionalCustomer: false, termsAccepted: false });
   const [attemptId] = useState(() => window.crypto.randomUUID());
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
@@ -1198,6 +1203,7 @@ function CheckoutDialog({ open, onClose, cart, onOpenLegal }) {
           attemptId,
           items: cart,
           customer: { businessName: form.businessName, email: form.email, destinationUrl: form.destinationUrl },
+          professionalCustomer: form.professionalCustomer,
           termsAccepted: form.termsAccepted,
         }),
       });
@@ -1215,7 +1221,7 @@ function CheckoutDialog({ open, onClose, cart, onOpenLegal }) {
     <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <section ref={dialogRef} className="checkout-dialog" role="dialog" aria-modal="true" aria-labelledby="checkout-title" aria-describedby="checkout-description" tabIndex="-1">
         <button className="dialog-close" onClick={onClose} aria-label="Fermer"><X /></button>
-        <span className="kicker">COMMANDE SÉCURISÉE</span>
+        <span className="kicker">COMMANDE PROFESSIONNELLE SÉCURISÉE</span>
         <h2 id="checkout-title">On prépare<br />ton Tapote.</h2>
         <p id="checkout-description">Ces informations lancent la préparation. Les liens multiples et les détails de personnalisation seront confirmés au BAT avant production.</p>
         <form onSubmit={submit}>
@@ -1223,6 +1229,7 @@ function CheckoutDialog({ open, onClose, cart, onOpenLegal }) {
           <label><span>E-mail de commande *</span><input type="email" name="email" value={form.email} onChange={update} required placeholder="aymeric@tapote.fr" /></label>
           <label><span>Lien principal à ouvrir</span><input type="url" name="destinationUrl" value={form.destinationUrl} onChange={update} placeholder="https://…" pattern="https://.*" title="Le lien doit commencer par https://" /></label>
           <div className="checkout-pilot-beta"><b>Pilot est en bêta privée.</b><span>Cette commande porte uniquement sur les objets : aucun abonnement n’est ajouté ni présélectionné.</span></div>
+          <label className="checkout-terms"><input type="checkbox" name="professionalCustomer" checked={form.professionalCustomer} onChange={update} required /><span>Je confirme passer cette commande exclusivement pour les besoins de mon activité professionnelle et ne pas agir en qualité de consommateur.</span></label>
           <label className="checkout-terms"><input type="checkbox" name="termsAccepted" checked={form.termsAccepted} onChange={update} required /><span>J’ai lu et j’accepte les <button type="button" onClick={() => onOpenLegal("cgv")}>CGV</button> et la <button type="button" onClick={() => onOpenLegal("privacy")}>politique de confidentialité</button>{legalDetails.version ? ` — version ${legalDetails.version}` : ""}.</span></label>
           <div className="checkout-costs"><span>Sous-total TTC <b>{formatMoney(subtotal)}</b></span><span>Livraison France <b>{shipping === 0 ? "Offerte" : formatMoney(shipping)}</b></span></div>
           <div className="checkout-total"><span>Total à payer</span><strong>{formatMoney(total)} TTC</strong></div>

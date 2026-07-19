@@ -196,11 +196,14 @@ Garde ces valeurs tant que la recette n’est pas terminée :
 ALLOW_DEMO_CHECKOUT=false
 LEGAL_READY=false
 STRIPE_AUTOMATIC_TAX_ENABLED=false
+STRIPE_SANDBOX_CHECKOUT_ENABLED=false
 TRUST_PROXY_HOPS=1
 VITE_PILOT_DEMO=false
 ```
 
-`LEGAL_READY=true` ne vient qu’après validation des mentions, CGV, confidentialité, médiateur, TVA et droit de rétractation/personnalisation. Stripe Tax reste désactivé tant que vos obligations et inscriptions fiscales ne sont pas configurées.
+`LEGAL_READY=true` ne vient qu’après validation des mentions, CGV B2B, confidentialité, TVA et règles de personnalisation. La boutique reste exclusivement professionnelle. Stripe Tax reste désactivé tant que les obligations et inscriptions fiscales ne sont pas configurées.
+
+Pour une recette temporaire sur le VPS avec une clé `sk_test_`, passe `STRIPE_SANDBOX_CHECKOUT_ENABLED=true`, reconstruis le conteneur et réalise le parcours complet. `/api/ready` reste volontairement à `503` car cette route signifie « prêt à vendre réellement ». Remets ensuite cette variable à `false`. Le feu vert exige une clé `sk_live_` et un webhook créé séparément dans l’environnement live Stripe.
 
 ## 5. Pointer tapote.fr vers le VPS
 
@@ -373,7 +376,7 @@ Le KVM 2 est adapté pour démarrer cette architecture légère parce que Postgr
 - [ ] CI locale et GitHub verte ;
 - [ ] DNS et TLS valides pour les cinq noms ;
 - [ ] port 3001 inaccessible depuis Internet ;
-- [ ] `/api/health` et `/api/ready` à `200` ;
+- [ ] `/api/health` à `200`, puis `/api/ready` à `200` seulement avec Stripe live ;
 - [ ] achat sandbox complet et webhook rejoué sans doublon ;
 - [ ] achat live réel puis remboursement validé ;
 - [ ] tarifs, TVA, livraison et e-mails cohérents ;

@@ -97,7 +97,7 @@ Documentation officielle : [domaines Resend](https://resend.com/docs/dashboard/d
 
 ## 6. Renseigner et valider le juridique
 
-Complète toutes les variables suivantes avec des informations validées : société/nom, capital, adresse, immatriculation, TVA, directeur de publication, contact, hébergeur, médiateur, contact vie privée, adresse de retour et version des textes.
+La boutique est réservée aux professionnels. Complète toutes les variables suivantes avec des informations validées : identité de l’entrepreneur, statut juridique, adresse, immatriculation, TVA, directeur de publication, contact avec téléphone, hébergeur, contact vie privée, adresse de réclamation/retour et version des textes.
 
 ```dotenv
 LEGAL_READY=false
@@ -110,7 +110,6 @@ VITE_LEGAL_VAT=...
 VITE_LEGAL_DIRECTOR=...
 VITE_LEGAL_CONTACT=...
 VITE_LEGAL_HOST=...
-VITE_LEGAL_MEDIATOR=...
 VITE_LEGAL_PRIVACY_CONTACT=...
 VITE_LEGAL_RETURNS_ADDRESS=...
 VITE_LEGAL_VERSION=2026-07-16
@@ -118,7 +117,7 @@ VITE_LEGAL_VERSION=2026-07-16
 
 Les variables `VITE_*` sont publiques et doivent exister pendant le **build** et au **runtime**. Ne mets `LEGAL_READY=true` qu’après validation. Le serveur exige que les deux versions soient identiques.
 
-Points à faire vérifier : délais/BAT, personnalisation et rétractation, garanties, retours, médiateur, politique de confidentialité, sous-traitants, conservation, TVA et éventuels IDU REP. Sources utiles : [obligations e-commerce DGCCRF](https://www.economie.gouv.fr/entreprises/site-internet-mentions-obligatoires), [médiation de la consommation](https://www.economie.gouv.fr/mediation-conso).
+Le checkout exige deux consentements distincts : statut professionnel et acceptation des CGV B2B. Une activité B2C future nécessitera un nouveau parcours, des CGV consommateurs et l’adhésion préalable à un médiateur de la consommation. Points à faire vérifier : délais/BAT, personnalisation, garanties, retours, politique de confidentialité, sous-traitants, conservation, TVA et éventuels IDU REP. Source utile : [mentions obligatoires — Économie.gouv.fr](https://www.economie.gouv.fr/entreprises/developper-son-entreprise/innover-et-numeriser-son-entreprise/mentions-sur-votre-site-internet-les-obligations-respecter).
 
 ## 7. Ajouter Sentry
 

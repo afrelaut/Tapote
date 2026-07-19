@@ -25,7 +25,6 @@ export function loadConfig(env = process.env) {
     "VITE_LEGAL_DIRECTOR",
     "VITE_LEGAL_CONTACT",
     "VITE_LEGAL_HOST",
-    "VITE_LEGAL_MEDIATOR",
     "VITE_LEGAL_PRIVACY_CONTACT",
     "VITE_LEGAL_RETURNS_ADDRESS",
     "VITE_LEGAL_VERSION",
@@ -44,6 +43,7 @@ export function loadConfig(env = process.env) {
     stripeSecretKey: String(env.STRIPE_SECRET_KEY || "").trim(),
     stripeWebhookSecret: String(env.STRIPE_WEBHOOK_SECRET || "").trim(),
     stripeAutomaticTax: readBoolean(env.STRIPE_AUTOMATIC_TAX_ENABLED, false),
+    stripeSandboxCheckoutEnabled: readBoolean(env.STRIPE_SANDBOX_CHECKOUT_ENABLED, false),
     legalReady: readBoolean(env.LEGAL_READY, false),
     legalVersion: String(env.LEGAL_VERSION || "").trim(),
     legalContentReady: legalPublicFields.every((field) => String(env[field] || "").trim()),
@@ -64,10 +64,12 @@ export function loadConfig(env = process.env) {
 }
 
 export function getProductionChecks(config, services = {}) {
+  const stripeKeyPrefix = config.stripeSecretKey.split("_").slice(0, 2).join("_");
   const checks = {
     https: !config.isProduction || config.publicUrl.startsWith("https://"),
     legal: config.legalReady && config.legalContentReady && config.legalVersionsMatch,
-    stripe: Boolean(config.stripeSecretKey),
+    stripeConfigured: Boolean(config.stripeSecretKey),
+    stripeLive: !config.isProduction || stripeKeyPrefix === "sk_live",
     stripeWebhook: Boolean(config.stripeWebhookSecret),
     database: Boolean(config.databaseUrl) && services.repository?.durable === true,
     privateStorage: Boolean(config.supabaseUrl && config.supabaseSecretKey) && services.storage?.durable === true,

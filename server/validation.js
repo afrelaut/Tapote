@@ -41,6 +41,7 @@ export const checkoutSchema = z.object({
     email: z.email().trim().max(150).transform((value) => value.toLowerCase()),
     destinationUrl: optionalHttpsUrl,
   }).strict(),
+  professionalCustomer: z.literal(true, { error: "La boutique Tapote est réservée aux clients professionnels." }),
   termsAccepted: z.literal(true),
 }).strict();
 

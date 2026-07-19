@@ -331,9 +331,10 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
   app.post("/api/checkout", checkoutLimiter, async (request, response, next) => {
     const parsed = parseRequest(checkoutSchema, request.body);
     if (parsed.error) return response.status(400).json({ error: parsed.error });
-    const { attemptId, customer, termsAccepted, items } = parsed.data;
+    const { attemptId, customer, professionalCustomer, termsAccepted, items } = parsed.data;
     const returnUrl = checkoutReturnUrl(request, config);
     void termsAccepted;
+    void professionalCustomer;
 
     try {
       const validItems = [];
@@ -393,8 +394,14 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
       }
 
       const readiness = getProductionChecks(config, { repository, storage });
-      if (config.isProduction && !readiness.ready) {
-        request.log.error({ missingChecks: Object.entries(readiness.checks).filter(([, ready]) => !ready).map(([name]) => name) }, "Checkout bloqué par la readiness");
+      const sandboxCheckout = config.isProduction
+        && config.stripeSandboxCheckoutEnabled
+        && config.stripeSecretKey.startsWith("sk_test_");
+      const missingChecks = Object.entries(readiness.checks)
+        .filter(([name, ready]) => !ready && !(sandboxCheckout && name === "stripeLive"))
+        .map(([name]) => name);
+      if (config.isProduction && missingChecks.length > 0) {
+        request.log.error({ missingChecks }, "Checkout bloqué par la readiness");
         return response.status(503).json({ error: "La boutique finalise sa configuration. Réessaie un peu plus tard." });
       }
       if (!config.legalReady || !config.legalVersion) {
@@ -451,10 +458,10 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
         payment_intent_data: { metadata: { orderToken: attemptId } },
         success_url: `${returnUrl}/?commande=confirmee&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${returnUrl}/?commande=annulee`,
-        metadata: { orderToken: attemptId, businessName: customer.businessName },
+        metadata: { orderToken: attemptId, businessName: customer.businessName, customerType: "business" },
         custom_text: {
-          shipping_address: { message: "Votre objet sera personnalisé, configuré et testé avant expédition." },
-          submit: { message: `En payant, vous confirmez votre commande et acceptez les CGV ${config.legalVersion}.` },
+          shipping_address: { message: "Commande professionnelle : votre objet sera personnalisé, configuré et testé avant expédition." },
+          submit: { message: `En payant, vous confirmez agir à titre professionnel et accepter les CGV B2B ${config.legalVersion}.` },
         },
       }, { idempotencyKey: `tapote-checkout-${attemptId}` });
 

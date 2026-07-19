@@ -40,6 +40,7 @@ const checkoutBody = (attemptId = "7e58b0a4-0c28-4a1b-a2c4-40fc8dc87a58") => ({
   attemptId,
   items: cart,
   customer: { businessName: "Café Test", email: "client@example.com", destinationUrl: "https://example.com/avis" },
+  professionalCustomer: true,
   termsAccepted: true,
 });
 
@@ -96,7 +97,7 @@ describe("API Tapote", () => {
     expect(checkout.cancel_url).toBe("http://localhost:5173/?commande=annulee");
   });
 
-  it("refuse les URL non HTTPS et l’absence d’acceptation des CGV", async () => {
+  it("refuse les URL non HTTPS, les particuliers et l’absence d’acceptation des CGV", async () => {
     const { app } = makeContext();
     const invalidUrl = checkoutBody();
     invalidUrl.customer.destinationUrl = "http://example.com";
@@ -104,6 +105,11 @@ describe("API Tapote", () => {
     const noTerms = checkoutBody();
     noTerms.termsAccepted = false;
     expect((await request(app).post("/api/checkout").send(noTerms)).status).toBe(400);
+    const consumer = checkoutBody();
+    consumer.professionalCustomer = false;
+    const consumerResponse = await request(app).post("/api/checkout").send(consumer);
+    expect(consumerResponse.status).toBe(400);
+    expect(consumerResponse.body.error).toMatch(/professionnels/i);
   });
 
   it("réutilise une session Stripe pour une même tentative", async () => {
@@ -229,7 +235,7 @@ describe("API Tapote", () => {
     const complete = makeContext({
       NODE_ENV: "production",
       PUBLIC_URL: "https://tapote.fr",
-      STRIPE_SECRET_KEY: "sk_test_ready",
+      STRIPE_SECRET_KEY: "sk_live_ready",
       STRIPE_WEBHOOK_SECRET: "whsec_ready",
       DATABASE_URL: "postgresql://unused",
       SUPABASE_URL: "https://example.supabase.co",
@@ -241,6 +247,35 @@ describe("API Tapote", () => {
       storage: { durable: true, healthCheck: vi.fn(async () => true) },
     });
     expect((await request(complete.app).get("/api/ready")).status).toBe(200);
+  });
+
+  it("autorise explicitement un checkout sandbox sans annoncer la vente prête", async () => {
+    const stripe = {
+      checkout: { sessions: {
+        create: vi.fn(async () => ({ id: "cs_test_sandbox", url: "https://checkout.stripe.test/sandbox" })),
+        retrieve: vi.fn(),
+      } },
+    };
+    const context = makeContext({
+      NODE_ENV: "production",
+      PUBLIC_URL: "https://tapote.fr",
+      STRIPE_SECRET_KEY: "sk_test_sandbox",
+      STRIPE_WEBHOOK_SECRET: "whsec_sandbox",
+      STRIPE_SANDBOX_CHECKOUT_ENABLED: "true",
+      DATABASE_URL: "postgresql://unused",
+      SUPABASE_URL: "https://example.supabase.co",
+      SUPABASE_SECRET_KEY: "sb_secret_ready",
+      RESEND_API_KEY: "re_ready",
+      ORDER_NOTIFICATION_EMAIL: "commandes@example.com",
+    }, stripe, {
+      repository: Object.assign(createRepository(loadConfig({ NODE_ENV: "test" })), { durable: true }),
+      storage: { durable: true, healthCheck: vi.fn(async () => true) },
+    });
+
+    expect((await request(context.app).get("/api/ready")).status).toBe(503);
+    const checkout = await request(context.app).post("/api/checkout").send(checkoutBody("da58b0a4-0c28-4a1b-a2c4-40fc8dc87a62"));
+    expect(checkout.status).toBe(200);
+    expect(checkout.body.url).toBe("https://checkout.stripe.test/sandbox");
   });
 
   it("vérifie la signature réelle du fichier avant stockage", async () => {
