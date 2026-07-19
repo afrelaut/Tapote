@@ -437,6 +437,14 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
         line_items: lineItems,
         customer_email: customer.email,
         customer_creation: "always",
+        tax_id_collection: { enabled: true },
+        invoice_creation: {
+          enabled: true,
+          invoice_data: {
+            description: `Commande professionnelle Tapote · ${attemptId}`,
+            metadata: { orderToken: attemptId, customerType: "business" },
+          },
+        },
         billing_address_collection: "required",
         shipping_address_collection: { allowed_countries: ["FR"] },
         shipping_options: [{

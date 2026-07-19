@@ -205,6 +205,8 @@ VITE_PILOT_DEMO=false
 
 Pour une recette temporaire sur le VPS avec une clé `sk_test_`, passe `STRIPE_SANDBOX_CHECKOUT_ENABLED=true`, reconstruis le conteneur et réalise le parcours complet. `/api/ready` reste volontairement à `503` car cette route signifie « prêt à vendre réellement ». Remets ensuite cette variable à `false`. Le feu vert exige une clé `sk_live_` et un webhook créé séparément dans l’environnement live Stripe.
 
+Checkout collecte l’identité fiscale professionnelle et crée une facture pour chaque paiement ponctuel. Avant le test live, configure dans Stripe le nom légal de l’entrepreneur, l’adresse, le SIREN et le régime de TVA, puis vérifie le modèle PDF, la numérotation séquentielle au niveau du compte et l’envoi au client. Stripe fournit le document, mais l’exactitude de ses mentions reste de la responsabilité de Tapote.
+
 ## 5. Pointer tapote.fr vers le VPS
 
 Dans la zone DNS de `tapote.fr`, crée ces enregistrements `A` vers l’IPv4 du VPS :

@@ -161,6 +161,11 @@ describe("API Tapote", () => {
     const checkout = stripe.checkout.sessions.create.mock.calls[0][0];
     expect(checkout.line_items[0].price_data.unit_amount).toBe(4900);
     expect(checkout.shipping_options[0].shipping_rate_data.fixed_amount.amount).toBe(490);
+    expect(checkout.tax_id_collection).toEqual({ enabled: true });
+    expect(checkout.invoice_creation).toMatchObject({
+      enabled: true,
+      invoice_data: { metadata: { customerType: "business" } },
+    });
   });
 
   it("déduplique les événements Stripe signés", async () => {
