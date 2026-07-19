@@ -1,12 +1,25 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
-import PilotApp from "./PilotApp.jsx";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import PilotApp, { PilotLogin } from "./PilotApp.jsx";
 
 afterEach(() => cleanup());
 
 describe("Tapote Pilot", () => {
+  it("envoie un lien de réinitialisation sans révéler si le compte existe", async () => {
+    const resetPasswordForEmail = vi.fn(async () => ({ error: null }));
+    render(<PilotLogin authClient={{ auth: { resetPasswordForEmail } }} />);
+
+    fireEvent.change(screen.getByLabelText("Adresse e-mail invitée"), { target: { value: "CLIENT@EXAMPLE.COM " } });
+    fireEvent.click(screen.getByRole("button", { name: /Mot de passe oublié/ }));
+
+    await waitFor(() => expect(resetPasswordForEmail).toHaveBeenCalledWith("client@example.com", {
+      redirectTo: `${window.location.origin}/pilot/`,
+    }));
+    expect(screen.getByRole("status")).toHaveTextContent("Si cette adresse possède un compte Pilot");
+  });
+
   it("affiche le workspace de démonstration et permet de changer une destination", async () => {
     render(<PilotApp />);
 

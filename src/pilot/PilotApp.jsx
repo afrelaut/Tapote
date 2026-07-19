@@ -149,7 +149,7 @@ function PilotLogo({ dark = false }) {
   );
 }
 
-function PilotLogin({ onDemo }) {
+export function PilotLogin({ onDemo, authClient = pilotSupabase }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [method, setMethod] = useState("password");
@@ -169,8 +169,8 @@ function PilotLogin({ onDemo }) {
     setMessage("");
     const normalizedEmail = email.trim().toLowerCase();
     const { error } = method === "password"
-      ? await pilotSupabase.auth.signInWithPassword({ email: normalizedEmail, password })
-      : await pilotSupabase.auth.signInWithOtp({
+      ? await authClient.auth.signInWithPassword({ email: normalizedEmail, password })
+      : await authClient.auth.signInWithOtp({
         email: normalizedEmail,
         options: { shouldCreateUser: false, emailRedirectTo: `${window.location.origin}/pilot` },
       });
@@ -186,6 +186,28 @@ function PilotLogin({ onDemo }) {
       setCooldown(60);
       setMessage("Le lien de connexion vient de partir. Il reste valable pour une seule connexion.");
     }
+  };
+
+  const requestPasswordReset = async () => {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail) {
+      setStatus("error");
+      setMessage("Renseigne d’abord l’adresse e-mail de ton compte Pilot.");
+      return;
+    }
+    setStatus("loading");
+    setMessage("");
+    const { error } = await authClient.auth.resetPasswordForEmail(normalizedEmail, {
+      redirectTo: `${window.location.origin}/pilot/`,
+    });
+    if (error) {
+      setStatus("error");
+      setMessage("Impossible d’envoyer le lien de réinitialisation pour le moment.");
+      return;
+    }
+    setStatus("sent");
+    setCooldown(60);
+    setMessage("Si cette adresse possède un compte Pilot, un lien de réinitialisation vient d’être envoyé.");
   };
 
   return (
@@ -213,6 +235,7 @@ function PilotLogin({ onDemo }) {
               <span>{method === "password" ? "Ouvrir Pilot" : cooldown > 0 ? `Renvoyer dans ${cooldown} s` : "Recevoir mon lien"}</span>
             </button>
           </div>
+          {method === "password" && <button className="pilot-password-reset" type="button" onClick={requestPasswordReset} disabled={status === "loading" || cooldown > 0}>Mot de passe oublié&nbsp;?</button>}
           {message && <p id="pilot-login-message" className={`pilot-form-message pilot-form-${status}`} role={status === "error" ? "alert" : "status"}>{message}</p>}
         </form>
         <small>Accès sur invitation uniquement. Le lien sécurisé reste disponible sans mot de passe.</small>
@@ -222,6 +245,59 @@ function PilotLogin({ onDemo }) {
         <img src="/assets/tapote-hero-a6-hd.webp" alt="" />
         <div className="pilot-login-signal"><Radio size={34} /><b>294</b><span>interactions · 30 jours</span></div>
       </aside>
+    </main>
+  );
+}
+
+function PilotPasswordUpdate({ onComplete, authClient = pilotSupabase }) {
+  const [password, setPassword] = useState("");
+  const [confirmation, setConfirmation] = useState("");
+  const [status, setStatus] = useState("idle");
+  const [message, setMessage] = useState("");
+
+  const submit = async (event) => {
+    event.preventDefault();
+    if (password !== confirmation) {
+      setStatus("error");
+      setMessage("Les deux mots de passe ne correspondent pas.");
+      return;
+    }
+    setStatus("loading");
+    setMessage("");
+    const { error } = await authClient.auth.updateUser({ password });
+    if (error) {
+      setStatus("error");
+      setMessage("Le mot de passe n’a pas pu être mis à jour. Demande un nouveau lien.");
+      return;
+    }
+    window.history.replaceState({}, document.title, "/pilot/");
+    setStatus("sent");
+    setMessage("Mot de passe mis à jour. Ouverture de Pilot…");
+    window.setTimeout(onComplete, 500);
+  };
+
+  return (
+    <main className="pilot-login pilot-password-update">
+      <section className="pilot-login-copy">
+        <PilotLogo />
+        <div className="pilot-login-heading">
+          <span className="pilot-kicker">SÉCURITÉ DU COMPTE</span>
+          <h1>Nouveau<br /><em>mot de passe.</em></h1>
+          <p>Choisis au moins 8 caractères et conserve ce mot de passe dans un gestionnaire sécurisé.</p>
+        </div>
+        <form onSubmit={submit} className="pilot-login-form">
+          <label htmlFor="pilot-new-password">Nouveau mot de passe</label>
+          <div className="pilot-login-entry">
+            <div className="pilot-login-inputs">
+              <input id="pilot-new-password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} required minLength={8} autoComplete="new-password" />
+              <input aria-label="Confirmer le nouveau mot de passe" type="password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} required minLength={8} autoComplete="new-password" placeholder="Confirmer le mot de passe" />
+            </div>
+            <button type="submit" disabled={status === "loading" || status === "sent"}>{status === "loading" ? <LoaderCircle className="pilot-spin" size={18} /> : <Check size={18} />}<span>Enregistrer</span></button>
+          </div>
+          {message && <p className={`pilot-form-message pilot-form-${status}`} role={status === "error" ? "alert" : "status"}>{message}</p>}
+        </form>
+      </section>
+      <aside className="pilot-login-visual" aria-hidden="true"><img src="/assets/tapote-hero-a6-hd.webp" alt="" /></aside>
     </main>
   );
 }
@@ -533,6 +609,7 @@ export default function PilotApp() {
   const [previewDemo, setPreviewDemo] = useState(false);
   const [session, setSession] = useState(isPilotDemo ? { user: { id: "demo-user", email: "demo@tapote.fr" } } : null);
   const [authLoading, setAuthLoading] = useState(!isPilotDemo && isPilotConfigured);
+  const [passwordRecovery, setPasswordRecovery] = useState(false);
   const [workspace, setWorkspace] = useState(null);
   const [workspaceLoading, setWorkspaceLoading] = useState(true);
   const [workspaceError, setWorkspaceError] = useState("");
@@ -570,7 +647,8 @@ export default function PilotApp() {
         setAuthLoading(false);
       }
     });
-    const { data: listener } = pilotSupabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data: listener } = pilotSupabase.auth.onAuthStateChange((event, nextSession) => {
+      if (event === "PASSWORD_RECOVERY") setPasswordRecovery(true);
       setSession(nextSession);
       setAuthLoading(false);
     });
@@ -651,6 +729,7 @@ export default function PilotApp() {
     setSession({ user: { id: "demo-user", email: "demo@tapote.fr" } });
     setWorkspaceLoading(true);
   } : null} />;
+  if (passwordRecovery) return <PilotPasswordUpdate onComplete={() => setPasswordRecovery(false)} />;
   if (workspaceLoading) return <PilotLoading />;
   if (workspaceError) return <main className="pilot-error"><PilotLogo /><h1>Impossible d’ouvrir Pilot.</h1><p>{workspaceError}</p><button type="button" onClick={() => window.location.reload()}>Réessayer</button></main>;
   if (!workspace) return <EmptyWorkspace email={session.user.email} />;
