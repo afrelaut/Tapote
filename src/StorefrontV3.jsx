@@ -1,11 +1,14 @@
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
+  Bookmark,
   CalendarDays,
+  Camera,
   Check,
   CheckCircle2,
   CircleDollarSign,
   Clock3,
+  Clapperboard,
   ClipboardList,
   ContactRound,
   CreditCard,
@@ -14,11 +17,17 @@ import {
   Gift,
   Grid3X3,
   Heart,
+  Home,
+  Inbox,
+  Info,
   Layers3,
   Link2,
+  LockKeyhole,
   MapPin,
   Menu,
   MessageCircle,
+  Mic,
+  Music2,
   Minus,
   PackageCheck,
   Palette,
@@ -27,7 +36,7 @@ import {
   Plus,
   PhoneCall,
   Search,
-  SendHorizontal,
+  Share2,
   ShieldCheck,
   ShoppingBag,
   SmartphoneNfc,
@@ -37,6 +46,8 @@ import {
   Truck,
   UtensilsCrossed,
   Upload,
+  UserRound,
+  UsersRound,
   Video,
   Wifi,
   X,
@@ -53,7 +64,7 @@ import {
 } from "../shared/catalog.js";
 import { DevicePreview, GeneratedBrandMark, PlatformGlyph, prepareLogoFile, readFileAsDataUrl } from "./App.jsx";
 import { extractLogoPalette, pickScreenColor } from "./brandColors.js";
-import { DEVICE_THEMES, normalizeHexColor } from "./deviceThemes.js";
+import { DEVICE_THEMES, normalizeHexColor, contrastRatio } from "./deviceThemes.js";
 import { findSectorBySlug, SECTOR_CATEGORIES, SECTORS } from "./storefront/sectorData.js";
 
 const MAX_ITEM_QUANTITY = 50;
@@ -197,7 +208,7 @@ function pageMetadata(path) {
   if (path === "/boutique" || path.startsWith("/categorie/")) return ["Boutique NFC + QR | Tapote", "Tous les chevalets, plaques, cartes et packs Tapote, prêts à l’emploi ou personnalisés."];
   if (path.startsWith("/produits/")) {
     const product = PRODUCT_PAGES[path.split("/")[2]];
-    if (product) return [`${product.name} NFC + QR | Tapote`, `${product.description} Prêt à l’emploi ou personnalisé, avec lien modifiable à distance.`];
+    if (product) return [`${product.name}${/nfc/i.test(product.name) ? "" : " NFC"} + QR | Tapote`, `${product.description} Prêt à l’emploi ou personnalisé, avec lien modifiable à distance.`];
   }
   if (path === "/designs") return ["Designs NFC + QR | Tapote", "Découvrez les designs Tapote pour les avis, Instagram, Facebook, le Wi-Fi, les menus, les réservations et tous vos liens."];
   if (path === "/secteurs") return [`Tapote pour votre secteur | ${SECTORS.length} usages concrets`, "Découvrez les supports NFC + QR et les usages Tapote adaptés à votre métier."];
@@ -466,57 +477,370 @@ function ProductArt({ surface = "comptoir", actionId = "avis", brandName = "VOTR
 }
 
 const PHONE_CONTENT_PATH = "M630 313 C609 318 599 341 612 372 L863 930 C877 963 901 978 932 971 L1187 913 C1214 907 1224 880 1209 848 L902 294 C891 274 869 266 844 270 Z";
+// Restaurant glass measured just inside the black bezel. The whole surface is
+// live so the iOS status area can share the exact background of each app.
+const PHONE_DYNAMIC_CONTENT_PATH = "M624 307 C605 311 598 330 607 354 L870 922 C884 944 910 961 920 958 L1140 880 C1165 878 1182 858 1178 818 L902 288 C891 268 869 260 844 263 Z";
+// Dark full-screen apps expose sub-pixel gaps that are invisible on the
+// photographed white iOS surface. Extend only the left glass edge by a few
+// source pixels so TikTok's black canvas meets the physical bezel cleanly.
+const PHONE_DARK_CONTENT_PATH = "M612 304 C593 307 586 328 595 354 L858 928 C875 953 906 969 920 965 L1140 880 C1165 878 1182 858 1178 818 L902 288 C891 268 869 260 844 263 Z";
 
-function PhoneActionPreview({ actionId, screen }) {
-  if (actionId === "avis") return <div className="v3-phone-google-card"><header><PlatformGlyph id="google" /><span><b>Avis Google</b><small>Visible publiquement</small></span></header><strong>Quelle note donneriez-vous ?</strong><div className="v3-phone-google-stars" aria-label="5 étoiles"><i>★</i><i>★</i><i>★</i><i>★</i><i>★</i></div><span className="v3-phone-review-copy">Décrivez votre expérience</span><small className="v3-phone-google-account">Publication avec votre compte Google</small></div>;
-  if (actionId === "menu") return <div className="v3-phone-menu-card"><nav><b>Entrées</b><span>Plats</span><span>Desserts</span></nav><div><span><b>Assiette du marché</b><small>Produits frais · fait maison</small></span><strong>18 €</strong></div><div><span><b>Suggestion du chef</b><small>Selon l’arrivage du jour</small></span><strong>22 €</strong></div></div>;
-  if (actionId === "reservation") return <div className="v3-phone-booking-card"><div><span>Lun<small>21</small></span><span className="is-selected">Mar<small>22</small></span><span>Mer<small>23</small></span><span>Jeu<small>24</small></span></div><strong>Créneaux disponibles</strong><nav><span>09:00</span><span className="is-selected">11:00</span><span>15:30</span></nav></div>;
-  if (actionId === "commande") return <div className="v3-phone-order-card"><div><i /><span><b>Formule du jour</b><small>Quantité · 1</small></span><strong>16 €</strong></div><div><i /><span><b>Boisson maison</b><small>Quantité · 1</small></span><strong>4 €</strong></div><footer><span>Total</span><b>20 €</b></footer></div>;
-  if (["paiement", "pourboire"].includes(actionId)) return <div className={`v3-phone-payment-card is-${actionId}`}><small>{actionId === "paiement" ? "À RÉGLER" : "POUR L’ÉQUIPE"}</small><strong>{actionId === "paiement" ? "24,00 €" : "Merci !"}</strong>{actionId === "pourboire" ? <nav><span>5 %</span><span className="is-selected">10 %</span><span>15 %</span></nav> : <div><b> Pay</b><b><i>G</i> Pay</b></div>}<span>Paiement sécurisé</span></div>;
-  if (actionId === "fidelite") return <div className="v3-phone-loyalty-card"><div>{[1, 2, 3, 4, 5].map((step) => <span className={step < 5 ? "is-complete" : ""} key={step}>{step < 5 ? "✓" : step}</span>)}</div><strong>Encore une visite</strong><small>Votre prochain avantage est presque débloqué.</small></div>;
+const RESTAURANT_PHONE_MEDIA = {
+  burrata: "/assets/phone/restaurant-burrata-v1.webp",
+  duck: "/assets/phone/restaurant-canard-v1.webp",
+  fish: "/assets/phone/restaurant-dorade-v1.webp",
+  dessert: "/assets/phone/restaurant-creme-brulee-v1.webp",
+  tiktok: "/assets/phone/restaurant-chef-tiktok-v1.webp",
+};
+
+const PHONE_SCENE_SECTORS = {
+  "/assets/products/tapote-bg-cafe-v1.webp": "cafe",
+  "/assets/products/tapote-bg-restaurant-live-screen-v1.webp": "restaurant",
+  "/assets/products/tapote-bg-restaurant-v1.webp": "restaurant",
+  "/assets/products/tapote-bg-boulangerie-v1.webp": "boulangerie",
+  "/assets/products/tapote-bg-beaute-v1.webp": "salon",
+  "/assets/products/tapote-bg-medical-v1.webp": "cabinet_medical",
+  "/assets/products/tapote-bg-retail-v1.webp": "boutique",
+  "/assets/products/tapote-bg-hotel-v1.webp": "hotel",
+  "/assets/products/tapote-bg-auto-ecole-v1.webp": "auto_ecole",
+  "/assets/products/tapote-bg-automobile-v1.webp": "garage",
+  "/assets/products/tapote-bg-artisan-v1.webp": "artisan",
+  "/assets/products/tapote-bg-agence-v1.webp": "immobilier",
+  "/assets/products/tapote-bg-sport-v1.webp": "salle_sport",
+  "/assets/products/tapote-bg-formation-v1.webp": "coworking",
+  "/assets/products/tapote-bg-evenement-v1.webp": "evenement",
+  "/assets/products/tapote-bg-animaux-v1.webp": "veterinaire",
+};
+
+const DEFAULT_PHONE_SECTOR_PROFILE = {
+  bookingTitle: "Choisissez votre créneau",
+  bookingSubject: "1 rendez-vous",
+  bookingService: "Prochaines disponibilités",
+  reward: "Avantage de bienvenue",
+  menuTitle: "Notre sélection",
+  menuItems: [["Prestation essentielle", "Sur rendez-vous", "35 €"], ["Formule complète", "Conseil personnalisé", "59 €"], ["Option premium", "Selon vos besoins", "79 €"]],
+  orderItems: [["Formule essentielle", "Disponible aujourd’hui", "35 €"], ["Option complémentaire", "Ajout à la demande", "12 €"]],
+  paymentLabel: "Règlement sécurisé",
+  paymentAmount: "35,00 €",
+  formType: "Demande d’information",
+  formPlaceholder: "Votre besoin, vos disponibilités, précisions…",
+  siteKicker: "NOTRE SAVOIR-FAIRE",
+  siteTitle: "Un service précis. Une réponse claire.",
+  siteBody: "Découvrez nos services, nos disponibilités et les informations utiles.",
+  links: [["Nos services", "Prestations et informations"], ["Prendre rendez-vous", "Disponibilités en ligne"], ["Venir sur place", "Adresse et horaires"], ["Nous contacter", "Téléphone et e-mail"]],
+  phone: "01 84 80 20 20",
+  email: "bonjour@votremarque.fr",
+  address: "Voir l’itinéraire",
+  wifi: "INVITÉS",
+  socialCaption: "Un aperçu de notre quotidien et de notre savoir-faire.",
+};
+
+const PHONE_SECTOR_PROFILES = {
+  cafe: { bookingSubject: "2 personnes", bookingService: "Ce soir", reward: "Boisson chaude offerte", menuTitle: "La carte du moment", menuItems: [["Espresso de spécialité", "Brésil · notes chocolatées", "2,50 €"], ["Cappuccino", "Double shot · lait fermier", "4,50 €"], ["Cookie noisette", "Cuit ce matin", "3,80 €"]], orderItems: [["Cappuccino", "Lait entier", "4,50 €"], ["Cookie noisette", "Quantité · 1", "3,80 €"]], paymentLabel: "Commande au comptoir", paymentAmount: "8,30 €", formType: "Privatisation", formPlaceholder: "Date, nombre de personnes, ambiance souhaitée…", siteKicker: "CAFÉ DE SPÉCIALITÉ", siteTitle: "Torréfié avec soin. Servi simplement.", siteBody: "La carte, nos horaires et les cafés du moment.", links: [["Voir la carte", "Cafés, boissons et douceurs"], ["Réserver une table", "Disponibilités ce soir"], ["Nos horaires", "Ouvert aujourd’hui"], ["Nous appeler", "Une question rapide"]], phone: "01 42 60 11 25", email: "bonjour@cafenoma.fr", address: "18 rue du Bac, Paris", wifi: "CAFE_NOMA_GUEST", socialCaption: "Du grain à la tasse, les coulisses du comptoir." },
+  restaurant: { bookingSubject: "2 personnes", bookingService: "Service du soir", reward: "Dessert maison offert", menuTitle: "Aujourd’hui au menu", menuItems: [["Velouté de potimarron", "Châtaigne · huile de noisette", "9 €"], ["Burrata crémeuse", "Tomates anciennes · basilic", "12 €"], ["Magret de canard", "Pommes grenaille · jus corsé", "24 €"]], orderItems: [["Burrata du marché", "Tomates anciennes", "12 €"], ["Magret de canard", "Pommes grenaille", "24 €"], ["Crème brûlée", "Vanille de Madagascar", "8 €"]], paymentLabel: "Règlement de la table", paymentAmount: "44,00 €", formType: "Privatisation", formPlaceholder: "Date, nombre de personnes, précisions…", siteKicker: "CUISINE DE SAISON", siteTitle: "Le goût du produit, simplement.", siteBody: "Produits frais, gestes précis et accueil chaleureux.", links: [["Voir la carte", "Menu du jour et allergènes"], ["Réserver une table", "Disponibilités en temps réel"], ["Venir au restaurant", "Itinéraire et horaires"], ["Nous contacter", "Appel et e-mail"]], phone: "01 42 18 21 21", email: "bonjour@latelier21.fr", address: "21 rue du Marché, Paris", wifi: "ATELIER21_INVITES", socialCaption: "En cuisine : le produit du jour, sauce montée minute ✨" },
+  boulangerie: { bookingSubject: "1 commande", bookingService: "Retrait en boutique", reward: "Baguette tradition offerte", menuTitle: "Sorties du four", menuItems: [["Tradition au levain", "Farine Label Rouge", "1,30 €"], ["Croissant pur beurre", "Feuilletage maison", "1,40 €"], ["Tarte citron", "Format individuel", "4,90 €"]], orderItems: [["Pain de campagne", "Tranché · 500 g", "4,20 €"], ["6 croissants", "Retrait demain matin", "8,40 €"]], paymentLabel: "Commande à retirer", paymentAmount: "12,60 €", formType: "Commande spéciale", formPlaceholder: "Produit, quantité, date et heure de retrait…", siteKicker: "FABRIQUÉ ICI", siteTitle: "Du levain, du beurre, du temps.", siteBody: "Nos pains, pâtisseries et commandes pour vos événements.", links: [["Commander", "Pains et pâtisseries"], ["Voir les créations", "La sélection du moment"], ["Horaires", "Cuissons et ouvertures"], ["Nous appeler", "Commande spéciale"]], phone: "01 43 21 08 14", email: "commande@maisonlevain.fr", address: "8 place du Marché, Lyon", wifi: "MAISON_LEVAIN", socialCaption: "Ce matin au fournil : feuilletage pur beurre et levain naturel." },
+  salon: { bookingTitle: "Réservez votre prestation", bookingSubject: "Coupe & coiffage", bookingService: "Cette semaine", reward: "Soin profond offert", menuTitle: "Nos prestations", menuItems: [["Coupe & coiffage", "Diagnostic inclus", "48 €"], ["Couleur signature", "Soin protecteur inclus", "85 €"], ["Rituel bien-être", "Massage du cuir chevelu", "35 €"]], orderItems: [["Shampoing éclat", "250 ml", "24 €"], ["Masque réparateur", "200 ml", "29 €"]], paymentLabel: "Prestation du jour", paymentAmount: "48,00 €", formType: "Diagnostic personnalisé", formPlaceholder: "Votre longueur, votre envie, vos disponibilités…", siteKicker: "BEAUTÉ & SOIN", siteTitle: "Votre style, jusque dans le détail.", siteBody: "Prestations, inspirations et réservation avec votre équipe.", links: [["Réserver", "Choisir une prestation"], ["Nos tarifs", "Coupes, couleurs et soins"], ["Voir Instagram", "Inspirations et réalisations"], ["Nous contacter", "Conseil avant rendez-vous"]], phone: "01 45 20 22 40", email: "bonjour@studiolune.fr", address: "32 rue de Charonne, Paris", wifi: "STUDIO_LUNE", socialCaption: "Avant / après : une coupe pensée pour le mouvement." },
+  cabinet_medical: { bookingTitle: "Prendre rendez-vous", bookingSubject: "Consultation", bookingService: "Créneaux disponibles", reward: "Rappel prévention activé", menuTitle: "Informations pratiques", menuItems: [["Consultation", "Sur rendez-vous", "Secteur 1"], ["Téléconsultation", "Selon le motif", "25 €"], ["Documents utiles", "Ordonnance et carte Vitale", "—"]], orderItems: [["Téléconsultation", "Créneau confirmé", "25 €"]], paymentLabel: "Téléconsultation", paymentAmount: "25,00 €", formType: "Demande administrative", formPlaceholder: "Objet de la demande, disponibilité, informations utiles…", siteKicker: "INFORMATIONS PATIENTS", siteTitle: "Votre parcours, clairement expliqué.", siteBody: "Horaires, accès, spécialités et préparation du rendez-vous.", links: [["Prendre rendez-vous", "Créneaux disponibles"], ["Préparer ma visite", "Documents nécessaires"], ["Accès au cabinet", "Adresse et transports"], ["Contacter le secrétariat", "Demandes administratives"]], phone: "01 40 18 72 10", email: "secretariat@cabinetrivoli.fr", address: "14 rue de Rivoli, Paris", wifi: "CABINET_INVITES", socialCaption: "Informations de prévention et actualités du cabinet." },
+  boutique: { bookingSubject: "Conseil privé", bookingService: "Cette semaine", reward: "-15 % sur votre prochain achat", menuTitle: "La sélection", menuItems: [["Veste en laine", "Coupe droite · marine", "149 €"], ["Chemise popeline", "Coton biologique", "79 €"], ["Sac atelier", "Cuir pleine fleur", "189 €"]], orderItems: [["Chemise popeline", "Taille M · blanc", "79 €"], ["Ceinture atelier", "Cuir cognac", "59 €"]], paymentLabel: "Commande boutique", paymentAmount: "138,00 €", formType: "Conseil taille", formPlaceholder: "Article, taille habituelle et préférence…", siteKicker: "NOUVELLE COLLECTION", siteTitle: "Des pièces choisies pour durer.", siteBody: "La collection, les nouveautés et le retrait en boutique.", links: [["Voir la collection", "Nouveautés et essentiels"], ["Réserver en boutique", "Essayage personnalisé"], ["Notre adresse", "Horaires et accès"], ["Nous écrire", "Disponibilité d’un article"]], phone: "01 84 25 16 90", email: "bonjour@maisoneclat.fr", address: "6 rue Vieille-du-Temple, Paris", wifi: "MAISON_ECLAT_GUEST", socialCaption: "Nouvelle silhouette : matières naturelles et coupe précise." },
+  hotel: { bookingTitle: "Réserver un service", bookingSubject: "2 voyageurs", bookingService: "Pendant votre séjour", reward: "Départ tardif offert", menuTitle: "Services de l’hôtel", menuItems: [["Petit-déjeuner", "Servi de 7 h à 10 h 30", "18 €"], ["Room service", "Jusqu’à 22 h 30", "À la carte"], ["Départ tardif", "Selon disponibilité", "25 €"]], orderItems: [["Petit-déjeuner", "2 personnes · demain", "36 €"], ["Départ tardif", "Jusqu’à 14 h", "25 €"]], paymentLabel: "Services du séjour", paymentAmount: "61,00 €", formType: "Demande à la réception", formPlaceholder: "Numéro de chambre, service et horaire souhaité…", siteKicker: "VOTRE SÉJOUR", siteTitle: "Tout l’hôtel dans votre poche.", siteBody: "Wi-Fi, services, bonnes adresses et informations pratiques.", links: [["Guide d’accueil", "Services et informations"], ["Commander un service", "Petit-déjeuner et chambre"], ["Bonnes adresses", "La sélection de la réception"], ["Contacter l’accueil", "Disponible 24 h / 24"]], phone: "01 58 90 14 14", email: "reception@hotelrivage.fr", address: "4 quai de la Loire, Nantes", wifi: "RIVAGE_GUEST", socialCaption: "Une adresse calme, pensée pour prendre le temps." },
+  auto_ecole: { bookingTitle: "Réserver une leçon", bookingSubject: "Leçon de conduite", bookingService: "Mon planning", reward: "1 h de simulateur offerte", menuTitle: "Nos formations", menuItems: [["Permis B", "Boîte manuelle", "Dès 1 190 €"], ["Conduite accompagnée", "Dès 15 ans", "Dès 1 290 €"], ["Heure de conduite", "Leçon individuelle", "52 €"]], orderItems: [["Heure de conduite", "Moniteur confirmé", "52 €"], ["Livret numérique", "Inclus", "0 €"]], paymentLabel: "Leçon de conduite", paymentAmount: "52,00 €", formType: "Inscription permis", formPlaceholder: "Permis visé, disponibilités et expérience…", siteKicker: "PRENEZ LE VOLANT", siteTitle: "Une formation claire, à votre rythme.", siteBody: "Formules, planning des leçons et inscription en ligne.", links: [["Voir les formations", "Permis et formules"], ["Réserver une leçon", "Planning en ligne"], ["Dossier d’inscription", "Pièces à fournir"], ["Contacter l’agence", "Une question sur le permis"]], phone: "01 46 70 31 20", email: "contact@driveclub.fr", address: "27 avenue Jean-Jaurès, Lille", wifi: "DRIVE_CLUB", socialCaption: "Conseils de conduite, réussites et vie de l’agence." },
+  garage: { bookingTitle: "Planifier l’entretien", bookingSubject: "Révision véhicule", bookingService: "Atelier", reward: "Contrôle sécurité offert", menuTitle: "Nos prestations", menuItems: [["Révision constructeur", "Garantie préservée", "Dès 189 €"], ["Diagnostic électronique", "Compte-rendu inclus", "79 €"], ["Pneumatiques", "Montage et équilibrage", "Sur devis"]], orderItems: [["Diagnostic électronique", "Durée estimée · 1 h", "79 €"], ["Contrôle sécurité", "Inclus", "0 €"]], paymentLabel: "Facture atelier", paymentAmount: "189,00 €", formType: "Demande de devis", formPlaceholder: "Immatriculation, kilométrage et intervention…", siteKicker: "L’ATELIER AUTO", siteTitle: "Votre véhicule, suivi sans surprise.", siteBody: "Entretien, diagnostic, devis et prochain rendez-vous.", links: [["Prendre rendez-vous", "Entretien et diagnostic"], ["Demander un devis", "Réponse de l’atelier"], ["Suivre mon véhicule", "État de l’intervention"], ["Appeler la réception", "Une urgence mécanique"]], phone: "01 70 26 45 80", email: "atelier@atelierauto.fr", address: "12 route de Lyon, Dijon", wifi: "ATELIER_AUTO", socialCaption: "Diagnostic, entretien et conseils de l’équipe atelier." },
+  artisan: { bookingTitle: "Planifier un rendez-vous", bookingSubject: "Visite technique", bookingService: "Sur place", reward: "Diagnostic offert", menuTitle: "Nos prestations", menuItems: [["Dépannage", "Intervention rapide", "Sur devis"], ["Installation", "Étude personnalisée", "Sur devis"], ["Entretien annuel", "Contrôle complet", "129 €"]], orderItems: [["Diagnostic sur place", "Déplacement inclus", "69 €"], ["Compte-rendu", "Envoyé par e-mail", "Inclus"]], paymentLabel: "Acompte intervention", paymentAmount: "69,00 €", formType: "Demande de devis", formPlaceholder: "Adresse, travaux souhaités, photos et délai…", siteKicker: "SAVOIR-FAIRE ARTISAN", siteTitle: "Un travail propre, expliqué et durable.", siteBody: "Réalisations, zones d’intervention et demande de devis.", links: [["Voir les réalisations", "Chantiers et finitions"], ["Demander un devis", "Décrivez votre projet"], ["Zone d’intervention", "Secteurs desservis"], ["Appeler l’artisan", "Disponible sur le terrain"]], phone: "06 12 34 56 78", email: "contact@ateliermartin.fr", address: "Interventions en Île-de-France", wifi: "ATELIER_MARTIN", socialCaption: "Les étapes d’un chantier soigné, du diagnostic à la finition." },
+  immobilier: { bookingTitle: "Planifier une visite", bookingSubject: "Visite immobilière", bookingService: "Avec votre conseiller", reward: "Avis de valeur offert", menuTitle: "Nos services", menuItems: [["Estimation", "Avis de valeur détaillé", "Offert"], ["Mise en vente", "Photos et diffusion", "Sur mandat"], ["Recherche acquéreur", "Accompagnement complet", "Sur mesure"]], orderItems: [["Dossier d’estimation", "Analyse du marché", "Offert"]], paymentLabel: "Acompte prestation", paymentAmount: "90,00 €", formType: "Demande d’estimation", formPlaceholder: "Adresse, surface, type de bien et projet…", siteKicker: "VOTRE PROJET IMMOBILIER", siteTitle: "Estimer, vendre, trouver le bon lieu.", siteBody: "Biens disponibles, estimation et contact direct avec votre conseiller.", links: [["Voir les biens", "Sélection disponible"], ["Estimer mon bien", "Avis de valeur offert"], ["Prendre rendez-vous", "Visite ou échange conseil"], ["Enregistrer le contact", "Votre conseiller dédié"]], phone: "06 24 18 72 30", email: "bonjour@agencehorizon.fr", address: "9 place Bellecour, Lyon", wifi: "HORIZON_CLIENTS", socialCaption: "Nouveau bien : lumière, volumes et emplacement recherché." },
+  salle_sport: { bookingTitle: "Réserver une séance", bookingSubject: "Cours collectif", bookingService: "Planning du studio", reward: "1 séance offerte", menuTitle: "Le planning", menuItems: [["HIIT Express", "45 min · tous niveaux", "18 €"], ["Pilates Flow", "50 min · petit groupe", "20 €"], ["Coaching individuel", "Bilan inclus", "65 €"]], orderItems: [["Carnet 10 séances", "Valable 4 mois", "160 €"], ["Bilan forme", "30 min", "Offert"]], paymentLabel: "Carnet de séances", paymentAmount: "160,00 €", formType: "Séance d’essai", formPlaceholder: "Objectif, niveau et créneaux préférés…", siteKicker: "BOUGEZ À VOTRE RYTHME", siteTitle: "Un studio, une équipe, votre progression.", siteBody: "Planning, réservation et formules d’entraînement.", links: [["Voir le planning", "Cours et disponibilités"], ["Réserver une séance", "Confirmation immédiate"], ["Nos formules", "À la séance ou abonnement"], ["Rejoindre la communauté", "Actualités du studio"]], phone: "01 82 83 46 20", email: "hello@motionclub.fr", address: "5 rue Oberkampf, Paris", wifi: "MOTION_CLUB", socialCaption: "Séance du jour : énergie, précision et progression collective." },
+  coworking: { bookingTitle: "Réserver une salle", bookingSubject: "Salle de réunion", bookingService: "Aujourd’hui", reward: "1 h de salle offerte", menuTitle: "Espaces & services", menuItems: [["Poste nomade", "Journée complète", "29 €"], ["Salle Horizon", "Jusqu’à 8 personnes", "45 €/h"], ["Studio visio", "Équipement inclus", "30 €/h"]], orderItems: [["Salle Horizon", "2 heures", "90 €"], ["Café d’accueil", "8 personnes", "24 €"]], paymentLabel: "Réservation d’espace", paymentAmount: "114,00 €", formType: "Inscription formation", formPlaceholder: "Programme, participants et besoins techniques…", siteKicker: "TRAVAILLER AUTREMENT", siteTitle: "Des espaces prêts quand vous l’êtes.", siteBody: "Salles, bureaux, événements et ressources des membres.", links: [["Réserver une salle", "Disponibilités en direct"], ["Programme des formations", "Sessions à venir"], ["Ressources membres", "Documents et accès"], ["Contacter l’accueil", "Aide sur place"]], phone: "01 76 40 22 18", email: "accueil@bureaulibre.fr", address: "22 rue du Sentier, Paris", wifi: "BUREAU_LIBRE_GUEST", socialCaption: "Atelier, rencontre et nouveaux projets dans les espaces partagés." },
+  evenement: { bookingTitle: "Réserver une place", bookingSubject: "1 participant", bookingService: "Prochaine session", reward: "Accès prioritaire offert", menuTitle: "Le programme", menuItems: [["Ouverture des portes", "Accueil du public", "18:30"], ["Temps fort", "Scène principale", "20:00"], ["Rencontre artistes", "Après la représentation", "22:00"]], orderItems: [["Billet plein tarif", "Placement libre", "24 €"], ["Soutien à l’association", "Don libre", "10 €"]], paymentLabel: "Billetterie", paymentAmount: "34,00 €", formType: "Inscription bénévole", formPlaceholder: "Disponibilités, mission souhaitée et expérience…", siteKicker: "AU PROGRAMME", siteTitle: "Une soirée à vivre ensemble.", siteBody: "Programme, billetterie, accès et informations pratiques.", links: [["Voir le programme", "Horaires et scènes"], ["Prendre un billet", "Billetterie sécurisée"], ["Informations pratiques", "Accès et horaires"], ["Soutenir le projet", "Adhésion et dons"]], phone: "01 88 32 14 60", email: "bonjour@lebonmoment.fr", address: "Parvis des Arts, Bordeaux", wifi: "BON_MOMENT_PUBLIC", socialCaption: "Montage en cours : les coulisses avant l’ouverture des portes." },
+  veterinaire: { bookingTitle: "Prendre rendez-vous", bookingSubject: "Consultation vétérinaire", bookingService: "Créneaux disponibles", reward: "Bilan prévention offert", menuTitle: "Soins & conseils", menuItems: [["Consultation", "Chien, chat et NAC", "42 €"], ["Vaccination", "Bilan inclus", "Dès 58 €"], ["Toilettage soin", "Sur rendez-vous", "Dès 45 €"]], orderItems: [["Alimentation conseil", "Sac 3 kg", "29 €"], ["Antiparasitaire", "Selon le poids", "18 €"]], paymentLabel: "Consultation du jour", paymentAmount: "42,00 €", formType: "Demande de rendez-vous", formPlaceholder: "Animal, motif, âge et disponibilités…", siteKicker: "PRENDRE SOIN D’EUX", siteTitle: "Une équipe attentive, à chaque étape.", siteBody: "Rendez-vous, urgences, conseils et informations pratiques.", links: [["Prendre rendez-vous", "Consultations et soins"], ["Conseils pratiques", "Prévention et bien-être"], ["Accès à la clinique", "Adresse et urgences"], ["Appeler l’équipe", "Une question sur votre animal"]], phone: "01 49 72 18 30", email: "contact@cliniquedeslilas.fr", address: "3 avenue des Lilas, Lille", wifi: "CLINIQUE_INVITES", socialCaption: "Conseils de prévention et nouvelles de nos patients à quatre pattes." },
+};
+
+// Dedicated in-phone media. Lifestyle hero photographs deliberately never
+// appear here: reusing them would put a second phone inside the first one.
+const PHONE_SECTOR_MEDIA = {
+  cafe: "/assets/phone/sector-cafe-media-v1.webp",
+  boulangerie: "/assets/phone/sector-boulangerie-media-v1.webp",
+  salon: "/assets/phone/sector-salon-media-v1.webp",
+  cabinet_medical: "/assets/phone/sector-medical-media-v1.webp",
+  boutique: "/assets/phone/sector-boutique-media-v1.webp",
+  hotel: "/assets/phone/sector-hotel-media-v1.webp",
+  auto_ecole: "/assets/phone/sector-auto-ecole-media-v1.webp",
+  garage: "/assets/phone/sector-garage-media-v1.webp",
+  artisan: "/assets/phone/sector-artisan-media-v1.webp",
+  immobilier: "/assets/phone/sector-immobilier-media-v1.webp",
+  salle_sport: "/assets/phone/sector-sport-media-v1.webp",
+  coworking: "/assets/phone/sector-coworking-media-v1.webp",
+  evenement: "/assets/phone/sector-evenement-media-v1.webp",
+  veterinaire: "/assets/phone/sector-veterinaire-media-v1.webp",
+};
+
+const PHONE_SECTOR_EXPERIENCE = {
+  cafe: { times: ["08:30", "10:00", "11:30"], tabs: ["Boissons", "Douceurs", "Infos"], location: "Paris", incoming: "Bonjour 👋 Vous souhaitez réserver une table ou connaître le café du jour ?", outgoing: "Bonjour, avez-vous encore une table pour deux vers 18 h ?" },
+  restaurant: { times: ["19:00", "19:30", "20:00"], tabs: ["Entrées", "Plats", "Desserts"], location: "Paris", incoming: "Bonsoir 👋 Souhaitez-vous réserver ou nous signaler une allergie ?", outgoing: "Bonsoir, une table pour deux à 20 h serait-elle disponible ?" },
+  boulangerie: { times: ["08:00", "09:30", "11:00"], tabs: ["Pains", "Viennoiseries", "Pâtisseries"], location: "Lyon", incoming: "Bonjour 👋 Que souhaitez-vous faire préparer ?", outgoing: "Bonjour, je voudrais réserver six croissants pour demain matin." },
+  salon: { times: ["09:30", "13:00", "16:30"], tabs: ["Coiffure", "Couleur", "Soins"], location: "Paris", incoming: "Bonjour 👋 Quelle prestation souhaitez-vous réserver ?", outgoing: "Bonjour, avez-vous un créneau coupe et coiffage cette semaine ?" },
+  cabinet_medical: { times: ["09:00", "11:20", "15:40"], tabs: ["Consultations", "Pratique", "Accès"], location: "Paris", incoming: "Bonjour, le secrétariat vous répond pour les demandes administratives.", outgoing: "Bonjour, je souhaite déplacer mon rendez-vous de jeudi." },
+  boutique: { times: ["11:00", "14:30", "17:00"], tabs: ["Nouveautés", "Collection", "Guide"], location: "Paris", incoming: "Bonjour 👋 Souhaitez-vous vérifier une taille ou réserver un essayage ?", outgoing: "Bonjour, la chemise popeline est-elle disponible en taille M ?" },
+  hotel: { times: ["07:30", "09:00", "10:30"], tabs: ["Séjour", "Services", "Infos"], location: "Nantes", incoming: "Bonjour 👋 La réception est disponible. Indiquez-nous votre numéro de chambre.", outgoing: "Bonjour, chambre 204 : deux petits-déjeuners pour demain, s’il vous plaît." },
+  auto_ecole: { times: ["10:00", "14:00", "17:30"], tabs: ["Permis B", "Conduite", "Dossier"], location: "Lille", incoming: "Bonjour 👋 Avez-vous déjà un numéro NEPH ?", outgoing: "Bonjour, je souhaite réserver une leçon de conduite samedi." },
+  garage: { times: ["08:30", "11:00", "14:30"], tabs: ["Entretien", "Diagnostic", "Devis"], location: "Dijon", incoming: "Bonjour 👋 Pouvez-vous nous préciser le modèle et l’immatriculation ?", outgoing: "Bonjour, je souhaite un devis pour la révision de mon véhicule." },
+  artisan: { times: ["08:00", "13:30", "16:00"], tabs: ["Services", "Réalisations", "Zone"], location: "Île-de-France", incoming: "Bonjour 👋 Envoyez votre adresse et quelques photos du projet.", outgoing: "Bonjour, je souhaiterais un devis pour une intervention à domicile." },
+  immobilier: { times: ["10:00", "14:00", "17:00"], tabs: ["Biens", "Estimation", "Conseil"], location: "Lyon", incoming: "Bonjour 👋 Souhaitez-vous visiter un bien ou demander une estimation ?", outgoing: "Bonjour, je voudrais visiter l’appartement présenté cette semaine." },
+  salle_sport: { times: ["07:30", "12:15", "18:30"], tabs: ["Cours", "Coaching", "Tarifs"], location: "Bordeaux", incoming: "Bonjour 👋 Quel cours souhaitez-vous essayer ?", outgoing: "Bonjour, reste-t-il une place au Pilates de 18 h 30 ?" },
+  coworking: { times: ["09:00", "13:00", "15:30"], tabs: ["Espaces", "Salles", "Pass"], location: "Toulouse", incoming: "Bonjour 👋 Pour combien de personnes souhaitez-vous réserver ?", outgoing: "Bonjour, je cherche une salle pour six personnes jeudi après-midi." },
+  evenement: { times: ["18:30", "19:30", "20:30"], tabs: ["Billets", "Programme", "Accès"], location: "Marseille", incoming: "Bonjour 👋 Une question sur le programme ou l’accessibilité ?", outgoing: "Bonjour, reste-t-il des places pour la séance de samedi ?" },
+  veterinaire: { times: ["09:20", "11:40", "16:10"], tabs: ["Soins", "Prévention", "Urgences"], location: "Lille", incoming: "Bonjour 👋 Quel animal souhaitez-vous faire examiner ?", outgoing: "Bonjour, mon chat doit recevoir son rappel de vaccin." },
+};
+
+function phoneSectorExperience(sectorId) {
+  return PHONE_SECTOR_EXPERIENCE[sectorId] || { times: ["09:00", "13:30", "17:00"], tabs: ["Sélection", "Services", "Infos"], location: "France", incoming: "Bonjour 👋 Comment pouvons-nous vous aider ?", outgoing: "Bonjour, je souhaiterais obtenir un renseignement." };
+}
+
+function phoneSectorMedia(sectorId) {
+  if (sectorId === "restaurant") return [RESTAURANT_PHONE_MEDIA.burrata, RESTAURANT_PHONE_MEDIA.tiktok, RESTAURANT_PHONE_MEDIA.duck, RESTAURANT_PHONE_MEDIA.fish, RESTAURANT_PHONE_MEDIA.dessert, RESTAURANT_PHONE_MEDIA.burrata];
+  const asset = PHONE_SECTOR_MEDIA[sectorId] || PHONE_SECTOR_MEDIA.cafe;
+  return [asset, asset, asset, asset, asset, asset];
+}
+
+function resolvePhoneSectorId(sectorId, sceneImage) {
+  return sectorId || PHONE_SCENE_SECTORS[sceneImage] || "";
+}
+
+function phoneSectorProfile(sectorId, sceneImage) {
+  return { ...DEFAULT_PHONE_SECTOR_PROFILE, ...(PHONE_SECTOR_PROFILES[resolvePhoneSectorId(sectorId, sceneImage)] || {}) };
+}
+
+function parseEuroAmount(value) {
+  const normalized = String(value || "").replace(/\s/g, "").replace(",", ".").match(/\d+(?:\.\d+)?/);
+  return normalized ? Number(normalized[0]) : 0;
+}
+
+function compactEuro(value) {
+  return `${value.toLocaleString("fr-FR", { minimumFractionDigits: value % 1 ? 2 : 0, maximumFractionDigits: 2 })} €`;
+}
+
+function PhoneActionPreview({ actionId, screen, sceneImage = "", brandName = "VOTRE MARQUE", sectorId = "" }) {
+  const safeBrandName = brandName || "VOTRE MARQUE";
+  const resolvedSectorId = resolvePhoneSectorId(sectorId, sceneImage);
+  const profile = phoneSectorProfile(resolvedSectorId, sceneImage);
+  const experience = phoneSectorExperience(resolvedSectorId);
+  const media = phoneSectorMedia(resolvedSectorId);
+  const isRestaurant = resolvedSectorId === "restaurant";
+  if (actionId === "avis") return <div className="v3-phone-google-card">
+    <header><PlatformGlyph id="google" /><span><b>Publier un avis</b><small>{safeBrandName} · Google Maps</small></span></header>
+    <div className="v3-phone-google-user"><i>R</i><span><b>Votre compte Google</b><small>Publication publique</small></span></div>
+    <strong>Comment s’est passée votre visite ?</strong>
+    <div className="v3-phone-google-stars" aria-label="5 étoiles"><i>★</i><i>★</i><i>★</i><i>★</i><i>★</i></div>
+    <span className="v3-phone-review-copy">Partagez des détails sur votre expérience</span>
+    <span className="v3-phone-google-photo-action"><Camera /> Ajouter des photos</span>
+  </div>;
+  if (actionId === "menu") {
+    return <div className="v3-phone-menu-card"><nav><b>{experience.tabs[0]}</b><span>{experience.tabs[1]}</span><span>{experience.tabs[2]}</span></nav>{profile.menuItems.map(([name, detail, price]) => <div key={name}><span><b>{name}</b><small>{detail}</small></span><strong>{price}</strong></div>)}</div>;
+  }
+  if (actionId === "reservation") return <div className="v3-phone-booking-card">
+    <header><span><UserRound />{profile.bookingSubject}</span><small>Modifier</small></header>
+    <div className="v3-phone-booking-days"><span>Lun<small>21</small></span><span className="is-selected">Mar<small>22</small></span><span>Mer<small>23</small></span><span>Jeu<small>24</small></span></div>
+    <strong>{profile.bookingService}</strong>
+    <nav>{experience.times.map((time, index) => <span className={index === 1 ? "is-selected" : ""} key={time}>{time}</span>)}</nav>
+    <footer><CheckCircle2 /> Confirmation immédiate</footer>
+  </div>;
+  if (actionId === "commande") {
+    const items = isRestaurant ? [
+      { name: "Burrata du marché", detail: "Tomates anciennes", price: "12 €", image: RESTAURANT_PHONE_MEDIA.burrata },
+      { name: "Magret de canard", detail: "Pommes grenaille", price: "24 €", image: RESTAURANT_PHONE_MEDIA.duck },
+      { name: "Crème brûlée", detail: "Vanille de Madagascar", price: "8 €", image: RESTAURANT_PHONE_MEDIA.dessert },
+    ] : profile.orderItems.map(([name, detail, price], index) => ({ name, detail, price, image: media[index % media.length] }));
+    const calculatedTotal = items.reduce((sum, item) => sum + parseEuroAmount(item.price), 0);
+    return <div className="v3-phone-order-card">{items.map((item, index) => <div key={item.name}><img src={item.image} alt="" style={socialCropStyle(item.image, index + 1)} /><span><b>{item.name}</b><small>{item.detail}</small><em>× 1</em></span><strong>{item.price}</strong></div>)}<footer><span><small>{items.length} article{items.length > 1 ? "s" : ""}</small>Total</span><b>{calculatedTotal ? compactEuro(calculatedTotal) : profile.paymentAmount}</b></footer></div>;
+  }
+  if (actionId === "pourboire") {
+    const bill = parseEuroAmount(profile.paymentAmount);
+    return <div className="v3-phone-payment-card is-pourboire">
+    <header><span>{profile.paymentLabel}</span><b>{profile.paymentAmount}</b></header>
+    <small>POUR L’ÉQUIPE</small><strong>Merci !</strong>
+    <nav><span>0 %<small>Aucun</small></span>{[5, 10, 15].map((rate) => <span className={rate === 10 ? "is-selected" : ""} key={rate}>{rate} %<small>{compactEuro((bill * rate) / 100)}</small></span>)}</nav>
+    <span>Le pourboire est intégralement reversé à l’équipe.</span>
+  </div>;
+  }
+  if (actionId === "fidelite") return <div className="v3-phone-loyalty-card">
+    <header><span>Carte de fidélité</span><b>4 / 5 visites</b></header>
+    <div>{[1, 2, 3, 4, 5].map((step) => <span className={step < 5 ? "is-complete" : ""} key={step}>{step < 5 ? "✓" : step}</span>)}</div>
+    <section><Gift /><span><small>PROCHAINE RÉCOMPENSE</small><strong>{profile.reward}</strong></span></section>
+    <small>Encore une visite chez {safeBrandName}.</small>
+  </div>;
   if (actionId === "wifi") return <div className="v3-phone-wifi-card"><i>⌁</i><span><small>RÉSEAU</small><b>INVITÉS</b></span><strong>Connecté</strong></div>;
   if (actionId === "site") return <div className="v3-phone-website-card"><div><span>NOTRE SAVOIR-FAIRE</span><strong>Des gestes précis.<br />Un résultat durable.</strong></div><nav><span>Services</span><span>Réalisations</span><span>Contact</span></nav></div>;
-  if (actionId === "contact") return <div className="v3-phone-contact-card"><div><span>☎</span><b>06 12 34 56 78</b></div><div><span>✉</span><b>bonjour@votremarque.fr</b></div><div><span>◎</span><b>votremarque.fr</b></div></div>;
+  if (actionId === "contact") return <div className="v3-phone-contact-card">
+    <div><span><PhoneCall /></span><p><small>APPELER</small><b>{profile.phone}</b></p></div>
+    <div><span><ContactRound /></span><p><small>E-MAIL</small><b>{profile.email}</b></p></div>
+    <div><span><MapPin /></span><p><small>ITINÉRAIRE</small><b>{profile.address}</b></p></div>
+  </div>;
   if (actionId === "whatsapp") return <div className="v3-phone-whatsapp-card"><div><PlatformGlyph id="whatsapp" /><b>WhatsApp</b><span>en ligne</span></div><p>Bonjour ! Comment pouvons-nous vous aider ?</p><small>Écrivez votre message…</small></div>;
-  if (actionId === "multiliens") return <div className="v3-phone-links-card"><span>Nos horaires <b>›</b></span><span>Réserver <b>›</b></span><span>Voir nos services <b>›</b></span></div>;
-  if (actionId === "formulaire") return <div className="v3-phone-form-card"><label>Votre nom<span /></label><label>Votre demande<span /></label><label>Votre message<span className="is-large" /></label></div>;
+  if (actionId === "multiliens") {
+    const LinkIcons = [Globe2, CalendarDays, MapPin, PhoneCall];
+    return <div className="v3-phone-links-card">{profile.links.map(([title, detail], index) => { const LinkIcon = LinkIcons[index]; return <div key={title}><span><LinkIcon /></span><p><b>{title}</b><small>{detail}</small></p><strong>›</strong></div>; })}</div>;
+  }
+  if (actionId === "formulaire") return <div className="v3-phone-form-card">
+    <label><small>NOM COMPLET</small><span>Votre nom</span></label>
+    <label><small>VOTRE DEMANDE</small><span>{profile.formType} <b>⌄</b></span></label>
+    <label><small>MESSAGE</small><span className="is-large">{profile.formPlaceholder}</span></label>
+    <p><Check /> Réponse habituelle sous 24 h</p>
+  </div>;
   return <strong className={`v3-phone-detail is-${actionId}`}>{screen.detail}</strong>;
 }
 
-function instagramPostImages(sceneImage) {
-  const source = sceneImage || "/assets/products/tapote-bg-cafe-v1.webp";
-  const food = [source, "/assets/products/tapote-bg-restaurant-v1.webp", "/assets/products/tapote-bg-boulangerie-v1.webp", source, "/assets/products/tapote-bg-boulangerie-v1.webp", "/assets/products/tapote-bg-restaurant-v1.webp"];
-  const care = [source, "/assets/products/tapote-bg-beaute-v1.webp", "/assets/products/tapote-bg-hotel-v1.webp", source, "/assets/products/tapote-bg-retail-v1.webp", "/assets/products/tapote-bg-beaute-v1.webp"];
-  const craft = [source, "/assets/products/tapote-bg-artisan-v1.webp", "/assets/products/tapote-bg-automobile-v1.webp", source, "/assets/products/tapote-bg-auto-ecole-v1.webp", "/assets/products/tapote-bg-artisan-v1.webp"];
-  const service = [source, "/assets/products/tapote-bg-agence-v1.webp", "/assets/products/tapote-bg-evenement-v1.webp", source, "/assets/products/tapote-bg-formation-v1.webp", "/assets/products/tapote-bg-agence-v1.webp"];
-  if (/(cafe|restaurant|boulangerie)/.test(source)) return food;
-  if (/(beaute|medical|hotel|retail)/.test(source)) return care;
-  if (/(artisan|automobile|auto-ecole)/.test(source)) return craft;
-  if (/(agence|formation|evenement)/.test(source)) return service;
-  return [source, "/assets/products/tapote-bg-retail-v1.webp", "/assets/products/tapote-bg-evenement-v1.webp", source, "/assets/products/tapote-bg-agence-v1.webp", "/assets/products/tapote-bg-sport-v1.webp"];
+function instagramPostImages(sceneImage, sectorId = "") {
+  return phoneSectorMedia(resolvePhoneSectorId(sectorId, sceneImage));
 }
 
-function InstagramPhoneApp({ brandAvatar, brandName, handle, sceneImage }) {
-  const posts = instagramPostImages(sceneImage);
+const SOCIAL_CROP_POSITIONS = ["18% 22%", "52% 18%", "82% 28%", "20% 72%", "54% 66%", "82% 76%"];
+const socialCropStyle = (image, index) => ({
+  "--v3-phone-post-image": `url(${image})`,
+  "--v3-phone-post-position": SOCIAL_CROP_POSITIONS[index % SOCIAL_CROP_POSITIONS.length],
+  "--v3-phone-post-size": index % 3 === 1 ? "220%" : "185%",
+});
+
+function InstagramPhoneApp({ brandAvatar, brandName, handle, sceneImage, profile, sectorId }) {
+  const posts = instagramPostImages(sceneImage, sectorId);
   return <div className="v3-instagram-app">
-    <header><strong>{handle.replace(/^@/, "")}</strong><span><Heart /><MessageCircle /></span></header>
+    <header><strong>{handle.replace(/^@/, "")}⌄</strong><span><Plus /><Menu /></span></header>
     <section className="v3-instagram-profile">
       {brandAvatar}
       <dl><div><dt>128</dt><dd>publications</dd></div><div><dt>4,8 k</dt><dd>followers</dd></div><div><dt>246</dt><dd>suivi(e)s</dd></div></dl>
-      <div className="v3-instagram-bio"><b>{brandName}</b><span>Maison indépendante · savoir-faire local</span><small>Ouvert aujourd’hui</small></div>
+      <div className="v3-instagram-bio"><b>{brandName}</b><span>{profile.siteKicker.toLowerCase()}</span><small>Ouvert aujourd’hui</small></div>
       <nav><b>Suivre</b><span>Contacter</span></nav>
-      <div className="v3-instagram-highlights" aria-hidden="true"><i /><i /><i /></div>
+      <div className="v3-instagram-highlights" aria-hidden="true">{posts.slice(0, 3).map((post, index) => <i key={`${post}-${index}`} style={{ "--v3-highlight-image": `url(${post})`, backgroundPosition: SOCIAL_CROP_POSITIONS[index] }} />)}</div>
     </section>
-    <div className="v3-instagram-tabs"><Grid3X3 /><Video /></div>
-    <div className="v3-live-social-grid" aria-label="Aperçu des publications">{posts.map((post, index) => <i key={`${post}-${index}`} style={{ "--v3-phone-post-image": `url(${post})` }} />)}</div>
+    <div className="v3-instagram-tabs"><Grid3X3 /><Clapperboard /></div>
+    <div className="v3-live-social-grid" aria-label="Aperçu des publications">{posts.map((post, index) => <i key={`${post}-${index}`} style={socialCropStyle(post, index)} />)}</div>
+    <footer><Home /><Search /><Plus /><Clapperboard /><span className="v3-instagram-footer-avatar">{brandAvatar}</span></footer>
   </div>;
 }
 
-function WhatsAppPhoneApp({ brandAvatar, brandName }) {
+function TikTokPhoneApp({ brandAvatar, brandName, handle, sceneImage, profile, sectorId }) {
+  const poster = phoneSectorMedia(resolvePhoneSectorId(sectorId, sceneImage))[1];
+  return <div className="v3-tiktok-app" style={{ "--v3-tiktok-poster": poster ? `url(${poster})` : "none" }}>
+    <div className="v3-tiktok-poster" />
+    <header><span>Abonnements</span><b>Pour toi</b><Search /></header>
+    <aside>
+      {brandAvatar}
+      <span><Heart fill="currentColor" /><b>12,4 K</b></span>
+      <span><MessageCircle fill="currentColor" /><b>386</b></span>
+      <span><Bookmark fill="currentColor" /><b>1 208</b></span>
+      <span><Share2 fill="currentColor" /><b>Partager</b></span>
+      <i className="v3-tiktok-disc"><Music2 /></i>
+    </aside>
+    <footer>
+      <b>{handle}</b>
+      <p>{profile.socialCaption}</p>
+      <small>♫ son original · {brandName}</small>
+      <nav><span><Home /><small>Accueil</small></span><span><UsersRound /><small>Amis</small></span><strong><Plus /></strong><span><Inbox /><small>Boîte de réception</small></span><span><UserRound /><small>Profil</small></span></nav>
+    </footer>
+  </div>;
+}
+
+function FacebookPhoneApp({ brandAvatar, brandName, sceneImage, profile, sectorId }) {
+  const posts = instagramPostImages(sceneImage, sectorId);
+  return <div className="v3-facebook-app">
+    <header><strong>facebook</strong><span><Search /><Menu /></span></header>
+    <div className="v3-facebook-cover" style={{ "--v3-social-cover": `url(${posts[1]})` }} />
+    <section>
+      {brandAvatar}
+      <div><h3>{brandName}</h3><p>{profile.siteKicker}</p><small>4,8 ★ · 246 avis</small></div>
+      <nav><b>Suivre</b><span>Message</span><i>•••</i></nav>
+      <menu><b>Accueil</b><span>Publications</span><span>Photos</span><span>À propos</span></menu>
+    </section>
+    <article>
+      <header>{brandAvatar}<span><b>{brandName}</b><small>À l’instant · Public</small></span><i>•••</i></header>
+      <p>{profile.socialCaption}</p>
+      <div style={{ "--v3-social-cover": `url(${posts[2]})` }} />
+      <footer><span>👍 ❤️ 128</span><span>12 commentaires · 4 partages</span></footer>
+      <nav><b>J’aime</b><span>Commenter</span><span>Partager</span></nav>
+    </article>
+    <footer className="v3-facebook-tabbar"><span><Home /><b>Accueil</b></span><span><Video /><b>Vidéos</b></span><span><Inbox /><b>Notifications</b></span><span><Menu /><b>Menu</b></span></footer>
+  </div>;
+}
+
+function LinkedInPhoneApp({ brandAvatar, brandName, sceneImage, profile, sectorId }) {
+  const posts = instagramPostImages(sceneImage, sectorId);
+  const experience = phoneSectorExperience(resolvePhoneSectorId(sectorId, sceneImage));
+  return <div className="v3-linkedin-app">
+    <header><PlatformGlyph id="linkedin" /><span><Search />Rechercher</span><MessageCircle /></header>
+    <div className="v3-linkedin-cover" style={{ "--v3-social-cover": `url(${posts[0]})` }} />
+    <section>
+      {brandAvatar}
+      <h3>{brandName}</h3>
+      <p>{profile.siteTitle}</p>
+      <small>{experience.location} · 4,8 k abonnés</small>
+      <nav><b>+ Suivre</b><span>Voir le site</span><i>•••</i></nav>
+      <menu><b>Accueil</b><span>À propos</span><span>Publications</span><span>Emplois</span></menu>
+    </section>
+    <article>
+      <header>{brandAvatar}<span><b>{brandName}</b><small>4 812 abonnés · 1 h</small></span><i>•••</i></header>
+      <p>{profile.socialCaption}</p>
+      <div style={{ "--v3-social-cover": `url(${posts[1]})` }} />
+      <footer><span>👍 💡 ❤️ 86</span><span>8 commentaires</span></footer>
+      <nav><b>J’aime</b><span>Commenter</span><span>Republier</span><span>Envoyer</span></nav>
+    </article>
+    <footer className="v3-linkedin-tabbar"><span><Home /><b>Accueil</b></span><span><UserRound /><b>Réseau</b></span><span><Plus /><b>Publier</b></span><span><Inbox /><b>Notifications</b></span><span><ShoppingBag /><b>Emplois</b></span></footer>
+  </div>;
+}
+
+function WifiSettingsApp({ brandName, profile }) {
+  const privateNetwork = brandName.replace(/[^A-Z0-9]+/gi, "_").replace(/^_|_$/g, "").toUpperCase().slice(0, 22) || "ENTREPRISE";
+  return <div className="v3-ios-wifi-app">
+    <header><span>‹ Réglages</span><b>Wi‑Fi</b><i>Modifier</i></header>
+    <section className="v3-ios-settings-group"><div><b>Wi‑Fi</b><i className="is-on"><span /></i></div></section>
+    <small>RÉSEAUX</small>
+    <section className="v3-ios-settings-group v3-ios-network-list">
+      <div><Check /><b>{profile.wifi}</b><Wifi /><Info /></div>
+      <div><span /><b>{privateNetwork}</b><LockKeyhole /><Wifi /><Info /></div>
+    </section>
+    <small>AUTRES RÉSEAUX</small>
+    <section className="v3-ios-settings-group v3-ios-network-list"><div><span /><b>Orange_5G</b><LockKeyhole /><Wifi /><Info /></div></section>
+  </div>;
+}
+
+function WhatsAppPhoneApp({ brandAvatar, brandName, sectorId }) {
+  const experience = phoneSectorExperience(sectorId);
   return <div className="v3-whatsapp-app">
-    <header><span className="v3-whatsapp-back">‹</span>{brandAvatar}<div><b>{brandName}</b><small>en ligne</small></div><PhoneCall /><Video /></header>
-    <section><time>AUJOURD’HUI</time><p className="is-incoming">Bonjour 👋 Comment pouvons-nous vous aider ?<small>11:24</small></p><p className="is-outgoing">Bonjour, je souhaiterais avoir un renseignement.<small>11:25 · ✓✓</small></p></section>
-    <footer><span>Message</span><b><SendHorizontal /></b></footer>
+    <header><span className="v3-whatsapp-back">‹</span>{brandAvatar}<div><b>{brandName}</b><small>compte professionnel</small></div><Video /><PhoneCall /></header>
+    <section><time>AUJOURD’HUI</time><p className="is-incoming">{experience.incoming}<small>11:24</small></p><p className="is-outgoing">{experience.outgoing}<small>11:25 · ✓✓</small></p></section>
+    <footer><Plus /><span>Message<Camera /></span><Mic /></footer>
+  </div>;
+}
+
+function ApplePayPhoneApp({ brandAvatar, brandName, profile }) {
+  return <div className="v3-apple-pay-app">
+    <div className="v3-apple-pay-checkout">
+      <header>{brandAvatar}<span><b>{brandName}</b><small>{profile.paymentLabel}</small></span></header>
+      <div><span>Total</span><b>{profile.paymentAmount}</b></div>
+    </div>
+    <section className="v3-apple-pay-sheet">
+      <i className="v3-apple-pay-grabber" />
+      <header><b>Apple Pay</b><strong>{profile.paymentAmount}</strong></header>
+      <div><small>CARTE</small><span><b>•••• 4242</b><em>Visa</em></span></div>
+      <div><small>CONTACT</small><span><b>Compte Apple · contact masqué</b><em>›</em></span></div>
+      <footer><span>Confirmer avec le bouton latéral</span><i /></footer>
+    </section>
+  </div>;
+}
+
+function SafariPhoneApp({ brandAvatar, brandName, actionId, sceneImage, profile, sectorId }) {
+  const isOther = actionId === "autre";
+  const heroImage = phoneSectorMedia(resolvePhoneSectorId(sectorId, sceneImage))[0];
+  const domain = brandName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "").slice(0, 18) || "votre-lien";
+  return <div className="v3-safari-app">
+    <main>
+      <header>{brandAvatar}<span>{brandName}</span><Menu /></header>
+      <div className="v3-safari-hero" style={{ "--v3-safari-image": `url(${heroImage})` }}>
+        <small>{isOther ? "VOTRE ESPACE" : profile.siteKicker}</small>
+        <h3>{isOther ? "Un lien, votre univers." : profile.siteTitle}</h3>
+      </div>
+      <section><b>{isOther ? "Bienvenue" : "À découvrir"}</b><p>{isOther ? "Horaires, actualités et informations utiles au même endroit." : profile.siteBody}</p><span>{isOther ? "Découvrir" : "Voir les services"}</span></section>
+    </main>
+    <footer>
+      <div><LockKeyhole /><span>{isOther ? "votre-lien.fr" : `${domain}.fr`}</span><i>↻</i></div>
+      <nav><span>‹</span><span>›</span><Share2 /><Bookmark /><Layers3 /></nav>
+    </footer>
   </div>;
 }
 
@@ -539,8 +863,14 @@ function PhoneServiceMark({ actionId, label }) {
   return <span className="v3-live-phone-service">{platformId ? <PlatformGlyph id={platformId} /> : ServiceIcon ? <ServiceIcon /> : null}<b>{actionId === "avis" ? "Avis Google" : label}</b></span>;
 }
 
-function LivePhoneScreen({ actionId = "avis", brandName = "VOTRE MARQUE", brandLogo = "", primaryColor = "", secondaryColor = "", textColor = "", sceneImage = "", className = "", native = false }) {
-  const screen = PHONE_SCREENS[actionId] || PHONE_SCREENS.autre;
+function LivePhoneScreen({ actionId = "avis", brandName = "VOTRE MARQUE", brandLogo = "", primaryColor = "", secondaryColor = "", textColor = "", sceneImage = "", sectorId = "", className = "", native = false, preserveNativeStatus = false }) {
+  const resolvedSectorId = resolvePhoneSectorId(sectorId, sceneImage);
+  const profile = phoneSectorProfile(resolvedSectorId, sceneImage);
+  const baseScreen = PHONE_SCREENS[actionId] || PHONE_SCREENS.autre;
+  const screen = {
+    ...baseScreen,
+    title: actionId === "menu" ? profile.menuTitle : actionId === "reservation" ? profile.bookingTitle : baseScreen.title,
+  };
   const socialNetwork = ["instagram", "facebook", "linkedin", "tiktok"].includes(actionId) ? actionId : "";
   const safeBrandName = brandName || "VOTRE MARQUE";
   const handle = `@${safeBrandName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, ".").replace(/^\.|\.$/g, "") || "votre.marque"}`;
@@ -548,37 +878,69 @@ function LivePhoneScreen({ actionId = "avis", brandName = "VOTRE MARQUE", brandL
   const clipId = `tapote-phone-screen-${instanceId}`;
   const glareId = `tapote-phone-glare-${instanceId}`;
   const glassId = `tapote-phone-glass-${instanceId}`;
+  const isRestaurantLiveScreen = sceneImage === "/assets/products/tapote-bg-restaurant-live-screen-v1.webp";
+  const isLifestylePhone = Boolean(PHONE_SCENE_SECTORS[sceneImage]);
+  const contentPath = isRestaurantLiveScreen
+    ? actionId === "tiktok" ? PHONE_DARK_CONTENT_PATH : PHONE_DYNAMIC_CONTENT_PATH
+    : isLifestylePhone ? roundedPhoneClipPath(sceneImage) : PHONE_CONTENT_PATH;
+  // The phone screen mimics a real light-mode app: brand text and the avatar
+  // (a white glyph on a coloured disc) sit on a white UI, so they need a dark
+  // brand colour. Depending on the theme the dark tone is the paper (blue,
+  // green) or the ink (sand, rose, mono), so pick whichever of the two reads
+  // best on white and fall back to near-black if neither is dark enough.
+  const brandCandidates = [primaryColor, textColor]
+    .map((value) => normalizeHexColor(value, ""))
+    .filter(Boolean);
+  const strongestBrandColor = brandCandidates.reduce((best, candidate) => (
+    !best || contrastRatio(candidate, "#ffffff") > contrastRatio(best, "#ffffff") ? candidate : best
+  ), "");
+  const brandDark = strongestBrandColor && contrastRatio(strongestBrandColor, "#ffffff") >= 4.5
+    ? strongestBrandColor
+    : "#161310";
+  const normalizedSecondary = normalizeHexColor(secondaryColor, "#2057f3");
+  const brandAccent = contrastRatio(normalizedSecondary, "#ffffff") >= 3
+    ? normalizedSecondary
+    : contrastRatio(normalizeHexColor(primaryColor, brandDark), "#ffffff") >= 3
+      ? normalizeHexColor(primaryColor, brandDark)
+      : brandDark;
   const phoneStyle = {
-    "--v3-phone-primary": normalizeHexColor(primaryColor, "#161310"),
-    "--v3-phone-accent": normalizeHexColor(secondaryColor, "#2057f3"),
-    "--v3-phone-copy": normalizeHexColor(textColor, "#111827"),
+    "--v3-phone-primary": brandDark,
+    "--v3-phone-accent": brandAccent,
+    // Base UI text also lives on the white app surface, so it uses the same
+    // guaranteed-dark tone rather than the support's ink (light on dark themes).
+    "--v3-phone-copy": brandDark,
     "--v3-phone-scene-image": sceneImage ? `url(${sceneImage})` : "none",
   };
-  const brandAvatar = <div className="v3-live-brand-avatar">{brandLogo ? <img src={brandLogo} alt="" /> : <GeneratedBrandMark name={safeBrandName} />}{(socialNetwork || actionId === "whatsapp") && <b className={`is-${socialNetwork || actionId}`}><PlatformGlyph id={socialNetwork || actionId} /></b>}</div>;
+  const bareBrandAvatar = <div className="v3-live-brand-avatar">{brandLogo ? <img src={brandLogo} alt="" /> : <GeneratedBrandMark name={safeBrandName} />}</div>;
+  const brandAvatar = <div className="v3-live-brand-avatar">{brandLogo ? <img src={brandLogo} alt="" /> : <GeneratedBrandMark name={safeBrandName} />}{socialNetwork && <b className={`is-${socialNetwork}`}><PlatformGlyph id={socialNetwork} /></b>}</div>;
+  const socialPosts = instagramPostImages(sceneImage, resolvedSectorId);
   return (
-    <div className={`v3-live-phone-screen is-action-${actionId} ${className}`} style={phoneStyle} data-phone-action={actionId} data-native-source={native || undefined} role="img" aria-label={`Écran du téléphone après ouverture : ${ACTIONS[actionId]?.name || "lien"}`}>
+    <div className={`v3-live-phone-screen is-action-${actionId} ${className}`} style={phoneStyle} data-phone-action={actionId} data-phone-sector={resolvedSectorId || undefined} data-native-source={native || undefined} role="img" aria-label={`Écran du téléphone après ouverture : ${ACTIONS[actionId]?.name || "lien"}`}>
       <svg className="v3-live-phone-svg" viewBox="0 0 1254 1254" preserveAspectRatio="none" aria-hidden="true">
         <defs>
-          <clipPath id={clipId} clipPathUnits="userSpaceOnUse"><path d={PHONE_CONTENT_PATH} /></clipPath>
+          <clipPath id={clipId} clipPathUnits="userSpaceOnUse"><path d={contentPath} /></clipPath>
           <linearGradient id={glassId} x1=".12" y1="0" x2=".86" y2="1"><stop offset="0" stopColor="#f4f2ed" /><stop offset=".48" stopColor="#eeede9" /><stop offset="1" stopColor="#d7d9dd" /></linearGradient>
           <linearGradient id={glareId} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#fff7e8" stopOpacity=".2" /><stop offset=".4" stopColor="#fff" stopOpacity="0" /><stop offset=".82" stopColor="#cbd5e1" stopOpacity=".12" /></linearGradient>
         </defs>
-        <path className="v3-live-phone-mask" d={PHONE_CONTENT_PATH} fill={`url(#${glassId})`} />
+        <path className="v3-live-phone-mask" d={contentPath} fill={`url(#${glassId})`} />
         <foreignObject x="0" y="0" width="1254" height="1254" clipPath={`url(#${clipId})`}>
           <div className="v3-live-phone-canvas" xmlns="http://www.w3.org/1999/xhtml">
             <div className="v3-live-phone-ui">
-              <div className="v3-live-phone-status"><span>11:25</span><i /><b>5G</b></div>
-              {!['instagram', 'whatsapp'].includes(actionId) && <div className="v3-live-phone-browser"><span>‹</span><strong><PhoneServiceMark actionId={actionId} label={screen.overline} /></strong><i>•••</i></div>}
-              {actionId === "instagram" ? <InstagramPhoneApp brandAvatar={brandAvatar} brandName={safeBrandName} handle={handle} sceneImage={sceneImage} /> : actionId === "whatsapp" ? <WhatsAppPhoneApp brandAvatar={brandAvatar} brandName={safeBrandName} /> : socialNetwork ? <div className="v3-live-phone-social">
+              {/* Every lifestyle photograph already contains the physical iOS
+                  status area. Light destinations preserve it; TikTok repaints
+                  the full glass and therefore draws a white live status bar. */}
+              {(!preserveNativeStatus || actionId === "tiktok") && <div className="v3-live-phone-status"><span>11:25</span><div><i className="is-signal" /><Wifi /><i className="is-battery" /></div></div>}
+              {!['instagram', 'tiktok', 'facebook', 'linkedin', 'whatsapp', 'wifi', 'paiement', 'site', 'autre'].includes(actionId) && <div className="v3-live-phone-browser"><span>‹</span><strong><PhoneServiceMark actionId={actionId} label={screen.overline} /></strong><i>•••</i></div>}
+              {actionId === "instagram" ? <InstagramPhoneApp brandAvatar={bareBrandAvatar} brandName={safeBrandName} handle={handle} sceneImage={sceneImage} profile={profile} sectorId={resolvedSectorId} /> : actionId === "tiktok" ? <TikTokPhoneApp brandAvatar={bareBrandAvatar} brandName={safeBrandName} handle={handle} sceneImage={sceneImage} profile={profile} sectorId={resolvedSectorId} /> : actionId === "facebook" ? <FacebookPhoneApp brandAvatar={bareBrandAvatar} brandName={safeBrandName} sceneImage={sceneImage} profile={profile} sectorId={resolvedSectorId} /> : actionId === "linkedin" ? <LinkedInPhoneApp brandAvatar={bareBrandAvatar} brandName={safeBrandName} sceneImage={sceneImage} profile={profile} sectorId={resolvedSectorId} /> : actionId === "whatsapp" ? <WhatsAppPhoneApp brandAvatar={bareBrandAvatar} brandName={safeBrandName} profile={profile} sectorId={resolvedSectorId} /> : actionId === "wifi" ? <WifiSettingsApp brandName={safeBrandName} profile={profile} /> : actionId === "paiement" ? <ApplePayPhoneApp brandAvatar={bareBrandAvatar} brandName={safeBrandName} profile={profile} /> : ["site", "autre"].includes(actionId) ? <SafariPhoneApp brandAvatar={bareBrandAvatar} brandName={safeBrandName} actionId={actionId} sceneImage={sceneImage} profile={profile} sectorId={resolvedSectorId} /> : socialNetwork ? <div className="v3-live-phone-social">
                 {brandAvatar}
                 <div><h3>{safeBrandName}</h3><span>{handle}</span></div>
                 <dl><div><dt>128</dt><dd>publications</dd></div><div><dt>4,8 k</dt><dd>abonnés</dd></div><div><dt>246</dt><dd>abonnements</dd></div></dl>
                 <span className="v3-live-phone-cta">{socialNetwork === "linkedin" ? "Suivre la page" : "Suivre"}</span>
-                <div className="v3-live-social-grid"><i /><i /><i /><i /><i /><i /></div>
+                <div className="v3-live-social-grid">{socialPosts.map((post, index) => <i key={`${post}-${index}`} style={{ "--v3-phone-post-image": `url(${post})` }} />)}</div>
               </div> : <div className={`v3-live-phone-content is-${actionId}`}>
                 <div className="v3-live-phone-brand">{brandAvatar}<small>{safeBrandName}</small></div>
                 <h3>{screen.title}</h3>
-                <PhoneActionPreview actionId={actionId} screen={screen} />
+                <PhoneActionPreview actionId={actionId} screen={screen} sceneImage={sceneImage} brandName={safeBrandName} sectorId={resolvedSectorId} />
                 <p>{screen.helper}</p>
                 <span className="v3-live-phone-cta">{screen.cta}</span>
               </div>}
@@ -597,23 +959,164 @@ function sectorDefaultSurface(sector) {
   return sector.composition?.comptoir > 0 ? "comptoir" : "plaque";
 }
 
-function ProductScene({ image, alt, nativeAction = "avis", preview, compact = false, className = "" }) {
-  const nativeScreen = preview.actionId === nativeAction && preview.personalization !== "custom";
+// Per-photo perspective mapping. The live UI is projected directly from its
+// native 390 × 844 rectangle onto the measured glass quadrilateral. Keeping the
+// SVG mask fixed in photo coordinates avoids double-warping the rounded corners.
+const PHONE_UI_SOURCE_QUAD = [[0, 0], [390 / 1254, 0], [390 / 1254, 844 / 1254], [0, 844 / 1254]];
+const PHONE_SCREEN_QUADS = {
+  // Four measured intersections of the photographed glass edges. Keeping the
+  // full quadrilateral (instead of approximating its centre) makes both the
+  // browser chrome and the home indicator parallel to the physical phone.
+  "/assets/products/tapote-bg-restaurant-live-screen-v1.webp": [[0.46709, 0.25773], [0.69149, 0.21130], [0.95828, 0.69250], [0.71273, 0.77095]],
+  "/assets/products/tapote-bg-cafe-v1.webp": [[0.484577, 0.272529], [0.707072, 0.216924], [0.997888, 0.718486], [0.736645, 0.770518]],
+  "/assets/products/tapote-bg-restaurant-v1.webp": [[0.474478, 0.257134], [0.687755, 0.205264], [0.959916, 0.682301], [0.697377, 0.780543]],
+  "/assets/products/tapote-bg-boulangerie-v1.webp": [[0.498975, 0.248284], [0.733490, 0.211885], [0.968620, 0.691920], [0.716358, 0.771898]],
+  "/assets/products/tapote-bg-beaute-v1.webp": [[0.501229, 0.249648], [0.740691, 0.213979], [0.969611, 0.703874], [0.716696, 0.785585]],
+  "/assets/products/tapote-bg-medical-v1.webp": [[0.476215, 0.280453], [0.694688, 0.224574], [0.945019, 0.669781], [0.718625, 0.758771]],
+  "/assets/products/tapote-bg-retail-v1.webp": [[0.499329, 0.247809], [0.732111, 0.210345], [0.966294, 0.685388], [0.716630, 0.770543]],
+  "/assets/products/tapote-bg-hotel-v1.webp": [[0.465652, 0.259039], [0.682713, 0.205416], [0.947277, 0.681730], [0.712337, 0.769983]],
+  "/assets/products/tapote-bg-auto-ecole-v1.webp": [[0.500609, 0.276762], [0.739021, 0.239813], [0.977707, 0.727795], [0.723370, 0.814768]],
+  "/assets/products/tapote-bg-automobile-v1.webp": [[0.508017, 0.259777], [0.728628, 0.221889], [0.967728, 0.711728], [0.724802, 0.789559]],
+  "/assets/products/tapote-bg-artisan-v1.webp": [[0.497336, 0.248034], [0.727057, 0.210598], [0.976482, 0.723398], [0.723725, 0.800895]],
+  "/assets/products/tapote-bg-agence-v1.webp": [[0.498484, 0.250929], [0.728625, 0.215380], [0.964823, 0.692531], [0.717898, 0.780191]],
+  "/assets/products/tapote-bg-sport-v1.webp": [[0.500117, 0.254376], [0.730542, 0.219908], [0.967212, 0.708945], [0.714041, 0.788721]],
+  "/assets/products/tapote-bg-formation-v1.webp": [[0.503090, 0.252974], [0.732562, 0.215909], [0.975399, 0.708791], [0.721353, 0.782529]],
+  "/assets/products/tapote-bg-evenement-v1.webp": [[0.503473, 0.253848], [0.734066, 0.218198], [0.965786, 0.696765], [0.716194, 0.782694]],
+  "/assets/products/tapote-bg-animaux-v1.webp": [[0.472355, 0.285801], [0.685404, 0.230525], [0.936727, 0.674057], [0.708341, 0.757322]],
+};
+
+// Corner radii in the native 390 × 844 screen coordinate system, ordered
+// TL, TR, BR, BL. Generated lifestyle shots bend the two lower corners
+// differently, so a single CSS radius cannot follow their photographed glass.
+const PHONE_SCREEN_CLIP_RADII = {
+  "/assets/products/tapote-bg-cafe-v1.webp": [60, 60, 88, 76],
+  "/assets/products/tapote-bg-restaurant-v1.webp": [60, 60, 80, 110],
+  "/assets/products/tapote-bg-boulangerie-v1.webp": [60, 60, 109, 70],
+  "/assets/products/tapote-bg-beaute-v1.webp": [60, 60, 92, 78],
+  "/assets/products/tapote-bg-medical-v1.webp": [58, 58, 74, 70],
+  "/assets/products/tapote-bg-retail-v1.webp": [60, 60, 92, 79],
+  "/assets/products/tapote-bg-hotel-v1.webp": [58, 58, 70, 66],
+  "/assets/products/tapote-bg-auto-ecole-v1.webp": [60, 60, 110, 86],
+  "/assets/products/tapote-bg-automobile-v1.webp": [58, 58, 87, 59],
+  "/assets/products/tapote-bg-artisan-v1.webp": [54, 54, 74, 52],
+  "/assets/products/tapote-bg-agence-v1.webp": [60, 60, 110, 82],
+  "/assets/products/tapote-bg-sport-v1.webp": [60, 60, 104, 82],
+  "/assets/products/tapote-bg-formation-v1.webp": [60, 60, 104, 82],
+  "/assets/products/tapote-bg-evenement-v1.webp": [60, 60, 110, 83],
+  "/assets/products/tapote-bg-animaux-v1.webp": [58, 58, 82, 67],
+};
+
+// Local control-point corrections for generated glass whose photographed
+// rounded corner does not converge on the mathematical edge intersection.
+// Values are photo pixels and affect only the curve, not the app perspective.
+const PHONE_SCREEN_CLIP_CONTROL_OFFSETS = {
+  "/assets/products/tapote-bg-formation-v1.webp": { br: [-38, 0] },
+};
+
+// Project a rounded 390 × 844 screen silhouette into the photographed glass.
+// The four quad points are the intersections of the straight glass edges; the
+// rounded path then clips the live HTML in photo coordinates. This is the same
+// robust masking principle as the hand-measured restaurant scene, generalized
+// to every lifestyle photograph so no app surface can escape over a bezel.
+function roundedPhoneClipPath(sceneImage) {
+  const quad = PHONE_SCREEN_QUADS[sceneImage];
+  if (!quad) return PHONE_CONTENT_PATH;
+  const [tl, tr, br, bl] = quad.map(([x, y]) => [x * 1254, y * 1254]);
+  const [tlRadius, trRadius, brRadius, blRadius] = PHONE_SCREEN_CLIP_RADII[sceneImage] || [60, 60, 82, 76];
+  const controlOffsets = PHONE_SCREEN_CLIP_CONTROL_OFFSETS[sceneImage] || {};
+  const shifted = ([x, y], [dx = 0, dy = 0] = []) => [x + dx, y + dy];
+  const tlControl = shifted(tl, controlOffsets.tl);
+  const trControl = shifted(tr, controlOffsets.tr);
+  const brControl = shifted(br, controlOffsets.br);
+  const blControl = shifted(bl, controlOffsets.bl);
+  const along = ([ax, ay], [bx, by], amount) => [ax + ((bx - ax) * amount), ay + ((by - ay) * amount)];
+  const topStart = along(tl, tr, tlRadius / 390);
+  const topEnd = along(tr, tl, trRadius / 390);
+  const rightStart = along(tr, br, trRadius / 844);
+  const rightEnd = along(br, tr, brRadius / 844);
+  const bottomStart = along(br, bl, brRadius / 390);
+  const bottomEnd = along(bl, br, blRadius / 390);
+  const leftStart = along(bl, tl, blRadius / 844);
+  const leftEnd = along(tl, bl, tlRadius / 844);
+  const point = ([x, y]) => `${x.toFixed(2)} ${y.toFixed(2)}`;
+  return [
+    `M ${point(topStart)}`,
+    `L ${point(topEnd)}`,
+    `Q ${point(trControl)} ${point(rightStart)}`,
+    `L ${point(rightEnd)}`,
+    `Q ${point(brControl)} ${point(bottomStart)}`,
+    `L ${point(bottomEnd)}`,
+    `Q ${point(blControl)} ${point(leftStart)}`,
+    `L ${point(leftEnd)}`,
+    `Q ${point(tlControl)} ${point(topStart)}`,
+    "Z",
+  ].join(" ");
+}
+
+// Adjugate of a 3×3 matrix (row-major, length 9).
+function adj3(m) {
+  return [
+    m[4] * m[8] - m[5] * m[7], m[2] * m[7] - m[1] * m[8], m[1] * m[5] - m[2] * m[4],
+    m[5] * m[6] - m[3] * m[8], m[0] * m[8] - m[2] * m[6], m[2] * m[3] - m[0] * m[5],
+    m[3] * m[7] - m[4] * m[6], m[1] * m[6] - m[0] * m[7], m[0] * m[4] - m[1] * m[3],
+  ];
+}
+function mul3(a, b) {
+  const c = new Array(9).fill(0);
+  for (let i = 0; i < 3; i += 1) for (let j = 0; j < 3; j += 1) for (let k = 0; k < 3; k += 1) c[3 * i + j] += a[3 * i + k] * b[3 * k + j];
+  return c;
+}
+function mulV(m, v) {
+  return [m[0] * v[0] + m[1] * v[1] + m[2] * v[2], m[3] * v[0] + m[4] * v[1] + m[5] * v[2], m[6] * v[0] + m[7] * v[1] + m[8] * v[2]];
+}
+// Basis mapping the unit square corners to four points.
+function basisFor(pts) {
+  const m = [pts[0][0], pts[1][0], pts[2][0], pts[0][1], pts[1][1], pts[2][1], 1, 1, 1];
+  const v = mulV(adj3(m), [pts[3][0], pts[3][1], 1]);
+  return mul3(m, [v[0], 0, 0, 0, v[1], 0, 0, 0, v[2]]);
+}
+// CSS matrix3d string mapping the source quad onto the destination quad, both given
+// in scene fractions and scaled to the scene's pixel size (w × h).
+function quadMatrix3d(srcFrac, dstFrac, w, h) {
+  const scale = (q) => q.map(([x, y]) => [x * w, y * h]);
+  const projection = mul3(basisFor(scale(dstFrac)), adj3(basisFor(scale(srcFrac))));
+  for (let i = 0; i < 9; i += 1) projection[i] /= projection[8];
+  const t = projection;
+  const m = [t[0], t[3], 0, t[6], t[1], t[4], 0, t[7], 0, 0, 1, 0, t[2], t[5], 0, t[8]];
+  return `matrix3d(${m.join(",")})`;
+}
+
+function ProductScene({ image, alt, preview, compact = false, className = "", sectorId = "" }) {
+  const isRestaurantPhoto = image === "/assets/products/tapote-bg-restaurant-live-screen-v1.webp";
+  const isPhotoPhone = Boolean(PHONE_SCENE_SECTORS[image]);
+  const resolvedSectorId = resolvePhoneSectorId(sectorId, image);
   const isMixedPack = preview.surface === "mix";
+  const sceneRef = useRef(null);
+  const destQuad = PHONE_SCREEN_QUADS[image];
+  useLayoutEffect(() => {
+    const scene = sceneRef.current;
+    const screenEl = scene?.querySelector(".v3-live-phone-screen");
+    const uiEl = scene?.querySelector(".v3-live-phone-ui");
+    if (!screenEl || !uiEl) return undefined;
+    screenEl.style.transform = "";
+    if (!destQuad) { uiEl.style.transform = ""; return undefined; }
+    uiEl.style.transform = quadMatrix3d(PHONE_UI_SOURCE_QUAD, destQuad, 1254, 1254);
+    return undefined;
+  }, [destQuad, preview.actionId, preview.brandName, preview.brandLogo, preview.primaryColor, preview.secondaryColor, preview.textColor, preview.personalization]);
   return (
-    <div className={`v3-sector-scene ${compact ? "is-compact is-fixed-preview" : "is-live-preview"} is-surface-${preview.surface} ${className}`} data-preview-mode={compact ? "fixed" : "live"} aria-hidden={compact || undefined}>
+    <div ref={sceneRef} className={`v3-sector-scene ${compact ? "is-compact is-fixed-preview" : "is-live-preview"} is-surface-${preview.surface} ${className}`} data-preview-mode={compact ? "fixed" : "live"} aria-hidden={compact || undefined}>
       <img className="v3-sector-scene-background" src={image} alt={compact ? "" : alt} loading={compact ? "lazy" : "eager"} />
       {isMixedPack ? <div className="v3-sector-scene-support v3-sector-scene-support-mix">
         <ProductArt {...preview} surface="comptoir" className="is-mix-comptoir" />
         <ProductArt {...preview} surface="plaque" className="is-mix-plaque" />
       </div> : <ProductArt key={`${preview.surface}-${preview.actionId}-${preview.designStyle}-${preview.primaryColor}-${preview.secondaryColor}-${preview.textColor}-${preview.brandName}`} {...preview} className="v3-sector-scene-support" />}
-      <LivePhoneScreen key={`${preview.actionId}-${preview.brandName}-${preview.brandLogo}-${preview.primaryColor}-${preview.secondaryColor}-${preview.textColor}-${preview.personalization}`} actionId={preview.actionId} brandName={preview.brandName} brandLogo={preview.brandLogo} primaryColor={preview.primaryColor} secondaryColor={preview.secondaryColor} textColor={preview.textColor} sceneImage={image} className="v3-sector-scene-screen" native={nativeScreen} />
+      <LivePhoneScreen key={`${preview.actionId}-${preview.brandName}-${preview.brandLogo}-${preview.primaryColor}-${preview.secondaryColor}-${preview.textColor}-${preview.personalization}`} actionId={preview.actionId} brandName={preview.brandName} brandLogo={preview.brandLogo} primaryColor={preview.primaryColor} secondaryColor={preview.secondaryColor} textColor={preview.textColor} sceneImage={image} sectorId={resolvedSectorId} className={`v3-sector-scene-screen${isPhotoPhone ? " is-photo-screen" : ""}${isRestaurantPhoto ? " is-restaurant-screen" : ""}`} preserveNativeStatus={isRestaurantPhoto} />
     </div>
   );
 }
 
 function SectorScene({ sector, preview, compact = false, className = "" }) {
-  return <ProductScene image={sector.image} alt={`Tapote utilisé dans un univers ${sector.title}`} nativeAction={sector.actionIds[0]} preview={preview} compact={compact} className={className} />;
+  return <ProductScene image={sector.image} alt={`Tapote utilisé dans un univers ${sector.title}`} nativeAction={sector.actionIds[0]} preview={preview} compact={compact} className={className} sectorId={sector.id} />;
 }
 
 function CompositionPicker({ count, composition, onChange }) {
@@ -1200,7 +1703,7 @@ function ProductPage({ page, onAdd, forcedMode = "" }) {
     const productLabel = preview.count > 1
       ? `Pack ${compositionLabel(preview.composition) || `${preview.count} supports`}`
       : data.name;
-    const title = `${productLabel} NFC + QR | Tapote`;
+    const title = `${productLabel}${/nfc/i.test(productLabel) ? "" : " NFC"} + QR | Tapote`;
     const description = `${productLabel} Tapote pour ouvrir ${ACTIONS[preview.actionId]?.name || "le lien de votre choix"}. NFC + QR configurés, lien modifiable à vie.`;
     document.title = title;
     setMetaContent("name", "description", description);

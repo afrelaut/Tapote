@@ -54,6 +54,10 @@ describe("Boutique Tapote V3", () => {
     expect(screen.getByRole("heading", { name: "Restaurants, traiteurs & food trucks" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Hébergements & tourisme" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Auto-écoles" })).toBeVisible();
+    const projectedScreens = Array.from(document.querySelectorAll('.v3-sector-directory-grid .v3-live-phone-ui'));
+    expect(projectedScreens).toHaveLength(15);
+    expect(projectedScreens.every((element) => element.style.transform.startsWith("matrix3d("))).toBe(true);
+    expect(new Set(Array.from(document.querySelectorAll('.v3-sector-directory-grid [data-phone-sector]'), (element) => element.dataset.phoneSector)).size).toBe(15);
 
     cleanup();
     renderRoute("/secteurs/auto-ecoles");
@@ -88,26 +92,101 @@ describe("Boutique Tapote V3", () => {
   it("synchronise l’écran du téléphone de la fiche avec le lien choisi", () => {
     renderRoute("/produits/chevalet?mode=ready&action=avis");
 
-    expect(document.querySelector('[data-preview-mode="live"] [data-phone-action="avis"]')).toHaveAttribute("data-native-source", "true");
+    const liveScreen = document.querySelector('[data-preview-mode="live"] [data-phone-action="avis"]');
+    expect(liveScreen).toHaveAttribute("data-phone-sector", "cafe");
+    expect(liveScreen).not.toHaveAttribute("data-native-source");
     fireEvent.change(screen.getByLabelText("Le lien à ouvrir"), { target: { value: "menu" } });
 
     expect(document.querySelector('[data-preview-mode="live"] [data-phone-action="menu"]')).toBeInTheDocument();
     expect(window.location.search).toContain("action=menu");
   });
 
-  it("rend des écrans dédiés et reconnaissables pour Avis, Instagram et WhatsApp", () => {
+  it("rend des écrans dédiés et reconnaissables pour les apps et réglages", () => {
     renderRoute("/produits/chevalet?mode=custom&action=avis");
 
     expect(document.querySelector(".v3-phone-google-stars")).toHaveTextContent("★★★★★");
-    expect(screen.getByText("Quelle note donneriez-vous ?")).toBeVisible();
+    expect(screen.getByText("Publier un avis")).toBeVisible();
 
     fireEvent.change(screen.getByLabelText("Le lien à ouvrir"), { target: { value: "instagram" } });
     expect(document.querySelector(".v3-instagram-app")).toBeInTheDocument();
     expect(document.querySelectorAll(".v3-instagram-app .v3-live-social-grid i")).toHaveLength(6);
+    expect(document.querySelectorAll(".v3-instagram-app > footer svg")).toHaveLength(5);
+    expect(document.querySelector(".v3-instagram-app .v3-live-social-grid i").getAttribute("style")).toContain("sector-cafe-media-v1.webp");
+    expect(document.querySelector(".v3-instagram-app .v3-live-social-grid i").getAttribute("style")).not.toContain("tapote-bg-");
+
+    fireEvent.change(screen.getByLabelText("Le lien à ouvrir"), { target: { value: "facebook" } });
+    expect(document.querySelector(".v3-facebook-app")).toHaveTextContent("CAFÉ DE SPÉCIALITÉ");
+    expect(document.querySelector(".v3-facebook-app > article > nav")).toHaveTextContent("Commenter");
+
+    fireEvent.change(screen.getByLabelText("Le lien à ouvrir"), { target: { value: "linkedin" } });
+    expect(document.querySelector(".v3-linkedin-app")).toHaveTextContent("Torréfié avec soin");
+    expect(document.querySelector(".v3-linkedin-app > article > nav")).toHaveTextContent("Republier");
+
+    fireEvent.change(screen.getByLabelText("Le lien à ouvrir"), { target: { value: "wifi" } });
+    expect(document.querySelector(".v3-ios-wifi-app")).toHaveTextContent("Modifier");
+    expect(document.querySelector(".v3-ios-wifi-app")).toHaveTextContent("CAFE_NOMA_GUEST");
+
+    fireEvent.change(screen.getByLabelText("Le lien à ouvrir"), { target: { value: "paiement" } });
+    expect(document.querySelector(".v3-apple-pay-app")).toHaveTextContent("Confirmer avec le bouton latéral");
+    expect(document.querySelector(".v3-apple-pay-app")).toHaveTextContent("contact masqué");
+
+    fireEvent.change(screen.getByLabelText("Le lien à ouvrir"), { target: { value: "site" } });
+    expect(document.querySelector(".v3-safari-app")).toHaveTextContent("cafenoma.fr");
+
+    fireEvent.change(screen.getByLabelText("Le lien à ouvrir"), { target: { value: "tiktok" } });
+    expect(document.querySelectorAll(".v3-tiktok-app > footer > nav svg")).toHaveLength(5);
 
     fireEvent.change(screen.getByLabelText("Le lien à ouvrir"), { target: { value: "whatsapp" } });
-    expect(document.querySelector(".v3-whatsapp-app")).toHaveTextContent("Comment pouvons-nous vous aider");
+    expect(document.querySelector(".v3-whatsapp-app")).toHaveTextContent("table pour deux");
     expect(document.querySelector(".v3-whatsapp-app")).toHaveTextContent("✓✓");
+    expect(document.querySelectorAll(".v3-whatsapp-app > footer svg")).toHaveLength(3);
+  });
+
+  it("utilise les médias restaurant dédiés pour Instagram, Commander et TikTok", () => {
+    renderRoute("/secteurs/restaurants-traiteurs-food-trucks");
+
+    const actionSelect = screen.getByLabelText("Le lien à ouvrir");
+    expect(Array.from(actionSelect.options, (option) => option.value)).toEqual(expect.arrayContaining([
+      "avis", "formulaire", "menu", "reservation", "commande", "paiement", "pourboire", "fidelite", "instagram", "tiktok", "facebook", "linkedin", "wifi", "site", "contact", "whatsapp", "multiliens",
+    ]));
+    fireEvent.change(actionSelect, { target: { value: "instagram" } });
+    const instagramPosts = document.querySelectorAll('[data-preview-mode="live"] .v3-instagram-app .v3-live-social-grid i');
+    expect(instagramPosts).toHaveLength(6);
+    expect(instagramPosts[0].getAttribute("style")).toContain("restaurant-burrata-v1.webp");
+
+    fireEvent.change(actionSelect, { target: { value: "commande" } });
+    const orderImages = document.querySelectorAll('[data-preview-mode="live"] .v3-phone-order-card img');
+    expect(orderImages).toHaveLength(3);
+    expect(orderImages[1]).toHaveAttribute("src", "/assets/phone/restaurant-canard-v1.webp");
+
+    fireEvent.change(actionSelect, { target: { value: "tiktok" } });
+    expect(document.querySelector('[data-preview-mode="live"] .v3-tiktok-app').getAttribute("style")).toContain("restaurant-chef-tiktok-v1.webp");
+  });
+
+  it("rend les parcours restaurant opérationnels avec des détails crédibles", () => {
+    renderRoute("/secteurs/restaurants-traiteurs-food-trucks");
+
+    const actionSelect = screen.getByLabelText("Le lien à ouvrir");
+    fireEvent.change(actionSelect, { target: { value: "menu" } });
+    expect(document.querySelector('[data-preview-mode="live"] .v3-phone-menu-card')).toHaveTextContent("Velouté de potimarron");
+    expect(document.querySelector('[data-preview-mode="live"] .v3-phone-menu-card')).toHaveTextContent("Magret de canard");
+
+    fireEvent.change(actionSelect, { target: { value: "reservation" } });
+    expect(document.querySelector('[data-preview-mode="live"] .v3-phone-booking-card')).toHaveTextContent("2 personnes");
+    expect(document.querySelector('[data-preview-mode="live"] .v3-phone-booking-card')).toHaveTextContent("19:30");
+
+    fireEvent.change(actionSelect, { target: { value: "fidelite" } });
+    expect(document.querySelector('[data-preview-mode="live"] .v3-phone-loyalty-card')).toHaveTextContent("Dessert maison offert");
+    expect(document.querySelector('[data-preview-mode="live"] .v3-phone-loyalty-card')).toHaveTextContent("L’ATELIER 21");
+
+    fireEvent.change(actionSelect, { target: { value: "contact" } });
+    expect(document.querySelector('[data-preview-mode="live"] .v3-phone-contact-card')).toHaveTextContent("bonjour@latelier21.fr");
+
+    fireEvent.change(actionSelect, { target: { value: "multiliens" } });
+    expect(document.querySelector('[data-preview-mode="live"] .v3-phone-links-card')).toHaveTextContent("Réserver une table");
+
+    fireEvent.change(actionSelect, { target: { value: "formulaire" } });
+    expect(document.querySelector('[data-preview-mode="live"] .v3-phone-form-card')).toHaveTextContent("Réponse habituelle sous 24 h");
   });
 
   it("fait configurer les packs au lieu de les ajouter sans choix", () => {

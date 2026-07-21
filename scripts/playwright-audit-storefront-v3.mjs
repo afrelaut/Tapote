@@ -122,7 +122,7 @@ const readyTiktok = await auditPage(desktop, "/produits/plaque?mode=ready&design
   const phoneCopy = (await scene.locator(".v3-sector-scene-screen").innerText()).replace(/\s+/g, " ");
   assert("tiktok-selectionne", await page.getByLabel("Le lien à ouvrir").inputValue() === "tiktok");
   assert("preset-tiktok-conserve", supportCopy.includes("LIGNE NOIRE") && supportCopy.includes("Voyez les coulisses."), supportCopy);
-  assert("iphone-tiktok-synchronise", phoneCopy.includes("TIKTOK") && phoneCopy.includes("LIGNE NOIRE"), phoneCopy);
+  assert("iphone-tiktok-synchronise", phoneCopy.includes("Pour toi") && phoneCopy.includes("LIGNE NOIRE"), phoneCopy);
   assert("style-tiktok-conserve", await page.getByRole("button", { name: "Signature", pressed: true }).count() === 1);
   await scene.screenshot({ path: path.join(outputDir, "03b-design-tiktok.png") });
   await page.getByRole("button", { name: "Minimal" }).click();
@@ -170,6 +170,44 @@ const drivingSchool = await auditPage(desktop, "/secteurs/auto-ecoles", "Secteur
 });
 await drivingSchool.close();
 
+const sectorPhoneMatrix = [
+  ["cafe", "cafes-bars", "cafe"],
+  ["restaurant", "restaurants-traiteurs-food-trucks", "restaurant"],
+  ["boulangerie", "boulangeries-patisseries", "boulangerie"],
+  ["salon", "beaute-coiffure-bien-etre", "salon"],
+  ["cabinet_medical", "cabinets-medicaux-paramedicaux", "medical"],
+  ["boutique", "boutiques-commerces", "boutique"],
+  ["hotel", "hebergements-tourisme", "hotel"],
+  ["auto_ecole", "auto-ecoles", "auto-ecole"],
+  ["garage", "garages-mobilite", "garage"],
+  ["artisan", "artisans-services-terrain", "artisan"],
+  ["immobilier", "agences-independants", "immobilier"],
+  ["salle_sport", "sport-studios", "sport"],
+  ["coworking", "bureaux-formation", "coworking"],
+  ["evenement", "evenements-culture-associations", "evenement"],
+  ["veterinaire", "animaux-soins", "veterinaire"],
+];
+
+for (const [index, [sectorId, slug, mediaStem]] of sectorPhoneMatrix.entries()) {
+  const page = await desktop.newPage();
+  const response = await page.goto(`${baseUrl}/secteurs/${slug}`, { waitUntil: "networkidle" });
+  const scene = page.locator(".v3-sector-hero .v3-sector-scene");
+  await scene.waitFor({ state: "visible" });
+  const screen = scene.locator(".v3-live-phone-screen");
+  const ui = scene.locator(".v3-live-phone-ui");
+  assert(`secteur-${sectorId}-charge`, response?.ok());
+  assert(`secteur-${sectorId}-dynamique`, await screen.getAttribute("data-phone-sector") === sectorId);
+  assert(`secteur-${sectorId}-projection-et-masque`, await ui.evaluate((element) => getComputedStyle(element).transform.startsWith("matrix3d")) && Boolean(await scene.locator("foreignObject").getAttribute("clip-path")));
+  await page.locator(".v3-sector-buy select").selectOption("instagram");
+  await scene.locator(".v3-instagram-app").waitFor({ state: "visible" });
+  await page.waitForTimeout(280);
+  const postImages = await scene.locator(".v3-live-social-grid i").evaluateAll((items) => items.map((item) => getComputedStyle(item).getPropertyValue("--v3-phone-post-image")));
+  const expectedMedia = sectorId === "restaurant" ? "/assets/phone/restaurant-" : `/assets/phone/sector-${mediaStem}-media-v1.webp`;
+  assert(`secteur-${sectorId}-media-dedie`, postImages.length > 0 && postImages.every((value) => value.includes(expectedMedia)), postImages);
+  await scene.screenshot({ path: path.join(outputDir, `04-sector-${String(index + 1).padStart(2, "0")}-${sectorId}.png`) });
+  await page.close();
+}
+
 const custom = await auditPage(desktop, "/produits/chevalet?mode=custom&count=2&action=avis", "Pack personnalisé", async (page) => {
   const hero = page.locator(".v3-product-main-image");
   const floatingPurchase = page.locator(".v3-mobile-product-cta");
@@ -208,20 +246,20 @@ const custom = await auditPage(desktop, "/produits/chevalet?mode=custom&count=2&
   await page.getByLabel("Brief de design").fill("Brief interne confidentiel — ne pas imprimer");
   await page.locator('.v3-logo-upload input[type="file"]').setInputFiles(path.resolve("public/brand/tapote-logo.svg"));
   await page.getByText("Prêt pour le BAT").waitFor();
-  assert("logo-incruste-dans-iphone", await hero.locator(".v3-sector-scene-screen .v3-live-brand-avatar img").count() === 1);
+  assert("logo-incruste-dans-iphone", await hero.locator(".v3-sector-scene-screen .v3-live-brand-avatar img").count() >= 1);
   assert("marque-synchronisee-support-iphone", await hero.getByText("Maison Nova").count() >= 2);
   const phoneTheme = await hero.locator(".v3-sector-scene-screen").evaluate((element) => ({
     primary: getComputedStyle(element).getPropertyValue("--v3-phone-primary").trim(),
     accent: getComputedStyle(element).getPropertyValue("--v3-phone-accent").trim(),
     copy: getComputedStyle(element).getPropertyValue("--v3-phone-copy").trim(),
   }));
-  assert("couleurs-synchronisees-dans-iphone", phoneTheme.primary === "#173b57" && phoneTheme.accent === "#f4b942" && phoneTheme.copy === "#ffffff", phoneTheme);
+  assert("couleurs-synchronisees-dans-iphone", phoneTheme.primary === "#173b57" && phoneTheme.accent === "#173b57" && phoneTheme.copy === "#173b57", phoneTheme);
   assert("brief-non-imprime", await hero.getByText("Brief interne confidentiel — ne pas imprimer").count() === 0);
   assert("url-configuration-partageable", /mode=custom/.test(page.url()) && /action=instagram/.test(page.url()) && /count=2/.test(page.url()) && /composition=mix/.test(page.url()), page.url());
   await page.reload({ waitUntil: "networkidle" });
   assert("brouillon-conserve", await page.getByLabel("Nom de votre entreprise").inputValue() === "Maison Nova" && await page.getByLabel("Brief de design").inputValue() === "Brief interne confidentiel — ne pas imprimer");
   assert("logo-conserve-apres-reload", await page.locator('.v3-product-main-image img[alt="Logo client importé"]').count() > 0);
-  assert("logo-iphone-conserve-apres-reload", await page.locator(".v3-product-main-image .v3-sector-scene-screen .v3-live-brand-avatar img").count() === 1);
+  assert("logo-iphone-conserve-apres-reload", await page.locator(".v3-product-main-image .v3-sector-scene-screen .v3-live-brand-avatar img").count() >= 1);
   await page.locator(".v3-buybox-summary").getByRole("button", { name: /Ajouter au panier/i }).click();
   await page.getByRole("status").waitFor();
   assert("toast-pack-explicite", (await page.getByRole("status").innerText()).includes("2 supports") && (await page.getByRole("status").innerText()).includes("Instagram") && (await page.getByRole("status").innerText()).includes("1 chevalet + 1 plaque"));
@@ -341,14 +379,14 @@ const narrowProduct = await auditPage(narrow, "/produits/plaque?mode=custom&acti
   await page.locator('.v3-brand-colors input[type="color"]').nth(0).fill("#173b57");
   await page.locator('.v3-brand-colors input[type="color"]').nth(1).fill("#f4b942");
   await page.locator('.v3-logo-upload input[type="file"]').setInputFiles(path.resolve("public/brand/tapote-logo.svg"));
-  await scene.locator(".v3-live-brand-avatar img").waitFor({ state: "visible" });
+  await scene.locator(".v3-live-brand-avatar img").first().waitFor({ state: "visible" });
   assert("aucun-debordement-320", await page.evaluate(() => document.documentElement.scrollWidth === document.documentElement.clientWidth));
   assert("une-seule-incrustation-iphone-320", await scene.locator(".v3-sector-scene-screen").count() === 1 && await scene.locator(".v3-live-phone-svg").count() === 1);
   const syncedNames = await scene.evaluate((element) => ({
     support: element.querySelector(".v3-sector-scene-support")?.textContent?.toLowerCase().includes("atelier solstice"),
     phone: element.querySelector(".v3-sector-scene-screen")?.textContent?.toLowerCase().includes("atelier solstice"),
   }));
-  assert("logo-et-marque-iphone-320", await scene.locator(".v3-live-brand-avatar img").count() === 1 && syncedNames.support && syncedNames.phone, syncedNames);
+  assert("logo-et-marque-iphone-320", await scene.locator(".v3-live-brand-avatar img").count() >= 1 && syncedNames.support && syncedNames.phone, syncedNames);
   await page.screenshot({ path: path.join(outputDir, "14-product-320.png"), fullPage: true });
 });
 await narrowProduct.close();

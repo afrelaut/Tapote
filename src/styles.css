@@ -428,6 +428,10 @@ a { color: inherit; }
 .platform-glyph svg .is-filled { fill: currentColor; stroke: none; }
 .platform-glyph-facebook, .platform-glyph-linkedin { padding: .17em; color: #fff; background: #1877f2; border-radius: 28%; }
 .platform-glyph-linkedin { background: #0a66c2; border-radius: 13%; }
+.platform-glyph-facebook { background: #0866ff; border-radius: 50%; }
+.platform-glyph-facebook svg, .platform-glyph-linkedin svg { display: none; }
+.platform-glyph-facebook::before { content: "f"; color: #fff; font: 900 1.18em/.9 Arial, sans-serif; transform: translateY(.1em); }
+.platform-glyph-linkedin::before { content: "in"; color: #fff; font: 800 .64em/1 Arial, sans-serif; letter-spacing: -.08em; }
 .platform-glyph-instagram { padding: .12em; color: #fff; background: radial-gradient(circle at 70% 76%, #ffd15c 0 13%, #ee2a7b 38%, #6228d7 76%); border-radius: 29%; }
 .platform-glyph-tiktok { color: #fff; background: #050505; border-radius: 28%; }
 .platform-glyph-tiktok .is-shadow { fill: #25f4ee; stroke: none; transform: translate(-.8px, .5px); }

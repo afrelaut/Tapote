@@ -23,7 +23,7 @@ const sectorRows = [
     description: "Menu toujours à jour, réservation et avis sans recherche ni application.",
     placement: "Sur table, au comptoir ou près du point de retrait.",
     script: "« La carte est ici ; après le repas, vous pouvez aussi nous laisser un avis. »",
-    image: "/assets/products/tapote-bg-restaurant-v1.webp",
+    image: "/assets/products/tapote-bg-restaurant-live-screen-v1.webp",
     category: "Restauration & commerce",
     recommendedProductId: "pack_duo",
     composition: { comptoir: 2, plaque: 0 },
