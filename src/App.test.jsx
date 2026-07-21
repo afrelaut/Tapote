@@ -3,7 +3,7 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CartPage, CheckoutPage, Configurator } from "./App.jsx";
-import { DEVICE_THEMES } from "./deviceThemes.js";
+import { DEVICE_THEMES, resolveDeviceColors } from "./deviceThemes.js";
 
 
 const logoFile = () => new File(
@@ -63,6 +63,13 @@ describe("Configurateur Tapote", () => {
       expect(contrastRatio(paper, ink)).toBeGreaterThanOrEqual(4.5);
       expect(contrastRatio(accent, accentInk)).toBeGreaterThanOrEqual(4.5);
     });
+  });
+
+  it("corrige une couleur de texte personnalisée illisible avant impression", () => {
+    const colors = resolveDeviceColors("sand", "#173b57", "#f4b942", "#402d24");
+
+    expect(contrastRatio(colors.paper, colors.ink)).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(colors.accent, colors.accentInk)).toBeGreaterThanOrEqual(4.5);
   });
 
   it("applique le prix du pack au lieu de multiplier le prix unitaire", () => {

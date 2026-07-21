@@ -784,7 +784,7 @@ body {
 .device-preview-canonical .customer-brand,
 .device-preview-canonical .customer-brand-has-logo {
   width: 100%;
-  height: 20cqw !important;
+  height: 15cqw !important;
   gap: 1.1cqw !important;
 }
 .device-preview-canonical .customer-brand > span {
@@ -799,25 +799,31 @@ body {
   max-height: 14cqw !important;
 }
 .device-preview-canonical .action-signature {
-  min-height: 5.4cqw !important;
-  margin: .7cqw 0 !important;
+  min-height: 8cqw !important;
+  margin: 1cqw 0 !important;
   gap: 1.4cqw;
-  font-size: 1.85cqw !important;
+  font-size: 2.55cqw !important;
 }
-.device-preview-canonical .action-signature svg { width: 4.1cqw; height: 4.1cqw; }
+.device-preview-canonical .action-signature svg { width: 5.2cqw; height: 5.2cqw; }
+.device-preview-canonical .device-purpose {
+  max-width: 91cqw;
+  margin: auto 0 2cqw !important;
+  font-size: 10.4cqw !important;
+  line-height: .91;
+}
 .device-preview-canonical .device-headline {
   max-width: 88cqw;
-  margin: auto 0 1.5cqw !important;
-  font-size: 11.7cqw !important;
-  line-height: .91;
+  margin: 0 0 1cqw !important;
+  font-size: 4cqw !important;
+  line-height: 1.05;
 }
 .device-preview-canonical .device-subline {
   margin: 0 0 auto !important;
-  font-size: 2.35cqw !important;
+  font-size: 2.2cqw !important;
 }
 .device-preview-canonical .tap-zone {
   width: 100% !important;
-  min-height: 38cqw !important;
+  min-height: 33cqw !important;
   padding: 3.2cqw !important;
   grid-template-columns: minmax(0, 1fr) 23cqw !important;
   gap: 2.8cqw !important;
@@ -849,7 +855,8 @@ body {
 }
 .device-preview-canonical:is(.device-preview-plaque, .device-preview-mini, .device-preview-sticker) .printed-insert { padding: 4.5cqw !important; }
 .device-preview-canonical:is(.device-preview-plaque, .device-preview-mini, .device-preview-sticker) .customer-brand { height: 15cqw !important; }
-.device-preview-canonical:is(.device-preview-plaque, .device-preview-mini, .device-preview-sticker) .device-headline { font-size: 9.8cqw !important; }
+.device-preview-canonical:is(.device-preview-plaque, .device-preview-mini, .device-preview-sticker) .device-purpose { font-size: 9.2cqw !important; }
+.device-preview-canonical:is(.device-preview-plaque, .device-preview-mini, .device-preview-sticker) .device-headline { font-size: 3.6cqw !important; }
 .device-preview-canonical:is(.device-preview-plaque, .device-preview-mini, .device-preview-sticker) .tap-zone { min-height: 31cqw !important; }
 
 /* The card remains landscape, but its print language is identical. */
@@ -857,16 +864,18 @@ body {
   padding: 5cqw !important;
   display: grid !important;
   grid-template-columns: .9fr 1.1fr !important;
-  grid-template-rows: 1fr !important;
+  grid-template-rows: auto auto 1fr !important;
   gap: 3cqw !important;
   align-items: center;
 }
 .device-preview-canonical.device-preview-carte .customer-brand { grid-column: 1; grid-row: 1; height: auto !important; align-self: start; }
-.device-preview-canonical.device-preview-carte .device-headline { grid-column: 1; grid-row: 1; align-self: end; margin: 0 !important; font-size: 7.3cqw !important; }
-.device-preview-canonical.device-preview-carte :is(.device-subline, .action-signature, .maker-signature) { display: none !important; }
+.device-preview-canonical.device-preview-carte .action-signature { grid-column: 1; grid-row: 2; min-height: 5cqw !important; margin: 0 !important; justify-self: start; font-size: 1.8cqw !important; }
+.device-preview-canonical.device-preview-carte .action-signature svg { width: 4cqw; height: 4cqw; }
+.device-preview-canonical.device-preview-carte .device-purpose { grid-column: 1; grid-row: 3; align-self: start; max-width: none; margin: 0 !important; font-size: 6.5cqw !important; line-height: .92; text-align: left; }
+.device-preview-canonical.device-preview-carte :is(.device-headline, .device-subline, .maker-signature) { display: none !important; }
 .device-preview-canonical.device-preview-carte .tap-zone {
   grid-column: 2;
-  grid-row: 1;
+  grid-row: 1 / 4;
   min-height: 26cqw !important;
   margin: 0 !important;
   grid-template-columns: minmax(0, 1fr) 15cqw !important;

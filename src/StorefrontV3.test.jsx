@@ -20,6 +20,20 @@ afterEach(() => {
 });
 
 describe("Boutique Tapote V3", () => {
+  it("rend le service et Pilot tangibles dès l’accueil", () => {
+    renderRoute("/");
+
+    expect(screen.getByRole("heading", { name: /Vous choisissez\. On prépare\. Vous posez/i })).toBeVisible();
+    expect(screen.getByRole("region", { name: /Aperçu de Tapote Pilot/i })).toBeVisible();
+    expect(screen.getByText("294")).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "7 j" }));
+
+    expect(screen.getByText("86")).toBeVisible();
+    expect(screen.getByText("61 NFC · 25 QR")).toBeVisible();
+    expect(screen.getByRole("link", { name: /Voir les 3 supports/i })).toHaveAttribute("href", "/boutique");
+  });
+
   it("propose une galerie complète de designs par action", () => {
     renderRoute("/designs");
 
@@ -27,6 +41,10 @@ describe("Boutique Tapote V3", () => {
     expect(screen.getByRole("heading", { name: /La suite sur Instagram/i })).toBeVisible();
     expect(screen.getByRole("heading", { name: /Retrouvez-nous ici/i })).toBeVisible();
     expect(screen.getAllByText(/Partir de ce design/i)).toHaveLength(18);
+    expect(document.querySelectorAll(".v3-design-specimen .device-purpose")).toHaveLength(18);
+    expect(screen.getAllByText("Laissez un avis Google").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText("Suivez-nous sur Instagram")).toBeVisible();
+    expect(screen.getByText("Consultez le menu")).toBeVisible();
   });
 
   it("couvre quinze familles de secteurs avec une offre recommandée mais non imposée", () => {
@@ -53,6 +71,43 @@ describe("Boutique Tapote V3", () => {
     expect(screen.getByRole("heading", { name: "Carte NFC" })).toBeVisible();
     expect(screen.getAllByText("29 €").length).toBeGreaterThanOrEqual(2);
     expect(screen.getByText("19 €")).toBeVisible();
+  });
+
+  it("fige les aperçus boutique sur un rendu commun sans les relier au configurateur", () => {
+    renderRoute("/boutique");
+
+    expect(document.querySelectorAll('[data-preview-mode="fixed"]')).toHaveLength(3);
+    expect(document.querySelectorAll('[data-preview-mode="fixed"] [data-phone-action="avis"]')).toHaveLength(3);
+
+    fireEvent.click(screen.getByRole("button", { name: /À votre image/i }));
+
+    expect(document.querySelectorAll('[data-preview-mode="fixed"]')).toHaveLength(3);
+    expect(document.querySelectorAll('[data-preview-mode="fixed"] [data-phone-action="avis"]')).toHaveLength(3);
+  });
+
+  it("synchronise l’écran du téléphone de la fiche avec le lien choisi", () => {
+    renderRoute("/produits/chevalet?mode=ready&action=avis");
+
+    expect(document.querySelector('[data-preview-mode="live"] [data-phone-action="avis"]')).toHaveAttribute("data-native-source", "true");
+    fireEvent.change(screen.getByLabelText("Le lien à ouvrir"), { target: { value: "menu" } });
+
+    expect(document.querySelector('[data-preview-mode="live"] [data-phone-action="menu"]')).toBeInTheDocument();
+    expect(window.location.search).toContain("action=menu");
+  });
+
+  it("rend des écrans dédiés et reconnaissables pour Avis, Instagram et WhatsApp", () => {
+    renderRoute("/produits/chevalet?mode=custom&action=avis");
+
+    expect(document.querySelector(".v3-phone-google-stars")).toHaveTextContent("★★★★★");
+    expect(screen.getByText("Quelle note donneriez-vous ?")).toBeVisible();
+
+    fireEvent.change(screen.getByLabelText("Le lien à ouvrir"), { target: { value: "instagram" } });
+    expect(document.querySelector(".v3-instagram-app")).toBeInTheDocument();
+    expect(document.querySelectorAll(".v3-instagram-app .v3-live-social-grid i")).toHaveLength(6);
+
+    fireEvent.change(screen.getByLabelText("Le lien à ouvrir"), { target: { value: "whatsapp" } });
+    expect(document.querySelector(".v3-whatsapp-app")).toHaveTextContent("Comment pouvons-nous vous aider");
+    expect(document.querySelector(".v3-whatsapp-app")).toHaveTextContent("✓✓");
   });
 
   it("fait configurer les packs au lieu de les ajouter sans choix", () => {

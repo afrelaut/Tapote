@@ -63,6 +63,12 @@ const home = await auditPage(desktop, "/", "Accueil desktop", async (page) => {
   assert("achat-direct-home", await page.getByRole("button", { name: /Ajouter ·/ }).first().isVisible());
   assert("trois-supports-home", await page.getByRole("button", { name: /Chevalet A6|Plaque 12|Carte NFC/ }).count() === 3);
   assert("scene-home-complete", await page.locator(".v3-home-product-scene .v3-sector-scene-background, .v3-home-product-scene .v3-sector-scene-support, .v3-home-product-scene .v3-sector-scene-screen").count() === 3);
+  const pilotPreview = page.getByRole("region", { name: /Aperçu de Tapote Pilot/i });
+  assert("pilot-visible-et-honnete", await pilotPreview.isVisible() && (await pilotPreview.innerText()).includes("DONNÉES D’EXEMPLE"));
+  await pilotPreview.getByRole("button", { name: "7 j" }).click();
+  assert("pilot-apercu-interactif", (await pilotPreview.innerText()).includes("86") && (await pilotPreview.innerText()).includes("61 NFC · 25 QR"));
+  await pilotPreview.getByRole("button", { name: "30 j" }).click();
+  assert("service-et-cta-final-home", await page.getByRole("heading", { name: /Vous choisissez\. On prépare\. Vous posez/i }).isVisible() && await page.getByRole("link", { name: /Voir les 3 supports/i }).isVisible());
   await page.screenshot({ path: path.join(outputDir, "01-home-desktop.png"), fullPage: true });
 });
 await home.close();
@@ -70,6 +76,14 @@ await home.close();
 const shop = await auditPage(desktop, "/boutique", "Boutique desktop", async (page) => {
   assert("trois-supports-boutique", await page.locator(".v3-shop-card").count() === 3);
   assert("prix-et-actions-visibles", await page.locator(".v3-shop-card .v3-shop-card-price-chip").count() === 3 && await page.getByRole("button", { name: /Ajouter ·/ }).count() === 3);
+  const previewGeometry = await page.locator(".v3-shop-card-image").evaluateAll((frames) => frames.map((frame) => {
+    const scene = frame.querySelector(".v3-sector-scene");
+    const frameBox = frame.getBoundingClientRect();
+    const sceneBox = scene?.getBoundingClientRect();
+    return sceneBox ? { square: Math.abs(sceneBox.width - sceneBox.height) < 1, coversFrame: sceneBox.width >= frameBox.width - 1 && sceneBox.height >= frameBox.height - 1, phones: scene.querySelectorAll(".v3-live-phone-svg").length } : null;
+  }));
+  assert("apercus-recadrent-photo-support-et-telephone-ensemble", previewGeometry.length === 3 && previewGeometry.every((item) => item?.square && item.coversFrame), previewGeometry);
+  assert("une-seule-incrustation-par-apercu", previewGeometry.every((item) => item?.phones === 1), previewGeometry);
   await page.getByRole("button", { name: /À votre image/i }).first().click();
   assert("custom-passe-par-fiche-produit", await page.getByRole("link", { name: "Personnaliser" }).count() === 3);
   await page.getByRole("button", { name: /Packs ·/ }).click();
@@ -88,6 +102,53 @@ const directory = await auditPage(desktop, "/secteurs", "Annuaire secteurs", asy
   await page.screenshot({ path: path.join(outputDir, "03-secteurs.png"), fullPage: true });
 });
 await directory.close();
+
+const designs = await auditPage(desktop, "/designs", "Galerie designs", async (page) => {
+  const specimens = page.locator(".v3-design-specimen");
+  const links = await specimens.evaluateAll((items) => items.map((item) => item.getAttribute("href")));
+  assert("dix-huit-designs-disponibles", await specimens.count() === 18, await specimens.count());
+  assert("designs-ouvrent-la-fiche-exacte", links.length === 18 && links.every((href) => href?.includes("mode=ready") && href.includes("design=") && href.includes("action=")), links);
+  const purposeLabels = await specimens.locator(".device-purpose").allTextContents();
+  assert("utilite-lisible-sur-chaque-design", purposeLabels.length === 18 && purposeLabels.every((label) => label.trim().split(/\s+/).length >= 2), purposeLabels);
+  assert("logos-officiels-sur-les-destinations-connues", await specimens.locator(".action-signature .platform-glyph").count() >= 7);
+  assert("identite-de-marque-sur-chaque-support", await specimens.locator(".customer-brand .generated-brand-mark").count() === 18);
+  await page.screenshot({ path: path.join(outputDir, "03a-designs.png"), fullPage: true });
+});
+await designs.close();
+
+const readyTiktok = await auditPage(desktop, "/produits/plaque?mode=ready&design=tiktok&action=tiktok", "Design TikTok prêt à l’emploi", async (page) => {
+  const scene = page.locator(".v3-product-main-image");
+  const supportCopy = (await scene.locator(".v3-sector-scene-support").innerText()).replace(/\s+/g, " ");
+  const phoneCopy = (await scene.locator(".v3-sector-scene-screen").innerText()).replace(/\s+/g, " ");
+  assert("tiktok-selectionne", await page.getByLabel("Le lien à ouvrir").inputValue() === "tiktok");
+  assert("preset-tiktok-conserve", supportCopy.includes("LIGNE NOIRE") && supportCopy.includes("Voyez les coulisses."), supportCopy);
+  assert("iphone-tiktok-synchronise", phoneCopy.includes("TIKTOK") && phoneCopy.includes("LIGNE NOIRE"), phoneCopy);
+  assert("style-tiktok-conserve", await page.getByRole("button", { name: "Signature", pressed: true }).count() === 1);
+  await scene.screenshot({ path: path.join(outputDir, "03b-design-tiktok.png") });
+  await page.getByRole("button", { name: "Minimal" }).click();
+  await page.waitForURL((url) => !url.searchParams.has("design") && url.searchParams.get("action") === "tiktok");
+  assert("changement-style-retire-le-preset-fige", !page.url().includes("design=") && page.url().includes("action=tiktok"), page.url());
+});
+await readyTiktok.close();
+
+const readyMinimal = await auditPage(desktop, "/produits/plaque?mode=ready&design=avis-minimal&action=avis", "Design Minimal prêt à l’emploi", async (page) => {
+  const scene = page.locator(".v3-product-main-image");
+  const supportCopy = (await scene.locator(".v3-sector-scene-support").innerText()).replace(/\s+/g, " ");
+  assert("minimal-selectionne", await page.getByRole("button", { name: "Minimal", pressed: true }).count() === 1);
+  assert("preset-minimal-conserve", supportCopy.includes("MAISON CALME") && supportCopy.includes("Dites-nous tout."), supportCopy);
+  assert("iphone-avis-synchronise", (await scene.locator(".v3-sector-scene-screen").innerText()).includes("Avis Google"));
+});
+await readyMinimal.close();
+
+const readyTip = await auditPage(desktop, "/produits/chevalet?mode=ready&design=pourboire&action=pourboire", "Design Pourboire prêt à l’emploi", async (page) => {
+  const scene = page.locator(".v3-product-main-image");
+  const supportCopy = (await scene.locator(".v3-sector-scene-support").innerText()).replace(/\s+/g, " ");
+  const phoneCopy = (await scene.locator(".v3-sector-scene-screen").innerText()).replace(/\s+/g, " ");
+  assert("pourboire-selectionne", await page.getByLabel("Le lien à ouvrir").inputValue() === "pourboire");
+  assert("preset-pourboire-conserve", supportCopy.includes("CAFÉ NOMA") && supportCopy.includes("Merci pour l’équipe."), supportCopy);
+  assert("iphone-pourboire-synchronise", phoneCopy.includes("POURBOIRE") && phoneCopy.includes("CAFÉ NOMA"), phoneCopy);
+});
+await readyTip.close();
 
 const restaurant = await auditPage(desktop, "/secteurs/restaurants-traiteurs-food-trucks", "Secteur restaurant", async (page) => {
   const hero = page.locator(".v3-sector-scene");
@@ -147,11 +208,20 @@ const custom = await auditPage(desktop, "/produits/chevalet?mode=custom&count=2&
   await page.getByLabel("Brief de design").fill("Brief interne confidentiel — ne pas imprimer");
   await page.locator('.v3-logo-upload input[type="file"]').setInputFiles(path.resolve("public/brand/tapote-logo.svg"));
   await page.getByText("Prêt pour le BAT").waitFor();
+  assert("logo-incruste-dans-iphone", await hero.locator(".v3-sector-scene-screen .v3-live-brand-avatar img").count() === 1);
+  assert("marque-synchronisee-support-iphone", await hero.getByText("Maison Nova").count() >= 2);
+  const phoneTheme = await hero.locator(".v3-sector-scene-screen").evaluate((element) => ({
+    primary: getComputedStyle(element).getPropertyValue("--v3-phone-primary").trim(),
+    accent: getComputedStyle(element).getPropertyValue("--v3-phone-accent").trim(),
+    copy: getComputedStyle(element).getPropertyValue("--v3-phone-copy").trim(),
+  }));
+  assert("couleurs-synchronisees-dans-iphone", phoneTheme.primary === "#173b57" && phoneTheme.accent === "#f4b942" && phoneTheme.copy === "#ffffff", phoneTheme);
   assert("brief-non-imprime", await hero.getByText("Brief interne confidentiel — ne pas imprimer").count() === 0);
   assert("url-configuration-partageable", /mode=custom/.test(page.url()) && /action=instagram/.test(page.url()) && /count=2/.test(page.url()) && /composition=mix/.test(page.url()), page.url());
   await page.reload({ waitUntil: "networkidle" });
   assert("brouillon-conserve", await page.getByLabel("Nom de votre entreprise").inputValue() === "Maison Nova" && await page.getByLabel("Brief de design").inputValue() === "Brief interne confidentiel — ne pas imprimer");
   assert("logo-conserve-apres-reload", await page.locator('.v3-product-main-image img[alt="Logo client importé"]').count() > 0);
+  assert("logo-iphone-conserve-apres-reload", await page.locator(".v3-product-main-image .v3-sector-scene-screen .v3-live-brand-avatar img").count() === 1);
   await page.locator(".v3-buybox-summary").getByRole("button", { name: /Ajouter au panier/i }).click();
   await page.getByRole("status").waitFor();
   assert("toast-pack-explicite", (await page.getByRole("status").innerText()).includes("2 supports") && (await page.getByRole("status").innerText()).includes("Instagram") && (await page.getByRole("status").innerText()).includes("1 chevalet + 1 plaque"));
@@ -264,10 +334,40 @@ const shortHome = await auditPage(shortDesktop, "/", "Accueil desktop 1365 × 76
 });
 await shortHome.close();
 
+const narrow = await browser.newContext({ viewport: { width: 320, height: 700 }, deviceScaleFactor: 1 });
+const narrowProduct = await auditPage(narrow, "/produits/plaque?mode=custom&action=facebook", "Produit étroit 320 px", async (page) => {
+  const scene = page.locator(".v3-product-main-image");
+  await page.getByLabel("Nom de votre entreprise").fill("Atelier Solstice");
+  await page.locator('.v3-brand-colors input[type="color"]').nth(0).fill("#173b57");
+  await page.locator('.v3-brand-colors input[type="color"]').nth(1).fill("#f4b942");
+  await page.locator('.v3-logo-upload input[type="file"]').setInputFiles(path.resolve("public/brand/tapote-logo.svg"));
+  await scene.locator(".v3-live-brand-avatar img").waitFor({ state: "visible" });
+  assert("aucun-debordement-320", await page.evaluate(() => document.documentElement.scrollWidth === document.documentElement.clientWidth));
+  assert("une-seule-incrustation-iphone-320", await scene.locator(".v3-sector-scene-screen").count() === 1 && await scene.locator(".v3-live-phone-svg").count() === 1);
+  const syncedNames = await scene.evaluate((element) => ({
+    support: element.querySelector(".v3-sector-scene-support")?.textContent?.toLowerCase().includes("atelier solstice"),
+    phone: element.querySelector(".v3-sector-scene-screen")?.textContent?.toLowerCase().includes("atelier solstice"),
+  }));
+  assert("logo-et-marque-iphone-320", await scene.locator(".v3-live-brand-avatar img").count() === 1 && syncedNames.support && syncedNames.phone, syncedNames);
+  await page.screenshot({ path: path.join(outputDir, "14-product-320.png"), fullPage: true });
+});
+await narrowProduct.close();
+
+const wide = await browser.newContext({ viewport: { width: 2000, height: 1200 }, deviceScaleFactor: 1 });
+const wideProduct = await auditPage(wide, "/produits/plaque?mode=custom&action=avis", "Produit large 2000 px", async (page) => {
+  const scene = page.locator(".v3-product-main-image");
+  assert("scene-large-sans-double-telephone", await scene.locator(".v3-sector-scene-screen").count() === 1 && await scene.locator(".v3-live-phone-svg").count() === 1);
+  assert("support-vertical-large", await scene.evaluate((element) => element.classList.contains("is-surface-plaque")));
+  await scene.screenshot({ path: path.join(outputDir, "15-product-scene-2000.png") });
+});
+await wideProduct.close();
+
 await desktop.close();
 await mobile.close();
 await tablet.close();
 await shortDesktop.close();
+await narrow.close();
+await wide.close();
 await browser.close();
 
 report.ok = report.errors.length === 0 && report.assertions.every((assertion) => assertion.ok);

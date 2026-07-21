@@ -27,17 +27,26 @@ export function relativeLuminance(color) {
 }
 
 export function readableInk(background) {
-  return relativeLuminance(background) > 0.42 ? "#111111" : "#ffffff";
+  const dark = "#111111";
+  const light = "#ffffff";
+  return contrastRatio(background, dark) >= contrastRatio(background, light) ? dark : light;
+}
+
+export function contrastRatio(first, second) {
+  const luminances = [relativeLuminance(first), relativeLuminance(second)].sort((a, b) => b - a);
+  return (luminances[0] + 0.05) / (luminances[1] + 0.05);
 }
 
 export function resolveDeviceColors(theme = "blue", primaryColor = "", secondaryColor = "", textColor = "") {
   const base = DEVICE_THEMES[theme] || DEVICE_THEMES.blue;
   const paper = normalizeHexColor(primaryColor, base.paper);
   const accent = normalizeHexColor(secondaryColor, base.accent);
+  const requestedInk = normalizeHexColor(textColor, primaryColor ? readableInk(paper) : base.ink);
+  const requestedAccentInk = secondaryColor ? readableInk(accent) : base.accentInk;
   return {
     paper,
     accent,
-    ink: normalizeHexColor(textColor, primaryColor ? readableInk(paper) : base.ink),
-    accentInk: secondaryColor ? readableInk(accent) : base.accentInk,
+    ink: contrastRatio(paper, requestedInk) >= 4.5 ? requestedInk : readableInk(paper),
+    accentInk: contrastRatio(accent, requestedAccentInk) >= 4.5 ? requestedAccentInk : readableInk(accent),
   };
 }
