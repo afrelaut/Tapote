@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const repository = vi.hoisted(() => ({
@@ -43,14 +43,23 @@ const workspace = {
   settings: { orderPrefix: "TPT", currency: "EUR", timezone: "Europe/Paris", lowStockNotifications: true, shippingCutoff: "16:00" },
 };
 
+let authChangeCallback;
+let realtimeCallback;
+
 beforeEach(() => {
   vi.clearAllMocks();
   window.scrollTo = vi.fn();
   repository.getManagementSession.mockResolvedValue({ user: { id: "user-1", email: "marketmenow75@gmail.com" } });
   repository.getManagementAccess.mockResolvedValue({ organizationId: "org-1", organizationName: "TAPOTE Gestion", role: "owner", displayName: "Aymeric", jobTitle: "Propriétaire & administrateur", email: "marketmenow75@gmail.com" });
   repository.loadManagementData.mockResolvedValue(workspace);
-  repository.onManagementAuthChange.mockReturnValue(() => {});
-  repository.subscribeToManagement.mockReturnValue(() => {});
+  repository.onManagementAuthChange.mockImplementation((callback) => {
+    authChangeCallback = callback;
+    return () => {};
+  });
+  repository.subscribeToManagement.mockImplementation((_organizationId, callback) => {
+    realtimeCallback = callback;
+    return () => {};
+  });
   repository.updateManagementOrderStatus.mockImplementation(async (_organizationId, order, status, tracking) => ({ ...order, status, tracking }));
   repository.advanceManagementEncodedProduct.mockResolvedValue({});
   repository.createManagementEncodedProduct.mockResolvedValue({});
@@ -145,6 +154,52 @@ describe("TAPOTE Gestion", () => {
     expect(screen.getByText("Owner · administration complète")).toBeInTheDocument();
     expect(screen.getByText("marketmenow75@gmail.com")).toBeInTheDocument();
     expect(screen.getByText("Supabase & Realtime connectés")).toBeInTheDocument();
+  });
+
+  it("ne réinitialise pas la vue lors du rafraîchissement de la session Supabase", async () => {
+    render(<TapoteManagementApp />);
+    await screen.findByRole("heading", { name: "Vue d’ensemble" });
+    fireEvent.click(screen.getByRole("button", { name: /Commandes/ }));
+    expect(screen.getByRole("heading", { name: "Commandes" })).toBeInTheDocument();
+
+    act(() => {
+      authChangeCallback({
+        access_token: "jeton-renouvele",
+        user: { id: "user-1", email: "marketmenow75@gmail.com" },
+      }, "TOKEN_REFRESHED");
+    });
+
+    expect(screen.getByRole("heading", { name: "Commandes" })).toBeInTheDocument();
+    expect(screen.queryByText("Vérification du compte et synchronisation Supabase…")).not.toBeInTheDocument();
+    expect(repository.loadManagementData).toHaveBeenCalledTimes(1);
+  });
+
+  it("ignore une ancienne synchronisation Realtime terminée après la plus récente", async () => {
+    render(<TapoteManagementApp />);
+    await screen.findByRole("heading", { name: "Vue d’ensemble" });
+    fireEvent.click(screen.getByRole("button", { name: /Clients/ }));
+
+    let resolveOlderLoad;
+    let resolveLatestLoad;
+    repository.loadManagementData
+      .mockImplementationOnce(() => new Promise((resolve) => { resolveOlderLoad = resolve; }))
+      .mockImplementationOnce(() => new Promise((resolve) => { resolveLatestLoad = resolve; }));
+
+    act(() => realtimeCallback());
+    await waitFor(() => expect(repository.loadManagementData).toHaveBeenCalledTimes(2));
+    act(() => realtimeCallback());
+    await waitFor(() => expect(repository.loadManagementData).toHaveBeenCalledTimes(3));
+
+    await act(async () => {
+      resolveLatestLoad({ ...workspace, clients: [{ ...workspace.clients[0], name: "Client récent" }] });
+    });
+    expect((await screen.findAllByText("Client récent")).length).toBeGreaterThan(0);
+
+    await act(async () => {
+      resolveOlderLoad({ ...workspace, clients: [{ ...workspace.clients[0], name: "Client obsolète" }] });
+    });
+    expect(screen.getAllByText("Client récent").length).toBeGreaterThan(0);
+    expect(screen.queryAllByText("Client obsolète")).toHaveLength(0);
   });
 
   it("centralise la création et le contrôle des produits NFC", async () => {

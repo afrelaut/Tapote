@@ -79,6 +79,12 @@ function tapoteShortUrl(shortCode) {
   }
 }
 
+function hasSameManagementIdentity(currentSession, nextSession) {
+  if (!currentSession || !nextSession) return currentSession === nextSession;
+  return currentSession.user?.id === nextSession.user?.id
+    && currentSession.user?.email === nextSession.user?.email;
+}
+
 const statusMeta = {
   paid: { label: "Payée", tone: "blue", action: "Préparer le BAT" },
   bat: { label: "BAT à valider", tone: "amber", action: "BAT validé" },
@@ -987,6 +993,7 @@ export default function TapoteManagementApp() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState(null);
   const [toast, setToast] = useState("");
+  const dataLoadSequence = useRef(0);
 
   useEffect(() => {
     const previousTitle = document.title;
@@ -1007,7 +1014,7 @@ export default function TapoteManagementApp() {
     getManagementSession()
       .then((currentSession) => {
         if (!active) return;
-        setSession(currentSession);
+        setSession((previousSession) => hasSameManagementIdentity(previousSession, currentSession) ? previousSession : currentSession);
         setSessionReady(true);
       })
       .catch(() => {
@@ -1018,7 +1025,10 @@ export default function TapoteManagementApp() {
       });
     const unsubscribe = onManagementAuthChange((nextSession, event) => {
       if (!active) return;
-      setSession(nextSession);
+      // Supabase may emit SIGNED_IN/TOKEN_REFRESHED repeatedly (notably on tab focus).
+      // Keep the same state object while the authenticated identity is unchanged so
+      // those background events never restart the whole Gestion workspace.
+      setSession((previousSession) => hasSameManagementIdentity(previousSession, nextSession) ? previousSession : nextSession);
       setSessionReady(true);
       if (event === "PASSWORD_RECOVERY") setPasswordRecovery(true);
     });
@@ -1030,9 +1040,10 @@ export default function TapoteManagementApp() {
   useEffect(() => {
     if (!sessionReady) return undefined;
     let active = true;
+    const loadSequence = ++dataLoadSequence.current;
     Promise.resolve().then(async () => {
       if (!session) {
-        if (active) {
+        if (active && loadSequence === dataLoadSequence.current) {
           setAccess(null);
           setAuthState("signedOut");
         }
@@ -1041,21 +1052,21 @@ export default function TapoteManagementApp() {
       if (active) setAuthState("loading");
       try {
         const nextAccess = await getManagementAccess(session.user);
-        if (!active) return;
+        if (!active || loadSequence !== dataLoadSequence.current) return;
         if (!nextAccess) {
           setAccess(null);
           setAuthState("unauthorized");
           return;
         }
         const workspace = await loadManagementData(nextAccess.organizationId);
-        if (!active) return;
+        if (!active || loadSequence !== dataLoadSequence.current) return;
         setAccess(nextAccess);
         setData(workspace);
         setLastSyncedAt(new Date());
         setSelectedClient((current) => current || workspace.clients[0]?.id || null);
         setAuthState("ready");
       } catch (error) {
-        if (!active) return;
+        if (!active || loadSequence !== dataLoadSequence.current) return;
         setToast(toUserMessage(error, "Impossible de charger les données Supabase."));
         setAuthState("error");
       }
@@ -1092,14 +1103,18 @@ export default function TapoteManagementApp() {
 
   const refreshData = useCallback(async ({ quiet = false } = {}) => {
     if (!access) return;
+    const loadSequence = ++dataLoadSequence.current;
     if (!quiet) setSyncing(true);
     try {
       const workspace = await loadManagementData(access.organizationId);
+      // Realtime can start several overlapping reads. Only the newest snapshot is
+      // allowed to reach React; a slower, older response must never roll the UI back.
+      if (loadSequence !== dataLoadSequence.current) return;
       setData(workspace);
       setLastSyncedAt(new Date());
       setSelectedClient((current) => current || workspace.clients[0]?.id || null);
     } catch (error) {
-      setToast(toUserMessage(error, "Synchronisation impossible."));
+      if (loadSequence === dataLoadSequence.current) setToast(toUserMessage(error, "Synchronisation impossible."));
     } finally {
       if (!quiet) setSyncing(false);
     }
