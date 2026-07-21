@@ -87,17 +87,17 @@ const inventory = [
   ["SUP-A6-CLR", "Chevalet plexi A6", "Support", 18, 9, 12, 30, "2026-07-22"],
   ["NFC-NTAG215", "Puce NFC NTAG215", "Électronique", 42, 13, 25, 100, "2026-07-24"],
   ["CARD-PVC-W", "Carte PVC blanche", "Support", 64, 2, 30, 0, null],
-  ["STK-EXT-MAT", "Sticker extérieur mat", "Impression", 7, 3, 15, 50, "2026-07-19"],
+  ["PLAQUE-PVC-12", "Plaque PVC 12 × 12", "Support", 31, 8, 15, 50, "2026-07-19"],
   ["BOX-A6-KRAFT", "Étui kraft A6", "Packaging", 23, 8, 20, 0, null],
 ];
 const orders = [
-  ["TPT-1048", "c1", "Pack Restaurant ×6", 1, 24900, "assembly", "Boutique", "2026-07-15", "2026-07-18", "Haute", "Aymeric", "Avis Google", null, "6 chevalets, visuel terracotta validé."],
-  ["TPT-1047", "c2", "Comptoir A6", 2, 11800, "bat", "Boutique", "2026-07-15", "2026-07-19", "Normale", "Rico", "Réservation", null, "En attente de confirmation du rose de marque."],
-  ["TPT-1046", "c3", "Pack Restaurant ×6", 1, 24900, "quality", "Devis", "2026-07-14", "2026-07-17", "Haute", "Aymeric", "Menu", null, "Contrôler les 6 QR avant emballage."],
-  ["TPT-1045", "c4", "Comptoir A6", 1, 5900, "ready", "Boutique", "2026-07-13", "2026-07-17", "Normale", "Rico", "Instagram", null, "Colis prêt, étiquette à imprimer."],
-  ["TPT-1044", "c5", "Sticker NFC", 1, 3500, "supply", "Boutique", "2026-07-12", "2026-07-18", "Normale", "Aymeric", "Avis Google", null, "Réserver un sticker extérieur mat."],
-  ["TPT-1043", "c1", "Carte NFC", 2, 5800, "shipped", "Boutique", "2026-07-10", "2026-07-15", "Normale", "Rico", "Fidélité", "1K02840173012", "Remis à La Poste."],
-  ["TPT-1042", "c3", "Pack Restaurant ×6", 1, 24900, "shipped", "Devis", "2026-07-08", "2026-07-14", "Normale", "Aymeric", "Avis Google", "1K02840172991", "Livré le 14 juillet."],
+  ["TPT-1048", "c1", PRODUCTS.pack_cinq.name, 1, PRODUCTS.pack_cinq.price, "assembly", "Boutique", "2026-07-15", "2026-07-18", "Haute", "Aymeric", "Avis Google", null, "2 chevalets et 3 plaques, identité terracotta validée."],
+  ["TPT-1047", "c2", PRODUCTS.comptoir.name, 2, PRODUCTS.comptoir.price * 2, "bat", "Boutique", "2026-07-15", "2026-07-19", "Normale", "Rico", "Réservation", null, "En attente de confirmation du rose de marque."],
+  ["TPT-1046", "c3", PRODUCTS.pack_cinq_standard.name, 1, PRODUCTS.pack_cinq_standard.price, "quality", "Boutique", "2026-07-14", "2026-07-17", "Haute", "Aymeric", "Menu", null, "Contrôler les 5 supports, NFC et QR avant emballage."],
+  ["TPT-1045", "c4", PRODUCTS.comptoir_standard.name, 1, PRODUCTS.comptoir_standard.price, "ready", "Boutique", "2026-07-13", "2026-07-17", "Normale", "Rico", "Instagram", null, "Colis prêt, étiquette à imprimer."],
+  ["TPT-1044", "c5", PRODUCTS.plaque_standard.name, 1, PRODUCTS.plaque_standard.price, "supply", "Boutique", "2026-07-12", "2026-07-18", "Normale", "Aymeric", "Avis Google", null, "Réserver une plaque PVC et contrôler le visuel prêt à l’emploi."],
+  ["TPT-1043", "c1", PRODUCTS.carte.name, 2, PRODUCTS.carte.price * 2, "shipped", "Boutique", "2026-07-10", "2026-07-15", "Normale", "Rico", "Fidélité", "1K02840173012", "Remis à La Poste."],
+  ["TPT-1042", "c3", PRODUCTS.pack_duo.name, 1, PRODUCTS.pack_duo.price, "shipped", "Boutique", "2026-07-08", "2026-07-14", "Normale", "Aymeric", "Avis Google", "1K02840172991", "Livré le 14 juillet."],
 ];
 
 await database.connect();
@@ -176,17 +176,24 @@ try {
       }
     }
     const products = [
-      [PRODUCTS.comptoir.name, PRODUCTS.comptoir.price, true, "SUP-A6-CLR", 24, 4.8],
-      [PRODUCTS.pack_resto.name, PRODUCTS.pack_resto.price, true, "SUP-A6-CLR", 9, 2.9],
-      [PRODUCTS.carte.name, PRODUCTS.carte.price, true, "CARD-PVC-W", 18, 5.2],
-      [PRODUCTS.sticker.name, PRODUCTS.sticker.price, true, "STK-EXT-MAT", 12, 3.6],
+      [PRODUCTS.comptoir_standard.id, PRODUCTS.comptoir_standard.name, PRODUCTS.comptoir_standard.price, true, "SUP-A6-CLR", 18, 5.1],
+      [PRODUCTS.comptoir.id, PRODUCTS.comptoir.name, PRODUCTS.comptoir.price, true, "SUP-A6-CLR", 24, 4.8],
+      [PRODUCTS.plaque_standard.id, PRODUCTS.plaque_standard.name, PRODUCTS.plaque_standard.price, true, "PLAQUE-PVC-12", 15, 4.6],
+      [PRODUCTS.plaque.id, PRODUCTS.plaque.name, PRODUCTS.plaque.price, true, "PLAQUE-PVC-12", 12, 3.9],
+      [PRODUCTS.carte_standard.id, PRODUCTS.carte_standard.name, PRODUCTS.carte_standard.price, true, "CARD-PVC-W", 21, 5.5],
+      [PRODUCTS.carte.id, PRODUCTS.carte.name, PRODUCTS.carte.price, true, "CARD-PVC-W", 18, 5.2],
+      [PRODUCTS.pack_duo_standard.id, PRODUCTS.pack_duo_standard.name, PRODUCTS.pack_duo_standard.price, true, "NFC-NTAG215", 11, 4.1],
+      [PRODUCTS.pack_duo.id, PRODUCTS.pack_duo.name, PRODUCTS.pack_duo.price, true, "NFC-NTAG215", 14, 4.4],
+      [PRODUCTS.pack_cinq_standard.id, PRODUCTS.pack_cinq_standard.name, PRODUCTS.pack_cinq_standard.price, true, "NFC-NTAG215", 7, 3.2],
+      [PRODUCTS.pack_cinq.id, PRODUCTS.pack_cinq.name, PRODUCTS.pack_cinq.price, true, "NFC-NTAG215", 9, 3.6],
+      [PRODUCTS.carte_assortie.id, PRODUCTS.carte_assortie.name, PRODUCTS.carte_assortie.price, true, "CARD-PVC-W", 8, 2.8],
     ];
     for (const product of products) {
       await database.query(
         `insert into public.management_storefront_products
-         (organization_id, name, price_cents, online, inventory_item_id, sales_count, conversion_rate)
-         values ($1,$2,$3,$4,$5,$6,$7)`,
-        [organizationId, product[0], product[1], product[2], inventoryIds.get(product[3]), product[4], product[5]],
+         (organization_id, external_product_id, name, price_cents, online, inventory_item_id, sales_count, conversion_rate)
+         values ($1,$2,$3,$4,$5,$6,$7,$8)`,
+        [organizationId, product[0], product[1], product[2], product[3], inventoryIds.get(product[4]), product[5], product[6]],
       );
     }
     await database.query(

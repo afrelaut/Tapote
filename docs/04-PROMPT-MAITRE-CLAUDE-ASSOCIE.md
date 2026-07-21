@@ -1,5 +1,7 @@
 # Tapote — Prompt maître pour le Claude de l’associé
 
+> **NE PLUS UTILISER CE PROMPT EN L’ÉTAT.** Sa grille commerciale est obsolète depuis le 20 juillet 2026. Toute nouvelle analyse doit prendre `shared/catalog.js`, `docs/07-PILOT-BETA.md` et `docs/18-PRODUIT-PRODUCTION-TAPOTE.md` comme sources prioritaires.
+
 Version 1.1 — 17 juillet 2026
 
 Usage : copier la section « Prompt à donner à Claude » dans les instructions d’un Projet Claude, puis joindre si possible les documents Tapote mentionnés à la fin.

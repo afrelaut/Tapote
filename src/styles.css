@@ -277,6 +277,14 @@ a { color: inherit; }
 .brand-controls { display: grid; grid-template-columns: 1fr auto; gap: 9px; }
 .brand-controls > input { min-width: 0; padding: 0 13px; color: #fff; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.24); outline: none; font-size: 11px; }
 .brand-controls > input:focus { border-color: var(--yellow); }
+.brand-color-controls { margin-top: 10px; padding: 11px; display: grid; grid-template-columns: 1fr 1fr; gap: 9px; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.04); }
+.brand-color-controls > label { min-width: 0; display: grid; gap: 6px; }
+.brand-color-controls > label > span { color: rgba(255,255,255,.7); font-size: 9px; font-weight: 750; }
+.brand-color-controls > label > div { min-height: 38px; padding: 4px 5px; display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.16); }
+.brand-color-controls input[type="color"] { width: 29px; height: 29px; padding: 0; border: 0; background: transparent; cursor: pointer; }
+.brand-color-controls code { min-width: 0; color: #fff; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 9px; }
+.brand-color-controls button { margin-left: auto; min-height: 27px; padding: 0 7px; display: inline-flex; align-items: center; gap: 4px; color: var(--ink); background: var(--paper); border: 0; font-size: 8px; font-weight: 800; cursor: pointer; }
+.brand-color-controls > small { grid-column: 1 / -1; color: rgba(255,255,255,.55); font-size: 8px; line-height: 1.45; }
 .logo-upload { min-height: 43px; display: flex; align-items: center; justify-content: center; gap: 7px; padding: 0 14px; color: var(--ink); background: var(--paper); cursor: pointer; font-size: 9px; font-weight: 800; transition: background 160ms ease, color 160ms ease; }
 .logo-upload input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .logo-upload-success { background: var(--yellow); }
@@ -406,7 +414,8 @@ a { color: inherit; }
 .insert-style-minimal .action-signature { color: var(--insert-ink); opacity: .65; }
 .insert-style-minimal .tap-zone { --tap-zone-ink: var(--insert-paper); color: var(--tap-zone-ink); background: var(--insert-ink); }
 
-.device-preview-plaque { width: min(360px, 62%); aspect-ratio: 1; padding: 7px; background: rgba(255,255,255,.94); border: 0; border-radius: 8px; box-shadow: 0 33px 68px rgba(0,0,0,.32); transform: perspective(850px) rotateY(-5deg) rotate(-1deg); }
+.device-preview-plaque { width: min(360px, 62%); aspect-ratio: 1; padding: 7px; background: linear-gradient(145deg, rgba(255,255,255,.98), rgba(221,236,244,.7)); border: 1px solid rgba(255,255,255,.9); border-radius: 9px; box-shadow: 0 18px 36px rgba(0,0,0,.22), inset 0 0 0 1px rgba(151,179,194,.28); transform: perspective(850px) rotateY(-4deg) rotate(-1deg); }
+.device-preview-plaque::after { content: ""; position: absolute; z-index: -1; right: 2%; bottom: -6px; left: 2%; height: 8px; background: linear-gradient(180deg, rgba(218,234,242,.92), rgba(153,179,192,.65)); border-radius: 0 0 7px 7px; box-shadow: 0 6px 12px rgba(0,0,0,.16); }
 .device-preview-plaque .printed-insert, .device-preview-mini .printed-insert { padding: 7%; border-radius: 4px; }
 .device-preview-plaque .tap-zone, .device-preview-mini .tap-zone { min-height: 96px; }
 .device-preview-mini { width: min(285px, 49%); aspect-ratio: 1; padding: 6px; background: rgba(255,255,255,.94); border: 0; border-radius: 7px; box-shadow: 0 28px 58px rgba(0,0,0,.3); transform: perspective(850px) rotateY(5deg) rotate(2deg); }

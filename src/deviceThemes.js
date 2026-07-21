@@ -5,3 +5,39 @@ export const DEVICE_THEMES = Object.freeze({
   sand: { paper: "#efe5d2", ink: "#402d24", accent: "#b95632", accentInk: "#ffffff" },
   mono: { paper: "#f4f1e9", ink: "#111111", accent: "#111111", accentInk: "#f4f1e9" },
 });
+
+const HEX_COLOR = /^#[0-9a-f]{6}$/i;
+
+export function normalizeHexColor(value, fallback) {
+  const normalized = String(value || "").trim();
+  return HEX_COLOR.test(normalized) ? normalized.toLowerCase() : fallback;
+}
+
+function channelToLinear(channel) {
+  const value = channel / 255;
+  return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+}
+
+export function relativeLuminance(color) {
+  const normalized = normalizeHexColor(color, "#000000");
+  const red = Number.parseInt(normalized.slice(1, 3), 16);
+  const green = Number.parseInt(normalized.slice(3, 5), 16);
+  const blue = Number.parseInt(normalized.slice(5, 7), 16);
+  return 0.2126 * channelToLinear(red) + 0.7152 * channelToLinear(green) + 0.0722 * channelToLinear(blue);
+}
+
+export function readableInk(background) {
+  return relativeLuminance(background) > 0.42 ? "#111111" : "#ffffff";
+}
+
+export function resolveDeviceColors(theme = "blue", primaryColor = "", secondaryColor = "") {
+  const base = DEVICE_THEMES[theme] || DEVICE_THEMES.blue;
+  const paper = normalizeHexColor(primaryColor, base.paper);
+  const accent = normalizeHexColor(secondaryColor, base.accent);
+  return {
+    paper,
+    accent,
+    ink: primaryColor ? readableInk(paper) : base.ink,
+    accentInk: secondaryColor ? readableInk(accent) : base.accentInk,
+  };
+}

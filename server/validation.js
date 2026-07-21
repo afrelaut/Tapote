@@ -9,6 +9,7 @@ const designStyleIds = Object.keys(DESIGN_STYLES);
 
 const requiredText = (maximum) => z.string().trim().min(1).max(maximum);
 const optionalText = (maximum) => z.string().trim().max(maximum).optional().default("");
+const optionalHexColor = z.union([z.literal(""), z.string().regex(/^#[0-9a-f]{6}$/i)]).optional().default("");
 const optionalHttpsUrl = z.string().trim().max(500).optional().default("").superRefine((value, context) => {
   if (!value) return;
   try {
@@ -25,12 +26,18 @@ const cartItemSchema = z.object({
   quantity: z.coerce.number().int().min(1).max(50),
   brandName: optionalText(60),
   theme: z.enum(themes).optional().default("blue"),
+  primaryColor: optionalHexColor,
+  secondaryColor: optionalHexColor,
   targetId: z.enum(targetIds).optional().default("cafe"),
   designStyle: z.enum(designStyleIds).optional().default("signature"),
   customHeadline: optionalText(64),
   destinationUrl: optionalHttpsUrl,
   brandLogoId: z.uuid().optional().or(z.literal("")),
   logoFileName: optionalText(120),
+  supportComposition: z.object({
+    comptoir: z.coerce.number().int().min(0).max(5),
+    plaque: z.coerce.number().int().min(0).max(5),
+  }).strict().optional(),
 }).strict();
 
 export const checkoutSchema = z.object({

@@ -1,5 +1,7 @@
 # Tapote — Étude de marché France
 
+> **ARCHIVE — grille commerciale remplacée le 20 juillet 2026.** Les anciens prix, packs et références Vitrine ci-dessous ne doivent plus servir à décider ou à prompter un assistant. La source active est `shared/catalog.js`; le cahier produit actuel est `docs/18-PRODUIT-PRODUCTION-TAPOTE.md`.
+
 Version 1.1 — 17 juillet 2026
 
 Périmètre : supports physiques NFC + QR personnalisés et logiciel de pilotage pour commerces, établissements de services et réseaux.

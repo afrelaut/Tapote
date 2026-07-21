@@ -52,11 +52,6 @@ const limiter = (windowMs, limit, message) => rateLimit({
   message: { error: message },
 });
 
-const checkoutLimiter = limiter(60 * 60 * 1_000, 20, "Trop de tentatives de paiement. Réessaie dans quelques minutes.");
-const uploadLimiter = limiter(60 * 60 * 1_000, 30, "Trop d’envois de fichiers. Réessaie plus tard.");
-const leadLimiter = limiter(60 * 60 * 1_000, 10, "Trop de demandes envoyées. Réessaie plus tard.");
-const statusLimiter = limiter(15 * 60 * 1_000, 60, "Trop de vérifications. Réessaie dans quelques minutes.");
-
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 2 * 1024 * 1024, files: 1, fields: 0 },
@@ -88,6 +83,7 @@ function cspDirectives(config) {
     objectSrc: ["'none'"],
     scriptSrc: ["'self'"],
     styleSrc: ["'self'"],
+    styleSrcAttr: ["'unsafe-inline'"],
     upgradeInsecureRequests: config.isProduction ? [] : null,
   };
 }
@@ -184,6 +180,10 @@ function stripeStatus(session, storedOrder) {
 export function createApp({ config, repository, storage, logger, outboxWorker, stripe: injectedStripe } = {}) {
   const stripe = injectedStripe ?? (config.stripeSecretKey ? new Stripe(config.stripeSecretKey) : null);
   const app = express();
+  const checkoutLimiter = limiter(60 * 60 * 1_000, 20, "Trop de tentatives de paiement. Réessaie dans quelques minutes.");
+  const uploadLimiter = limiter(60 * 60 * 1_000, 30, "Trop d’envois de fichiers. Réessaie plus tard.");
+  const leadLimiter = limiter(60 * 60 * 1_000, 10, "Trop de demandes envoyées. Réessaie plus tard.");
+  const statusLimiter = limiter(15 * 60 * 1_000, 60, "Trop de vérifications. Réessaie dans quelques minutes.");
 
   app.disable("x-powered-by");
   if (config.trustProxyHops > 0) app.set("trust proxy", config.trustProxyHops);
@@ -337,6 +337,11 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
     void professionalCustomer;
 
     try {
+      const hasEligibleSupport = items.some((item) => {
+        const candidate = PRODUCTS[item.productId];
+        return candidate?.personalization === "custom"
+          && (candidate?.kind === "support" || candidate?.kind === "pack");
+      });
       const validItems = [];
       for (const item of items) {
         if (item.brandLogoId) {
@@ -345,8 +350,15 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
         }
         const product = PRODUCTS[item.productId];
         const action = ACTIONS[item.actionId];
-        if (product.availableStandalone === false) {
-          return response.status(400).json({ error: `${product.name} est disponible uniquement dans les packs Tapote.` });
+        if (product.requiresSupportOrder && !hasEligibleSupport) {
+          return response.status(400).json({ error: `${product.name} est réservée aux commandes contenant une plaque ou un chevalet.` });
+        }
+        if (product.kind === "pack") {
+          const composition = item.supportComposition || product.defaultComposition;
+          const supportTotal = composition.comptoir + composition.plaque;
+          if (supportTotal !== product.supportCount) {
+            return response.status(400).json({ error: `La composition de ${product.name} doit contenir exactement ${product.supportCount} supports.` });
+          }
         }
         validItems.push({
           product,
@@ -355,14 +367,27 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
           customization: {
             brandName: item.brandName,
             theme: item.theme,
+            primaryColor: item.primaryColor,
+            secondaryColor: item.secondaryColor,
             targetId: item.targetId,
             designStyle: item.designStyle,
             customHeadline: item.customHeadline,
             destinationUrl: item.destinationUrl || customer.destinationUrl,
             brandLogoId: item.brandLogoId || null,
             logoFileName: item.logoFileName,
+            supportComposition: product.kind === "pack"
+              ? (item.supportComposition || product.defaultComposition)
+              : null,
           },
         });
+      }
+
+      const physicalSupportTotal = validItems.reduce(
+        (sum, { product, quantity }) => sum + (product.supportCount || 1) * quantity,
+        0,
+      );
+      if (physicalSupportTotal >= 10) {
+        return response.status(400).json({ error: "À partir de 10 supports, demandez un devis afin de recevoir un tarif adapté à votre composition." });
       }
 
       const orderItems = validItems.map(({ product, action, quantity, customization }) => ({
@@ -422,13 +447,33 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
               actionId: action.id,
               brandName: customization.brandName || customer.businessName,
               theme: customization.theme,
+              primaryColor: customization.primaryColor || "default",
+              secondaryColor: customization.secondaryColor || "default",
               targetId: customization.targetId,
               designStyle: customization.designStyle,
               brandLogoId: customization.brandLogoId || "none",
+              supportComposition: customization.supportComposition
+                ? JSON.stringify(customization.supportComposition)
+                : "single",
             },
           },
         },
       }));
+
+      const personalizedOrder = validItems.some(({ product }) => product.personalization !== "ready");
+      const shippingRateData = {
+        type: "fixed_amount",
+        fixed_amount: { amount: shippingAmount, currency: "eur" },
+        display_name: shippingAmount === 0
+          ? "Livraison standard France métropolitaine offerte"
+          : "Livraison standard France métropolitaine",
+        ...(!personalizedOrder ? {
+          delivery_estimate: {
+            minimum: { unit: "business_day", value: 4 },
+            maximum: { unit: "business_day", value: 6 },
+          },
+        } : {}),
+      };
 
       const session = await stripe.checkout.sessions.create({
         mode: "payment",
@@ -447,19 +492,7 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
         },
         billing_address_collection: "required",
         shipping_address_collection: { allowed_countries: ["FR"] },
-        shipping_options: [{
-          shipping_rate_data: {
-            type: "fixed_amount",
-            fixed_amount: { amount: shippingAmount, currency: "eur" },
-            display_name: shippingAmount === 0
-              ? "Livraison standard France métropolitaine offerte"
-              : "Livraison standard France métropolitaine",
-            delivery_estimate: {
-              minimum: { unit: "business_day", value: 4 },
-              maximum: { unit: "business_day", value: 6 },
-            },
-          },
-        }],
+        shipping_options: [{ shipping_rate_data: shippingRateData }],
         allow_promotion_codes: true,
         phone_number_collection: { enabled: true },
         automatic_tax: { enabled: config.stripeAutomaticTax },
@@ -468,7 +501,9 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
         cancel_url: `${returnUrl}/commande?commande=annulee`,
         metadata: { orderToken: attemptId, businessName: customer.businessName, customerType: "business" },
         custom_text: {
-          shipping_address: { message: "Commande professionnelle : votre objet sera personnalisé, configuré et testé avant expédition." },
+          shipping_address: { message: personalizedOrder
+            ? "Commande personnalisée : la préparation commence après validation de votre BAT. Chaque support sera ensuite configuré et testé avant expédition."
+            : "Commande professionnelle : chaque support sera préparé, configuré et testé avant expédition." },
           submit: { message: `En payant, vous confirmez agir à titre professionnel et accepter les CGV B2B ${config.legalVersion}.` },
         },
       }, { idempotencyKey: `tapote-checkout-${attemptId}` });

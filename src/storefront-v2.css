@@ -1130,6 +1130,7 @@ body {
 .config-options-heading small { max-width: 270px; color: rgba(255, 255, 255, .68); font-size: 11px; line-height: 1.4; text-align: right; }
 .config-options .choice-grid,
 .config-options .design-style-grid { margin-top: 8px; }
+.config-bat-note { margin: 10px 0 0; padding: 11px 12px; color: rgba(255,255,255,.82); border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.06); font-size: 12px; line-height: 1.45; }
 .destination-control { margin-top: 18px; }
 .config-summary {
   display: grid;
@@ -1150,6 +1151,10 @@ body {
 .config-quantity-control input { padding: 0; border-right: 1px solid rgba(255, 255, 255, .2); border-left: 1px solid rgba(255, 255, 255, .2); outline: 0; font-size: 12px; font-weight: 850; text-align: center; appearance: textfield; }
 .config-quantity-control input::-webkit-inner-spin-button,
 .config-quantity-control input::-webkit-outer-spin-button { margin: 0; appearance: none; }
+.config-quantity-options { display: grid; grid-template-columns: repeat(3, 40px); gap: 6px; }
+.config-quantity-options button { min-height: 36px; color: #fff; background: transparent; border: 1px solid rgba(255, 255, 255, .28); border-radius: 2px; font-weight: 850; cursor: pointer; }
+.config-quantity-options button:hover,
+.config-quantity-options button.is-selected { color: var(--tapote-ink); background: var(--yellow); border-color: var(--yellow); }
 
 .tap-demo-copy > p,
 .showcase-heading > p,

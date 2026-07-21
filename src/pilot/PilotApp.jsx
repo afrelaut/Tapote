@@ -29,8 +29,8 @@ import "./pilot.css";
 
 const DAY = 86_400_000;
 const views = {
-  overview: { label: "Vue d’ensemble", icon: BarChart3 },
-  products: { label: "Produits", icon: Radio },
+  overview: { label: "Accueil", accessibleLabel: "Vue d’ensemble", icon: BarChart3 },
+  products: { label: "Mes supports", accessibleLabel: "Produits", icon: Radio },
   history: { label: "Historique", icon: History },
   support: { label: "Support", icon: LifeBuoy },
 };
@@ -323,7 +323,7 @@ function PilotLoading() {
 function ProductGlyph({ type }) {
   return (
     <span className={`pilot-product-glyph pilot-product-${type}`} aria-hidden="true">
-      {type === "sticker" ? <Sparkles size={19} /> : type === "carte" ? <Link2 size={19} /> : <Radio size={20} />}
+      {type === "carte" ? <Link2 size={19} /> : <Radio size={20} />}
     </span>
   );
 }
@@ -359,50 +359,101 @@ function PeriodSwitch({ period, onChange }) {
 function Overview({ workspace, analytics, period, setPeriod, locationId, setLocationId, openProduct, showProducts }) {
   const maximum = Math.max(...analytics.series.map((entry) => entry.value), 1);
   const topProducts = [...analytics.products].sort((a, b) => (analytics.byProduct.get(b.id) || 0) - (analytics.byProduct.get(a.id) || 0)).slice(0, 4);
+  const [quickProductId, setQuickProductId] = useState("");
+  const quickProduct = analytics.products.find((product) => product.id === quickProductId) || analytics.products[0] || null;
   const TrendIcon = analytics.trendPercent >= 0 ? TrendingUp : TrendingDown;
   return (
     <>
       <header className="pilot-view-heading">
-        <div className="pilot-heading-copy"><span className="pilot-kicker">ACTIVITÉ · {workspace.organization.name}</span><h1>Vue d’ensemble</h1><p>Les performances de vos produits Tapote, sans jargon.</p></div>
-        <div className="pilot-view-controls">
-          <label className="pilot-select-control"><span>Établissement</span><select aria-label="Filtrer par établissement" value={locationId} onChange={(event) => setLocationId(event.target.value)}>
+        <div className="pilot-heading-copy"><span className="pilot-kicker">PILOT · {workspace.organization.name}</span><h1>Vue d’ensemble</h1><p>Les performances de vos produits Tapote, sans jargon.</p></div>
+        <span className="pilot-free-promise"><Check size={16} /><span><b>Inclus à vie</b>Liens modifiables sans limite</span></span>
+      </header>
+
+      <section className="pilot-link-workspace" aria-labelledby="pilot-link-title">
+        <div className="pilot-link-intro">
+          <span>ACTION PRINCIPALE</span>
+          <h2 id="pilot-link-title">Changer un lien</h2>
+          <p>Choisissez le support. Collez la nouvelle adresse. Le prochain tap l’utilise.</p>
+        </div>
+        {quickProduct ? (
+          <div className="pilot-link-control">
+            <label htmlFor="pilot-quick-product">Support à modifier</label>
+            <div className="pilot-link-select">
+              <ProductGlyph type={quickProduct.productType} />
+              <select id="pilot-quick-product" value={quickProduct.id} onChange={(event) => setQuickProductId(event.target.value)}>
+                {analytics.products.map((product) => <option key={product.id} value={product.id}>{product.label} · {product.locationName}</option>)}
+              </select>
+            </div>
+            <div className="pilot-current-link"><span>Ouvre aujourd’hui</span><strong>{quickProduct.targetUrl ? hostnameFromUrl(quickProduct.targetUrl) : "Aucune destination"}</strong><small>{quickProduct.locationName}</small></div>
+            <button className="pilot-change-link" type="button" onClick={() => openProduct(quickProduct.id)}><Link2 size={18} />Changer ce lien <ArrowRight size={17} /></button>
+          </div>
+        ) : (
+          <p className="pilot-link-empty">Aucun support dans ce lieu. Affichez tous les lieux pour choisir un produit.</p>
+        )}
+        <aside className="pilot-basic-counter" aria-label="Compteur simple inclus">
+          <span>COMPTEUR SIMPLE · INCLUS</span>
+          <strong>{formatNumber(analytics.total)}</strong>
+          <p>interactions NFC et QR<br />sur {period} jours</p>
+          <small><i />{analytics.activeProducts} support{analytics.activeProducts > 1 ? "s" : ""} actif{analytics.activeProducts > 1 ? "s" : ""}</small>
+        </aside>
+      </section>
+
+      <section className="pilot-location-section" aria-labelledby="pilot-location-title">
+        <div><span>LIEUX</span><h2 id="pilot-location-title">Regrouper les supports</h2><p>Un lieu sélectionné filtre les supports et leur compteur.</p></div>
+        <div className="pilot-location-list" role="group" aria-label="Filtrer les supports par lieu">
+          <button type="button" className={locationId === "all" ? "is-active" : ""} aria-pressed={locationId === "all"} onClick={() => setLocationId("all")}><span>Tous les lieux</span><b>{workspace.products.length}</b></button>
+          {workspace.locations.map((location) => {
+            const count = workspace.products.filter((product) => product.locationId === location.id).length;
+            return <button type="button" key={location.id} className={locationId === location.id ? "is-active" : ""} aria-pressed={locationId === location.id} onClick={() => setLocationId(location.id)}><span>{location.name}</span><b>{count}</b></button>;
+          })}
+        </div>
+      </section>
+
+      <section className="pilot-section-block">
+        <div className="pilot-section-title"><div><span>MES SUPPORTS</span><h2>Prêts à être utilisés</h2><p>Cliquez sur un support pour voir ou changer son lien.</p></div><button type="button" onClick={showProducts}>Gérer tous les supports <ArrowRight size={16} /></button></div>
+        <div className="pilot-client-product-list">
+          {topProducts.map((product) => <ProductRow key={product.id} product={product} interactions={analytics.byProduct.get(product.id) || 0} onOpen={openProduct} />)}
+          {!topProducts.length && <p className="pilot-empty-line">Aucun produit pour ce filtre.</p>}
+        </div>
+      </section>
+
+      <section className="pilot-advanced" aria-labelledby="pilot-advanced-title">
+        <header className="pilot-advanced-heading">
+          <div><span>PILOT · FONCTIONS AVANCÉES</span><h2 id="pilot-advanced-title">Comprendre ce qui fonctionne</h2><p>Les outils de pilotage quand un compteur ne suffit plus.</p></div>
+          <div className="pilot-plan-price"><strong>9 €</strong><span>/ mois</span><small>ou 89 € / an</small></div>
+        </header>
+        <div className="pilot-advanced-features" aria-label="Fonctions Pilot avancées">
+          <span>Stats par lieu</span><span>Périodes 7 / 30 / 90 jours</span><span>Part NFC / QR</span><span>Dernière interaction</span><span>Multi-établissement</span><span>Export CSV et historique</span>
+        </div>
+        <div className="pilot-advanced-controls">
+          <label className="pilot-select-control"><span>Établissement analysé</span><select aria-label="Filtrer par établissement" value={locationId} onChange={(event) => setLocationId(event.target.value)}>
               <option value="all">Tous les établissements</option>
               {workspace.locations.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}
             </select></label>
           <PeriodSwitch period={period} onChange={setPeriod} />
         </div>
-      </header>
-
-      <section className="pilot-activity" aria-labelledby="pilot-activity-title">
-        <div className="pilot-activity-total">
-          <span id="pilot-activity-title">Interactions</span>
-          <strong>{formatNumber(analytics.total)}</strong>
-          {analytics.comparisonAvailable ? <div className={`pilot-trend ${analytics.trendPercent >= 0 ? "is-positive" : "is-negative"}`}><TrendIcon size={17} /><b>{analytics.trendPercent >= 0 ? "+" : ""}{analytics.trendPercent} %</b><span>vs période précédente</span></div> : <div className="pilot-trend"><Activity size={17} /><span>{formatNumber(analytics.averagePerDay)} par jour</span></div>}
-          <small>NFC et QR · {period} derniers jours</small>
-        </div>
-        <div className="pilot-chart-panel">
-          <div className="pilot-chart-heading"><span>Évolution</span><small>{period === 90 ? "par semaine" : "par jour"}</small></div>
-          <div className="pilot-chart" role="img" aria-label={`${analytics.total} interactions sur les ${period} derniers jours`}>
-            {analytics.series.map((entry) => (
-              <i key={entry.date.toISOString()} style={{ "--pilot-bar": `${Math.max(3, Math.round((entry.value / maximum) * 100))}%` }} title={`${entry.label} : ${entry.value} interactions`} />
-            ))}
+        <div className="pilot-activity" aria-labelledby="pilot-activity-title">
+          <div className="pilot-activity-total">
+            <span id="pilot-activity-title">Interactions</span>
+            <strong>{formatNumber(analytics.total)}</strong>
+            {analytics.comparisonAvailable ? <div className={`pilot-trend ${analytics.trendPercent >= 0 ? "is-positive" : "is-negative"}`}><TrendIcon size={17} /><b>{analytics.trendPercent >= 0 ? "+" : ""}{analytics.trendPercent} %</b><span>vs période précédente</span></div> : <div className="pilot-trend"><Activity size={17} /><span>{formatNumber(analytics.averagePerDay)} par jour</span></div>}
+            <small>NFC et QR · {period} derniers jours</small>
           </div>
-          <div className="pilot-chart-axis"><span>{analytics.series[0]?.label}</span><span>{analytics.series.at(-1)?.label}</span></div>
+          <div className="pilot-chart-panel">
+            <div className="pilot-chart-heading"><span>Évolution</span><small>{period === 90 ? "par semaine" : "par jour"}</small></div>
+            <div className="pilot-chart" role="img" aria-label={`${analytics.total} interactions sur les ${period} derniers jours`}>
+              {analytics.series.map((entry) => (
+                <i key={entry.date.toISOString()} style={{ "--pilot-bar": `${Math.max(3, Math.round((entry.value / maximum) * 100))}%` }} title={`${entry.label} : ${entry.value} interactions`} />
+              ))}
+            </div>
+            <div className="pilot-chart-axis"><span>{analytics.series[0]?.label}</span><span>{analytics.series.at(-1)?.label}</span></div>
+          </div>
         </div>
-      </section>
-
-      <section className="pilot-kpis" aria-label="Indicateurs principaux">
-        <div><span>Produits actifs</span><strong>{analytics.activeProducts} <small>/ {analytics.products.length}</small></strong><p>Supports opérationnels</p></div>
-        <div><span>Part NFC</span><strong>{analytics.nfcShare} %</strong><p>Ouvertures sans appareil photo</p></div>
-        <div><span>Dernière interaction</span><strong>{relativeDate(analytics.lastInteraction)}</strong><p>{formatDateTime(analytics.lastInteraction)}</p></div>
-      </section>
-
-      <section className="pilot-section-block">
-        <div className="pilot-section-title"><div><span>PRODUITS</span><h2>Les plus utilisés</h2><p>Classés selon les interactions de la période affichée.</p></div><button type="button" onClick={showProducts}>Voir tous les produits <ArrowRight size={16} /></button></div>
-        <div className="pilot-client-product-list">
-          {topProducts.map((product) => <ProductRow key={product.id} product={product} interactions={analytics.byProduct.get(product.id) || 0} onOpen={openProduct} />)}
-          {!topProducts.length && <p className="pilot-empty-line">Aucun produit pour ce filtre.</p>}
-        </div>
+        <section className="pilot-kpis" aria-label="Indicateurs Pilot avancés">
+          <div><span>Produits actifs</span><strong>{analytics.activeProducts} <small>/ {analytics.products.length}</small></strong><p>Supports opérationnels</p></div>
+          <div><span>Part NFC</span><strong>{analytics.nfcShare} %</strong><p>Ouvertures sans appareil photo</p></div>
+          <div><span>Dernière interaction</span><strong>{relativeDate(analytics.lastInteraction)}</strong><p>{formatDateTime(analytics.lastInteraction)}</p></div>
+        </section>
       </section>
     </>
   );
@@ -470,7 +521,7 @@ function SupportView() {
         <CircleHelp size={32} />
         <h2>Un produit ne réagit pas<br />comme prévu ?</h2>
         <p>Indiquez le numéro de série visible dans sa fiche et décrivez le geste effectué. Tapote vérifiera le lien, le NFC et le QR.</p>
-        <a href="/#devis" target="_blank" rel="noreferrer">Contacter Tapote <ArrowRight size={17} /></a>
+        <a href="/devis" target="_blank" rel="noreferrer">Contacter Tapote <ArrowRight size={17} /></a>
       </section>
       <section className="pilot-support-facts">
         <div><b>01</b><strong>NFC silencieux</strong><p>Essayez sans coque, approchez le haut du téléphone, puis testez le QR.</p></div>
@@ -564,21 +615,10 @@ function ProductInspector({ product, canEdit, interactions, onClose, onSave, toa
           <span className={`pilot-client-status pilot-client-status-${product.status}`}><i />{product.status === "active" ? "Actif" : product.status}</span>
           <h2 id="pilot-inspector-title">{product.label}</h2>
           <p>{productName(product.productType)} · {actionLabels[product.actionId] || product.actionId}</p>
-          <dl>
-            <div><dt>Établissement</dt><dd>{product.locationName}</dd></div>
-            <div><dt>N° de série</dt><dd>{product.serialNumber}</dd></div>
-            <div><dt>Interactions</dt><dd>{formatNumber(interactions)}</dd></div>
-          </dl>
-          <section className="pilot-short-link">
-            <span>URL PERMANENTE DU PRODUIT</span>
-            <div><code>{shortUrl.replace(/^https?:\/\//, "")}</code><button type="button" onClick={copy}>{copied ? <Check size={17} /> : <Copy size={17} />}<span>{copied ? "Copié" : "Copier"}</span></button></div>
-            <p>Cette adresse reste identique, même lorsque vous changez la destination.</p>
-            <div className="pilot-source-links"><a href={`${shortUrl}?s=nfc`} target="_blank" rel="noreferrer">Tester comme un tap NFC <ExternalLink size={14} /></a><a href={`${shortUrl}?s=qr`} target="_blank" rel="noreferrer">Tester comme un scan QR <ExternalLink size={14} /></a></div>
-          </section>
-          <section className="pilot-destination-edit">
-            <label htmlFor="pilot-target">DESTINATION ACTUELLE</label>
-            <p>Collez l’adresse HTTPS complète de la page à ouvrir.</p>
-            <textarea id="pilot-target" rows="3" value={targetUrl} onChange={(event) => { setTargetUrl(event.target.value); setConfirming(false); setError(""); }} readOnly={!canEdit} />
+          <section className="pilot-destination-edit pilot-destination-edit-primary">
+            <div className="pilot-destination-heading"><label htmlFor="pilot-target">CHANGER LE LIEN</label><span>Inclus · sans limite</span></div>
+            <p>Collez l’adresse HTTPS de la page à ouvrir au prochain tap.</p>
+            <textarea id="pilot-target" aria-label="DESTINATION ACTUELLE" rows="3" value={targetUrl} onChange={(event) => { setTargetUrl(event.target.value); setConfirming(false); setError(""); }} readOnly={!canEdit} />
             {error && <p className="pilot-field-error" role="alert">{error}</p>}
             {canEdit && !confirming && <button className="pilot-primary-action" type="button" onClick={prepareSave}>Vérifier le changement <ArrowRight size={17} /></button>}
             {!canEdit && <p className="pilot-readonly">Votre rôle permet uniquement la consultation.</p>}
@@ -590,6 +630,17 @@ function ProductInspector({ product, canEdit, interactions, onClose, onSave, toa
               <div><button type="button" onClick={() => setConfirming(false)}>Annuler</button><button type="button" onClick={save} disabled={saving}>{saving ? <LoaderCircle className="pilot-spin" size={16} /> : <Check size={16} />}Confirmer</button></div>
             </section>
           )}
+          <dl>
+            <div><dt>Établissement</dt><dd>{product.locationName}</dd></div>
+            <div><dt>N° de série</dt><dd>{product.serialNumber}</dd></div>
+            <div><dt>Interactions</dt><dd>{formatNumber(interactions)}</dd></div>
+          </dl>
+          <section className="pilot-short-link">
+            <span>URL PERMANENTE DU PRODUIT</span>
+            <div><code>{shortUrl.replace(/^https?:\/\//, "")}</code><button type="button" onClick={copy}>{copied ? <Check size={17} /> : <Copy size={17} />}<span>{copied ? "Copié" : "Copier"}</span></button></div>
+            <p>Cette adresse reste identique, même lorsque vous changez la destination.</p>
+            <div className="pilot-source-links"><a href={`${shortUrl}?s=nfc`} target="_blank" rel="noreferrer">Tester comme un tap NFC <ExternalLink size={14} /></a><a href={`${shortUrl}?s=qr`} target="_blank" rel="noreferrer">Tester comme un scan QR <ExternalLink size={14} /></a></div>
+          </section>
         </div>
       </aside>
     </div>
@@ -600,7 +651,7 @@ function EmptyWorkspace({ email }) {
   return (
     <main className="pilot-empty-workspace">
       <PilotLogo />
-      <div><span className="pilot-kicker">COMPTE OUVERT</span><h1>Vos produits arrivent<br />bientôt dans Pilot.</h1><p>Le compte {email} est bien connecté, mais aucun établissement ne lui est encore rattaché.</p><a href="/#devis">Contacter Tapote <ArrowRight size={17} /></a></div>
+      <div><span className="pilot-kicker">COMPTE OUVERT</span><h1>Vos produits arrivent<br />bientôt dans Pilot.</h1><p>Le compte {email} est bien connecté, mais aucun établissement ne lui est encore rattaché.</p><a href="/devis">Contacter Tapote <ArrowRight size={17} /></a></div>
     </main>
   );
 }
@@ -740,10 +791,11 @@ export default function PilotApp() {
       <aside className={`pilot-client-sidebar ${menuOpen ? "is-open" : ""}`}>
         <div className="pilot-client-sidebar-top"><PilotLogo dark /><button type="button" onClick={() => setMenuOpen(false)} aria-label="Fermer le menu"><X size={20} /></button></div>
         <div className="pilot-organization"><span>ESPACE CLIENT</span><strong>{workspace.organization.name}</strong><small><i />{demoMode ? "Démonstration" : "Données à jour"}</small></div>
+        <button className="pilot-sidebar-change" type="button" onClick={() => { setSelectedProductId(workspace.products[0]?.id || null); setMenuOpen(false); }} disabled={!workspace.products.length}><Link2 size={18} /><span>Changer un lien</span><ArrowRight size={16} /></button>
         <nav aria-label="Navigation Pilot">
           {Object.entries(views).map(([key, item]) => {
             const Icon = item.icon;
-            return <button data-pilot-nav={key} type="button" key={key} aria-current={view === key ? "page" : undefined} className={view === key ? "is-active" : ""} onClick={() => changeView(key)}><Icon size={19} /><span>{item.label}</span></button>;
+            return <button data-pilot-nav={key} type="button" key={key} aria-label={item.accessibleLabel} aria-current={view === key ? "page" : undefined} className={view === key ? "is-active" : ""} onClick={() => changeView(key)}><Icon size={19} /><span>{item.label}</span></button>;
           })}
         </nav>
         <div className="pilot-client-sidebar-foot">

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CartPage, CheckoutPage, Configurator } from "./App.jsx";
 import { DEVICE_THEMES } from "./deviceThemes.js";
@@ -31,15 +31,31 @@ afterEach(() => {
 });
 
 describe("Configurateur Tapote", () => {
-  it("affiche les choix de support et de style sans accordéon", () => {
+  it("affiche uniquement les trois supports personnalisables et le brief de création", () => {
     const { container } = render(<Configurator initialProduct="comptoir" onAdd={vi.fn()} />);
 
     expect(screen.getByText("Choisissez votre support")).toBeVisible();
-    expect(screen.getByText("Style, accroche et palette")).toBeVisible();
-    expect(screen.getByRole("button", { name: /Plaque 12 × 12/i })).toBeVisible();
-    expect(screen.getByRole("button", { name: /Vitrine/i })).toBeVisible();
-    expect(screen.getByRole("button", { name: /Minimal/i })).toBeVisible();
+    expect(screen.getByText("Votre demande de design")).toBeVisible();
+    expect(screen.getByRole("button", { name: /PlaqueAvis.*39\s*€/i })).toBeVisible();
+    expect(screen.getByRole("button", { name: /Chevalet/i })).toBeVisible();
+    expect(screen.getByRole("button", { name: /Carte/i })).toBeVisible();
+    expect(screen.queryByRole("button", { name: /Vitrine/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Prêt(?:e)? à l’emploi/i })).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Votre brief")).toBeVisible();
     expect(container.querySelector("details")).not.toBeInTheDocument();
+  });
+
+  it("ajoute un chevalet personnalisé à 39 €", () => {
+    const onAdd = vi.fn();
+    render(<Configurator initialProduct="comptoir" onAdd={onAdd} />);
+
+    expect(screen.getByText(/39\s*€/, { selector: ".config-summary > strong" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Ajouter au panier" }));
+
+    expect(onAdd).toHaveBeenCalledWith(expect.objectContaining({
+      productId: "comptoir",
+      quantity: 1,
+    }));
   });
 
   it("garantit un contraste AA pour toutes les palettes du visuel", () => {
@@ -49,28 +65,29 @@ describe("Configurateur Tapote", () => {
     });
   });
 
-  it("ajoute plusieurs exemplaires identiques depuis le configurateur", () => {
+  it("applique le prix du pack au lieu de multiplier le prix unitaire", () => {
     const onAdd = vi.fn();
     render(<Configurator initialProduct="comptoir" onAdd={onAdd} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Augmenter la quantité" }));
-    fireEvent.click(screen.getByRole("button", { name: "Augmenter la quantité" }));
+    const quantityGroup = screen.getByRole("group", { name: "Quantité de chevalets" });
+    fireEvent.click(within(quantityGroup).getByRole("button", { name: "2" }));
 
-    expect(screen.getByLabelText("Quantité de Tapote")).toHaveValue(3);
-    fireEvent.click(screen.getByRole("button", { name: "Ajouter 3 au panier" }));
-    expect(onAdd).toHaveBeenCalledWith(expect.objectContaining({ productId: "comptoir", quantity: 3 }));
-    expect(screen.getByRole("button", { name: "3 ajoutés au panier" })).toBeInTheDocument();
+    expect(screen.getByText(/69\s*€/, { selector: ".config-summary > strong" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Ajouter le pack de 2" }));
+    expect(onAdd).toHaveBeenCalledWith(expect.objectContaining({
+      productId: "pack_duo",
+      quantity: 1,
+      supportComposition: { comptoir: 2, plaque: 0 },
+    }));
+    expect(screen.getByRole("button", { name: "Pack de 2 ajouté au panier" })).toBeInTheDocument();
   });
 
-  it("adapte la couleur du texte au fond accentué sélectionné", () => {
+  it("conserve un aperçu contrasté pendant la préparation du BAT", () => {
     const { container } = render(<Configurator initialProduct="comptoir" onAdd={vi.fn()} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Palette Profonde" }));
-    fireEvent.click(screen.getByRole("button", { name: /Minimal/i }));
-
     const insert = container.querySelector(".printed-insert");
-    expect(insert).toHaveClass("insert-style-minimal");
-    expect(insert).toHaveStyle({ "--insert-accent-ink": "#17110c" });
+    expect(insert).toHaveClass("insert-style-signature");
+    expect(insert).toHaveStyle({ "--insert-accent-ink": "#ffffff" });
   });
 
   it("affiche immédiatement le logo importé et l’ajoute à la configuration", async () => {
@@ -113,7 +130,7 @@ describe("Configurateur Tapote", () => {
   it("applique un scénario métier complet en un clic", () => {
     render(<Configurator initialProduct="comptoir" onAdd={vi.fn()} />);
 
-    fireEvent.click(screen.getByRole("button", { name: /Beauté & bien-être/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Salon de coiffure/i }));
 
     expect(screen.getByLabelText("Aperçu de La Plaque 12 × 12 pour Réservation")).toBeInTheDocument();
     expect(screen.getByDisplayValue("STUDIO LUNE")).toBeInTheDocument();
@@ -140,7 +157,7 @@ describe("Tunnel de commande B2B", () => {
     render(<CartPage cart={cart} setCart={vi.fn()} />);
 
     expect(screen.getByRole("heading", { name: "Votre panier." })).toBeVisible();
-    expect(screen.getByText("Le Comptoir A6")).toBeVisible();
+    expect(screen.getByText("Le Chevalet A6")).toBeVisible();
     expect(screen.getByRole("button", { name: /Renseigner mes coordonnées/i })).toBeVisible();
     expect(screen.getByRole("navigation", { name: "Étapes de la commande" })).toBeVisible();
   });

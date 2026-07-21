@@ -1,5 +1,7 @@
 # Plan maître de lancement Tapote
 
+> **ARCHIVE — offre et tarifs remplacés le 20 juillet 2026.** Les mentions 49 €, anciens packs, Vitrine, franco à 59 € ou Pilot requis pour changer un lien sont périmées. Voir `shared/catalog.js` et `docs/18-PRODUIT-PRODUCTION-TAPOTE.md`.
+
 Date : 17 juillet 2026 — tarifs alignés sur le catalogue en production
 
 ## 1. Décision de positionnement

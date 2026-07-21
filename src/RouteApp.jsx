@@ -3,7 +3,7 @@ import { lazy, Suspense } from "react";
 const PilotApp = lazy(() => import("./pilot/PilotApp.jsx"));
 const AccessApp = lazy(() => import("./access/AccessApp.jsx"));
 const ManagementApp = lazy(() => import("./ManagementApp.jsx"));
-const StoreApp = lazy(() => import("./App.jsx"));
+const StoreApp = lazy(() => import("./StorefrontV3.jsx"));
 
 export default function RouteApp() {
   const pilotRoute = window.location.pathname === "/pilot" || window.location.pathname.startsWith("/pilot/");

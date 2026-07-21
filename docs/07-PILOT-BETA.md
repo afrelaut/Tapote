@@ -2,6 +2,27 @@
 
 Pilot est l’espace client privé disponible sur `/pilot`. Il affiche les produits rattachés à une organisation, agrège les interactions NFC/QR sur 7, 30 ou 90 jours, exporte un CSV et permet de modifier une destination avec journal d’audit.
 
+## Règle commerciale à rendre parfaitement explicite
+
+L’achat d’un support Tapote comprend, sans abonnement et sans limite de durée :
+
+- l’encodage initial NFC + QR vers le lien choisi ;
+- le changement de destination à distance, autant de fois que nécessaire ;
+- la gestion des supports du compte ;
+- les statistiques essentielles de tapotements.
+
+Le changement de lien n’est donc jamais réservé à l’abonnement. Un client peut passer d’une page d’avis à un menu, une réservation, un site, un Wi-Fi ou toute autre URL compatible sans racheter ni réencoder physiquement son support.
+
+Le tarif prévu pour l’option **Pilot** est de **9 € par mois** ou **89 € par an**. Pendant la bêta, son activation reste accompagnée et son encaissement n’est pas automatisé. Les fonctions effectivement disponibles sont :
+
+- les statistiques avancées par support et par lieu ;
+- les comparaisons sur 7, 30 ou 90 jours ;
+- la répartition NFC / QR et la dernière interaction ;
+- la gestion de plusieurs établissements ;
+- l’export CSV et l’historique.
+
+Si le client arrête Pilot, ses supports continuent de fonctionner : la dernière destination publiée reste active et les fonctions gratuites restent disponibles. Le discours commercial doit présenter Pilot comme un gain de pilotage et d’analyse, jamais comme un péage nécessaire au fonctionnement du produit.
+
 ## État Supabase vérifié le 16 juillet 2026
 
 - Le projet Tapote est actif et les neuf migrations locales correspondent à l’historique distant.
@@ -83,7 +104,7 @@ Après provisionnement, `curl -I "https://t.tapote.fr/a/<code>?s=nfc"` doit rép
 - Configurer la surveillance de `t.tapote.fr` et les sauvegardes PostgreSQL.
 - Garder `VITE_PILOT_DEMO=false` en production.
 
-L’inscription publique, la facturation Pilot, le suivi logistique et la gestion des membres restent hors de cette bêta.
+L’inscription publique, l’encaissement automatisé de Pilot, le suivi logistique et la gestion des membres restent hors de cette bêta. Les campagnes programmées, pages Tapote multi-actions, alertes et rapports automatiques ne doivent pas être vendus tant qu’ils ne sont pas implémentés et testés.
 
 ## Plan de mise en service sur 48 heures
 

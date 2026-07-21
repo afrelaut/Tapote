@@ -16,10 +16,14 @@ export default function AccessApp() {
 
   useEffect(() => {
     const previousTitle = document.title;
+    const robots = document.querySelector('meta[name="robots"]');
+    const previousRobots = robots?.content;
     document.title = "Espace Tapote · Pilot et Gestion";
+    if (robots) robots.content = "noindex,nofollow";
     document.body.classList.add("access-body");
     return () => {
       document.title = previousTitle;
+      if (robots && previousRobots) robots.content = previousRobots;
       document.body.classList.remove("access-body");
     };
   }, []);

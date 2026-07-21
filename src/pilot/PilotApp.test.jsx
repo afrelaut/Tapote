@@ -28,7 +28,7 @@ describe("Tapote Pilot", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Produits" }));
     expect(screen.getByRole("heading", { name: "Produits" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /Avis · Comptoir/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Avis · Chevalet/ }));
 
     const destination = screen.getByLabelText("DESTINATION ACTUELLE");
     fireEvent.change(destination, { target: { value: "https://example.com/nouvelle-destination" } });
@@ -43,7 +43,7 @@ describe("Tapote Pilot", () => {
   it("refuse une destination non HTTPS avant confirmation", async () => {
     render(<PilotApp />);
     await screen.findByRole("heading", { name: "Vue d’ensemble" });
-    fireEvent.click(screen.getByRole("button", { name: /Avis · Comptoir/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Avis · Chevalet/ }));
     fireEvent.change(screen.getByLabelText("DESTINATION ACTUELLE"), { target: { value: "http://example.com" } });
     fireEvent.click(screen.getByRole("button", { name: /Vérifier le changement/ }));
     expect(screen.getByRole("alert")).toHaveTextContent("https://");
@@ -59,8 +59,9 @@ describe("Tapote Pilot", () => {
     fireEvent.click(screen.getByRole("button", { name: "Produits" }));
     fireEvent.change(screen.getByRole("searchbox", { name: "Rechercher" }), { target: { value: "Instagram" } });
 
-    expect(screen.getByRole("button", { name: /Instagram · Vitrine/ })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Avis · Comptoir/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Instagram · Plaque/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Avis · Chevalet/ })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Vitrine/i)).not.toBeInTheDocument();
     expect(screen.getByText(/1 résultat/)).toBeInTheDocument();
   });
 });

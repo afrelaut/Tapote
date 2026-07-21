@@ -99,18 +99,17 @@ const encodingStatusMeta = {
 };
 
 const productPrices = {
-  "Plaque 12 × 12": PRODUCTS.plaque.price / 100,
-  "Comptoir A6": PRODUCTS.comptoir.price / 100,
-  "Chevalets A6 ×6": PRODUCTS.table6.price / 100,
-  "Carte NFC": PRODUCTS.carte.price / 100,
-  "Vitrine NFC": PRODUCTS.sticker.price / 100,
-  "Mini Comptoir": PRODUCTS.mini.price / 100,
-  "Pack Essentiel": PRODUCTS.pack_essentiel.price / 100,
-  "Pack Visibilité": PRODUCTS.pack_visibilite.price / 100,
-  "Pack Commerce": PRODUCTS.pack_commerce.price / 100,
-  "Pack Restaurant": PRODUCTS.pack_resto.price / 100,
-  "Pack Salon": PRODUCTS.pack_salon.price / 100,
-  "Pack Équipe": PRODUCTS.pack_equipe.price / 100,
+  [PRODUCTS.comptoir_standard.name]: PRODUCTS.comptoir_standard.price / 100,
+  [PRODUCTS.comptoir.name]: PRODUCTS.comptoir.price / 100,
+  [PRODUCTS.plaque_standard.name]: PRODUCTS.plaque_standard.price / 100,
+  [PRODUCTS.plaque.name]: PRODUCTS.plaque.price / 100,
+  [PRODUCTS.carte_standard.name]: PRODUCTS.carte_standard.price / 100,
+  [PRODUCTS.carte.name]: PRODUCTS.carte.price / 100,
+  [PRODUCTS.pack_duo_standard.name]: PRODUCTS.pack_duo_standard.price / 100,
+  [PRODUCTS.pack_duo.name]: PRODUCTS.pack_duo.price / 100,
+  [PRODUCTS.pack_cinq_standard.name]: PRODUCTS.pack_cinq_standard.price / 100,
+  [PRODUCTS.pack_cinq.name]: PRODUCTS.pack_cinq.price / 100,
+  [PRODUCTS.carte_assortie.name]: PRODUCTS.carte_assortie.price / 100,
 };
 
 const initialData = {
@@ -122,26 +121,33 @@ const initialData = {
     { id: "c5", name: "Atelier Grain", contact: "Noé Dupont", email: "noe@ateliergrain.fr", phone: "07 42 18 22 06", city: "Nantes", segment: "Boutique", orders: 1, revenue: 35, joined: "11 juil. 2026", health: "Nouveau" },
   ],
   orders: [
-    { id: "TPT-1048", clientId: "c1", product: "Pack Restaurant", quantity: 1, total: 199, status: "assembly", payment: "Payé", channel: "Boutique", created: "15 juil.", due: "18 juil.", priority: "Haute", owner: "Aymeric", destination: "Avis Google", tracking: "", note: "6 chevalets et Vitrine, visuel terracotta validé." },
-    { id: "TPT-1047", clientId: "c2", product: "Comptoir A6", quantity: 2, total: 98, status: "bat", payment: "Payé", channel: "Boutique", created: "15 juil.", due: "19 juil.", priority: "Normale", owner: "Rico", destination: "Réservation", tracking: "", note: "En attente de confirmation du rose de marque." },
-    { id: "TPT-1046", clientId: "c3", product: "Pack Restaurant", quantity: 1, total: 199, status: "quality", payment: "Payé", channel: "Devis", created: "14 juil.", due: "17 juil.", priority: "Haute", owner: "Aymeric", destination: "Menu", tracking: "", note: "Contrôler les 8 supports et QR avant emballage." },
-    { id: "TPT-1045", clientId: "c4", product: "Comptoir A6", quantity: 1, total: 49, status: "ready", payment: "Payé", channel: "Boutique", created: "13 juil.", due: "17 juil.", priority: "Normale", owner: "Rico", destination: "Instagram", tracking: "", note: "Colis prêt, étiquette à imprimer." },
-    { id: "TPT-1044", clientId: "c5", product: "Vitrine NFC", quantity: 1, total: 29.9, status: "supply", payment: "Payé", channel: "Boutique", created: "12 juil.", due: "18 juil.", priority: "Normale", owner: "Aymeric", destination: "Avis Google", tracking: "", note: "Réserver un sticker extérieur mat." },
-    { id: "TPT-1043", clientId: "c1", product: "Carte NFC", quantity: 2, total: 59.8, status: "shipped", payment: "Payé", channel: "Boutique", created: "10 juil.", due: "15 juil.", priority: "Normale", owner: "Rico", destination: "Fidélité", tracking: "1K02840173012", note: "Remis à La Poste." },
-    { id: "TPT-1042", clientId: "c3", product: "Pack Restaurant", quantity: 1, total: 199, status: "shipped", payment: "Payé", channel: "Devis", created: "08 juil.", due: "14 juil.", priority: "Normale", owner: "Aymeric", destination: "Avis Google", tracking: "1K02840172991", note: "Livré le 14 juillet." },
+    { id: "TPT-1048", clientId: "c1", product: PRODUCTS.pack_cinq.name, quantity: 1, total: 109, status: "assembly", payment: "Payé", channel: "Boutique", created: "15 juil.", due: "18 juil.", priority: "Haute", owner: "Aymeric", destination: "Avis Google", tracking: "", note: "2 chevalets et 3 plaques, identité terracotta validée." },
+    { id: "TPT-1047", clientId: "c2", product: PRODUCTS.comptoir.name, quantity: 2, total: 78, status: "bat", payment: "Payé", channel: "Boutique", created: "15 juil.", due: "19 juil.", priority: "Normale", owner: "Rico", destination: "Réservation", tracking: "", note: "En attente de confirmation du rose de marque." },
+    { id: "TPT-1046", clientId: "c3", product: PRODUCTS.pack_cinq_standard.name, quantity: 1, total: 89, status: "quality", payment: "Payé", channel: "Boutique", created: "14 juil.", due: "17 juil.", priority: "Haute", owner: "Aymeric", destination: "Menu", tracking: "", note: "Contrôler les 5 supports, NFC et QR avant emballage." },
+    { id: "TPT-1045", clientId: "c4", product: PRODUCTS.comptoir_standard.name, quantity: 1, total: 29, status: "ready", payment: "Payé", channel: "Boutique", created: "13 juil.", due: "17 juil.", priority: "Normale", owner: "Rico", destination: "Instagram", tracking: "", note: "Colis prêt, étiquette à imprimer." },
+    { id: "TPT-1044", clientId: "c5", product: PRODUCTS.plaque_standard.name, quantity: 1, total: 29, status: "supply", payment: "Payé", channel: "Boutique", created: "12 juil.", due: "18 juil.", priority: "Normale", owner: "Aymeric", destination: "Avis Google", tracking: "", note: "Réserver une plaque PVC et contrôler le visuel prêt à l’emploi." },
+    { id: "TPT-1043", clientId: "c1", product: PRODUCTS.carte.name, quantity: 2, total: 58, status: "shipped", payment: "Payé", channel: "Boutique", created: "10 juil.", due: "15 juil.", priority: "Normale", owner: "Rico", destination: "Fidélité", tracking: "1K02840173012", note: "Remis à La Poste." },
+    { id: "TPT-1042", clientId: "c3", product: PRODUCTS.pack_duo.name, quantity: 1, total: 69, status: "shipped", payment: "Payé", channel: "Boutique", created: "08 juil.", due: "14 juil.", priority: "Normale", owner: "Aymeric", destination: "Avis Google", tracking: "1K02840172991", note: "Livré le 14 juillet." },
   ],
   inventory: [
     { id: "s1", sku: "SUP-A6-CLR", name: "Chevalet plexi A6", category: "Support", stock: 18, reserved: 9, threshold: 12, incoming: 30, eta: "22 juil." },
     { id: "s2", sku: "NFC-NTAG213-38", name: "Tag NFC NTAG213 · antenne 35 mm", category: "Électronique", stock: 42, reserved: 13, threshold: 25, incoming: 100, eta: "24 juil." },
     { id: "s3", sku: "CARD-PVC-W", name: "Carte PVC blanche", category: "Support", stock: 64, reserved: 2, threshold: 30, incoming: 0, eta: "—" },
-    { id: "s4", sku: "STK-EXT-MAT", name: "Sticker extérieur mat", category: "Impression", stock: 7, reserved: 3, threshold: 15, incoming: 50, eta: "19 juil." },
+    { id: "s4", sku: "PLAQUE-PVC-12", name: "Plaque PVC 12 × 12", category: "Support", stock: 31, reserved: 8, threshold: 15, incoming: 50, eta: "19 juil." },
     { id: "s5", sku: "BOX-A6-KRAFT", name: "Étui kraft A6", category: "Packaging", stock: 23, reserved: 8, threshold: 20, incoming: 0, eta: "—" },
   ],
   storefront: [
-    { id: "p1", name: PRODUCTS.comptoir.name, price: PRODUCTS.comptoir.price / 100, online: true, stockId: "s1", sales: 24, conversion: "4,8 %" },
-    { id: "p2", name: PRODUCTS.pack_resto.name, price: PRODUCTS.pack_resto.price / 100, online: true, stockId: "s1", sales: 9, conversion: "2,9 %" },
-    { id: "p3", name: PRODUCTS.carte.name, price: PRODUCTS.carte.price / 100, online: true, stockId: "s3", sales: 18, conversion: "5,2 %" },
-    { id: "p4", name: PRODUCTS.sticker.name, price: PRODUCTS.sticker.price / 100, online: true, stockId: "s4", sales: 12, conversion: "3,6 %" },
+    { id: "p1", name: PRODUCTS.comptoir_standard.name, price: PRODUCTS.comptoir_standard.price / 100, online: true, stockId: "s1", sales: 18, conversion: "5,1 %" },
+    { id: "p2", name: PRODUCTS.comptoir.name, price: PRODUCTS.comptoir.price / 100, online: true, stockId: "s1", sales: 24, conversion: "4,8 %" },
+    { id: "p3", name: PRODUCTS.plaque_standard.name, price: PRODUCTS.plaque_standard.price / 100, online: true, stockId: "s4", sales: 15, conversion: "4,6 %" },
+    { id: "p4", name: PRODUCTS.plaque.name, price: PRODUCTS.plaque.price / 100, online: true, stockId: "s4", sales: 12, conversion: "3,9 %" },
+    { id: "p5", name: PRODUCTS.carte_standard.name, price: PRODUCTS.carte_standard.price / 100, online: true, stockId: "s3", sales: 21, conversion: "5,5 %" },
+    { id: "p6", name: PRODUCTS.carte.name, price: PRODUCTS.carte.price / 100, online: true, stockId: "s3", sales: 18, conversion: "5,2 %" },
+    { id: "p7", name: PRODUCTS.pack_duo_standard.name, price: PRODUCTS.pack_duo_standard.price / 100, online: true, stockId: "s2", sales: 11, conversion: "4,1 %" },
+    { id: "p8", name: PRODUCTS.pack_duo.name, price: PRODUCTS.pack_duo.price / 100, online: true, stockId: "s2", sales: 14, conversion: "4,4 %" },
+    { id: "p9", name: PRODUCTS.pack_cinq_standard.name, price: PRODUCTS.pack_cinq_standard.price / 100, online: true, stockId: "s2", sales: 7, conversion: "3,2 %" },
+    { id: "p10", name: PRODUCTS.pack_cinq.name, price: PRODUCTS.pack_cinq.price / 100, online: true, stockId: "s2", sales: 9, conversion: "3,6 %" },
+    { id: "p11", name: PRODUCTS.carte_assortie.name, price: PRODUCTS.carte_assortie.price / 100, online: true, stockId: "s3", sales: 8, conversion: "2,8 %" },
   ],
   activity: [
     { id: "a1", icon: "order", text: "La commande TPT-1048 est passée en assemblage", time: "Il y a 12 min" },
@@ -150,7 +156,7 @@ const initialData = {
     { id: "a4", icon: "ship", text: "TPT-1043 remise au transporteur", time: "Hier, 17:42" },
   ],
   encodedProducts: [
-    { id: "u1", orderId: "row-1048", clientId: "c1", serialNumber: "TAP-6A2F91B8C440", supportType: "Comptoir A6", chipType: "NTAG213 · 38 mm", chipBatch: "N213-2607-A", label: "Café Noma · Avis", status: "encoded", shortCode: "4a8d22be71", targetUrl: "https://g.page/r/cafe-noma/review", iphoneTest: false, androidTest: false, qrTest: false, createdAt: "2026-07-16T09:30:00Z" },
+    { id: "u1", orderId: "row-1048", clientId: "c1", serialNumber: "TAP-6A2F91B8C440", supportType: "Chevalet A6", chipType: "NTAG213 · 38 mm", chipBatch: "N213-2607-A", label: "Café Noma · Avis", status: "encoded", shortCode: "4a8d22be71", targetUrl: "https://g.page/r/cafe-noma/review", iphoneTest: false, androidTest: false, qrTest: false, createdAt: "2026-07-16T09:30:00Z" },
     { id: "u2", orderId: null, clientId: "c2", serialNumber: "TAP-7DC42A18E103", supportType: "Plaque 12 × 12", chipType: "NTAG213 · 38 mm", chipBatch: "N213-2607-A", label: "Maison Sépia · Réservation", status: "locked", shortCode: "8f31c9e5a2", targetUrl: "https://example.com/reservation", iphoneTest: true, androidTest: true, qrTest: true, createdAt: "2026-07-15T14:00:00Z" },
   ],
   settings: { orderPrefix: "TPT", currency: "EUR", timezone: "Europe/Paris", lowStockNotifications: true, shippingCutoff: "16:00" },
@@ -799,7 +805,7 @@ function NewEncodedProductModal({ clients, orders, onClose, onCreate }) {
   const [form, setForm] = useState({
     clientId: clients[0]?.id || "",
     orderId: "",
-    supportType: "Comptoir A6",
+    supportType: "Chevalet A6",
     chipType: "NTAG213 · 38 mm",
     chipBatch: "",
     label: "",
@@ -820,7 +826,7 @@ function NewEncodedProductModal({ clients, orders, onClose, onCreate }) {
       <div className="pilot-form-grid">
         <label><span>Client</span><select value={form.clientId} onChange={(event) => setForm({ ...form, clientId: event.target.value })}><option value="">Stock non affecté</option>{clients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}</select></label>
         <label><span>Commande liée</span><select value={form.orderId} onChange={(event) => updateOrder(event.target.value)}><option value="">Sans commande</option>{orders.filter((order) => !isClosedOrder(order)).map((order) => <option key={order.recordId || order.id} value={order.recordId || order.id}>{order.id} · {order.product}</option>)}</select></label>
-        <label><span>Support</span><select value={form.supportType} onChange={(event) => setForm({ ...form, supportType: event.target.value })}><option>Comptoir A6</option><option>Plaque 12 × 12</option><option>Carte NFC</option><option>Vitrine NFC</option><option>Mini Comptoir</option></select></label>
+        <label><span>Support</span><select value={form.supportType} onChange={(event) => setForm({ ...form, supportType: event.target.value })}><option>Chevalet A6</option><option>Plaque 12 × 12</option><option>Carte NFC</option></select></label>
         <label><span>Puce / antenne</span><select value={form.chipType} onChange={(event) => setForm({ ...form, chipType: event.target.value })}><option>NTAG213 · 38 mm</option><option>NTAG213 anti-métal · 38 mm</option></select></label>
         <label><span>Lot de puces</span><input value={form.chipBatch} onChange={(event) => setForm({ ...form, chipBatch: event.target.value })} placeholder="N213-2607-A" maxLength="80" /></label>
         <label><span>Nom atelier</span><input value={form.label} onChange={(event) => setForm({ ...form, label: event.target.value })} placeholder="Café Noma · Avis" minLength="2" maxLength="120" required /></label>
@@ -856,7 +862,7 @@ function EncodingTestModal({ product, onClose, onValidate }) {
 
 function NewOrderModal({ clients, onClose, onCreate }) {
   const [today] = useState(() => Date.now());
-  const [form, setForm] = useState({ clientId: clients[0]?.id || "", product: "Comptoir A6", quantity: 1, due: dateInputValue(today, 3), channel: "Boutique", destination: "Avis Google" });
+  const [form, setForm] = useState({ clientId: clients[0]?.id || "", product: PRODUCTS.comptoir.name, quantity: 1, due: dateInputValue(today, 3), channel: "Boutique", destination: "Avis Google" });
   const total = (productPrices[form.product] || 0) * Number(form.quantity);
   const submit = (event) => { event.preventDefault(); onCreate({ ...form, quantity: Number(form.quantity), total }); };
   return (
@@ -943,10 +949,14 @@ export default function TapoteManagementApp() {
 
   useEffect(() => {
     const previousTitle = document.title;
+    const robots = document.querySelector('meta[name="robots"]');
+    const previousRobots = robots?.content;
     document.title = "TAPOTE · Gestion interne";
+    if (robots) robots.content = "noindex,nofollow";
     document.body.classList.add("pilot-body");
     return () => {
       document.title = previousTitle;
+      if (robots && previousRobots) robots.content = previousRobots;
       document.body.classList.remove("pilot-body");
     };
   }, []);

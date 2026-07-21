@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#161310" />
-    <meta name="description" content="Tapote transforme chaque passage en comptoir en avis, réservation ou client fidèle grâce à des objets NFC + QR prêts à poser." />
+    <meta name="description" content="Chevalets, plaques et cartes NFC + QR prêts à l'emploi ou personnalisés. Changez le lien à distance, gratuitement et à vie. Dès 19 €." />
     <meta name="robots" content="index,follow,max-image-preview:large" />
     <link rel="canonical" href="https://tapote.fr/" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -15,38 +15,109 @@
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="fr_FR" />
     <meta property="og:site_name" content="Tapote" />
-    <meta property="og:title" content="Tapote — Faites tapoter. Faites agir." />
-    <meta property="og:description" content="Avis, réservation, menu ou fidélité : des objets NFC + QR personnalisés, configurés et prêts à poser." />
+    <meta property="og:title" content="Tapote — Supports NFC + QR prêts à faire agir" />
+    <meta property="og:description" content="Chevalets, plaques et cartes prêts à l'emploi ou personnalisés. Avis, menu, réservation, Wi-Fi ou tout autre lien, modifiable à distance." />
     <meta property="og:url" content="https://tapote.fr/" />
     <meta property="og:image" content="https://tapote.fr/assets/tapote-og.png" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Logo Tapote, la sonnette de comptoir connectée" />
+    <meta property="og:image:alt" content="Les chevalets, plaques et cartes NFC + QR Tapote" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Tapote — Faites tapoter. Faites agir." />
-    <meta name="twitter:description" content="Avis, réservation, menu ou fidélité : des objets NFC + QR personnalisés, configurés et prêts à poser." />
+    <meta name="twitter:title" content="Tapote — Supports NFC + QR prêts à faire agir" />
+    <meta name="twitter:description" content="Chevalets, plaques et cartes prêts à l'emploi ou personnalisés. Le lien reste modifiable à distance, gratuitement et à vie." />
     <meta name="twitter:image" content="https://tapote.fr/assets/tapote-og.png" />
-    <meta name="twitter:image:alt" content="Logo Tapote, la sonnette de comptoir connectée" />
-    <title>Tapote — Faites tapoter. Faites agir.</title>
+    <meta name="twitter:image:alt" content="Les chevalets, plaques et cartes NFC + QR Tapote" />
+    <title>Supports NFC + QR prêts ou personnalisés | Tapote</title>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@graph": [
           {
             "@type": "Organization",
+            "@id": "https://tapote.fr/#organization",
             "name": "Tapote",
             "url": "https://tapote.fr/",
             "logo": "https://tapote.fr/brand/tapote-logo.svg",
-            "description": "Objets NFC + QR personnalisés et prêts à poser pour les commerces."
+            "description": "Chevalets, plaques et cartes NFC + QR prêts à l'emploi ou personnalisés pour les professionnels."
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://tapote.fr/#website",
+            "url": "https://tapote.fr/",
+            "name": "Tapote",
+            "inLanguage": "fr-FR",
+            "publisher": { "@id": "https://tapote.fr/#organization" }
           },
           {
             "@type": "ItemList",
-            "name": "Objets NFC Tapote",
+            "@id": "https://tapote.fr/#products",
+            "name": "Supports NFC + QR Tapote",
+            "numberOfItems": 3,
             "itemListElement": [
-              { "@type": "ListItem", "position": 1, "item": { "@type": "Product", "name": "Le Comptoir A6", "image": "https://tapote.fr/assets/tapote-hero-a6-hd.webp", "offers": { "@type": "Offer", "priceCurrency": "EUR", "price": "49.00", "availability": "https://schema.org/PreOrder", "url": "https://tapote.fr/#configurateur" } } },
-              { "@type": "ListItem", "position": 2, "item": { "@type": "Product", "name": "Les Chevalets A6 ×6", "image": "https://tapote.fr/assets/tapote-pack-a6.webp", "offers": { "@type": "Offer", "priceCurrency": "EUR", "price": "139.00", "availability": "https://schema.org/PreOrder", "url": "https://tapote.fr/#configurateur" } } },
-              { "@type": "ListItem", "position": 3, "item": { "@type": "Product", "name": "La Carte", "image": "https://tapote.fr/assets/tapote-card-nfc.webp", "offers": { "@type": "Offer", "priceCurrency": "EUR", "price": "29.90", "availability": "https://schema.org/PreOrder", "url": "https://tapote.fr/#configurateur" } } }
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "item": {
+                  "@type": "Product",
+                  "@id": "https://tapote.fr/produits/chevalet#product",
+                  "name": "Chevalet NFC + QR Tapote",
+                  "description": "Chevalet A6 prêt à l'emploi ou personnalisé, encodé et livré prêt à poser.",
+                  "image": "https://tapote.fr/assets/tapote-hero-a6-hd.webp",
+                  "brand": { "@type": "Brand", "name": "Tapote" },
+                  "offers": {
+                    "@type": "AggregateOffer",
+                    "priceCurrency": "EUR",
+                    "lowPrice": "29.00",
+                    "highPrice": "39.00",
+                    "offerCount": 2,
+                    "availability": "https://schema.org/InStock",
+                    "url": "https://tapote.fr/produits/chevalet"
+                  }
+                }
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "item": {
+                  "@type": "Product",
+                  "@id": "https://tapote.fr/produits/plaque#product",
+                  "name": "Plaque NFC + QR Tapote",
+                  "description": "Plaque NFC + QR prête à l'emploi ou personnalisée, encodée vers le lien de votre choix.",
+                  "image": "https://tapote.fr/assets/tapote-hero-nfc-counter.webp",
+                  "brand": { "@type": "Brand", "name": "Tapote" },
+                  "offers": {
+                    "@type": "AggregateOffer",
+                    "priceCurrency": "EUR",
+                    "lowPrice": "29.00",
+                    "highPrice": "39.00",
+                    "offerCount": 2,
+                    "availability": "https://schema.org/InStock",
+                    "url": "https://tapote.fr/produits/plaque"
+                  }
+                }
+              },
+              {
+                "@type": "ListItem",
+                "position": 3,
+                "item": {
+                  "@type": "Product",
+                  "@id": "https://tapote.fr/produits/carte#product",
+                  "name": "Carte NFC + QR Tapote",
+                  "description": "Carte NFC + QR prête à l'emploi ou personnalisée, au format portefeuille.",
+                  "image": "https://tapote.fr/assets/tapote-card-nfc.webp",
+                  "brand": { "@type": "Brand", "name": "Tapote" },
+                  "offers": {
+                    "@type": "AggregateOffer",
+                    "priceCurrency": "EUR",
+                    "lowPrice": "19.00",
+                    "highPrice": "29.00",
+                    "offerCount": 2,
+                    "availability": "https://schema.org/InStock",
+                    "url": "https://tapote.fr/produits/carte"
+                  }
+                }
+              }
             ]
           }
         ]

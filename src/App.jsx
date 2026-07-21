@@ -22,6 +22,8 @@ import {
   Minus,
   Music2,
   PackageCheck,
+  Palette,
+  Pipette,
   Play,
   Plus,
   QrCode,
@@ -46,19 +48,19 @@ import {
   SHIPPING,
   TARGETS,
 } from "../shared/catalog.js";
-import { DEVICE_THEMES } from "./deviceThemes.js";
+import { DEVICE_THEMES, normalizeHexColor, resolveDeviceColors } from "./deviceThemes.js";
+import { extractLogoPalette, pickScreenColor } from "./brandColors.js";
 
-const storefrontProductOrder = ["plaque", "comptoir", "carte", "sticker"];
-const configuratorProductOrder = ["plaque", "comptoir", "mini", "carte", "sticker", "table6"];
-const packOrder = ["pack_essentiel", "pack_commerce", "pack_resto"];
-const complementaryPackOrder = ["pack_salon", "pack_equipe"];
+const storefrontProductOrder = ["plaque", "comptoir", "carte"];
+const configuratorProductOrder = ["plaque", "comptoir", "carte"];
+const packOrder = ["pack_duo", "pack_cinq"];
+const complementaryPackOrder = [];
 const actionOrder = ["avis", "formulaire", "menu", "reservation", "commande", "paiement", "pourboire", "fidelite", "instagram", "tiktok", "facebook", "linkedin", "wifi", "site", "contact", "whatsapp", "multiliens", "autre"];
 const targetOrder = ["cafe", "restaurant", "salon", "boutique", "hotel", "artisan", "immobilier", "evenement"];
-const designStyleOrder = ["signature", "platform", "editorial", "minimal"];
 const themeOrder = ["blue", "rose", "green", "sand", "mono"];
-const themeLabels = { blue: "Signature", rose: "Douce", green: "Profonde", sand: "Naturelle", mono: "Monochrome" };
 const MAX_ITEM_QUANTITY = 50;
 const normalizeQuantity = (value) => Math.max(1, Math.min(MAX_ITEM_QUANTITY, Math.floor(Number(value) || 1)));
+
 const actionIcons = {
   star: Star,
   message: MessageCircle,
@@ -82,17 +84,14 @@ const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}
 
 const launchOffers = [
   { productId: "comptoir", eyebrow: "POUR COMMENCER", title: "Le Comptoir A6", detail: "Un point de contact premium au comptoir, prêt pour les avis, réservations ou réseaux.", icon: SmartphoneNfc },
-  { productId: "pack_commerce", eyebrow: "POUR UN COMMERCE", title: "Pack Commerce", detail: "Le comptoir, le mur et l’équipe avec une identité cohérente et jusqu’à cinq destinations.", icon: Store },
-  { productId: "pack_resto", eyebrow: "POUR PLUSIEURS ZONES", title: "Pack Restaurant", detail: "Le comptoir, six tables et la vitrine réunis dans une seule installation.", icon: UtensilsCrossed },
+  { productId: "pack_duo", eyebrow: "POUR UN COMMERCE", title: "2 supports", detail: "Deux emplacements et une identité cohérente.", icon: Store },
+  { productId: "pack_cinq", eyebrow: "POUR PLUSIEURS ZONES", title: "5 supports", detail: "Cinq points de contact, plaques et chevalets au choix.", icon: UtensilsCrossed },
 ];
 
 const packStories = {
-  pack_essentiel: { productId: "plaque", actionId: "avis", theme: "blue", brandName: "CAFÉ NOMA", moment: "AVIS AU COMPTOIR + CARTE MOBILE" },
-  pack_visibilite: { productId: "plaque", actionId: "instagram", theme: "rose", brandName: "STUDIO LUNE", moment: "AVIS + RÉSEAUX + MULTI-LIENS" },
-  pack_commerce: { productId: "comptoir", actionId: "avis", theme: "sand", brandName: "MAISON ÉCLAT", moment: "COMPTOIR + MUR + ÉQUIPE" },
-  pack_resto: { productId: "table6", actionId: "menu", theme: "green", brandName: "L’ATELIER 21", moment: "COMPTOIR + TABLES + VITRINE" },
-  pack_salon: { productId: "comptoir", actionId: "reservation", theme: "rose", brandName: "STUDIO LUNE", moment: "AVIS + RÉSERVATION" },
-  pack_equipe: { productId: "carte", actionId: "contact", theme: "blue", brandName: "ATELIER MARTIN", moment: "ÉQUIPE + VITRINE" },
+  pack_duo: { productId: "comptoir", actionId: "avis", theme: "blue", brandName: "CAFÉ NOMA", moment: "DEUX EMPLACEMENTS" },
+  pack_cinq: { productId: "comptoir", actionId: "menu", theme: "green", brandName: "L’ATELIER 21", moment: "CINQ POINTS DE CONTACT" },
+  carte_assortie: { productId: "carte", actionId: "contact", theme: "blue", brandName: "ATELIER MARTIN", moment: "LA MÊME IDENTITÉ EN POCHE" },
 };
 
 const createPackCartItem = (product) => ({
@@ -107,6 +106,7 @@ const createPackCartItem = (product) => ({
   destinationUrl: "",
   brandLogoId: "",
   logoFileName: "",
+  supportComposition: product.defaultComposition,
 });
 
 const cartSubtotal = (cart) => cart.reduce((sum, item) => sum + PRODUCTS[item.productId].price * item.quantity, 0);
@@ -149,7 +149,8 @@ const logoExtensionTypes = new Map([
 ]);
 const maxLogoBytes = 2 * 1024 * 1024;
 
-function readFileAsDataUrl(file) {
+// eslint-disable-next-line react-refresh/only-export-components
+export function readFileAsDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result);
@@ -193,7 +194,8 @@ async function convertSvgLogo(file) {
   }
 }
 
-async function prepareLogoFile(file) {
+// eslint-disable-next-line react-refresh/only-export-components
+export async function prepareLogoFile(file) {
   const extension = file.name.split(".").pop()?.toLowerCase() || "";
   const canonicalType = logoMimeAliases.get(file.type.toLowerCase()) || logoExtensionTypes.get(extension) || "";
   if (!canonicalType || file.size > maxLogoBytes) {
@@ -216,6 +218,8 @@ function loadCart() {
         quantity,
         brandName: String(item.brandName || "").slice(0, 60),
         theme: themeOrder.includes(item.theme) ? item.theme : "blue",
+        primaryColor: normalizeHexColor(item.primaryColor, ""),
+        secondaryColor: normalizeHexColor(item.secondaryColor, ""),
         targetId: TARGETS[item.targetId] ? item.targetId : "cafe",
         designStyle: DESIGN_STYLES[item.designStyle] ? item.designStyle : "signature",
         customHeadline: String(item.customHeadline || "").slice(0, 64),
@@ -385,9 +389,9 @@ function PreviewInsert({ action, brandName, brandLogo, colors, productId, design
   );
 }
 
-function DevicePreview({ productId = "comptoir", actionId = "avis", compact = false, brandName = "CAFÉ NOMA", brandLogo = "", theme = "blue", designStyle = "signature", customHeadline = "" }) {
+export function DevicePreview({ productId = "comptoir", actionId = "avis", compact = false, brandName = "CAFÉ NOMA", brandLogo = "", theme = "blue", primaryColor = "", secondaryColor = "", designStyle = "signature", customHeadline = "" }) {
   const action = ACTIONS[actionId];
-  const colors = DEVICE_THEMES[theme] || DEVICE_THEMES.blue;
+  const colors = resolveDeviceColors(theme, primaryColor, secondaryColor);
   const product = PRODUCTS[productId] || PRODUCTS.comptoir;
   return (
     <div className={`device-preview device-preview-canonical device-preview-${productId} ${compact ? "device-preview-compact" : ""}`} aria-label={`Aperçu de ${product.name} pour ${action.name}`}>
@@ -588,15 +592,21 @@ function ProductSection({ onSelect }) {
   );
 }
 
-export function Configurator({ initialProduct, onAdd }) {
+export function Configurator({ initialProduct, initialAction = "avis", initialTarget = "cafe", initialQuantity = 1, onAdd }) {
   const [productId, setProductId] = useState(initialProduct || "comptoir");
-  const [actionId, setActionId] = useState("avis");
-  const [actionCategory, setActionCategory] = useState("confiance");
-  const [targetId, setTargetId] = useState("cafe");
-  const [quantity, setQuantity] = useState(1);
+  const [actionId, setActionId] = useState(ACTIONS[initialAction] ? initialAction : "avis");
+  const [actionCategory, setActionCategory] = useState(ACTIONS[initialAction]?.category || "confiance");
+  const [targetId, setTargetId] = useState(TARGETS[initialTarget] ? initialTarget : "cafe");
+  const [quantity, setQuantity] = useState([1, 2, 5].includes(initialQuantity) ? initialQuantity : 1);
   const [added, setAdded] = useState(false);
   const [brandName, setBrandName] = useState("CAFÉ NOMA");
+  // Le configurateur est volontairement une demande de création : la direction
+  // graphique est préparée au BAT, plutôt que de faire croire qu'un simple
+  // sélecteur de couleurs constitue une personnalisation finale.
   const [theme, setTheme] = useState("blue");
+  const [primaryColor, setPrimaryColor] = useState(DEVICE_THEMES.blue.paper);
+  const [secondaryColor, setSecondaryColor] = useState(DEVICE_THEMES.blue.accent);
+  const [paletteDetected, setPaletteDetected] = useState(false);
   const [designStyle, setDesignStyle] = useState("signature");
   const [customHeadline, setCustomHeadline] = useState("");
   const [destinationUrl, setDestinationUrl] = useState("");
@@ -608,6 +618,21 @@ export function Configurator({ initialProduct, onAdd }) {
   const [pendingLogoFile, setPendingLogoFile] = useState(null);
 
   const product = PRODUCTS[productId];
+  const packagedProductId = productId !== "carte" && quantity === 2
+    ? "pack_duo"
+    : productId !== "carte" && quantity === 5
+      ? "pack_cinq"
+      : productId;
+  const checkoutProduct = PRODUCTS[packagedProductId];
+  const supportComposition = checkoutProduct.kind === "pack"
+    ? {
+        comptoir: productId === "comptoir" ? quantity : 0,
+        plaque: productId === "plaque" ? quantity : 0,
+      }
+    : undefined;
+  const quantityLabel = quantity === 1
+    ? product.name
+    : `${quantity} ${product.shortName.toLowerCase()}${quantity > 1 ? "s" : ""} personnalisés`;
 
   const logoPending = Boolean(brandLogo && !brandLogoId);
   const destinationInvalid = Boolean(destinationUrl && !/^https:\/\/.+/i.test(destinationUrl));
@@ -628,15 +653,34 @@ export function Configurator({ initialProduct, onAdd }) {
     const target = TARGETS[id];
     setTargetId(id);
     setProductId(target.productId);
+    setQuantity(1);
     selectAction(target.actionId);
     setTheme(target.theme);
+    setPrimaryColor(DEVICE_THEMES[target.theme].paper);
+    setSecondaryColor(DEVICE_THEMES[target.theme].accent);
+    setPaletteDetected(false);
     setDesignStyle(target.designStyle);
     setBrandName(target.exampleBrand);
   };
 
   const add = () => {
     if (logoPending || logoStatus === "loading" || destinationInvalid) return;
-    onAdd({ productId, actionId, quantity, brandName, theme, targetId, designStyle, customHeadline, destinationUrl, brandLogoId, logoFileName });
+    onAdd({
+      productId: packagedProductId,
+      actionId,
+      quantity: 1,
+      brandName,
+      theme,
+      primaryColor,
+      secondaryColor,
+      targetId,
+      designStyle,
+      customHeadline,
+      destinationUrl,
+      brandLogoId,
+      logoFileName,
+      ...(supportComposition ? { supportComposition } : {}),
+    });
     setAdded(true);
     window.setTimeout(() => setAdded(false), 1800);
   };
@@ -675,6 +719,13 @@ export function Configurator({ initialProduct, onAdd }) {
       const file = await prepareLogoFile(selectedFile);
       const dataUrl = await readFileAsDataUrl(file);
       setBrandLogo(dataUrl);
+      setPaletteDetected(false);
+      void extractLogoPalette(dataUrl).then((palette) => {
+        if (!palette) return;
+        setPrimaryColor(palette.primary);
+        setSecondaryColor(palette.secondary);
+        setPaletteDetected(true);
+      });
       setLogoFileName(file.name.slice(0, 120));
       setPendingLogoFile(file);
       await transmitLogo(file);
@@ -683,6 +734,7 @@ export function Configurator({ initialProduct, onAdd }) {
       setBrandLogoId("");
       setLogoFileName("");
       setPendingLogoFile(null);
+      setPaletteDetected(false);
       setLogoStatus("error");
       setLogoError(error.message);
     }
@@ -693,6 +745,7 @@ export function Configurator({ initialProduct, onAdd }) {
     setBrandLogoId("");
     setLogoFileName("");
     setPendingLogoFile(null);
+    setPaletteDetected(false);
     setLogoStatus("idle");
     setLogoError("");
   };
@@ -702,11 +755,11 @@ export function Configurator({ initialProduct, onAdd }) {
       <div className="configurator-preview">
         <div className="preview-orbit preview-orbit-one" />
         <div className="preview-orbit preview-orbit-two" />
-        <DevicePreview productId={productId} actionId={actionId} brandName={brandName} brandLogo={brandLogo} theme={theme} designStyle={designStyle} customHeadline={customHeadline} />
+        <DevicePreview productId={productId} actionId={actionId} brandName={brandName} brandLogo={brandLogo} theme={theme} primaryColor={primaryColor} secondaryColor={secondaryColor} designStyle={designStyle} customHeadline={customHeadline} />
         <span className="preview-note"><b>APERÇU EN DIRECT</b>{product.format} · BAT final envoyé avant production</span>
       </div>
       <div className="configurator-panel">
-        <span className="kicker kicker-light">06 · PERSONNALISEZ</span>
+        <span className="kicker kicker-light">CRÉEZ LE VÔTRE</span>
         <h2>Voyez-le avant<br />de le commander.</h2>
         <p className="config-intro">Trois étapes suffisent. Tapote recommande le bon support et affine la direction graphique avec toi au BAT.</p>
         <fieldset>
@@ -725,7 +778,7 @@ export function Configurator({ initialProduct, onAdd }) {
             </div>
             <div className="choice-grid product-choice-grid">
               {configuratorProductOrder.map((id) => (
-                <button key={id} aria-pressed={productId === id} className={productId === id ? "choice-active" : ""} onClick={() => setProductId(id)}>
+                <button key={id} aria-pressed={productId === id} className={productId === id ? "choice-active" : ""} onClick={() => { setProductId(id); setQuantity(1); }}>
                   <span><small>{PRODUCTS[id].badge}</small><strong>{PRODUCTS[id].shortName}</strong><em>{PRODUCTS[id].recommendedFor}</em></span><b>{formatMoney(PRODUCTS[id].price)}</b>
                 </button>
               ))}
@@ -744,7 +797,7 @@ export function Configurator({ initialProduct, onAdd }) {
               return <button key={id} aria-pressed={actionId === id} className={actionId === id ? "action-active" : ""} onClick={() => selectAction(id)}><Icon size={14} aria-hidden="true" />{action.name}</button>;
             })}
           </div>
-          <label className={`destination-control ${destinationInvalid ? "destination-control-error" : ""}`}><Globe2 size={17} aria-hidden="true" /><span><input aria-label="Lien ouvert par le Tapote" type="url" value={destinationUrl} onChange={(event) => setDestinationUrl(event.target.value.slice(0, 500))} placeholder="https://votre-lien.fr" /><small>{destinationInvalid ? "Le lien doit commencer par https://" : "NFC et QR ouvriront cette destination. Pilot permettra de la modifier sans réencoder."}</small></span></label>
+          <label className={`destination-control ${destinationInvalid ? "destination-control-error" : ""}`}><Globe2 size={17} aria-hidden="true" /><span><input aria-label="Lien ouvert par le Tapote" type="url" value={destinationUrl} onChange={(event) => setDestinationUrl(event.target.value.slice(0, 500))} placeholder="https://votre-lien.fr" /><small>{destinationInvalid ? "Le lien doit commencer par https://" : "NFC et QR ouvriront cette destination. Vous pourrez la modifier gratuitement à distance ; Pilot ajoute les fonctions avancées."}</small></span></label>
         </fieldset>
         <fieldset>
           <legend>3. Quelle identité doit apparaître ?</legend>
@@ -756,6 +809,17 @@ export function Configurator({ initialProduct, onAdd }) {
               <span>{logoStatus === "loading" ? "Envoi…" : brandLogo ? "Remplacer" : "Importer un logo"}</span>
             </label>
           </div>
+          <div className="brand-color-controls" aria-label="Couleurs de votre identité">
+            <div>
+              <label htmlFor="tapote-primary-color"><Palette size={14} aria-hidden="true" /><span>Couleur principale<small>Fond du design</small></span></label>
+              <span><input id="tapote-primary-color" type="color" value={primaryColor} onChange={(event) => setPrimaryColor(event.target.value)} aria-label="Couleur principale" /><code>{primaryColor.toUpperCase()}</code>{typeof window !== "undefined" && "EyeDropper" in window && <button type="button" onClick={() => pickScreenColor(setPrimaryColor)}><Pipette size={14} /> Pipette</button>}</span>
+            </div>
+            <div>
+              <label htmlFor="tapote-secondary-color"><Palette size={14} aria-hidden="true" /><span>Couleur secondaire<small>Zone d’action NFC</small></span></label>
+              <span><input id="tapote-secondary-color" type="color" value={secondaryColor} onChange={(event) => setSecondaryColor(event.target.value)} aria-label="Couleur secondaire" /><code>{secondaryColor.toUpperCase()}</code>{typeof window !== "undefined" && "EyeDropper" in window && <button type="button" onClick={() => pickScreenColor(setSecondaryColor)}><Pipette size={14} /> Pipette</button>}</span>
+            </div>
+            <p>{paletteDetected ? "Palette détectée depuis votre logo. Vous pouvez encore l’ajuster." : "Le texte bascule automatiquement en clair ou foncé pour conserver un contraste lisible."} Le QR reste noir sur blanc.</p>
+          </div>
           {brandLogo && <div className={`logo-file logo-file-${logoStatus}`}>
             <span className="logo-file-preview"><img src={brandLogo} alt="Aperçu du logo importé" /></span>
             <span className="logo-file-copy"><b>{logoFileName}</b><small>{logoStatus === "success" ? "Logo prêt pour le BAT" : logoStatus === "loading" ? "Transmission sécurisée…" : "Aperçu local uniquement"}</small></span>
@@ -765,39 +829,31 @@ export function Configurator({ initialProduct, onAdd }) {
           {(logoStatus === "success" || logoError) && <p className={`logo-status logo-status-${logoStatus}`} role="status" aria-live="polite">{logoError || "Le logo est enregistré avec la configuration et apparaîtra sur le BAT final."}</p>}
           <div className="config-options config-style-options" aria-labelledby="style-options-title">
             <div className="config-options-heading">
-              <strong id="style-options-title">Style, accroche et palette</strong>
-              <small>Chaque option met l’aperçu à jour immédiatement.</small>
+              <strong id="style-options-title">Votre demande de design</strong>
+              <small>Décrivez l’univers souhaité : Tapote prépare un vrai BAT, pas un modèle coloré à la volée.</small>
             </div>
-            <div className="design-style-grid">
-              {designStyleOrder.map((id) => <button key={id} aria-pressed={designStyle === id} className={designStyle === id ? "design-style-active" : ""} onClick={() => setDesignStyle(id)}><span className={`design-swatch design-swatch-${id}`} aria-hidden="true" /><strong>{DESIGN_STYLES[id].name}</strong><small>{DESIGN_STYLES[id].description}</small></button>)}
-            </div>
-            <label className="headline-control"><span>Accroche personnalisée <small>facultatif</small></span><input value={customHeadline} onChange={(event) => setCustomHeadline(event.target.value.slice(0, 64))} placeholder={ACTIONS[actionId].headline} /><em>{customHeadline.length}/64</em></label>
-            <div className="theme-choices" aria-label="Palette du visuel">
-              {themeOrder.map((id) => <button key={id} aria-label={`Palette ${themeLabels[id]}`} aria-pressed={theme === id} className={`${id} ${theme === id ? "theme-active" : ""}`} onClick={() => setTheme(id)}><i /><span>{themeLabels[id]}</span></button>)}
-              <small>Palette affinée au BAT</small>
-            </div>
+            <label className="headline-control"><span>Votre brief <small>facultatif</small></span><input aria-label="Votre brief" value={customHeadline} onChange={(event) => setCustomHeadline(event.target.value.slice(0, 64))} placeholder="Ex. élégant, chaleureux, minimal ; texte à mettre en avant…" /><em>{customHeadline.length}/64</em></label>
+            <p className="config-bat-note">Logo, brief et action sont repris par notre équipe. Vous recevez un BAT réaliste à valider avant toute impression.</p>
           </div>
         </fieldset>
         <div className="config-guarantees"><span><Check size={13} /> NFC + QR testés</span><span><Check size={13} /> BAT avant impression</span><span><Check size={13} /> Aucun abonnement imposé</span></div>
         <div className="config-summary">
-          <div><span>{product.name}</span><small>{TARGETS[targetId].name} · {ACTIONS[actionId].name} · style {DESIGN_STYLES[designStyle].name.toLowerCase()}</small></div>
-          <label className="config-quantity">
+          <div><span>{quantityLabel}</span><small>{TARGETS[targetId].name} · {ACTIONS[actionId].name} · BAT préparé sur mesure</small></div>
+          {productId !== "carte" && <div className="config-quantity" role="group" aria-label={`Quantité de ${product.shortName.toLowerCase()}s`}>
             <span>Quantité</span>
-            <span className="config-quantity-control">
-              <button type="button" onClick={() => setQuantity((current) => normalizeQuantity(current - 1))} disabled={quantity <= 1} aria-label="Diminuer la quantité"><Minus size={14} aria-hidden="true" /></button>
-              <input type="number" min="1" max={MAX_ITEM_QUANTITY} step="1" inputMode="numeric" value={quantity} onChange={(event) => setQuantity(normalizeQuantity(event.target.value))} aria-label="Quantité de Tapote" />
-              <button type="button" onClick={() => setQuantity((current) => normalizeQuantity(current + 1))} disabled={quantity >= MAX_ITEM_QUANTITY} aria-label="Augmenter la quantité"><Plus size={14} aria-hidden="true" /></button>
+            <span className="config-quantity-options">
+              {[1, 2, 5].map((option) => <button type="button" key={option} aria-pressed={quantity === option} className={quantity === option ? "is-selected" : ""} onClick={() => setQuantity(option)}>{option}</button>)}
             </span>
-          </label>
-          <strong aria-live="polite">{formatMoney(product.price * quantity)}<small>{quantity > 1 ? `${quantity} × ${formatMoney(product.price)} ${priceTaxLabel}` : priceTaxLabel}</small></strong>
+          </div>}
+          <strong aria-live="polite">{formatMoney(checkoutProduct.price)}<small>{quantity > 1 ? `prix du pack · ${priceTaxLabel}` : priceTaxLabel}</small></strong>
         </div>
         <Button className={added ? "button-success" : ""} onClick={add} disabled={logoStatus === "loading" || logoPending || destinationInvalid}>
-          {logoStatus === "loading" ? "Envoi du logo…" : logoPending ? "Finaliser l’envoi du logo" : destinationInvalid ? "Vérifier le lien" : added ? `${quantity} ajouté${quantity > 1 ? "s" : ""} au panier` : quantity > 1 ? `Ajouter ${quantity} au panier` : "Ajouter au panier"}
+          {logoStatus === "loading" ? "Envoi du logo…" : logoPending ? "Finaliser l’envoi du logo" : destinationInvalid ? "Vérifier le lien" : added ? quantity > 1 ? `Pack de ${quantity} ajouté au panier` : "Ajouté au panier" : quantity > 1 ? `Ajouter le pack de ${quantity}` : "Ajouter au panier"}
         </Button>
         <p className="micro-copy"><Check size={14} /> Prix {priceTaxLabel} · livraison offerte dès {formatMoney(SHIPPING.freeThreshold)} · paiement sécurisé</p>
         <div className="config-quote-link">
           <span><strong>Plusieurs supports ou un besoin particulier ?</strong><small>Décrivez votre projet, nous préparons une proposition adaptée.</small></span>
-          <a href="#devis">Demander un devis <ArrowRight size={15} /></a>
+          <a href="/devis">Demander un devis <ArrowRight size={15} /></a>
         </div>
       </div>
     </section>
@@ -1171,7 +1227,7 @@ function PurchaseLine({ item, index, onQuantity }) {
   const previewProductId = packStories[item.productId]?.productId || item.productId;
   return (
     <article className="purchase-line">
-      <div className="purchase-line-art"><DevicePreview productId={previewProductId} actionId={item.actionId} brandName={item.brandName} theme={item.theme} designStyle={item.designStyle} customHeadline={item.customHeadline} compact /></div>
+          <div className="purchase-line-art"><DevicePreview productId={previewProductId} actionId={item.actionId} brandName={item.brandName} theme={item.theme} primaryColor={item.primaryColor} secondaryColor={item.secondaryColor} designStyle={item.designStyle} customHeadline={item.customHeadline} compact /></div>
       <div className="purchase-line-copy">
         <span>{product.kind === "pack" ? "PACK PROFESSIONNEL" : "OBJET TAPOTE"}</span>
         <h2>{product.name}</h2>
@@ -1405,7 +1461,7 @@ function CartDrawer({ open, onClose, cart, setCart, onCheckout }) {
             const previewProductId = packStories[item.productId]?.productId || item.productId;
             return (
               <div className="cart-item" key={`${item.productId}-${item.actionId}-${index}`}>
-                <div className="cart-item-art"><DevicePreview productId={previewProductId} actionId={item.actionId} brandName={item.brandName} theme={item.theme} designStyle={item.designStyle} customHeadline={item.customHeadline} compact /></div>
+        <div className="cart-item-art"><DevicePreview productId={previewProductId} actionId={item.actionId} brandName={item.brandName} theme={item.theme} primaryColor={item.primaryColor} secondaryColor={item.secondaryColor} designStyle={item.designStyle} customHeadline={item.customHeadline} compact /></div>
                 <div className="cart-item-copy"><strong>{product.name}</strong><span>{product.kind === "pack" ? product.format : `${action.name} · ${DESIGN_STYLES[item.designStyle]?.name || "Signature"}${item.brandLogoId ? " · logo transmis" : ""}`}</span><small>{product.kind === "pack" ? "Personnalisation et liens confirmés au BAT" : item.destinationUrl ? "Lien individuel configuré" : "Lien à confirmer au paiement"} · {item.quantity > 1 ? `${formatMoney(product.price * item.quantity)} ${priceTaxLabel} (${formatMoney(product.price)} / unité)` : `${formatMoney(product.price)} ${priceTaxLabel}`}</small></div>
                 <div className="quantity"><button onClick={() => changeQuantity(index, -1)} aria-label={`Diminuer la quantité de ${product.name}`}><Minus size={13} /></button><b>{item.quantity}</b><button onClick={() => changeQuantity(index, 1)} disabled={item.quantity >= MAX_ITEM_QUANTITY} aria-label={`Augmenter la quantité de ${product.name}`}><Plus size={13} /></button></div>
               </div>
@@ -1512,6 +1568,8 @@ function StorefrontApp() {
         && entry.actionId === normalizedItem.actionId
         && entry.brandName === normalizedItem.brandName
         && entry.theme === normalizedItem.theme
+        && entry.primaryColor === normalizedItem.primaryColor
+        && entry.secondaryColor === normalizedItem.secondaryColor
         && entry.targetId === normalizedItem.targetId
         && entry.designStyle === normalizedItem.designStyle
         && entry.customHeadline === normalizedItem.customHeadline

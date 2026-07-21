@@ -1,5 +1,7 @@
 # Tapote — Manuel de gestion A à Z pour Aymeric
 
+> **ARCHIVE — offre remplacée le 20 juillet 2026.** Ne plus utiliser les anciens prix, packs, références Vitrine ni l’ancien rôle de Pilot. Références actives : `shared/catalog.js`, `docs/07-PILOT-BETA.md` et `docs/18-PRODUIT-PRODUCTION-TAPOTE.md`.
+
 Version 1.1 — 17 juillet 2026
 
 > Manuel opérationnel de lancement. Les décisions juridiques, fiscales, comptables, sociales et contractuelles doivent être validées avec un expert-comptable et, selon le sujet, un avocat. Les seuils cités sont ceux vérifiés à la date du document.
