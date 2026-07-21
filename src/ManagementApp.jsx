@@ -43,7 +43,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { PRODUCTS } from "../shared/catalog.js";
+import { ACTIONS, PRODUCTS } from "../shared/catalog.js";
 import ManagementAuth, { ManagementPasswordSetup } from "./management/ManagementAuth.jsx";
 import {
   advanceManagementEncodedProduct,
@@ -52,6 +52,7 @@ import {
   createManagementInventoryItem,
   createManagementOrder,
   getManagementAccess,
+  getManagementOrderDetails,
   getManagementSession,
   loadManagementData,
   onManagementAuthChange,
@@ -201,6 +202,15 @@ const viewTitles = {
 
 function formatEuro(value) {
   return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value);
+}
+
+function formatComposition(composition) {
+  if (!composition || typeof composition !== "object") return "Support unitaire";
+  const labels = { comptoir: "chevalet", plaque: "plaque", carte: "carte" };
+  const parts = Object.entries(composition)
+    .filter(([, quantity]) => Number(quantity) > 0)
+    .map(([support, quantity]) => `${quantity} ${labels[support] || support}${Number(quantity) > 1 ? "s" : ""}`);
+  return parts.join(" + ") || "Composition à confirmer";
 }
 
 function formatToday(referenceTime) {
@@ -755,7 +765,31 @@ function EcommerceView({ data, toggleProduct, refreshData, syncing, lastSyncedAt
   );
 }
 
-function OrderDrawer({ order, client, onClose, advanceOrder, onOpenClient }) {
+function OrderCustomizationLine({ line }) {
+  const customization = line.customization || {};
+  const product = PRODUCTS[line.productId];
+  const action = ACTIONS[line.actionId];
+  const colors = [
+    ["Principale", customization.primaryColor],
+    ["Secondaire", customization.secondaryColor],
+    ["Texte", customization.textColor],
+  ].filter(([, value]) => value);
+  return <article className="pilot-custom-order-line">
+    <div className="pilot-custom-order-head"><div><b>{product?.name || line.productId}</b><span>{action?.name || line.actionId} · {line.quantity} × {formatEuro((line.unitAmount || 0) / 100)}</span></div><strong>{formatEuro(((line.unitAmount || 0) * line.quantity) / 100)}</strong></div>
+    <dl>
+      <div><dt>Action</dt><dd>{action?.name || line.actionId || "—"}</dd></div>
+      <div><dt>Composition</dt><dd>{formatComposition(customization.supportComposition)}</dd></div>
+      <div><dt>Marque</dt><dd>{customization.brandName || "Non renseignée"}</dd></div>
+      <div><dt>Style</dt><dd>{customization.designStyle || customization.theme || "Standard"}</dd></div>
+      <div className="is-wide"><dt>Accroche / brief</dt><dd>{customization.customHeadline || "Aucune accroche spécifique"}{customization.brief ? ` · ${customization.brief}` : ""}</dd></div>
+      {customization.destinationUrl && <div className="is-wide"><dt>Lien demandé</dt><dd className="pilot-order-url">{customization.destinationUrl}</dd></div>}
+    </dl>
+    {colors.length > 0 && <div className="pilot-order-colors">{colors.map(([label, value]) => <span key={label}><i style={{ backgroundColor: value }} />{label} <b>{value}</b></span>)}</div>}
+    {(customization.brandLogoId || customization.logoFileName || line.logo) && <div className="pilot-order-logo"><div><span>LOGO CLIENT</span><b>{line.logo?.originalName || customization.logoFileName || "Fichier transmis"}</b><small>ID {customization.brandLogoId || line.logo?.id}</small></div>{line.logo?.downloadUrl ? <a href={line.logo.downloadUrl} target="_blank" rel="noreferrer"><Download size={14} />Ouvrir le logo <small>lien privé · {Math.round((line.logo.expiresIn || 300) / 60)} min</small></a> : <span className="pilot-order-logo-missing">Fichier privé indisponible</span>}</div>}
+  </article>;
+}
+
+function OrderDrawer({ order, client, onClose, advanceOrder, onOpenClient, details, detailsState }) {
   if (!order || !client) return null;
   const currentIndex = statusFlow.indexOf(order.status);
   return (
@@ -767,6 +801,12 @@ function OrderDrawer({ order, client, onClose, advanceOrder, onOpenClient }) {
         <div className="pilot-drawer-status"><StatusBadge status={order.status} /><span>Échéance <b>{order.due}</b></span></div>
         {order.sourceOrderId && <div className={`pilot-integration-state pilot-integration-${order.pilotStatus || "paid"}`}><Radio size={17} /><div><b>{order.pilotStatus === "active" ? "Pilot activé" : order.pilotStatus === "ready_for_activation" ? "Pilot prêt à activer" : "Commande web synchronisée"}</b><span>{order.pilotStatus === "active" ? "Le client dispose de son espace et de ses liens actifs." : "Le suivi tapote.fr → production → Pilot est relié automatiquement."}</span></div></div>}
         <section className="pilot-drawer-section"><span>DÉTAILS</span><dl><div><dt>Produit</dt><dd>{order.product}</dd></div><div><dt>Quantité</dt><dd>{order.quantity}</dd></div><div><dt>Destination</dt><dd>{order.destination}</dd></div><div><dt>Montant</dt><dd>{formatEuro(order.total)}</dd></div><div><dt>Responsable</dt><dd>{order.owner}</dd></div><div><dt>Canal</dt><dd>{order.channel}</dd></div></dl></section>
+        {order.sourceOrderId && <section className="pilot-drawer-section pilot-custom-order-section"><span>FABRICATION & PERSONNALISATION</span>
+          {detailsState === "loading" && <div className="pilot-order-details-state"><LoaderCircle className="is-spinning" size={18} />Chargement sécurisé des lignes…</div>}
+          {detailsState === "error" && <div className="pilot-order-details-state is-error"><AlertTriangle size={18} />Détail privé momentanément indisponible.</div>}
+          {detailsState === "ready" && details?.lines?.length > 0 && <div className="pilot-custom-order-lines">{details.lines.map((line) => <OrderCustomizationLine key={line.id} line={line} />)}</div>}
+          {detailsState === "ready" && !details?.lines?.length && <div className="pilot-order-details-state">Aucune ligne boutique rattachée.</div>}
+        </section>}
         <section className="pilot-drawer-section"><span>AVANCEMENT</span><div className="pilot-timeline">
           {statusFlow.map((status, index) => <div key={status} className={cx(index <= currentIndex && "is-done", index === currentIndex && "is-current")}><i>{index < currentIndex ? <Check size={12} /> : null}</i><p><b>{statusMeta[status].label}</b><small>{index < currentIndex ? "Terminé" : index === currentIndex ? "Étape actuelle" : "À venir"}</small></p></div>)}
         </div></section>
@@ -934,6 +974,7 @@ export default function TapoteManagementApp() {
   const [search, setSearch] = useState("");
   const [navOpen, setNavOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [selectedOrderDetailsRequest, setSelectedOrderDetailsRequest] = useState({ recordId: null, state: "idle", details: null });
   const [selectedClient, setSelectedClient] = useState(null);
   const [newOrderOpen, setNewOrderOpen] = useState(false);
   const [newClientOpen, setNewClientOpen] = useState(false);
@@ -1104,6 +1145,27 @@ export default function TapoteManagementApp() {
     ].filter(Boolean);
   }, [data.inventory, data.orders]);
   const order = data.orders.find((item) => item.id === selectedOrder);
+
+  useEffect(() => {
+    if (!order?.sourceOrderId || !order.recordId) return undefined;
+    let active = true;
+    getManagementOrderDetails(order.recordId)
+      .then((details) => {
+        if (!active) return;
+        setSelectedOrderDetailsRequest({ recordId: order.recordId, state: "ready", details });
+      })
+      .catch(() => {
+        if (!active) return;
+        setSelectedOrderDetailsRequest({ recordId: order.recordId, state: "error", details: null });
+      });
+    return () => { active = false; };
+  }, [order?.recordId, order?.sourceOrderId]);
+  const selectedOrderDetails = selectedOrderDetailsRequest.recordId === order?.recordId ? selectedOrderDetailsRequest.details : null;
+  const selectedOrderDetailsState = !order?.sourceOrderId
+    ? "idle"
+    : selectedOrderDetailsRequest.recordId === order.recordId
+      ? selectedOrderDetailsRequest.state
+      : "loading";
 
   const showToast = (message) => setToast(message);
   const navigate = (nextView) => { setView(nextView); setSearch(""); window.scrollTo({ top: 0, behavior: "smooth" }); };
@@ -1305,7 +1367,7 @@ export default function TapoteManagementApp() {
           {view === "ecommerce" && <EcommerceView {...viewProps} toggleProduct={toggleProduct} refreshData={refreshData} syncing={syncing} lastSyncedAt={lastSyncedAt} />}
         </main>
       </div>
-      <OrderDrawer order={order} client={order ? clientMap[order.clientId] : null} onClose={() => setSelectedOrder(null)} advanceOrder={advanceOrder} onOpenClient={(clientId) => { setSelectedOrder(null); setSelectedClient(clientId); setView("clients"); }} />
+      <OrderDrawer order={order} client={order ? clientMap[order.clientId] : null} details={selectedOrderDetails} detailsState={selectedOrderDetailsState} onClose={() => setSelectedOrder(null)} advanceOrder={advanceOrder} onOpenClient={(clientId) => { setSelectedOrder(null); setSelectedClient(clientId); setView("clients"); }} />
       {newOrderOpen && <NewOrderModal clients={data.clients} onClose={() => setNewOrderOpen(false)} onCreate={createOrder} />}
       {newClientOpen && <NewClientModal onClose={() => setNewClientOpen(false)} onCreate={createClient} />}
       {newInventoryOpen && <NewInventoryModal onClose={() => setNewInventoryOpen(false)} onCreate={createInventory} />}

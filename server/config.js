@@ -27,6 +27,7 @@ export function loadConfig(env = process.env) {
     "VITE_LEGAL_HOST",
     "VITE_LEGAL_PRIVACY_CONTACT",
     "VITE_LEGAL_RETURNS_ADDRESS",
+    "VITE_LEGAL_DATA_RETENTION",
     "VITE_LEGAL_VERSION",
   ];
 
@@ -56,6 +57,8 @@ export function loadConfig(env = process.env) {
     supabaseBucket: String(env.SUPABASE_STORAGE_BUCKET || "tapote-order-assets").trim(),
     resendApiKey: String(env.RESEND_API_KEY || "").trim(),
     orderNotificationEmail: String(env.ORDER_NOTIFICATION_EMAIL || "").trim(),
+    customerSupportEmail: String(env.CUSTOMER_SUPPORT_EMAIL || env.VITE_LEGAL_CONTACT || env.ORDER_NOTIFICATION_EMAIL || "").trim(),
+    readyOrderLeadTime: String(env.READY_ORDER_LEAD_TIME || "").trim(),
     fromEmail: String(env.FROM_EMAIL || "Tapote <onboarding@resend.dev>").trim(),
     sentryDsn: String(env.SENTRY_DSN || "").trim(),
     logLevel: String(env.LOG_LEVEL || (isProduction ? "info" : "debug")).trim(),
@@ -73,7 +76,7 @@ export function getProductionChecks(config, services = {}) {
     stripeWebhook: Boolean(config.stripeWebhookSecret),
     database: Boolean(config.databaseUrl) && services.repository?.durable === true,
     privateStorage: Boolean(config.supabaseUrl && config.supabaseSecretKey) && services.storage?.durable === true,
-    orderEmail: Boolean(config.resendApiKey && config.orderNotificationEmail && config.fromEmail),
+    orderEmail: Boolean(config.resendApiKey && config.orderNotificationEmail && config.fromEmail && !/@resend\.dev\b/i.test(config.fromEmail)),
   };
 
   return {

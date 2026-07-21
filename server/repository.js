@@ -62,12 +62,15 @@ class DevelopmentRepository {
       order.amountTotal = event.amountTotal ?? order.amountTotal;
       order.currency = event.currency || order.currency;
       if (event.notification) {
-        this.enqueue("order_notification", `stripe:${event.eventId}`, {
+        const notification = {
           ...event.notification,
           orderToken: event.notification.orderToken || order.orderToken,
           businessName: event.notification.businessName || order.customer?.businessName,
           customerEmail: event.notification.customerEmail || order.customer?.email,
-        });
+          destinationUrl: order.customer?.destinationUrl || "",
+          items: order.items || [],
+        };
+        this.enqueue("order_notification", `stripe:${event.eventId}`, notification);
       }
     }
     return { duplicate: false, order: order || null };
@@ -87,6 +90,10 @@ class DevelopmentRepository {
 
   async getUpload(id) {
     return this.uploads.get(id) || null;
+  }
+
+  async getManagementOrderDetails() {
+    return null;
   }
 
   async resolveTapoteLink(shortCode) {
@@ -153,8 +160,8 @@ class PostgresRepository {
       const inserted = await client.query(
         `insert into orders (
           order_token, status, customer_business_name, customer_email, destination_url,
-          legal_version, terms_accepted_at
-        ) values ($1, 'pending', $2, $3, $4, $5, now())
+          legal_version, terms_accepted_at, professional_customer, professional_customer_attested_at
+        ) values ($1, 'pending', $2, $3, $4, $5, now(), true, now())
         on conflict (order_token) do nothing
         returning id, order_token, status, stripe_session_id, payment_intent_id`,
         [order.orderToken, order.customer.businessName, order.customer.email, order.customer.destinationUrl || null, order.legalVersion],
@@ -247,19 +254,34 @@ class PostgresRepository {
             or ($2::text is not null and stripe_session_id = $2::text)
             or ($3::text is not null and payment_intent_id = $3::text)
          returning id, order_token, status, stripe_session_id, payment_intent_id, amount_total, currency,
-           customer_business_name, customer_email`,
+           customer_business_name, customer_email, destination_url`,
         [event.orderToken || null, event.sessionId || null, event.paymentIntentId || null, event.status, event.amountTotal ?? null, event.currency || null],
       );
 
       if (updated.rowCount && event.notification) {
         const order = updated.rows[0];
+        const itemRows = await client.query(
+          `select product_id, action_id, quantity, unit_amount, customization
+           from order_items
+           where order_id = $1
+           order by created_at asc, id asc`,
+          [order.id],
+        );
         const notification = {
           ...event.notification,
           orderToken: event.notification.orderToken || order.order_token,
           businessName: event.notification.businessName || order.customer_business_name,
           customerEmail: event.notification.customerEmail || order.customer_email,
+          destinationUrl: order.destination_url || "",
           amountTotal: event.notification.amountTotal ?? order.amount_total,
           currency: event.notification.currency || order.currency,
+          items: itemRows.rows.map((item) => ({
+            productId: item.product_id,
+            actionId: item.action_id,
+            quantity: item.quantity,
+            unitAmount: item.unit_amount,
+            customization: item.customization || {},
+          })),
         };
         await client.query(
           `insert into outbox_jobs (kind, dedupe_key, payload)
@@ -321,6 +343,83 @@ class PostgresRepository {
       [id],
     );
     return result.rows[0] || null;
+  }
+
+  async getManagementOrderDetails(managementOrderId, managementUserId) {
+    const orderResult = await this.pool.query(
+      `select
+         management.id,
+         management.organization_id,
+         management.order_number,
+         management.source_order_id,
+         storefront.customer_business_name,
+         storefront.destination_url
+       from management_orders management
+       join organization_members membership
+         on membership.organization_id = management.organization_id
+        and membership.user_id = $2
+        and membership.role in ('owner', 'admin', 'manager')
+       left join orders storefront on storefront.id = management.source_order_id
+       where management.id = $1`,
+      [managementOrderId, managementUserId],
+    );
+    if (!orderResult.rowCount) return null;
+    const order = orderResult.rows[0];
+    if (!order.source_order_id) {
+      return {
+        id: order.id,
+        orderNumber: order.order_number,
+        sourceOrderId: null,
+        customerBusinessName: order.customer_business_name || null,
+        destinationUrl: order.destination_url || null,
+        lines: [],
+      };
+    }
+
+    const linesResult = await this.pool.query(
+      `select
+         items.id,
+         items.product_id,
+         items.action_id,
+         items.quantity,
+         items.unit_amount,
+         items.customization,
+         uploads.id as logo_id,
+         uploads.storage_path as logo_storage_path,
+         uploads.original_name as logo_original_name,
+         uploads.mime_type as logo_mime_type,
+         uploads.bytes as logo_bytes
+       from order_items items
+       left join uploads
+         on uploads.id::text = items.customization ->> 'brandLogoId'
+        and uploads.deleted_at is null
+       where items.order_id = $1
+       order by items.created_at asc, items.id asc`,
+      [order.source_order_id],
+    );
+
+    return {
+      id: order.id,
+      orderNumber: order.order_number,
+      sourceOrderId: order.source_order_id,
+      customerBusinessName: order.customer_business_name || null,
+      destinationUrl: order.destination_url || null,
+      lines: linesResult.rows.map((line) => ({
+        id: line.id,
+        productId: line.product_id,
+        actionId: line.action_id,
+        quantity: line.quantity,
+        unitAmount: line.unit_amount,
+        customization: line.customization || {},
+        logo: line.logo_id ? {
+          id: line.logo_id,
+          storagePath: line.logo_storage_path,
+          originalName: line.logo_original_name,
+          mimeType: line.logo_mime_type,
+          bytes: line.logo_bytes,
+        } : null,
+      })),
+    };
   }
 
   async resolveTapoteLink(shortCode) {

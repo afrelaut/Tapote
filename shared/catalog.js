@@ -7,6 +7,20 @@ export const calculateShipping = (subtotal) => (
   subtotal >= SHIPPING.freeThreshold ? 0 : SHIPPING.standardPrice
 );
 
+export const matchingIdentityKey = (item = {}) => JSON.stringify({
+  actionId: item.actionId || "",
+  brandName: item.brandName || "",
+  brandLogoId: item.brandLogoId || "",
+  primaryColor: item.primaryColor || "",
+  secondaryColor: item.secondaryColor || "",
+  textColor: item.textColor || "",
+  theme: item.theme || "",
+  targetId: item.targetId || "",
+  destinationUrl: item.destinationUrl || "",
+  designStyle: item.designStyle || "",
+  customHeadline: item.customHeadline || "",
+});
+
 export const PRODUCTS = {
   plaque_standard: {
     id: "plaque_standard",
@@ -69,8 +83,8 @@ export const PRODUCTS = {
     baseProductId: "carte",
     personalization: "ready",
     kind: "card",
-    name: "La Carte · Prête à l’emploi",
-    shortName: "Carte",
+    name: "La Carte NFC · Prête à l’emploi",
+    shortName: "Carte NFC",
     price: 1900,
     description: "Le format poche avec un design Tapote prêt et votre lien déjà configuré.",
     format: "Carte imprimée · 85 × 54 mm · NFC + QR",
@@ -83,8 +97,8 @@ export const PRODUCTS = {
     baseProductId: "carte",
     personalization: "custom",
     kind: "card",
-    name: "La Carte",
-    shortName: "Carte",
+    name: "La Carte NFC",
+    shortName: "Carte NFC",
     price: 2900,
     description: "Votre Tapote de poche pour le terrain, les visites et les équipes.",
     format: "Carte imprimée · 85 × 54 mm · NFC + QR",
@@ -165,8 +179,8 @@ export const PRODUCTS = {
     baseProductId: "carte",
     personalization: "matched",
     kind: "addon",
-    name: "La Carte assortie",
-    shortName: "Carte assortie",
+    name: "La Carte NFC assortie",
+    shortName: "Carte NFC assortie",
     price: 1900,
     value: 2900,
     requiresSupportOrder: true,
@@ -184,7 +198,7 @@ export const MULTISITE_TIERS = [
 
 export const ACTIONS = {
   avis: { id: "avis", name: "Avis Google", headline: "Votre avis compte.", subline: "30 secondes suffisent", category: "confiance", icon: "star", badge: "AVIS GOOGLE" },
-  formulaire: { id: "formulaire", name: "Satisfaction", headline: "Comment c’était ?", subline: "Votre retour nous aide", category: "confiance", icon: "message", badge: "VOTRE AVIS" },
+  formulaire: { id: "formulaire", name: "Formulaire / demande", headline: "Votre demande commence ici.", subline: "Devis, inscription ou retour", category: "contact", icon: "message", badge: "FORMULAIRE" },
   menu: { id: "menu", name: "Menu", headline: "La carte, juste ici.", subline: "Toujours à jour", category: "service", icon: "menu", badge: "MENU" },
   reservation: { id: "reservation", name: "Réservation", headline: "On se revoit quand ?", subline: "Réservez en 30 secondes", category: "service", icon: "calendar", badge: "RÉSERVATION" },
   commande: { id: "commande", name: "Commander", headline: "Votre envie, maintenant.", subline: "Commandez en ligne", category: "service", icon: "bag", badge: "COMMANDE" },

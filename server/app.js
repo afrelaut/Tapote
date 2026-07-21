@@ -9,9 +9,10 @@ import multer from "multer";
 import pinoHttp from "pino-http";
 import Stripe from "stripe";
 import { randomUUID } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { ACTIONS, calculateShipping, PRODUCTS } from "../shared/catalog.js";
+import { ACTIONS, calculateShipping, matchingIdentityKey, PRODUCTS } from "../shared/catalog.js";
 import { getProductionChecks } from "./config.js";
 import { checkoutSchema, checkoutStatusSchema, leadSchema, parseRequest, tapoteRedirectSchema } from "./validation.js";
 
@@ -32,7 +33,134 @@ const imageTypeAliases = new Map([
   ["image/webp", "image/webp"],
 ]);
 
+const storefrontPaths = new Set([
+  "/",
+  "/boutique",
+  "/designs",
+  "/secteurs",
+  "/personnaliser",
+  "/comment-ca-marche",
+  "/panier",
+  "/devis",
+  "/commande",
+  "/commande/confirmee",
+  "/mentions-legales",
+  "/cgv",
+  "/confidentialite",
+  "/categorie/chevalets-nfc",
+  "/categorie/plaques-nfc",
+  "/categorie/cartes-nfc",
+  "/categorie/packs-nfc",
+  "/categorie/packs",
+  "/produits/chevalet",
+  "/produits/plaque",
+  "/produits/carte",
+  "/secteurs/cafes-bars",
+  "/secteurs/restaurants-traiteurs-food-trucks",
+  "/secteurs/boulangeries-patisseries",
+  "/secteurs/beaute-coiffure-bien-etre",
+  "/secteurs/cabinets-medicaux-paramedicaux",
+  "/secteurs/boutiques-commerces",
+  "/secteurs/hebergements-tourisme",
+  "/secteurs/auto-ecoles",
+  "/secteurs/garages-mobilite",
+  "/secteurs/artisans-services-terrain",
+  "/secteurs/agences-independants",
+  "/secteurs/sport-studios",
+  "/secteurs/bureaux-formation",
+  "/secteurs/evenements-culture-associations",
+  "/secteurs/animaux-soins",
+]);
+
+const routeMeta = new Map([
+  ["/", ["Supports NFC + QR prêts ou personnalisés | Tapote", "Chevalets, plaques et cartes NFC + QR prêts à l’emploi ou personnalisés. Le bon lien s’ouvre en un geste et reste modifiable à vie."]],
+  ["/boutique", ["Boutique NFC + QR | Tapote", "Choisissez un chevalet, une plaque verticale, une Carte NFC ou un pack Tapote, prêt à l’emploi ou adapté à votre identité."]],
+  ["/designs", ["Designs Tapote pour chaque usage", "Comparez les designs Tapote pour avis, menu, réservation, réseaux sociaux, Wi-Fi, paiement et autres liens professionnels."]],
+  ["/secteurs", ["Tapote pour votre secteur | 15 usages concrets", "Trouvez le support NFC + QR, le placement et l’usage Tapote adaptés à votre métier."]],
+  ["/personnaliser", ["Personnaliser votre Tapote", "Préparez une Tapote à votre image avec votre logo, vos couleurs, votre texte et un BAT à valider avant production."]],
+  ["/comment-ca-marche", ["Comment fonctionne Tapote ?", "NFC ou QR : le client approche son téléphone et ouvre instantanément l’avis, le menu, la réservation ou le lien choisi."]],
+  ["/produits/chevalet", ["Chevalet A6 NFC + QR | Tapote", "Un chevalet vertical et visible pour déclencher avis, réservation, menu, Wi-Fi ou tout autre lien au comptoir."]],
+  ["/produits/plaque", ["Plaque verticale NFC + QR | Tapote", "Une plaque PMMA présentée debout, personnalisable et synchronisée avec le lien affiché sur le téléphone."]],
+  ["/produits/carte", ["Carte NFC + QR professionnelle | Tapote", "Une Carte NFC compacte pour partager contact, réseaux, réservation, avis ou tout autre lien en rendez-vous et sur le terrain."]],
+  ["/categorie/chevalets-nfc", ["Chevalets NFC + QR | Tapote", "Découvrez les chevalets Tapote prêts à l’emploi, personnalisés et disponibles en packs."]],
+  ["/categorie/plaques-nfc", ["Plaques NFC + QR | Tapote", "Découvrez les plaques verticales Tapote prêtes à l’emploi, personnalisées et disponibles en packs."]],
+  ["/categorie/cartes-nfc", ["Cartes NFC + QR | Tapote", "Découvrez les Cartes NFC Tapote prêtes à l’emploi, personnalisées ou assorties à vos supports."]],
+  ["/categorie/packs-nfc", ["Packs NFC + QR professionnels | Tapote", "Multipliez les points de contact avec les packs de chevalets et plaques Tapote configurés et testés."]],
+  ["/categorie/packs", ["Packs NFC + QR professionnels | Tapote", "Multipliez les points de contact avec les packs de chevalets et plaques Tapote configurés et testés."]],
+]);
+
+const sectorMetaTitles = new Map([
+  ["cafes-bars", "Cafés & bars"],
+  ["restaurants-traiteurs-food-trucks", "Restaurants, traiteurs & food trucks"],
+  ["boulangeries-patisseries", "Boulangeries & pâtisseries"],
+  ["beaute-coiffure-bien-etre", "Beauté, coiffure & bien-être"],
+  ["cabinets-medicaux-paramedicaux", "Cabinets médicaux & paramédicaux"],
+  ["boutiques-commerces", "Boutiques & commerces"],
+  ["hebergements-tourisme", "Hébergements & tourisme"],
+  ["auto-ecoles", "Auto-écoles"],
+  ["garages-mobilite", "Garages & mobilité"],
+  ["artisans-services-terrain", "Artisans & services terrain"],
+  ["agences-independants", "Agences & indépendants"],
+  ["sport-studios", "Sport & studios"],
+  ["bureaux-formation", "Bureaux & formation"],
+  ["evenements-culture-associations", "Événements, culture & associations"],
+  ["animaux-soins", "Animaux & soins"],
+]);
+
+const privateStorefrontPrefixes = ["/panier", "/commande", "/devis", "/connexion", "/gestion", "/pilot"];
+const normalizeStorefrontPath = (pathname) => (String(pathname || "/").split(/[?#]/, 1)[0].replace(/\/+$/, "") || "/");
+
+export function storefrontMetaForPath(pathname, publicUrl = "https://tapote.fr") {
+  const normalized = normalizeStorefrontPath(pathname);
+  const sectorSlug = normalized.startsWith("/secteurs/") ? normalized.slice("/secteurs/".length) : "";
+  const sectorTitle = sectorMetaTitles.get(sectorSlug);
+  const fallback = ["Page introuvable | Tapote", "Retrouvez les supports NFC + QR Tapote et choisissez le bon usage pour votre activité."];
+  const [title, description] = sectorTitle
+    ? [`Tapote pour ${sectorTitle} | NFC + QR`, `Découvrez le support, le placement et les usages Tapote recommandés pour ${sectorTitle.toLocaleLowerCase("fr-FR")}.`]
+    : routeMeta.get(normalized) || fallback;
+  const noindex = !isKnownFrontendPath(normalized) || privateStorefrontPrefixes.some((prefix) => normalized === prefix || normalized.startsWith(`${prefix}/`));
+  const base = String(publicUrl || "https://tapote.fr").replace(/\/+$/, "");
+  return {
+    title,
+    description,
+    canonical: `${base}${normalized === "/" ? "/" : normalized}`,
+    robots: noindex ? "noindex,nofollow" : "index,follow,max-image-preview:large",
+  };
+}
+
+const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
+const replaceMetaContent = (html, attribute, key, content) => html.replace(
+  new RegExp(`<meta\\s+${attribute}=["']${key}["'][^>]*>`, "i"),
+  `<meta ${attribute}="${key}" content="${escapeHtml(content)}" />`,
+);
+
+export function injectStorefrontMeta(html, pathname, publicUrl) {
+  const meta = storefrontMetaForPath(pathname, publicUrl);
+  let rendered = String(html).replace(/<title>[^<]*<\/title>/i, `<title>${escapeHtml(meta.title)}</title>`);
+  rendered = rendered.replace(/<link\s+rel=["']canonical["'][^>]*>/i, `<link rel="canonical" href="${escapeHtml(meta.canonical)}" />`);
+  rendered = replaceMetaContent(rendered, "name", "description", meta.description);
+  rendered = replaceMetaContent(rendered, "name", "robots", meta.robots);
+  rendered = replaceMetaContent(rendered, "property", "og:title", meta.title);
+  rendered = replaceMetaContent(rendered, "property", "og:description", meta.description);
+  rendered = replaceMetaContent(rendered, "property", "og:url", meta.canonical);
+  rendered = replaceMetaContent(rendered, "name", "twitter:title", meta.title);
+  rendered = replaceMetaContent(rendered, "name", "twitter:description", meta.description);
+  return rendered;
+}
+
+export const isKnownFrontendPath = (pathname) => {
+  const normalized = String(pathname || "/").replace(/\/+$/, "") || "/";
+  return storefrontPaths.has(normalized)
+    || ["/connexion", "/gestion", "/pilot"].some((prefix) => normalized === prefix || normalized.startsWith(`${prefix}/`));
+};
+
 const canonicalImageType = (mimeType) => imageTypeAliases.get(String(mimeType || "").toLowerCase()) || "";
+
+function bearerToken(request) {
+  const authorization = String(request.headers.authorization || "").trim();
+  const match = authorization.match(/^Bearer\s+([^\s]+)$/i);
+  return match?.[1] || "";
+}
 
 function checkoutReturnUrl(request, config) {
   if (config.isProduction) return config.publicUrl;
@@ -217,7 +345,7 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
         return callback(new Error("ORIGINE_NON_AUTORISEE"));
       },
       methods: ["GET", "POST"],
-      allowedHeaders: ["Content-Type", "X-Request-Id"],
+      allowedHeaders: ["Content-Type", "Authorization", "X-Request-Id"],
       maxAge: 600,
     }));
   }
@@ -328,6 +456,40 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
     }
   });
 
+  app.get("/api/management/orders/:orderId/details", statusLimiter, async (request, response, next) => {
+    response.set({
+      "Cache-Control": "private, no-store, max-age=0",
+      "X-Robots-Tag": "noindex, nofollow",
+    });
+    if (!uuidPattern.test(request.params.orderId || "")) {
+      return response.status(400).json({ error: "Identifiant de commande invalide." });
+    }
+    try {
+      const user = await storage.authenticateManagementUser?.(bearerToken(request));
+      if (!user?.id) return response.status(401).json({ error: "Session Gestion invalide ou expirée." });
+      const details = await repository.getManagementOrderDetails(request.params.orderId, user.id);
+      if (!details) return response.status(404).json({ error: "Commande introuvable." });
+      const lines = await Promise.all(details.lines.map(async (line) => {
+        if (!line.logo?.storagePath) return { ...line, logo: null };
+        const signed = await storage.createSignedDownload(line.logo.storagePath, 300);
+        return {
+          ...line,
+          logo: {
+            id: line.logo.id,
+            originalName: line.logo.originalName,
+            mimeType: line.logo.mimeType,
+            bytes: line.logo.bytes,
+            downloadUrl: signed?.url || null,
+            expiresIn: signed?.expiresIn || null,
+          },
+        };
+      }));
+      return response.json({ ...details, lines });
+    } catch (error) {
+      return next(error);
+    }
+  });
+
   app.post("/api/checkout", checkoutLimiter, async (request, response, next) => {
     const parsed = parseRequest(checkoutSchema, request.body);
     if (parsed.error) return response.status(400).json({ error: parsed.error });
@@ -337,24 +499,48 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
     void professionalCustomer;
 
     try {
-      const hasEligibleSupport = items.some((item) => {
+      const eligibleSupports = items.filter((item) => {
         const candidate = PRODUCTS[item.productId];
         return candidate?.personalization === "custom"
           && (candidate?.kind === "support" || candidate?.kind === "pack");
       });
+      const hasEligibleSupport = eligibleSupports.length > 0;
+      const matchingSupportsByIdentity = new Map(eligibleSupports.map((item) => [matchingIdentityKey(item), item]));
+      const matchingSupport = matchingSupportsByIdentity.size === 1 ? matchingSupportsByIdentity.values().next().value : null;
+      const hasMatchedCard = items.some((item) => PRODUCTS[item.productId]?.personalization === "matched");
+      if (hasMatchedCard && matchingSupportsByIdentity.size > 1) {
+        return response.status(400).json({ error: "La Carte NFC assortie nécessite une seule identité dans le panier. Commande une Carte NFC personnalisée séparément pour une autre marque ou un autre lien." });
+      }
       const validItems = [];
       for (const item of items) {
-        if (item.brandLogoId) {
-          const logo = await repository.getUpload(item.brandLogoId);
+        const product = PRODUCTS[item.productId];
+        const effectiveItem = product.personalization === "matched" && matchingSupport
+          ? {
+            ...item,
+            actionId: matchingSupport.actionId,
+            brandName: matchingSupport.brandName,
+            theme: matchingSupport.theme,
+            primaryColor: matchingSupport.primaryColor,
+            secondaryColor: matchingSupport.secondaryColor,
+            textColor: matchingSupport.textColor,
+            targetId: matchingSupport.targetId,
+            designStyle: matchingSupport.designStyle,
+            customHeadline: matchingSupport.customHeadline,
+            destinationUrl: matchingSupport.destinationUrl,
+            brandLogoId: matchingSupport.brandLogoId,
+            logoFileName: matchingSupport.logoFileName,
+          }
+          : item;
+        if (effectiveItem.brandLogoId) {
+          const logo = await repository.getUpload(effectiveItem.brandLogoId);
           if (!logo) return response.status(400).json({ error: "Un logo du panier n’est plus disponible. Importe-le de nouveau." });
         }
-        const product = PRODUCTS[item.productId];
-        const action = ACTIONS[item.actionId];
+        const action = ACTIONS[effectiveItem.actionId];
         if (product.requiresSupportOrder && !hasEligibleSupport) {
           return response.status(400).json({ error: `${product.name} est réservée aux commandes contenant une plaque ou un chevalet.` });
         }
         if (product.kind === "pack") {
-          const composition = item.supportComposition || product.defaultComposition;
+          const composition = effectiveItem.supportComposition || product.defaultComposition;
           const supportTotal = composition.comptoir + composition.plaque;
           if (supportTotal !== product.supportCount) {
             return response.status(400).json({ error: `La composition de ${product.name} doit contenir exactement ${product.supportCount} supports.` });
@@ -363,20 +549,21 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
         validItems.push({
           product,
           action,
-          quantity: item.quantity,
+          quantity: effectiveItem.quantity,
           customization: {
-            brandName: item.brandName,
-            theme: item.theme,
-            primaryColor: item.primaryColor,
-            secondaryColor: item.secondaryColor,
-            targetId: item.targetId,
-            designStyle: item.designStyle,
-            customHeadline: item.customHeadline,
-            destinationUrl: item.destinationUrl || customer.destinationUrl,
-            brandLogoId: item.brandLogoId || null,
-            logoFileName: item.logoFileName,
+            brandName: effectiveItem.brandName,
+            theme: effectiveItem.theme,
+            primaryColor: effectiveItem.primaryColor,
+            secondaryColor: effectiveItem.secondaryColor,
+            textColor: effectiveItem.textColor,
+            targetId: effectiveItem.targetId,
+            designStyle: effectiveItem.designStyle,
+            customHeadline: effectiveItem.customHeadline,
+            destinationUrl: effectiveItem.destinationUrl || customer.destinationUrl,
+            brandLogoId: effectiveItem.brandLogoId || null,
+            logoFileName: effectiveItem.logoFileName,
             supportComposition: product.kind === "pack"
-              ? (item.supportComposition || product.defaultComposition)
+              ? (effectiveItem.supportComposition || product.defaultComposition)
               : null,
           },
         });
@@ -449,6 +636,7 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
               theme: customization.theme,
               primaryColor: customization.primaryColor || "default",
               secondaryColor: customization.secondaryColor || "default",
+              textColor: customization.textColor || "default",
               targetId: customization.targetId,
               designStyle: customization.designStyle,
               brandLogoId: customization.brandLogoId || "none",
@@ -467,12 +655,6 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
         display_name: shippingAmount === 0
           ? "Livraison standard France métropolitaine offerte"
           : "Livraison standard France métropolitaine",
-        ...(!personalizedOrder ? {
-          delivery_estimate: {
-            minimum: { unit: "business_day", value: 4 },
-            maximum: { unit: "business_day", value: 6 },
-          },
-        } : {}),
       };
 
       const session = await stripe.checkout.sessions.create({
@@ -523,14 +705,14 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
     try {
       if (sessionId.startsWith("demo_") && config.allowDemoCheckout) {
         const order = await repository.getOrderBySession(sessionId);
-        return order ? response.json({ status: "demo" }) : response.status(404).json({ error: "Commande de démonstration introuvable." });
+        return order ? response.json({ status: "demo", reference: order.orderToken }) : response.status(404).json({ error: "Commande de démonstration introuvable." });
       }
       if (!stripe || !sessionId.startsWith("cs_")) return response.status(404).json({ error: "Commande introuvable." });
       const [session, storedOrder] = await Promise.all([
         stripe.checkout.sessions.retrieve(sessionId),
         repository.getOrderBySession(sessionId),
       ]);
-      return response.json({ status: stripeStatus(session, storedOrder) });
+      return response.json({ status: stripeStatus(session, storedOrder), reference: storedOrder?.orderToken || session.metadata?.orderToken || null });
     } catch (error) {
       if (error?.statusCode === 404) return response.status(404).json({ error: "Commande introuvable." });
       return next(error);
@@ -563,9 +745,16 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
       }
     },
   }));
-  app.use((request, response, next) => {
-    if (!config.isProduction || request.method !== "GET" || !request.accepts("html")) return next();
-    return response.sendFile(join(distDir, "index.html"));
+  let storefrontTemplate;
+  app.use(async (request, response, next) => {
+    if (!config.isProduction || !["GET", "HEAD"].includes(request.method) || !request.accepts("html")) return next();
+    try {
+      storefrontTemplate ||= await readFile(join(distDir, "index.html"), "utf8");
+      const status = isKnownFrontendPath(request.path) ? 200 : 404;
+      return response.status(status).type("html").send(injectStorefrontMeta(storefrontTemplate, request.path, config.publicUrl));
+    } catch (error) {
+      return next(error);
+    }
   });
 
   app.use((_request, response) => response.status(404).json({ error: "Ressource introuvable." }));

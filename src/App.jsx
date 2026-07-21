@@ -220,6 +220,7 @@ function loadCart() {
         theme: themeOrder.includes(item.theme) ? item.theme : "blue",
         primaryColor: normalizeHexColor(item.primaryColor, ""),
         secondaryColor: normalizeHexColor(item.secondaryColor, ""),
+        textColor: normalizeHexColor(item.textColor, ""),
         targetId: TARGETS[item.targetId] ? item.targetId : "cafe",
         designStyle: DESIGN_STYLES[item.designStyle] ? item.designStyle : "signature",
         customHeadline: String(item.customHeadline || "").slice(0, 64),
@@ -252,7 +253,7 @@ const faqs = [
   ],
   [
     "Combien de temps faut-il pour être livré ?",
-    "L’objectif opérationnel de lancement est une préparation sous 2 jours ouvrés, puis 2 à 4 jours de transport en France métropolitaine. Le délai réel doit être confirmé dans les CGV avant ouverture officielle.",
+    "Le délai exact est confirmé lors de la prise en charge. Pour une création personnalisée, il commence après validation du BAT ; rien n’est imprimé avant votre accord.",
   ],
   [
     "Et pour un réseau ou une franchise ?",
@@ -367,17 +368,50 @@ function useModalA11y(open, onClose) {
   return dialogRef;
 }
 
-function PreviewInsert({ action, brandName, brandLogo, colors, productId, designStyle = "signature", customHeadline = "" }) {
+function GeneratedBrandMark({ name }) {
+  const safeName = name || "VOTRE MARQUE";
+  const hash = [...safeName].reduce((sum, character) => sum + character.charCodeAt(0), 0);
+  const normalized = safeName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+  const semanticVariants = [
+    [/CAFE|COMPTOIR|ATELIER 21/, 4],
+    [/LEVAIN|BOULANGER|SUCRE/, 5],
+    [/LUNE|BEAUTE|CALME|NUDE/, 6],
+    [/CABINET|CLINIQUE|DENTAL|PHARMACIE|ECOUTE/, 7],
+    [/HOTEL|RIVAGE|HORIZON|HORIZONS|TOURISME/, 8],
+    [/DRIVE|AUTO|VTC|MOBILE/, 9],
+    [/AGENCE|DOMAINE|MAISON|BUREAU/, 10],
+    [/MOTION|SPORT|ANCRAGE/, 3],
+    [/LILAS|MUSEAU|VETERINAIRE/, 11],
+    [/FLEURS|PINS|SAUVAGES/, 1],
+    [/GALERIE|MOMENT|CAMPUS/, 2],
+  ];
+  const variant = semanticVariants.find(([pattern]) => pattern.test(normalized))?.[1] ?? hash % 12;
+  const initial = safeName.trim().slice(0, 1).toUpperCase() || "V";
+  return (
+    <span className={`generated-brand-mark is-variant-${variant}`} aria-hidden="true">
+      <i /><i /><b>{initial}</b>
+    </span>
+  );
+}
+
+function ActionIdentity({ action }) {
+  if (action.id === "avis") return <span className="action-brand action-brand-google"><i>★</i><i>★</i><i>★</i><i>★</i><i>★</i><b>Avis Google</b></span>;
+  if (["instagram", "facebook", "linkedin", "tiktok", "whatsapp"].includes(action.id)) return <span className={`action-brand action-brand-${action.id}`}><i>{action.id === "facebook" ? "f" : action.id === "linkedin" ? "in" : action.id === "tiktok" ? "♪" : action.id === "whatsapp" ? "☎" : "◎"}</i><b>{action.name}</b></span>;
+  if (action.id === "paiement") return <span className="action-brand action-brand-payment"><b>Apple Pay</b><i>ou</i><b>G Pay</b></span>;
   const ActionIcon = actionIcons[action.icon] || Link2;
+  return <span className={`action-brand action-brand-${action.id}`}><ActionIcon size={14} aria-hidden="true" /><b>{action.badge}</b></span>;
+}
+
+function PreviewInsert({ action, brandName, brandLogo, colors, productId, designStyle = "signature", customHeadline = "" }) {
   const tapLabel = productId === "sticker" ? "Approchez ici" : "Approchez votre téléphone";
   const headline = customHeadline.trim() || action.headline;
   return (
     <div className={`printed-insert insert-style-${designStyle} insert-action-${action.id}`} style={{ "--insert-paper": colors.paper, "--insert-ink": colors.ink, "--insert-accent": colors.accent, "--insert-accent-ink": colors.accentInk }}>
       <div className={`customer-brand ${brandLogo ? "customer-brand-has-logo" : ""}`}>
-        {brandLogo ? <img src={brandLogo} alt="Logo client importé" /> : <span>{(brandName || "V").slice(0, 1).toUpperCase()}</span>}
+        {brandLogo ? <img src={brandLogo} alt="Logo client importé" /> : <GeneratedBrandMark name={brandName} />}
         {(brandName || !brandLogo) && <b>{brandName || "VOTRE MARQUE"}</b>}
       </div>
-      <div className="action-signature"><ActionIcon size={14} aria-hidden="true" /><span>{action.badge}</span></div>
+      <div className="action-signature"><ActionIdentity action={action} /></div>
       <div className="device-headline">{headline}</div>
       <div className="device-subline">{action.subline}</div>
       <div className="tap-zone">
@@ -389,9 +423,9 @@ function PreviewInsert({ action, brandName, brandLogo, colors, productId, design
   );
 }
 
-export function DevicePreview({ productId = "comptoir", actionId = "avis", compact = false, brandName = "CAFÉ NOMA", brandLogo = "", theme = "blue", primaryColor = "", secondaryColor = "", designStyle = "signature", customHeadline = "" }) {
+export function DevicePreview({ productId = "comptoir", actionId = "avis", compact = false, brandName = "CAFÉ NOMA", brandLogo = "", theme = "blue", primaryColor = "", secondaryColor = "", textColor = "", designStyle = "signature", customHeadline = "" }) {
   const action = ACTIONS[actionId];
-  const colors = resolveDeviceColors(theme, primaryColor, secondaryColor);
+  const colors = resolveDeviceColors(theme, primaryColor, secondaryColor, textColor);
   const product = PRODUCTS[productId] || PRODUCTS.comptoir;
   return (
     <div className={`device-preview device-preview-canonical device-preview-${productId} ${compact ? "device-preview-compact" : ""}`} aria-label={`Aperçu de ${product.name} pour ${action.name}`}>
@@ -1173,7 +1207,7 @@ function LegalDialog({ page, onClose }) {
           <p><strong>Champ d’application.</strong> Version <strong>{legalDetails.version || "à renseigner"}</strong>. La boutique Tapote est exclusivement réservée aux personnes agissant à des fins professionnelles. Toute commande passée en qualité de consommateur est interdite. Le client confirme son statut professionnel avant d’accéder au paiement.</p>
           <p><strong>Produits et commande.</strong> Les caractéristiques essentielles, quantités, personnalisations et prix sont récapitulés avant paiement. La commande devient ferme après paiement accepté par Stripe. Le BAT transmis après commande doit être validé avant production. Pilot n’est pas inclus dans l’achat des supports et ne fait l’objet d’aucun abonnement présélectionné.</p>
           <p><strong>Prix et paiement.</strong> Les prix affichés sont en euros et présentés {vatExempt ? "nets de TVA, celle-ci étant non applicable conformément au régime indiqué dans les mentions légales" : "TTC"}. Le paiement par carte est exigible à la commande. Pour toute somme exceptionnellement facturée à échéance, un retard entraîne de plein droit les pénalités prévues par l’article L.441-10 du Code de commerce ainsi que l’indemnité forfaitaire de 40 € pour frais de recouvrement.</p>
-          <p><strong>Livraison.</strong> La livraison standard en France métropolitaine coûte {formatMoney(SHIPPING.standardPrice)} et devient offerte dès {formatMoney(SHIPPING.freeThreshold)}. Le délai indicatif est de 4 à 6 jours ouvrés après validation du BAT. Un retard raisonnable indépendant de Tapote ne permet pas d’annuler automatiquement la commande ; le client doit contacter Tapote afin de convenir d’une solution.</p>
+          <p><strong>Livraison.</strong> La livraison standard en France métropolitaine coûte {formatMoney(SHIPPING.standardPrice)} et devient offerte dès {formatMoney(SHIPPING.freeThreshold)}. Le délai de préparation et de livraison applicable est communiqué lors de la prise en charge ; pour un support personnalisé, il démarre après validation du BAT. Un retard raisonnable indépendant de Tapote ne permet pas d’annuler automatiquement la commande ; le client doit contacter Tapote afin de convenir d’une solution.</p>
           <p><strong>Personnalisation, annulation et conformité.</strong> Une demande d’annulation peut être adressée avant validation du BAT. Après validation du BAT ou lancement de la production, l’annulation n’est possible qu’avec l’accord écrit de Tapote. Le client doit vérifier le BAT, notamment les textes, liens et visuels. Toute non-conformité ou avarie apparente doit être signalée rapidement avec des justificatifs, sans priver le client de ses droits légaux applicables.</p>
           <p><strong>Réclamations et retours.</strong> Contact et adresse : <strong>{legalDetails.returnsAddress || "à renseigner"}</strong>. Les parties rechercheront d’abord une solution amiable. La médiation de la consommation et le droit de rétractation du Code de la consommation ne s’appliquent pas aux commandes conclues exclusivement entre professionnels.</p>
           <p><strong>Responsabilité et droit applicable.</strong> Tapote ne répond pas du contenu ou de la disponibilité des destinations externes choisies par le client. Sa responsabilité ne peut être engagée pour un usage non conforme des supports, sans exclure les responsabilités qui ne peuvent légalement être limitées. Les conditions sont régies par le droit français ; à défaut d’accord amiable, les juridictions compétentes sont déterminées selon les règles applicables.</p>
@@ -1227,7 +1261,7 @@ function PurchaseLine({ item, index, onQuantity }) {
   const previewProductId = packStories[item.productId]?.productId || item.productId;
   return (
     <article className="purchase-line">
-          <div className="purchase-line-art"><DevicePreview productId={previewProductId} actionId={item.actionId} brandName={item.brandName} theme={item.theme} primaryColor={item.primaryColor} secondaryColor={item.secondaryColor} designStyle={item.designStyle} customHeadline={item.customHeadline} compact /></div>
+          <div className="purchase-line-art"><DevicePreview productId={previewProductId} actionId={item.actionId} brandName={item.brandName} theme={item.theme} primaryColor={item.primaryColor} secondaryColor={item.secondaryColor} textColor={item.textColor} designStyle={item.designStyle} customHeadline={item.customHeadline} compact /></div>
       <div className="purchase-line-copy">
         <span>{product.kind === "pack" ? "PACK PROFESSIONNEL" : "OBJET TAPOTE"}</span>
         <h2>{product.name}</h2>
@@ -1461,7 +1495,7 @@ function CartDrawer({ open, onClose, cart, setCart, onCheckout }) {
             const previewProductId = packStories[item.productId]?.productId || item.productId;
             return (
               <div className="cart-item" key={`${item.productId}-${item.actionId}-${index}`}>
-        <div className="cart-item-art"><DevicePreview productId={previewProductId} actionId={item.actionId} brandName={item.brandName} theme={item.theme} primaryColor={item.primaryColor} secondaryColor={item.secondaryColor} designStyle={item.designStyle} customHeadline={item.customHeadline} compact /></div>
+        <div className="cart-item-art"><DevicePreview productId={previewProductId} actionId={item.actionId} brandName={item.brandName} theme={item.theme} primaryColor={item.primaryColor} secondaryColor={item.secondaryColor} textColor={item.textColor} designStyle={item.designStyle} customHeadline={item.customHeadline} compact /></div>
                 <div className="cart-item-copy"><strong>{product.name}</strong><span>{product.kind === "pack" ? product.format : `${action.name} · ${DESIGN_STYLES[item.designStyle]?.name || "Signature"}${item.brandLogoId ? " · logo transmis" : ""}`}</span><small>{product.kind === "pack" ? "Personnalisation et liens confirmés au BAT" : item.destinationUrl ? "Lien individuel configuré" : "Lien à confirmer au paiement"} · {item.quantity > 1 ? `${formatMoney(product.price * item.quantity)} ${priceTaxLabel} (${formatMoney(product.price)} / unité)` : `${formatMoney(product.price)} ${priceTaxLabel}`}</small></div>
                 <div className="quantity"><button onClick={() => changeQuantity(index, -1)} aria-label={`Diminuer la quantité de ${product.name}`}><Minus size={13} /></button><b>{item.quantity}</b><button onClick={() => changeQuantity(index, 1)} disabled={item.quantity >= MAX_ITEM_QUANTITY} aria-label={`Augmenter la quantité de ${product.name}`}><Plus size={13} /></button></div>
               </div>
@@ -1570,6 +1604,7 @@ function StorefrontApp() {
         && entry.theme === normalizedItem.theme
         && entry.primaryColor === normalizedItem.primaryColor
         && entry.secondaryColor === normalizedItem.secondaryColor
+        && entry.textColor === normalizedItem.textColor
         && entry.targetId === normalizedItem.targetId
         && entry.designStyle === normalizedItem.designStyle
         && entry.customHeadline === normalizedItem.customHeadline

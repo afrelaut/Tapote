@@ -232,6 +232,26 @@ export async function loadManagementData(organizationId) {
   };
 }
 
+export async function getManagementOrderDetails(managementOrderId) {
+  const session = await getManagementSession();
+  if (!session?.access_token) throw new Error("Session Gestion expirée.");
+  const response = await fetch(`/api/management/orders/${encodeURIComponent(managementOrderId)}/details`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    credentials: "same-origin",
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error(body.error || "Le détail de la commande n’est pas disponible.");
+    error.status = response.status;
+    throw error;
+  }
+  return body;
+}
+
 export async function createManagementEncodedProduct(organizationId, form) {
   const { data, error } = await assertClient().rpc("create_management_encoded_product", {
     target_organization_id: organizationId,

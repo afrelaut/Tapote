@@ -10,6 +10,7 @@ const repository = vi.hoisted(() => ({
   createManagementInventoryItem: vi.fn(),
   createManagementOrder: vi.fn(),
   getManagementAccess: vi.fn(),
+  getManagementOrderDetails: vi.fn(),
   getManagementSession: vi.fn(),
   loadManagementData: vi.fn(),
   onManagementAuthChange: vi.fn(),
@@ -28,7 +29,7 @@ import TapoteManagementApp from "./ManagementApp.jsx";
 const workspace = {
   clients: [{ id: "client-1", name: "Café Noma", contact: "Léa", email: "lea@example.com", phone: "0600000000", city: "Lyon", segment: "Café", orders: 3, revenue: 406, joined: "04 juin", health: "Actif" }],
   orders: [
-    { recordId: "row-ready", id: "TPT-1050", clientId: "client-1", product: "Chevalet A6 personnalisé", quantity: 1, total: 39, status: "ready", payment: "Payé", channel: "Boutique", created: "16 juil", orderedOn: "2026-07-16", due: "17 juil", dueDate: "2026-07-17", priority: "Haute", owner: "Aymeric", destination: "Avis Google", tracking: "", note: "Prête." },
+    { recordId: "row-ready", id: "TPT-1050", clientId: "client-1", product: "Chevalet A6 personnalisé", quantity: 1, total: 39, status: "ready", payment: "Payé", channel: "Boutique", created: "16 juil", orderedOn: "2026-07-16", due: "17 juil", dueDate: "2026-07-17", priority: "Haute", owner: "Aymeric", destination: "Avis Google", tracking: "", note: "Prête.", sourceOrderId: "storefront-order-1" },
     { recordId: "row-shipped", id: "TPT-1049", clientId: "client-1", product: "Carte personnalisée", quantity: 2, total: 58, status: "shipped", payment: "Payé", channel: "Boutique", created: "15 juil", orderedOn: "2026-07-15", due: "16 juil", dueDate: "2026-07-16", priority: "Normale", owner: "Aymeric", destination: "Fidélité", tracking: "6A000000", note: "Expédiée." },
     { recordId: "row-cancelled", id: "TPT-1048", clientId: "client-1", product: "Plaque prête à l’emploi", quantity: 1, total: 29, status: "cancelled", payment: "En attente", channel: "Boutique", created: "14 juil", orderedOn: "2026-07-14", due: "15 juil", dueDate: "2026-07-15", priority: "Normale", owner: "Aymeric", destination: "Instagram", tracking: "", note: "Annulée." },
   ],
@@ -53,6 +54,28 @@ beforeEach(() => {
   repository.updateManagementOrderStatus.mockImplementation(async (_organizationId, order, status, tracking) => ({ ...order, status, tracking }));
   repository.advanceManagementEncodedProduct.mockResolvedValue({});
   repository.createManagementEncodedProduct.mockResolvedValue({});
+  repository.getManagementOrderDetails.mockResolvedValue({
+    id: "row-ready",
+    orderNumber: "TPT-1050",
+    lines: [{
+      id: "line-1",
+      productId: "comptoir",
+      actionId: "avis",
+      quantity: 2,
+      unitAmount: 3900,
+      customization: {
+        brandName: "Café Noma",
+        primaryColor: "#161310",
+        secondaryColor: "#2946F5",
+        textColor: "#FFFFFF",
+        customHeadline: "Votre avis compte.",
+        supportComposition: { comptoir: 2, plaque: 0 },
+        brandLogoId: "logo-1",
+        logoFileName: "logo-cafe-noma.png",
+      },
+      logo: { id: "logo-1", originalName: "logo-cafe-noma.png", downloadUrl: "https://storage.test/signed", expiresIn: 300 },
+    }],
+  });
 });
 
 afterEach(() => {
@@ -80,6 +103,23 @@ describe("TAPOTE Gestion", () => {
     fireEvent.click(screen.getByRole("button", { name: /Commandes/ }));
     expect(screen.getByText("TPT-1050")).toBeInTheDocument();
     expect(screen.queryByText("TPT-1048")).not.toBeInTheDocument();
+  });
+
+  it("expose toutes les informations de fabrication et le logo privé signé", async () => {
+    render(<TapoteManagementApp />);
+    await screen.findByRole("heading", { name: "Vue d’ensemble" });
+
+    fireEvent.click(screen.getByRole("button", { name: /Commandes/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Ouvrir TPT-1050" }));
+
+    expect(await screen.findByText("FABRICATION & PERSONNALISATION")).toBeInTheDocument();
+    expect(await screen.findByText("Café Noma", { selector: "dd" })).toBeInTheDocument();
+    expect(screen.getByText("2 chevalets")).toBeInTheDocument();
+    expect(screen.getByText("#FFFFFF")).toBeInTheDocument();
+    expect(screen.getByText("Votre avis compte.")).toBeInTheDocument();
+    expect(screen.getByText("ID logo-1")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Ouvrir le logo/ })).toHaveAttribute("href", "https://storage.test/signed");
+    expect(repository.getManagementOrderDetails).toHaveBeenCalledWith("row-ready");
   });
 
   it("demande un vrai suivi avant de marquer un colis expédié", async () => {

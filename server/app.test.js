@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
-import { createApp } from "./app.js";
+import { createApp, injectStorefrontMeta, isKnownFrontendPath, storefrontMetaForPath } from "./app.js";
 import { loadConfig } from "./config.js";
 import { createLogger } from "./logger.js";
 import { createRepository } from "./repository.js";
@@ -19,6 +19,7 @@ const legalEnv = {
   VITE_LEGAL_MEDIATOR: "Médiateur Test",
   VITE_LEGAL_PRIVACY_CONTACT: "privacy@example.com",
   VITE_LEGAL_RETURNS_ADDRESS: "1 rue du Test",
+  VITE_LEGAL_DATA_RETENTION: "10 ans pour les données comptables ; 3 ans pour le suivi commercial.",
   VITE_LEGAL_VERSION: "2026-07-16",
 };
 
@@ -57,6 +58,31 @@ function makeContext(env = {}, stripe = null, overrides = {}) {
 afterEach(() => vi.restoreAllMocks());
 
 describe("API Tapote", () => {
+  it("distingue les vraies routes front des soft-404", () => {
+    expect(isKnownFrontendPath("/")).toBe(true);
+    expect(isKnownFrontendPath("/boutique/")).toBe(true);
+    expect(isKnownFrontendPath("/secteurs/auto-ecoles")).toBe(true);
+    expect(isKnownFrontendPath("/gestion/commandes")).toBe(true);
+    expect(isKnownFrontendPath("/produits/invente")).toBe(false);
+    expect(isKnownFrontendPath("/secteurs/invente")).toBe(false);
+  });
+
+  it("sert des métadonnées produit et secteur exploitables sans JavaScript", () => {
+    const product = storefrontMetaForPath("/produits/plaque?ignored=true", "https://tapote.fr");
+    const sector = storefrontMetaForPath("/secteurs/auto-ecoles", "https://tapote.fr/");
+    const missing = storefrontMetaForPath("/produits/invente", "https://tapote.fr");
+    const template = '<html><head><title>Accueil</title><meta name="description" content="Accueil"><meta name="robots" content="index"><link rel="canonical" href="https://tapote.fr/"><meta property="og:title" content="Accueil"><meta property="og:description" content="Accueil"><meta property="og:url" content="https://tapote.fr/"><meta name="twitter:title" content="Accueil"><meta name="twitter:description" content="Accueil"></head></html>';
+    const rendered = injectStorefrontMeta(template, "/produits/plaque", "https://tapote.fr");
+
+    expect(product.title).toContain("Plaque verticale");
+    expect(product.canonical).toBe("https://tapote.fr/produits/plaque");
+    expect(sector.title).toContain("Auto-écoles");
+    expect(sector.canonical).toBe("https://tapote.fr/secteurs/auto-ecoles");
+    expect(missing.robots).toBe("noindex,nofollow");
+    expect(rendered).toContain("<title>Plaque verticale NFC + QR | Tapote</title>");
+    expect(rendered).toContain('property="og:url" content="https://tapote.fr/produits/plaque"');
+  });
+
   it("autorise uniquement les attributs de style inline nécessaires à React", async () => {
     const { app } = makeContext();
     const response = await request(app).get("/api/health");
@@ -85,7 +111,7 @@ describe("API Tapote", () => {
     expect(new URL(checkout.body.url).pathname).toBe("/commande/confirmee");
     const sessionId = new URL(checkout.body.url).searchParams.get("session_id");
     const status = await request(app).get(`/api/checkout/status?session_id=${encodeURIComponent(sessionId)}`);
-    expect(status.body).toEqual({ status: "demo" });
+    expect(status.body).toEqual({ status: "demo", reference: checkoutBody().attemptId });
   });
 
   it("renvoie Stripe vers l’origine active du storefront en développement", async () => {
@@ -201,10 +227,8 @@ describe("API Tapote", () => {
     const checkout = stripe.checkout.sessions.create.mock.calls[0][0];
     expect(checkout.line_items.map((item) => item.price_data.unit_amount)).toEqual([2900, 2900, 1900]);
     expect(checkout.shipping_options[0].shipping_rate_data.fixed_amount.amount).toBe(0);
-    expect(checkout.shipping_options[0].shipping_rate_data.delivery_estimate).toEqual({
-      minimum: { unit: "business_day", value: 4 },
-      maximum: { unit: "business_day", value: 6 },
-    });
+    expect(checkout.shipping_options[0].shipping_rate_data.delivery_estimate).toBeUndefined();
+    expect(checkout.custom_text.shipping_address.message).toMatch(/configur.+test.+avant expédition/i);
   });
 
   it("applique les quatre prix de packs et offre leur livraison dès 69 €", async () => {
@@ -293,6 +317,55 @@ describe("API Tapote", () => {
     expect(checkout.shipping_options[0].shipping_rate_data.fixed_amount.amount).toBe(490);
   });
 
+  it("dérive toujours l’identité de la carte assortie depuis le support personnalisé", async () => {
+    const stripe = {
+      checkout: { sessions: {
+        create: vi.fn(async () => ({ id: "cs_test_matched_identity", url: "https://checkout.stripe.test/matched-identity" })),
+        retrieve: vi.fn(),
+      } },
+    };
+    const { app } = makeContext({}, stripe);
+    const body = checkoutBody("2a58b0a4-0c28-4a1b-a2c4-40fc8dc87a68");
+    body.items = [
+      { ...cart[0], brandName: "Maison Source", actionId: "avis", primaryColor: "#112233" },
+      { ...cart[0], productId: "carte_assortie", brandName: "Identité forgée", actionId: "instagram", primaryColor: "#ff0000" },
+    ];
+
+    const response = await request(app).post("/api/checkout").send(body);
+
+    expect(response.status).toBe(200);
+    const checkout = stripe.checkout.sessions.create.mock.calls[0][0];
+    expect(checkout.line_items[1].price_data.product_data).toMatchObject({
+      name: "La Carte NFC assortie · Avis Google",
+      metadata: {
+        brandName: "Maison Source",
+        primaryColor: "#112233",
+      },
+    });
+  });
+
+  it("refuse une carte assortie quand le panier contient plusieurs identités", async () => {
+    const stripe = {
+      checkout: { sessions: {
+        create: vi.fn(),
+        retrieve: vi.fn(),
+      } },
+    };
+    const { app } = makeContext({}, stripe);
+    const body = checkoutBody("3a58b0a4-0c28-4a1b-a2c4-40fc8dc87a69");
+    body.items = [
+      { ...cart[0], brandName: "Maison Source", actionId: "avis", destinationUrl: "https://example.com/avis" },
+      { ...cart[0], brandName: "Autre Maison", actionId: "instagram", destinationUrl: "https://example.com/instagram" },
+      { ...cart[0], productId: "carte_assortie" },
+    ];
+
+    const response = await request(app).post("/api/checkout").send(body);
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toMatch(/une seule identité/i);
+    expect(stripe.checkout.sessions.create).not.toHaveBeenCalled();
+  });
+
   it("réserve la carte assortie à un support personnalisé", async () => {
     const { app } = makeContext({ ALLOW_DEMO_CHECKOUT: "true" });
     const body = checkoutBody("1a58b0a4-0c28-4a1b-a2c4-40fc8dc87a67");
@@ -339,6 +412,16 @@ describe("API Tapote", () => {
     expect(second.status).toBe(200);
     const jobs = await context.repository.claimOutboxJobs(10);
     expect(jobs).toHaveLength(1);
+    expect(jobs[0].payload).toMatchObject({
+      status: "paid",
+      destinationUrl: "",
+      items: [{
+        productId: "comptoir",
+        actionId: "avis",
+        quantity: 1,
+        unitAmount: 3900,
+      }],
+    });
   });
 
   it("enregistre et signale un remboursement Stripe", async () => {
@@ -386,11 +469,28 @@ describe("API Tapote", () => {
       SUPABASE_SECRET_KEY: "sb_secret_ready",
       RESEND_API_KEY: "re_ready",
       ORDER_NOTIFICATION_EMAIL: "commandes@example.com",
+      FROM_EMAIL: "Tapote <commandes@tapote.fr>",
     }, {}, {
       repository: { durable: true, healthCheck: vi.fn(async () => true) },
       storage: { durable: true, healthCheck: vi.fn(async () => true) },
     });
     expect((await request(complete.app).get("/api/ready")).status).toBe(200);
+
+    const defaultResendSender = makeContext({
+      NODE_ENV: "production",
+      PUBLIC_URL: "https://tapote.fr",
+      STRIPE_SECRET_KEY: "sk_live_ready",
+      STRIPE_WEBHOOK_SECRET: "whsec_ready",
+      DATABASE_URL: "postgresql://unused",
+      SUPABASE_URL: "https://example.supabase.co",
+      SUPABASE_SECRET_KEY: "sb_secret_ready",
+      RESEND_API_KEY: "re_ready",
+      ORDER_NOTIFICATION_EMAIL: "commandes@example.com",
+    }, {}, {
+      repository: { durable: true, healthCheck: vi.fn(async () => true) },
+      storage: { durable: true, healthCheck: vi.fn(async () => true) },
+    });
+    expect((await request(defaultResendSender.app).get("/api/ready")).status).toBe(503);
   });
 
   it("autorise explicitement un checkout sandbox sans annoncer la vente prête", async () => {
@@ -411,6 +511,7 @@ describe("API Tapote", () => {
       SUPABASE_SECRET_KEY: "sb_secret_ready",
       RESEND_API_KEY: "re_ready",
       ORDER_NOTIFICATION_EMAIL: "commandes@example.com",
+      FROM_EMAIL: "Tapote <commandes@tapote.fr>",
     }, stripe, {
       repository: Object.assign(createRepository(loadConfig({ NODE_ENV: "test" })), { durable: true }),
       storage: { durable: true, healthCheck: vi.fn(async () => true) },
@@ -433,6 +534,84 @@ describe("API Tapote", () => {
     expect(alias.status).toBe(201);
     const fake = await request(context.app).post("/api/uploads/logo").attach("logo", Buffer.from("not an image"), { filename: "logo.png", contentType: "image/png" });
     expect(fake.status).toBe(400);
+  });
+
+  it("protège le détail atelier d’une commande par la session Gestion", async () => {
+    const orderId = "7e58b0a4-0c28-4a1b-a2c4-40fc8dc87a59";
+    const context = makeContext({}, null, {
+      repository: {
+        durable: true,
+        healthCheck: vi.fn(async () => true),
+        getManagementOrderDetails: vi.fn(),
+      },
+      storage: {
+        durable: true,
+        healthCheck: vi.fn(async () => true),
+        authenticateManagementUser: vi.fn(async () => null),
+        createSignedDownload: vi.fn(),
+      },
+    });
+
+    const response = await request(context.app).get(`/api/management/orders/${orderId}/details`);
+
+    expect(response.status).toBe(401);
+    expect(response.headers["cache-control"]).toContain("no-store");
+    expect(context.repository.getManagementOrderDetails).not.toHaveBeenCalled();
+  });
+
+  it("retourne les lignes de fabrication et une URL de logo privée limitée à cinq minutes", async () => {
+    const orderId = "7e58b0a4-0c28-4a1b-a2c4-40fc8dc87a59";
+    const userId = "8f68b0a4-0c28-4a1b-a2c4-40fc8dc87a60";
+    const repository = {
+      durable: true,
+      healthCheck: vi.fn(async () => true),
+      getManagementOrderDetails: vi.fn(async () => ({
+        id: orderId,
+        orderNumber: "WEB-TEST",
+        sourceOrderId: "9a78b0a4-0c28-4a1b-a2c4-40fc8dc87a61",
+        lines: [{
+          id: "aa88b0a4-0c28-4a1b-a2c4-40fc8dc87a62",
+          productId: "comptoir",
+          actionId: "avis",
+          quantity: 2,
+          unitAmount: 3900,
+          customization: { brandName: "Café Test", textColor: "#ffffff", brandLogoId: "bb98b0a4-0c28-4a1b-a2c4-40fc8dc87a63" },
+          logo: {
+            id: "bb98b0a4-0c28-4a1b-a2c4-40fc8dc87a63",
+            storagePath: "orders/2026-07-21/private-logo.png",
+            originalName: "logo-client.png",
+            mimeType: "image/png",
+            bytes: 1200,
+          },
+        }],
+      })),
+    };
+    const storage = {
+      durable: true,
+      healthCheck: vi.fn(async () => true),
+      authenticateManagementUser: vi.fn(async () => ({ id: userId })),
+      createSignedDownload: vi.fn(async () => ({ url: "https://storage.test/signed-logo", expiresIn: 300 })),
+    };
+    const context = makeContext({}, null, { repository, storage });
+
+    const response = await request(context.app)
+      .get(`/api/management/orders/${orderId}/details`)
+      .set("Authorization", "Bearer management-token");
+
+    expect(response.status).toBe(200);
+    expect(repository.getManagementOrderDetails).toHaveBeenCalledWith(orderId, userId);
+    expect(storage.createSignedDownload).toHaveBeenCalledWith("orders/2026-07-21/private-logo.png", 300);
+    expect(response.body.lines[0]).toEqual(expect.objectContaining({
+      actionId: "avis",
+      quantity: 2,
+      customization: expect.objectContaining({ textColor: "#ffffff" }),
+      logo: expect.objectContaining({
+        originalName: "logo-client.png",
+        downloadUrl: "https://storage.test/signed-logo",
+        expiresIn: 300,
+      }),
+    }));
+    expect(JSON.stringify(response.body)).not.toContain("orders/2026-07-21/private-logo.png");
   });
 
   it("retourne un vrai 404 JSON pour toute route API inconnue", async () => {

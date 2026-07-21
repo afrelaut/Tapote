@@ -20,6 +20,14 @@ class DevelopmentStorage {
     await writeFile(join(localUploadsDir, storagePath), buffer, { flag: "wx" });
     return { storagePath };
   }
+
+  async authenticateManagementUser() {
+    return null;
+  }
+
+  async createSignedDownload() {
+    return null;
+  }
 }
 
 class SupabaseStorage {
@@ -50,6 +58,25 @@ class SupabaseStorage {
     });
     if (error) throw new Error(`Stockage du logo impossible : ${error.message}`);
     return { storagePath };
+  }
+
+  async authenticateManagementUser(accessToken) {
+    if (!accessToken) return null;
+    const { data, error } = await this.client.auth.getUser(accessToken);
+    if (error || !data?.user) return null;
+    return { id: data.user.id, email: data.user.email || null };
+  }
+
+  async createSignedDownload(storagePath, expiresIn = 300) {
+    if (!storagePath) return null;
+    const ttl = Math.min(600, Math.max(60, Number(expiresIn) || 300));
+    const { data, error } = await this.client.storage
+      .from(this.bucket)
+      .createSignedUrl(storagePath, ttl);
+    if (error || !data?.signedUrl) {
+      throw new Error(`Signature du logo impossible : ${error?.message || "URL absente"}`);
+    }
+    return { url: data.signedUrl, expiresIn: ttl };
   }
 }
 

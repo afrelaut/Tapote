@@ -41,18 +41,72 @@ describe("Boutique Tapote V3", () => {
     renderRoute("/secteurs/auto-ecoles");
     expect(screen.getByText(/Pack 2 recommandé · achat à l’unité toujours possible/i)).toBeVisible();
     expect(screen.getByRole("button", { name: /1 support/i })).toBeVisible();
-    expect(screen.getByLabelText("Le lien à ouvrir")).toHaveValue("reservation");
+    expect(screen.getByLabelText("Le lien à ouvrir")).toHaveValue("avis");
   });
 
   it("présente immédiatement l’offre courte et les prix prêts à l’emploi", () => {
     renderRoute("/boutique");
 
-    expect(screen.getByRole("heading", { name: /Trois formats/i })).toBeVisible();
+    expect(screen.getByRole("heading", { name: /Choisissez votre Tapote/i })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Chevalet" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Plaque" })).toBeVisible();
-    expect(screen.getByRole("heading", { name: "Carte" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Carte NFC" })).toBeVisible();
     expect(screen.getAllByText("29 €").length).toBeGreaterThanOrEqual(2);
     expect(screen.getByText("19 €")).toBeVisible();
+  });
+
+  it("fait configurer les packs au lieu de les ajouter sans choix", () => {
+    renderRoute("/boutique");
+
+    fireEvent.click(screen.getByRole("button", { name: /Packs · dès 17,80/i }));
+    fireEvent.click(screen.getByRole("button", { name: /À votre image/i }));
+
+    const links = screen.getAllByRole("link", { name: /Choisir la composition/i });
+    expect(links).toHaveLength(2);
+    expect(links[0]).toHaveAttribute("href", expect.stringContaining("mode=custom&count=2"));
+    expect(links[1]).toHaveAttribute("href", expect.stringContaining("mode=custom&count=5"));
+    expect(screen.queryByRole("button", { name: /Ajouter ce pack/i })).not.toBeInTheDocument();
+  });
+
+  it("conserve l’action choisie dans l’URL et garde le brief pour le BAT", () => {
+    renderRoute("/produits/chevalet?mode=custom&action=avis");
+
+    fireEvent.change(screen.getByLabelText("Le lien à ouvrir"), { target: { value: "instagram" } });
+    fireEvent.change(screen.getByLabelText("Brief de design"), { target: { value: "Univers premium chaleureux" } });
+
+    expect(window.location.search).toContain("action=instagram");
+    expect(screen.queryByText("Univers premium chaleureux")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Ajouter au panier/i }));
+    expect(JSON.parse(window.localStorage.getItem("tapote-cart-v3"))).toEqual([
+      expect.objectContaining({ actionId: "instagram", customHeadline: "Univers premium chaleureux" }),
+    ]);
+  });
+
+  it("synchronise toute la fiche avec la composition d’un pack de plaques", () => {
+    renderRoute("/produits/chevalet?mode=custom&count=2&composition=plaques&action=instagram");
+
+    expect(screen.getByRole("heading", { name: "Pack 2 plaques", level: 1 })).toBeVisible();
+    expect(screen.getByLabelText("Fil d’Ariane")).toHaveTextContent("Pack 2 plaques");
+    expect(screen.getByText(/2 plaques PMMA cohérentes/i)).toBeVisible();
+    expect(screen.getByText("2 plaques 12 × 12")).toBeVisible();
+    expect(screen.getByText("2 NFC + QR testés séparément")).toBeVisible();
+    expect(screen.getByText(/2 supports imprimés dans une identité cohérente/i)).toBeVisible();
+    expect(screen.queryByText("1 chevalet, 1 insert imprimé, 1 puce NFC configurée et son QR code associé.")).not.toBeInTheDocument();
+  });
+
+  it("rend une vraie page introuvable sans faire planter une fausse fiche produit", () => {
+    renderRoute("/produits/invente");
+
+    expect(screen.getByRole("heading", { name: /Cette page n’existe pas/i })).toBeVisible();
+    expect(document.querySelector('meta[name="robots"]')).toHaveAttribute("content", "noindex,nofollow");
+  });
+
+  it("présente des CGV structurées pour la commande professionnelle", () => {
+    renderRoute("/cgv");
+
+    expect(screen.getByRole("heading", { name: "Conditions générales de vente", level: 1 })).toBeVisible();
+    expect(screen.getByRole("heading", { name: /Personnalisation et BAT/i })).toBeVisible();
+    expect(screen.getByRole("heading", { name: /Conformité et réclamations/i })).toBeVisible();
   });
 
   it("ajoute la version prête à l’emploi de la fiche produit au panier par défaut", () => {

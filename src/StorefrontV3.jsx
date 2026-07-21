@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
   Check,
@@ -26,7 +26,6 @@ import {
   Trash2,
   Truck,
   Upload,
-  WandSparkles,
   X,
   Zap,
 } from "lucide-react";
@@ -34,29 +33,25 @@ import {
   ACTIONS,
   calculateShipping,
   formatMoney,
+  matchingIdentityKey,
   PILOT_PLANS,
   PRODUCTS,
   SHIPPING,
-  TARGETS,
 } from "../shared/catalog.js";
-import { Configurator, DevicePreview, prepareLogoFile, readFileAsDataUrl } from "./App.jsx";
+import { DevicePreview, prepareLogoFile, readFileAsDataUrl } from "./App.jsx";
 import { extractLogoPalette, pickScreenColor } from "./brandColors.js";
 import { DEVICE_THEMES, normalizeHexColor } from "./deviceThemes.js";
 import { findSectorBySlug, SECTOR_CATEGORIES, SECTORS } from "./storefront/sectorData.js";
-import chevaletAvisPrint from "../designs/print-ready/previews/chevalet-avis-google-PHOTO-105x148.png";
-import chevaletMenuPrint from "../designs/print-ready/previews/chevalet-menu-PHOTO-105x148.png";
-import plaqueAvisPrint from "../designs/print-ready/previews/plaque-avis-google-fondperdu-126x126.png";
-import plaqueReservationPrint from "../designs/print-ready/previews/plaque-reservation-fondperdu-126x126.png";
-import carteAvisPrint from "../designs/print-ready/previews/carte-avis-google-recto-fondperdu-89x58.png";
-import carteContactPrint from "../designs/print-ready/previews/carte-contact-recto-fondperdu-89x58.png";
 
 const MAX_ITEM_QUANTITY = 50;
 const CART_KEY = "tapote-cart-v3";
+const CONFIG_DRAFT_PREFIX = "tapote-config-draft-v1:";
+const LOGO_PREVIEW_PREFIX = "tapote-logo-preview-v1:";
 const FEATURED_ACTIONS = ["avis", "menu", "reservation", "instagram", "wifi", "multiliens"];
 const READY_ACTION_IDS = ["avis", "fidelite", "menu", "reservation", "commande", "paiement", "instagram", "facebook", "linkedin", "wifi", "site", "contact", "whatsapp", "multiliens", "formulaire"];
 const PHONE_SCREENS = {
   avis: { overline: "AVIS", title: "Comment s’est passée votre visite ?", detail: "★★★★★", helper: "Partagez votre expérience en quelques mots.", cta: "Publier mon avis" },
-  formulaire: { overline: "SATISFACTION", title: "Votre retour nous aide.", detail: "Très satisfait", helper: "Question 1 sur 3", cta: "Continuer" },
+  formulaire: { overline: "FORMULAIRE", title: "Comment pouvons-nous vous aider ?", detail: "Devis · Inscription · Demande", helper: "Quelques informations suffisent", cta: "Commencer" },
   menu: { overline: "LA CARTE", title: "Aujourd’hui au menu", detail: "Entrées · Plats · Desserts", helper: "Allergènes et options disponibles", cta: "Voir le menu" },
   reservation: { overline: "RÉSERVATION", title: "Choisissez votre créneau", detail: "09:00   11:00   15:30", helper: "Confirmation immédiate", cta: "Réserver" },
   commande: { overline: "COMMANDE", title: "Votre sélection", detail: "3 produits disponibles", helper: "Retrait ou livraison", cta: "Commander" },
@@ -116,19 +111,19 @@ const PRODUCT_PAGES = {
     name: "La Plaque 12 × 12",
     kicker: "COMPACTE ET TOUJOURS LÀ",
     title: "Un point de contact, sans prendre de place.",
-    description: "Une plaque PMMA compacte, posée complètement à plat là où votre client a naturellement le téléphone en main.",
+    description: "Une plaque PMMA compacte, présentée debout sur le comptoir là où votre client a naturellement le téléphone en main.",
     image: "/assets/products/tapote-plaque-avis-studio-v2.webp",
-    imageAlt: "Plaque NFC Tapote en PMMA posée à plat avec un téléphone affichant la page d’avis",
+    imageAlt: "Plaque NFC Tapote en PMMA sur un comptoir avec un téléphone affichant la page d’avis",
     gallery: ["/assets/products/tapote-plaque-avis-studio-v2.webp", "/assets/products/tapote-plaque-reservation-salon-v2.webp", "/assets/tapote-hero-nfc-counter.webp"],
     placements: "Comptoir · bureau · table",
-    size: "≈ 12 × 12 cm · PMMA à plat",
-    technical: ["Format carré proche de 12 × 12 cm", "Plaque PMMA imprimée de qualité professionnelle", "Faible épaisseur, posée entièrement à plat", "NFC + QR reliés au même lien"],
+    size: "≈ 12 × 12 cm · PMMA rigide",
+    technical: ["Format carré proche de 12 × 12 cm", "Plaque PMMA imprimée de qualité professionnelle", "Présentoir vertical, lisible sans la poser à plat", "NFC + QR reliés au même lien"],
     uses: ["Avis près du terminal de paiement", "Réservation sur un bureau d’accueil", "Informations pratiques sur une table ou un comptoir"],
     inBox: "1 plaque imprimée, 1 puce NFC configurée et son QR code associé.",
   },
   carte: {
     key: "carte",
-    name: "La Carte",
+    name: "La Carte NFC",
     kicker: "TAPOTE DANS LA POCHE",
     title: "Le bon lien vous suit partout.",
     description: "Pour les rendez-vous, livraisons, visites et équipes terrain. Elle se tend, se tapote et se range en une seconde.",
@@ -145,9 +140,16 @@ const PRODUCT_PAGES = {
 
 const LEGAL_DETAILS = {
   company: import.meta.env.VITE_LEGAL_COMPANY || "Tapote",
+  capital: import.meta.env.VITE_LEGAL_CAPITAL || "À compléter avant l’ouverture commerciale",
   address: import.meta.env.VITE_LEGAL_ADDRESS || "Adresse communiquée avant la mise en ligne commerciale.",
   registration: import.meta.env.VITE_LEGAL_REGISTRATION || "Immatriculation communiquée avant la mise en ligne commerciale.",
+  vat: import.meta.env.VITE_LEGAL_VAT || "Régime de TVA communiqué avant la mise en ligne commerciale.",
+  director: import.meta.env.VITE_LEGAL_DIRECTOR || "Direction de la publication communiquée avant la mise en ligne commerciale.",
   contact: import.meta.env.VITE_LEGAL_CONTACT || "contact@tapote.fr",
+  privacyContact: import.meta.env.VITE_LEGAL_PRIVACY_CONTACT || import.meta.env.VITE_LEGAL_CONTACT || "contact@tapote.fr",
+  returnsAddress: import.meta.env.VITE_LEGAL_RETURNS_ADDRESS || "Adresse de retour communiquée lors de la prise en charge.",
+  dataRetention: import.meta.env.VITE_LEGAL_DATA_RETENTION || "Durées opérationnelles détaillées à valider avant l’ouverture commerciale.",
+  version: import.meta.env.VITE_LEGAL_VERSION || "à valider avant l’ouverture commerciale",
   host: import.meta.env.VITE_LEGAL_HOST || "Hébergement communiqué avant la mise en ligne commerciale.",
 };
 
@@ -172,7 +174,18 @@ function pageMetadata(path) {
   if (path === "/panier") return ["Votre panier | Tapote", "Vérifiez vos supports Tapote, leur composition, la livraison et les options."];
   if (path === "/devis") return ["Devis volume et multi-sites | Tapote", "Décrivez votre besoin de 10 supports ou plus et recevez une proposition Tapote claire et adaptée."];
   if (path.startsWith("/commande")) return ["Finaliser la commande | Tapote", "Finalisez votre commande professionnelle Tapote via Stripe."];
-  return ["Tapote | Un geste, le bon lien", "Supports professionnels NFC + QR prêts ou personnalisés."];
+  if (path === "/mentions-legales") return ["Mentions légales | Tapote", "Informations relatives à l’éditeur, à la publication et à l’hébergement du site Tapote."];
+  if (path === "/cgv") return ["Conditions générales de vente B2B | Tapote", "Conditions applicables aux commandes professionnelles de supports NFC + QR Tapote."];
+  if (path === "/confidentialite") return ["Politique de confidentialité | Tapote", "Informations sur les données traitées par Tapote et les droits des professionnels."];
+  return ["Page introuvable | Tapote", "La page demandée n’existe pas ou a été déplacée."];
+}
+
+function isKnownStorefrontPath(path) {
+  if (["/", "/boutique", "/designs", "/secteurs", "/personnaliser", "/comment-ca-marche", "/panier", "/devis", "/commande", "/commande/confirmee", "/mentions-legales", "/cgv", "/confidentialite"].includes(path)) return true;
+  if (["/categorie/chevalets-nfc", "/categorie/plaques-nfc", "/categorie/cartes-nfc", "/categorie/packs-nfc", "/categorie/packs"].includes(path)) return true;
+  if (path.startsWith("/produits/")) return Boolean(PRODUCT_PAGES[path.split("/")[2]]);
+  if (path.startsWith("/secteurs/")) return Boolean(findSectorBySlug(path.split("/")[2]));
+  return false;
 }
 
 function getProductId(surface, personalization, count = 1) {
@@ -216,6 +229,7 @@ function makeCartItem(productId, actionId, options = {}) {
     theme: options.theme || "blue",
     primaryColor: normalizeHexColor(options.primaryColor, ""),
     secondaryColor: normalizeHexColor(options.secondaryColor, ""),
+    textColor: normalizeHexColor(options.textColor, ""),
     targetId: options.targetId || "cafe",
     designStyle: options.designStyle || "signature",
     customHeadline: options.customHeadline || "",
@@ -238,6 +252,105 @@ function compositionLabel(composition) {
   if (composition.comptoir) parts.push(`${composition.comptoir} chevalet${composition.comptoir > 1 ? "s" : ""}`);
   if (composition.plaque) parts.push(`${composition.plaque} plaque${composition.plaque > 1 ? "s" : ""}`);
   return parts.join(" + ");
+}
+
+function productPresentation(data, preview) {
+  const count = preview.count || 1;
+  if (count <= 1) return {
+    label: data.name,
+    kicker: data.kicker,
+    title: data.title,
+    description: data.description,
+    placements: data.placements,
+    size: data.size,
+    technical: data.technical,
+    uses: data.uses,
+    inBox: data.inBox,
+  };
+
+  const composition = preview.composition || (count === 5 ? { comptoir: 2, plaque: 3 } : { comptoir: 1, plaque: 1 });
+  const label = compositionLabel(composition) || `${count} supports`;
+  const hasChevalets = composition.comptoir > 0;
+  const hasPlaques = composition.plaque > 0;
+  const isMixed = hasChevalets && hasPlaques;
+  const formatParts = [];
+  if (hasChevalets) formatParts.push(`${composition.comptoir} chevalet${composition.comptoir > 1 ? "s" : ""} A6`);
+  if (hasPlaques) formatParts.push(`${composition.plaque} plaque${composition.plaque > 1 ? "s" : ""} 12 × 12`);
+
+  return {
+    label: `Pack ${label}`,
+    kicker: `${count} POINTS DE CONTACT COHÉRENTS`,
+    title: "Le pack qui couvre vraiment votre lieu.",
+    description: isMixed
+      ? `Un même univers graphique sur ${label} : les chevalets restent visibles et les plaques se placent au plus près du geste.`
+      : hasPlaques
+        ? `${count} plaques PMMA cohérentes à répartir sur vos comptoirs, bureaux ou tables, avec un lien modifiable pour chaque emplacement.`
+        : `${count} chevalets A6 cohérents à répartir aux endroits les plus visibles, avec un lien modifiable pour chaque emplacement.`,
+    placements: isMixed ? "Accueil · caisse · comptoir · table" : hasPlaques ? "Comptoirs · bureaux · tables" : "Accueils · caisses · tables",
+    size: formatParts.join(" + "),
+    technical: [
+      `${count} supports imprimés dans une identité cohérente`,
+      ...(hasChevalets ? ["Chevalets A6 avec supports transparents réutilisables"] : []),
+      ...(hasPlaques ? ["Plaques PMMA rigides proches de 12 × 12 cm"] : []),
+      "Un NFC et un QR testés individuellement sur chaque support",
+    ],
+    uses: [
+      "Couvrir plusieurs moments du parcours client",
+      "Conserver un design cohérent dans tout le lieu",
+      "Attribuer gratuitement un lien différent à chaque support après la commande",
+    ],
+    inBox: `${label}, ${count} puces NFC configurées et ${count} QR codes associés. Chaque support est imprimé, encodé et testé séparément.`,
+  };
+}
+
+function compositionSurface(count, composition, fallback = "comptoir") {
+  if (count <= 1 || !composition) return fallback;
+  if (composition.comptoir > 0 && composition.plaque > 0) return "mix";
+  return composition.plaque > 0 ? "plaque" : "comptoir";
+}
+
+function compositionParam(composition) {
+  if (!composition) return "";
+  if (composition.comptoir > 0 && composition.plaque > 0) return "mix";
+  return composition.plaque > 0 ? "plaques" : "chevalets";
+}
+
+function getCachedLogoPreview(uploadId) {
+  if (!uploadId) return "";
+  try { return window.sessionStorage.getItem(`${LOGO_PREVIEW_PREFIX}${uploadId}`) || ""; } catch { return ""; }
+}
+
+function cacheLogoPreview(uploadId, dataUrl) {
+  if (!uploadId || !dataUrl) return;
+  try { window.sessionStorage.setItem(`${LOGO_PREVIEW_PREFIX}${uploadId}`, dataUrl); } catch { /* The order remains valid even if the browser cannot cache the local preview. */ }
+}
+
+function loadConfigDraft(draftKey) {
+  if (!draftKey) return null;
+  try {
+    const draft = JSON.parse(window.sessionStorage.getItem(`${CONFIG_DRAFT_PREFIX}${draftKey}`) || "null");
+    return draft && typeof draft === "object" ? draft : null;
+  } catch { return null; }
+}
+
+function setMetaContent(attribute, value, content) {
+  let element = document.head.querySelector(`meta[${attribute}="${value}"]`);
+  if (!element) {
+    element = document.createElement("meta");
+    element.setAttribute(attribute, value);
+    document.head.appendChild(element);
+  }
+  element.setAttribute("content", content);
+}
+
+function setCanonicalUrl(url) {
+  let element = document.head.querySelector('link[rel="canonical"]');
+  if (!element) {
+    element = document.createElement("link");
+    element.setAttribute("rel", "canonical");
+    document.head.appendChild(element);
+  }
+  element.setAttribute("href", url);
 }
 
 function Brand() {
@@ -272,8 +385,9 @@ function Header({ cartCount, compact = false }) {
         <nav className={open ? "is-open" : ""} aria-label="Navigation principale">
           <a href="/boutique" onClick={() => setOpen(false)}>Acheter</a>
           <a href="/secteurs" onClick={() => setOpen(false)}>Secteurs</a>
-          <a href="/personnaliser" onClick={() => setOpen(false)}>Personnaliser</a>
+          <a href="/designs" onClick={() => setOpen(false)}>Designs</a>
           <a href="/comment-ca-marche" onClick={() => setOpen(false)}>Comment ça marche</a>
+          <a className="v3-mobile-login" href="/connexion" onClick={() => setOpen(false)}>Connexion</a>
         </nav>
         <div className="v3-header-actions">
           <a className="v3-login" href="/connexion">Connexion</a>
@@ -293,7 +407,7 @@ function Footer() {
     <footer className="v3-footer">
       <div className="v3-footer-main">
         <div><Brand /><p>Un geste. Le bon lien.<br />À votre image.</p></div>
-        <div><strong>Produits</strong><a href="/boutique">Toute la boutique</a><a href="/produits/chevalet">Chevalet A6</a><a href="/produits/plaque">Plaque 12 × 12</a><a href="/produits/carte">Carte</a><a href="/personnaliser">Personnaliser</a></div>
+        <div><strong>Produits</strong><a href="/boutique">Toute la boutique</a><a href="/produits/chevalet">Chevalet A6</a><a href="/produits/plaque">Plaque 12 × 12</a><a href="/produits/carte">Carte NFC</a><a href="/designs">Tous les designs</a></div>
         <div><strong>Découvrir</strong><a href="/secteurs">Tous les secteurs</a><a href="/designs">Tous les designs</a><a href="/comment-ca-marche">Comment ça marche</a><a href="/#pilot">Tapote Pilot</a><a href="/devis">Devis volume</a></div>
         <div><strong>Votre espace</strong><a href="/connexion">Connexion</a><a href="/pilot">Ouvrir Pilot</a><a href="mailto:contact@tapote.fr">Support</a></div>
       </div>
@@ -311,18 +425,8 @@ function Shell({ cartCount, cartNotice, onCloseNotice, compactCheckout = false, 
   return <div className="v3-site"><a className="v3-skip" href="#main-content">Aller au contenu</a>{!compactCheckout && <UtilityBar />}<Header cartCount={cartCount} compact={compactCheckout} />{children}<CartNotice notice={cartNotice} onClose={onCloseNotice} />{!compactCheckout && <Footer />}</div>;
 }
 
-function ProductArt({ surface = "comptoir", actionId = "avis", brandName = "VOTRE MARQUE", brandLogo = "", theme = "blue", primaryColor = "", secondaryColor = "", designStyle = "signature", customHeadline = "", className = "" }) {
-  return <div className={`v3-product-art ${className}`}><DevicePreview productId={surface} actionId={actionId} brandName={brandName} brandLogo={brandLogo} theme={theme} primaryColor={primaryColor} secondaryColor={secondaryColor} designStyle={designStyle} customHeadline={customHeadline} /></div>;
-}
-
-function printDesignFor(surface, actionId) {
-  if (surface === "comptoir" && actionId === "avis") return chevaletAvisPrint;
-  if (surface === "comptoir" && actionId === "menu") return chevaletMenuPrint;
-  if (surface === "plaque" && actionId === "avis") return plaqueAvisPrint;
-  if (surface === "plaque" && actionId === "reservation") return plaqueReservationPrint;
-  if (surface === "carte" && actionId === "avis") return carteAvisPrint;
-  if (surface === "carte" && actionId === "contact") return carteContactPrint;
-  return null;
+function ProductArt({ surface = "comptoir", actionId = "avis", brandName = "VOTRE MARQUE", brandLogo = "", theme = "blue", primaryColor = "", secondaryColor = "", textColor = "", designStyle = "signature", customHeadline = "", className = "" }) {
+  return <div className={`v3-product-art ${className}`}><DevicePreview productId={surface} actionId={actionId} brandName={brandName} brandLogo={brandLogo} theme={theme} primaryColor={primaryColor} secondaryColor={secondaryColor} textColor={textColor} designStyle={designStyle} customHeadline={customHeadline} /></div>;
 }
 
 function LivePhoneScreen({ actionId = "avis", brandName = "VOTRE MARQUE", className = "", native = false }) {
@@ -331,39 +435,35 @@ function LivePhoneScreen({ actionId = "avis", brandName = "VOTRE MARQUE", classN
   const safeBrandName = brandName || "VOTRE MARQUE";
   const handle = `@${safeBrandName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, ".").replace(/^\.|\.$/g, "") || "votre.marque"}`;
   return (
-    <div className={`v3-live-phone-screen is-action-${actionId} ${native ? "is-native-screen" : ""} ${className}`} aria-hidden={native || undefined} aria-label={native ? undefined : `Écran du téléphone après ouverture : ${ACTIONS[actionId]?.name || "lien"}`}>
-      <div className="v3-live-phone-status"><span>11:25</span><i /><b>5G</b></div>
-      <div className="v3-live-phone-browser"><span>‹</span><strong>{screen.overline}</strong><i>•••</i></div>
-      {socialNetwork ? <div className="v3-live-phone-social">
-        <div className={`v3-live-platform-logo is-${socialNetwork}`} aria-hidden="true"><i>{socialNetwork === "facebook" ? "f" : socialNetwork === "linkedin" ? "in" : socialNetwork === "tiktok" ? "♪" : ""}</i></div>
-        <div><h3>{safeBrandName}</h3><span>{handle}</span></div>
-        <dl><div><dt>128</dt><dd>publications</dd></div><div><dt>4,8 k</dt><dd>abonnés</dd></div><div><dt>246</dt><dd>abonnements</dd></div></dl>
-        <span className="v3-live-phone-cta">{socialNetwork === "linkedin" ? "Suivre la page" : "Suivre"}</span>
-        <div className="v3-live-social-grid"><i /><i /><i /><i /><i /><i /></div>
-      </div> : <div className="v3-live-phone-content">
-        <small>{safeBrandName}</small>
-        <h3>{screen.title}</h3>
-        <strong>{screen.detail}</strong>
-        <p>{screen.helper}</p>
-        <span className="v3-live-phone-cta">{screen.cta}</span>
-      </div>}
-      <i className="v3-live-phone-home" />
+    <div className={`v3-live-phone-screen is-action-${actionId} ${native ? "is-native-screen" : ""} ${className}`} role={native ? undefined : "img"} aria-hidden={native || undefined} aria-label={native ? undefined : `Écran du téléphone après ouverture : ${ACTIONS[actionId]?.name || "lien"}`}>
+      <svg className="v3-live-phone-svg" viewBox="0 0 1254 1254" preserveAspectRatio="none" aria-hidden="true">
+        <defs><clipPath id="tapote-phone-screen-shape" clipPathUnits="userSpaceOnUse"><path d="M678 311 C654 315 638 337 648 367 L849 910 C861 946 884 962 914 955 L1163 900 C1193 894 1206 870 1191 839 L900 309 C888 287 866 278 842 282 Z" /></clipPath></defs>
+        <path className="v3-live-phone-mask" d="M678 311 C654 315 638 337 648 367 L849 910 C861 946 884 962 914 955 L1163 900 C1193 894 1206 870 1191 839 L900 309 C888 287 866 278 842 282 Z" />
+        <foreignObject x="0" y="0" width="1254" height="1254" clipPath="url(#tapote-phone-screen-shape)">
+          <div className="v3-live-phone-canvas" xmlns="http://www.w3.org/1999/xhtml">
+            <div className="v3-live-phone-ui">
+        <div className="v3-live-phone-status"><span>11:25</span><i /><b>5G</b></div>
+        <div className="v3-live-phone-browser"><span>‹</span><strong>{screen.overline}</strong><i>•••</i></div>
+        {socialNetwork ? <div className="v3-live-phone-social">
+          <div className={`v3-live-platform-logo is-${socialNetwork}`} aria-hidden="true"><i>{socialNetwork === "facebook" ? "f" : socialNetwork === "linkedin" ? "in" : socialNetwork === "tiktok" ? "♪" : ""}</i></div>
+          <div><h3>{safeBrandName}</h3><span>{handle}</span></div>
+          <dl><div><dt>128</dt><dd>publications</dd></div><div><dt>4,8 k</dt><dd>abonnés</dd></div><div><dt>246</dt><dd>abonnements</dd></div></dl>
+          <span className="v3-live-phone-cta">{socialNetwork === "linkedin" ? "Suivre la page" : "Suivre"}</span>
+          <div className="v3-live-social-grid"><i /><i /><i /><i /><i /><i /></div>
+        </div> : <div className="v3-live-phone-content">
+          <small>{safeBrandName}</small>
+          <h3>{screen.title}</h3>
+          {actionId === "avis" ? <strong className="v3-google-rating"><span><i>★</i><i>★</i><i>★</i><i>★</i><i>★</i></span><b>Avis Google</b></strong> : <strong className={`v3-phone-detail is-${actionId}`}>{actionId === "paiement" ? " Pay   ·   G Pay" : screen.detail}</strong>}
+          <p>{screen.helper}</p>
+          <span className="v3-live-phone-cta">{screen.cta}</span>
+        </div>}
+              <i className="v3-live-phone-home" />
+            </div>
+          </div>
+        </foreignObject>
+      </svg>
     </div>
   );
-}
-
-function LiveDesignStage({ preview, sceneImage, sceneAlt, label = "APERÇU DE VOTRE DESIGN", placement, className = "", initialView = "design" }) {
-  const [view, setView] = useState(initialView);
-  const readyDesign = preview.personalization === "ready" ? printDesignFor(preview.surface, preview.actionId) : null;
-  return <div className={`v3-live-design-stage ${className} is-${view} is-surface-${preview.surface}`}>
-    {view === "situation" && <img className="v3-live-stage-scene" src={sceneImage} alt={sceneAlt} />}
-    <span className="v3-live-preview-label">{label}</span>
-    {view === "design" && readyDesign ? <img className={`v3-print-design-preview is-${preview.surface}`} src={readyDesign} alt={`Design prêt à l’emploi Tapote pour ${ACTIONS[preview.actionId]?.name || "votre action"}`} /> : <ProductArt {...preview} className="v3-live-stage-product" />}
-    {view === "situation" && <LivePhoneScreen actionId={preview.actionId} brandName={preview.brandName} />}
-    <small className="v3-live-stage-note">{view === "design" ? readyDesign ? "Design imprimable Tapote : vous choisissez l’action, nous préparons le support." : "Votre logo et votre brief servent à préparer un BAT sur mesure avant production." : "Le décor, le support et l’écran correspondent à l’usage choisi. Votre BAT reste validé avant production."}</small>
-    <div className="v3-live-stage-switch" role="group" aria-label="Type d’aperçu"><button type="button" className={view === "design" ? "is-selected" : ""} aria-pressed={view === "design"} onClick={() => setView("design")}>Design</button><button type="button" className={view === "situation" ? "is-selected" : ""} aria-pressed={view === "situation"} onClick={() => setView("situation")}>En situation</button></div>
-    {placement && <div className="v3-live-stage-placement"><MapPin /> {placement}</div>}
-  </div>;
 }
 
 function sectorDefaultSurface(sector) {
@@ -371,15 +471,23 @@ function sectorDefaultSurface(sector) {
   return sector.composition?.comptoir > 0 ? "comptoir" : "plaque";
 }
 
-function SectorScene({ sector, preview, compact = false, className = "" }) {
-  const nativeScreen = preview.actionId === sector.actionIds[0] && preview.personalization !== "custom";
+function ProductScene({ image, alt, nativeAction = "avis", preview, compact = false, className = "" }) {
+  const nativeScreen = preview.actionId === nativeAction && preview.personalization !== "custom";
+  const isMixedPack = preview.surface === "mix";
   return (
     <div className={`v3-sector-scene ${compact ? "is-compact" : ""} is-surface-${preview.surface} ${className}`} aria-hidden={compact || undefined}>
-      <img className="v3-sector-scene-background" src={sector.image} alt={compact ? "" : `Tapote utilisé dans un univers ${sector.title}`} loading={compact ? "lazy" : "eager"} />
-      <ProductArt key={`${preview.surface}-${preview.actionId}-${preview.designStyle}-${preview.primaryColor}-${preview.secondaryColor}`} {...preview} className="v3-sector-scene-support" />
+      <img className="v3-sector-scene-background" src={image} alt={compact ? "" : alt} loading={compact ? "lazy" : "eager"} />
+      {isMixedPack ? <div className="v3-sector-scene-support v3-sector-scene-support-mix">
+        <ProductArt {...preview} surface="comptoir" className="is-mix-comptoir" />
+        <ProductArt {...preview} surface="plaque" className="is-mix-plaque" />
+      </div> : <ProductArt key={`${preview.surface}-${preview.actionId}-${preview.designStyle}-${preview.primaryColor}-${preview.secondaryColor}-${preview.textColor}-${preview.brandName}`} {...preview} className="v3-sector-scene-support" />}
       <LivePhoneScreen key={`${preview.actionId}-${preview.brandName}-${preview.personalization}`} actionId={preview.actionId} brandName={preview.brandName} className="v3-sector-scene-screen" native={nativeScreen} />
     </div>
   );
+}
+
+function SectorScene({ sector, preview, compact = false, className = "" }) {
+  return <ProductScene image={sector.image} alt={`Tapote utilisé dans un univers ${sector.title}`} nativeAction={sector.actionIds[0]} preview={preview} compact={compact} className={className} />;
 }
 
 function CompositionPicker({ count, composition, onChange }) {
@@ -408,31 +516,42 @@ function CompositionPicker({ count, composition, onChange }) {
   );
 }
 
-function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "avis", initialCount = 1, initialComposition, initialPersonalization = "ready", initialTheme = "blue", targetId = "cafe", title = "Choisissez votre Tapote.", productOnly = false, compact = false, allowAllSurfaces = false, onPreviewChange }) {
+function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "avis", initialCount = 1, initialComposition, initialPersonalization = "ready", initialTheme = "blue", initialBrandName = "VOTRE MARQUE", targetId = "cafe", title = "Choisissez votre Tapote.", productOnly = false, compact = false, allowAllSurfaces = false, onPreviewChange, draftKey = "" }) {
   const initialColors = DEVICE_THEMES[initialTheme] || DEVICE_THEMES.blue;
+  const restoredDraft = useMemo(() => initialPersonalization === "custom" ? loadConfigDraft(draftKey) : null, [draftKey, initialPersonalization]);
   const [personalization, setPersonalization] = useState(initialPersonalization);
   const [surface, setSurface] = useState(initialSurface);
   const [count, setCount] = useState(initialCount);
   const [actionId, setActionId] = useState(initialAction);
   const [composition, setComposition] = useState(initialComposition || (initialCount === 5 ? { comptoir: 2, plaque: 3 } : { comptoir: 1, plaque: 1 }));
-  const [brandName, setBrandName] = useState("");
-  const [brandLogo, setBrandLogo] = useState("");
-  const [brandLogoId, setBrandLogoId] = useState("");
-  const [logoFileName, setLogoFileName] = useState("");
-  const [designStyle, setDesignStyle] = useState("signature");
-  const [customHeadline, setCustomHeadline] = useState("");
+  const [brandName, setBrandName] = useState(restoredDraft?.brandName || initialBrandName);
+  const [brandLogoId, setBrandLogoId] = useState(restoredDraft?.brandLogoId || "");
+  const [brandLogo, setBrandLogo] = useState(() => getCachedLogoPreview(restoredDraft?.brandLogoId));
+  const [logoFileName, setLogoFileName] = useState(restoredDraft?.logoFileName || "");
+  const [designStyle, setDesignStyle] = useState(restoredDraft?.designStyle || "signature");
+  const [customHeadline, setCustomHeadline] = useState(restoredDraft?.customHeadline || "");
   const theme = initialTheme;
-  const [primaryColor, setPrimaryColor] = useState(initialColors.paper);
-  const [secondaryColor, setSecondaryColor] = useState(initialColors.accent);
+  const [primaryColor, setPrimaryColor] = useState(restoredDraft?.primaryColor || initialColors.paper);
+  const [secondaryColor, setSecondaryColor] = useState(restoredDraft?.secondaryColor || initialColors.accent);
+  const [textColor, setTextColor] = useState(restoredDraft?.textColor || initialColors.ink);
+  const summaryRef = useRef(null);
+  const [summaryVisible, setSummaryVisible] = useState(false);
   const [paletteDetected, setPaletteDetected] = useState(false);
-  const [logoStatus, setLogoStatus] = useState("idle");
+  const [colorsManuallyEdited, setColorsManuallyEdited] = useState(false);
+  const [manualPalettePreserved, setManualPalettePreserved] = useState(false);
+  useEffect(() => {
+    if (!productOnly || !summaryRef.current || typeof IntersectionObserver === "undefined") return undefined;
+    const observer = new IntersectionObserver(([entry]) => setSummaryVisible(entry.isIntersecting), { threshold: 0.15 });
+    observer.observe(summaryRef.current);
+    return () => observer.disconnect();
+  }, [productOnly]);
+  const [logoStatus, setLogoStatus] = useState(restoredDraft?.brandLogoId ? "success" : "idle");
   const [logoError, setLogoError] = useState("");
   const [added, setAdded] = useState(false);
   const isCard = surface === "carte";
   const safeCount = isCard ? 1 : count;
   const productId = getProductId(surface, personalization, safeCount);
   const product = PRODUCTS[productId];
-  const customizeParams = new URLSearchParams({ support: surface, action: actionId, target: targetId, quantity: String(safeCount) });
   const readyUnitPrice = PRODUCTS[getProductId(surface, "ready", 1)].price;
   const customUnitPrice = PRODUCTS[getProductId(surface, "custom", 1)].price;
   const shipping = calculateShipping(product.price);
@@ -441,9 +560,16 @@ function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "avis", in
     setPersonalization(value);
     if (value === "ready" && !READY_ACTION_IDS.includes(actionId)) setActionId("avis");
   };
+  const previewSurface = compositionSurface(safeCount, composition, surface);
   useEffect(() => {
-    onPreviewChange?.({ surface, actionId, brandName: brandName || "VOTRE MARQUE", brandLogo, theme, primaryColor: personalization === "custom" ? primaryColor : "", secondaryColor: personalization === "custom" ? secondaryColor : "", designStyle, customHeadline, personalization });
-  }, [actionId, brandLogo, brandName, customHeadline, designStyle, onPreviewChange, personalization, primaryColor, secondaryColor, surface, theme]);
+    onPreviewChange?.({ surface: previewSurface, baseSurface: surface, actionId, brandName: brandName || "VOTRE MARQUE", brandLogo, theme, primaryColor: personalization === "custom" ? primaryColor : "", secondaryColor: personalization === "custom" ? secondaryColor : "", textColor: personalization === "custom" ? textColor : "", designStyle, customHeadline: "", personalization, count: safeCount, composition, productId, productName: product.name, price: product.price });
+  }, [actionId, brandLogo, brandName, composition, designStyle, onPreviewChange, personalization, previewSurface, primaryColor, product.name, product.price, productId, safeCount, secondaryColor, surface, textColor, theme]);
+  useEffect(() => {
+    if (!draftKey || personalization !== "custom") return;
+    try {
+      window.sessionStorage.setItem(`${CONFIG_DRAFT_PREFIX}${draftKey}`, JSON.stringify({ actionId, count: safeCount, composition, brandName, brandLogoId, logoFileName, designStyle, customHeadline, primaryColor, secondaryColor, textColor }));
+    } catch { /* A full browser storage area must never block configuration or checkout. */ }
+  }, [actionId, brandLogoId, brandName, composition, customHeadline, designStyle, draftKey, logoFileName, personalization, primaryColor, safeCount, secondaryColor, textColor]);
   const selectCount = (value) => {
     setCount(value);
     if (productOnly && initialSurface === "comptoir") {
@@ -454,12 +580,18 @@ function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "avis", in
       setComposition(value === 2 ? { comptoir: 1, plaque: 1 } : { comptoir: 2, plaque: 3 });
     }
   };
+  const selectSurface = (value) => {
+    setSurface(value);
+    if (value === "carte") return;
+    if (count > 1) setComposition(value === "plaque" ? { comptoir: 0, plaque: count } : { comptoir: count, plaque: 0 });
+  };
   const uploadLogo = async (event) => {
     const selectedFile = event.target.files?.[0];
     if (!selectedFile) return;
     setLogoStatus("loading");
     setLogoError("");
     setBrandLogoId("");
+    setManualPalettePreserved(false);
     try {
       const file = await prepareLogoFile(selectedFile);
       const dataUrl = await readFileAsDataUrl(file);
@@ -467,6 +599,10 @@ function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "avis", in
       setPaletteDetected(false);
       void extractLogoPalette(dataUrl).then((palette) => {
         if (!palette) return;
+        if (colorsManuallyEdited) {
+          setManualPalettePreserved(true);
+          return;
+        }
         setPrimaryColor(palette.primary);
         setSecondaryColor(palette.secondary);
         setPaletteDetected(true);
@@ -477,6 +613,7 @@ function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "avis", in
       const response = await fetch("/api/uploads/logo", { method: "POST", body: formData });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Envoi du logo impossible.");
+      cacheLogoPreview(data.uploadId, dataUrl);
       setBrandLogoId(data.uploadId);
       setLogoStatus("success");
     } catch (uploadError) {
@@ -492,7 +629,10 @@ function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "avis", in
     setLogoError("");
     setPrimaryColor(initialColors.paper);
     setSecondaryColor(initialColors.accent);
+    setTextColor(initialColors.ink);
     setPaletteDetected(false);
+    setColorsManuallyEdited(false);
+    setManualPalettePreserved(false);
   };
   const add = () => {
     if (logoStatus === "loading" || (brandLogo && !brandLogoId)) return;
@@ -506,15 +646,16 @@ function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "avis", in
       theme,
       primaryColor: personalization === "custom" ? primaryColor : "",
       secondaryColor: personalization === "custom" ? secondaryColor : "",
+      textColor: personalization === "custom" ? textColor : "",
       customHeadline: personalization === "custom" ? customHeadline : "",
     }));
     setAdded(true);
     window.setTimeout(() => setAdded(false), 1500);
   };
   return (
-    <section className={`v3-buybox ${compact ? "is-compact" : ""}`} aria-label="Configurer l’achat">
+    <section id={productOnly ? "configurer" : undefined} className={`v3-buybox ${compact ? "is-compact" : ""}`} aria-label="Configurer l’achat">
       <div className="v3-buybox-top"><span className="v3-rating"><Star size={14} fill="currentColor" /> Conçu pour les pros</span><span>NFC + QR · Sans application</span></div>
-      <div className="v3-buybox-intro"><div><h2>{title}</h2><p>À votre image. Vers le lien de votre choix. Modifiable à vie.</p></div></div>
+      <div className="v3-buybox-intro"><div><h2>{title}</h2><p>{personalization === "custom" ? "Votre logo, vos couleurs et un BAT à valider avant impression." : "Un design Tapote prêt à servir, vers le lien de votre choix."} Le lien reste modifiable à vie.</p></div></div>
       <div className="v3-field-block">
         <span className="v3-field-label">1. Votre design</span>
         <div className="v3-design-choice">
@@ -526,7 +667,6 @@ function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "avis", in
           </button>
         </div>
       </div>
-      {!compact && <a className="v3-design-link" href={`/personnaliser?${customizeParams.toString()}`}><WandSparkles size={16} /> {personalization === "custom" ? "Ouvrir le studio de design complet" : "Voir mon design personnalisé"}<ArrowRight size={15} /></a>}
       {personalization === "ready" && !compact && <div className="v3-field-block v3-personalization-panel"><span className="v3-field-label">Votre modèle Tapote</span><div className="v3-ready-designs">{[{ id: "signature", name: "Signature" }, { id: "editorial", name: "Éditorial" }, { id: "platform", name: "Impact" }].map((style) => <button type="button" aria-pressed={designStyle === style.id} className={designStyle === style.id ? `is-selected is-${style.id}` : `is-${style.id}`} onClick={() => setDesignStyle(style.id)} key={style.id}><i />{style.name}</button>)}</div></div>}
       {personalization === "custom" && (
         <div className="v3-field-block v3-branding-fields v3-personalization-panel">
@@ -540,9 +680,10 @@ function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "avis", in
           {brandLogo && <div className="v3-uploaded-logo"><img src={brandLogo} alt="Aperçu du logo importé" /><span><strong>{logoFileName}</strong><small>{logoStatus === "success" ? "Prêt pour le BAT" : "À retransmettre"}</small></span><button type="button" onClick={removeLogo} aria-label="Retirer le logo"><X size={15} /></button></div>}
           {logoError && <p className="v3-upload-error" role="alert">{logoError} Retirez le fichier pour continuer sans logo.</p>}
           <div className="v3-brand-colors" aria-label="Couleurs de votre identité">
-            <label><span>Couleur principale</span><div><input type="color" value={primaryColor} onChange={(event) => { setPrimaryColor(event.target.value); setPaletteDetected(false); }} aria-label="Couleur principale" /><code>{primaryColor.toUpperCase()}</code>{typeof window !== "undefined" && "EyeDropper" in window && <button type="button" onClick={() => pickScreenColor((color) => { setPrimaryColor(color); setPaletteDetected(false); })} aria-label="Prélever la couleur principale à l’écran"><Pipette size={14} /> Pipette</button>}</div></label>
-            <label><span>Couleur secondaire</span><div><input type="color" value={secondaryColor} onChange={(event) => { setSecondaryColor(event.target.value); setPaletteDetected(false); }} aria-label="Couleur secondaire" /><code>{secondaryColor.toUpperCase()}</code>{typeof window !== "undefined" && "EyeDropper" in window && <button type="button" onClick={() => pickScreenColor((color) => { setSecondaryColor(color); setPaletteDetected(false); })} aria-label="Prélever la couleur secondaire à l’écran"><Pipette size={14} /> Pipette</button>}</div></label>
-            <small>{paletteDetected ? "Palette détectée depuis votre logo. Ajustez-la si besoin." : "Texte clair ou foncé choisi automatiquement pour rester lisible."} Le QR reste noir sur blanc.</small>
+            <label><span>Couleur principale</span><div><input type="color" value={primaryColor} onChange={(event) => { setPrimaryColor(event.target.value); setPaletteDetected(false); setColorsManuallyEdited(true); setManualPalettePreserved(false); }} aria-label="Couleur principale" /><code>{primaryColor.toUpperCase()}</code>{typeof window !== "undefined" && "EyeDropper" in window && <button type="button" onClick={() => pickScreenColor((color) => { setPrimaryColor(color); setPaletteDetected(false); setColorsManuallyEdited(true); setManualPalettePreserved(false); })} aria-label="Prélever la couleur principale à l’écran"><Pipette size={14} /> Pipette</button>}</div></label>
+            <label><span>Couleur secondaire</span><div><input type="color" value={secondaryColor} onChange={(event) => { setSecondaryColor(event.target.value); setPaletteDetected(false); setColorsManuallyEdited(true); setManualPalettePreserved(false); }} aria-label="Couleur secondaire" /><code>{secondaryColor.toUpperCase()}</code>{typeof window !== "undefined" && "EyeDropper" in window && <button type="button" onClick={() => pickScreenColor((color) => { setSecondaryColor(color); setPaletteDetected(false); setColorsManuallyEdited(true); setManualPalettePreserved(false); })} aria-label="Prélever la couleur secondaire à l’écran"><Pipette size={14} /> Pipette</button>}</div></label>
+            <label><span>Couleur du texte</span><div><input type="color" value={textColor} onChange={(event) => { setTextColor(event.target.value); setColorsManuallyEdited(true); setManualPalettePreserved(false); }} aria-label="Couleur du texte" /><code>{textColor.toUpperCase()}</code>{typeof window !== "undefined" && "EyeDropper" in window && <button type="button" onClick={() => pickScreenColor((color) => { setTextColor(color); setColorsManuallyEdited(true); setManualPalettePreserved(false); })} aria-label="Prélever la couleur du texte à l’écran"><Pipette size={14} /> Pipette</button>}</div></label>
+            <small>{manualPalettePreserved ? "Logo importé : vos couleurs choisies ont été conservées." : paletteDetected ? "Palette détectée depuis votre logo. Ajustez-la si besoin." : "Choisissez les trois couleurs ou conservez la proposition Tapote."} Le QR reste noir sur blanc.</small>
           </div>
           <label className="v3-design-brief"><span>Votre brief <small>facultatif</small></span><input value={customHeadline} onChange={(event) => setCustomHeadline(event.target.value.slice(0, 64))} placeholder="Ex. élégant, chaleureux, minimal…" aria-label="Brief de design" /><small>Notre équipe prépare ensuite un BAT sur mesure à valider.</small></label>
         </div>
@@ -551,9 +692,9 @@ function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "avis", in
         <div className="v3-field-block">
           <span className="v3-field-label">2. Vos supports</span>
           <div className={`v3-choice-row ${allowAllSurfaces ? "v3-choice-row-three" : ""}`}>
-            <button type="button" aria-pressed={surface === "comptoir"} className={surface === "comptoir" ? "is-selected" : ""} onClick={() => setSurface("comptoir")}>Chevalet</button>
-            <button type="button" aria-pressed={surface === "plaque"} className={surface === "plaque" ? "is-selected" : ""} onClick={() => setSurface("plaque")}>Plaque</button>
-            {allowAllSurfaces && <button type="button" aria-pressed={surface === "carte"} className={surface === "carte" ? "is-selected" : ""} onClick={() => setSurface("carte")}>Carte</button>}
+            <button type="button" aria-pressed={surface === "comptoir"} className={surface === "comptoir" ? "is-selected" : ""} onClick={() => selectSurface("comptoir")}>Chevalet</button>
+            <button type="button" aria-pressed={surface === "plaque"} className={surface === "plaque" ? "is-selected" : ""} onClick={() => selectSurface("plaque")}>Plaque</button>
+            {allowAllSurfaces && <button type="button" aria-pressed={surface === "carte"} className={surface === "carte" ? "is-selected" : ""} onClick={() => selectSurface("carte")}>Carte</button>}
           </div>
         </div>
       )}
@@ -576,34 +717,46 @@ function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "avis", in
           {availableActions.map((action) => <option value={action.id} key={action.id}>{action.name}</option>)}
         </select>
       </div>
-      <div className="v3-buybox-summary">
+      <div className="v3-buybox-summary" ref={summaryRef}>
         <div><small>{product.name}</small><strong>{formatMoney(product.price)} <span>{taxLabel}</span></strong><em>{shipping === 0 ? "Livraison offerte" : `+ ${formatMoney(shipping)} de livraison`}</em></div>
         <button type="button" onClick={add} disabled={logoStatus === "loading" || Boolean(brandLogo && !brandLogoId)}>{logoStatus === "loading" ? "Envoi du logo…" : added ? <><Check size={18} /> Ajouté</> : <>Ajouter au panier <ArrowRight size={18} /></>}</button>
       </div>
-      <div className="v3-buy-reassurance"><span><ShieldCheck size={16} /> Paiement sécurisé</span><span><PackageCheck size={16} /> Encodé et testé</span><span><Link2 size={16} /> Changement de lien gratuit</span><span><CheckCircle2 size={16} /> Défaut NFC confirmé : remplacé</span></div>
+      <div className="v3-buy-reassurance"><span><ShieldCheck size={16} /> Paiement sécurisé</span><span><PackageCheck size={16} /> Encodé et testé</span><span><Link2 size={16} /> Changement de lien gratuit</span><span><CheckCircle2 size={16} /> Remplacement si défaut NFC confirmé</span></div>
+      {productOnly && <aside className={`v3-mobile-product-cta ${summaryVisible ? "is-summary-visible" : ""}`} aria-label="Résumé de la configuration"><span><small>{product.kind === "pack" && composition ? compositionLabel(composition) : product.name.replace(/ · .+$/, "")}</small><strong>{formatMoney(product.price)} {taxLabel}</strong></span><button type="button" onClick={add} disabled={logoStatus === "loading" || Boolean(brandLogo && !brandLogoId)}>{added ? "Ajouté" : "Ajouter"} <ArrowRight /></button></aside>}
     </section>
   );
 }
 
+const HOME_SCENES = {
+  comptoir: { slug: "chevalet", label: "Chevalet A6", image: "/assets/products/tapote-bg-cafe-v1.webp", brandName: "CAFÉ NOMA", theme: "blue", nativeAction: "avis" },
+  plaque: { slug: "plaque", label: "Plaque 12 × 12", image: "/assets/products/tapote-bg-boulangerie-v1.webp", brandName: "MAISON LEVAIN", theme: "sand", nativeAction: "fidelite" },
+  carte: { slug: "carte", label: "Carte NFC", image: "/assets/products/tapote-bg-artisan-v1.webp", brandName: "ATELIER MARTIN", theme: "sand", nativeAction: "contact" },
+};
+
 function HomePage({ onAdd }) {
   const [demoAction, setDemoAction] = useState("avis");
-  const [heroPreview, setHeroPreview] = useState({ surface: "comptoir", actionId: "avis", brandName: "VOTRE MARQUE", theme: "blue", designStyle: "signature", customHeadline: "", personalization: "ready" });
+  const [heroSurface, setHeroSurface] = useState("comptoir");
+  const [heroAction, setHeroAction] = useState("avis");
+  const heroScene = HOME_SCENES[heroSurface];
+  const heroPreview = { surface: heroSurface, actionId: heroAction, brandName: heroScene.brandName, theme: heroScene.theme, designStyle: "signature", customHeadline: "", personalization: "ready" };
+  const productLink = `/produits/${heroScene.slug}?action=${heroAction}`;
   return (
     <main id="main-content">
       <section className="v3-commerce-hero">
         <div className="v3-commerce-visual">
-          <img src="/assets/products/tapote-template-chevalet-v1.webp" alt="Un client tapote le chevalet A6 Tapote et voit la page d’avis sur son téléphone" fetchPriority="high" />
-          {heroPreview.personalization === "custom" && <div className="v3-hero-live-product" aria-label="Aperçu du chevalet Tapote personnalisé">
-            <span>APERÇU PRODUIT</span>
-            <ProductArt {...heroPreview} />
-            <small>Chevalet A6 · NFC + QR</small>
-          </div>}
-          <div className="v3-visual-caption"><span>Le Chevalet A6</span><strong>Prêt à servir dès réception.</strong><small>NFC + QR · lien déjà configuré</small></div>
+          <ProductScene key={`${heroSurface}-${heroAction}`} image={heroScene.image} alt={`${heroScene.label} Tapote utilisé par un client avec son téléphone`} nativeAction={heroScene.nativeAction} preview={heroPreview} className="v3-home-product-scene" />
+          <div className="v3-visual-caption"><span>{heroScene.label}</span><strong>{ACTIONS[heroAction].name} s’ouvre sur le téléphone.</strong><small>NFC + QR · lien modifiable à vie</small></div>
         </div>
         <div className="v3-commerce-buy">
           <span className="v3-eyebrow"><Sparkles size={14} /> LE BON LIEN, AU BON MOMENT</span>
           <h1>Un geste.<br />Le bon lien.</h1>
-          <BuyBox onAdd={onAdd} compact onPreviewChange={setHeroPreview} />
+          <p className="v3-home-lead">Choisissez un support et le lien à ouvrir. Nous l’encodons, le testons et vous le livrons prêt à servir.</p>
+          <div className="v3-home-quick-buy">
+            <fieldset><legend>1. Le support</legend><div>{Object.entries(HOME_SCENES).map(([surface, scene]) => <button type="button" aria-pressed={heroSurface === surface} className={heroSurface === surface ? "is-selected" : ""} onClick={() => setHeroSurface(surface)} key={surface}><strong>{scene.label}</strong><small>{surface === "comptoir" ? "Visible au comptoir" : surface === "plaque" ? "Compacte et bien lisible" : "À présenter en main"}</small></button>)}</div></fieldset>
+            <label><span>2. Le lien à ouvrir</span><select value={heroAction} onChange={(event) => setHeroAction(event.target.value)}>{READY_ACTION_IDS.map((id) => <option value={id} key={id}>{ACTIONS[id].name}</option>)}</select></label>
+            <div className="v3-home-price"><span>Dès</span><strong>{formatMoney(PRODUCTS[getProductId(heroSurface, "ready", 1)].price)}</strong><small>{taxLabel} · sans abonnement</small></div>
+            <div className="v3-home-ctas"><a href={productLink}>Configurer et commander <ArrowRight /></a><button type="button" onClick={() => onAdd(makeCartItem(getProductId(heroSurface, "ready", 1), heroAction))}>Ajouter · {ACTIONS[heroAction].name} <Plus /></button></div>
+          </div>
         </div>
       </section>
 
@@ -624,21 +777,12 @@ function HomePage({ onAdd }) {
           </div>
           <a className="v3-text-link" href="/comment-ca-marche">Voir comment le lien se modifie <ArrowRight size={16} /></a>
         </div>
-        <div className="v3-demo-player">
-          <div className="v3-demo-label"><i /> DÉMO EN DIRECT</div>
-          <ProductArt surface="comptoir" actionId={demoAction} brandName="CAFÉ NOMA" />
-          <div className="v3-demo-phone" aria-hidden="true"><span>tapote.fr</span><strong>{ACTIONS[demoAction].name}</strong><small>La bonne page vient de s’ouvrir.</small><b>Continuer</b></div>
-          <div className="v3-demo-rings" aria-hidden="true"><i /><i /><i /></div>
-          <span className="v3-demo-caption">Approchez le téléphone</span>
-        </div>
+        <ProductScene key={`demo-${demoAction}`} image="/assets/products/tapote-bg-cafe-v1.webp" alt={`Démonstration réaliste du chevalet ouvrant ${ACTIONS[demoAction].name}`} nativeAction="avis" preview={{ surface: "comptoir", actionId: demoAction, brandName: "CAFÉ NOMA", theme: "blue", designStyle: "signature", personalization: "ready" }} className="v3-demo-player" />
       </section>
 
       <DesignLibraryPreview />
-      <ProductFamily />
-      <DesignChoiceSection />
       <SectorPreview />
       <PilotSection />
-      <HowStrip />
       <FaqSection />
     </main>
   );
@@ -646,8 +790,9 @@ function HomePage({ onAdd }) {
 
 function DesignSpecimen({ preset, compact = false }) {
   const productName = preset.surface === "comptoir" ? "Chevalet A6" : preset.surface === "plaque" ? "Plaque 12 × 12" : "Carte NFC";
+  const productSlug = preset.surface === "comptoir" ? "chevalet" : preset.surface;
   return (
-    <a className={`v3-design-specimen ${compact ? "is-compact" : ""}`} href={`/personnaliser?support=${preset.surface}&action=${preset.actionId}`}>
+    <a className={`v3-design-specimen ${compact ? "is-compact" : ""}`} href={`/produits/${productSlug}?action=${preset.actionId}`}>
       <div className="v3-design-specimen-visual">
         <ProductArt surface={preset.surface} actionId={preset.actionId} brandName={preset.brandName} theme={preset.theme} designStyle={preset.designStyle} customHeadline={preset.title} />
         <span>{productName}</span>
@@ -691,35 +836,33 @@ function DesignsPage() {
         <div>{DESIGN_CATEGORIES.map((name) => <button type="button" aria-pressed={category === name} className={category === name ? "is-selected" : ""} onClick={() => setCategory(name)} key={name}>{name}</button>)}</div>
       </section>
       <section className="v3-designs-grid">{filtered.map((preset) => <DesignSpecimen preset={preset} key={preset.id} />)}</section>
-      <section className="v3-designs-custom-cta"><span>VOUS AVEZ DÉJÀ UNE IDENTITÉ ?</span><h2>Votre logo. Vos couleurs.<br />Notre œil sur le geste.</h2><p>Envoyez votre brief. Nous préparons un BAT sur mesure, avec une petite correction incluse avant fabrication.</p><a href="/personnaliser">Créer mon Tapote <ArrowRight /></a></section>
+      <section className="v3-designs-custom-cta"><span>VOUS AVEZ DÉJÀ UNE IDENTITÉ ?</span><h2>Votre logo. Vos couleurs.<br />Notre œil sur le geste.</h2><p>Choisissez d’abord le support : sa fiche affiche immédiatement votre nom, vos couleurs et votre usage dans la scène réelle.</p><a href="/boutique">Choisir mon support <ArrowRight /></a></section>
     </main>
   );
 }
 
 const SHOP_ITEMS = [
-  { category: "chevalet", surface: "comptoir", slug: "chevalet", image: "/assets/products/tapote-template-chevalet-v1.webp", promise: "Vertical, visible et idéal à la caisse ou à l’accueil." },
-  { category: "plaque", surface: "plaque", slug: "plaque", image: "/assets/products/tapote-plaque-avis-studio-v2.webp", promise: "À plat sous la main, juste au moment de tapoter." },
-  { category: "carte", surface: "carte", slug: "carte", image: "/assets/products/tapote-template-carte-v1.webp", promise: "Présentée en main pendant un rendez-vous ou sur le terrain." },
+  { category: "chevalet", surface: "comptoir", slug: "chevalet", image: "/assets/products/tapote-template-chevalet-v1.webp", promise: "Vertical, visible et idéal à la caisse ou à l’accueil.", spec: "A6 vertical · support transparent" },
+  { category: "plaque", surface: "plaque", slug: "plaque", image: "/assets/products/tapote-plaque-avis-studio-v2.webp", promise: "Debout sur le comptoir, compacte et lisible au moment de tapoter.", spec: "12 × 12 cm · PMMA rigide" },
+  { category: "carte", surface: "carte", slug: "carte", image: "/assets/products/tapote-template-carte-v1.webp", promise: "Présentée en main pendant un rendez-vous ou sur le terrain.", spec: "85 × 54 mm · format poche" },
 ];
 
 function ShopPage({ onAdd, initialCategory = "tous" }) {
   const [personalization, setPersonalization] = useState("ready");
-  const [category, setCategory] = useState(initialCategory);
-  const visibleProducts = category === "tous" ? SHOP_ITEMS : SHOP_ITEMS.filter((item) => item.category === category);
+  const [view, setView] = useState(initialCategory === "packs" ? "packs" : "supports");
   const packIds = personalization === "ready" ? ["pack_duo_standard", "pack_cinq_standard"] : ["pack_duo", "pack_cinq"];
   const addProduct = (surface) => onAdd(makeCartItem(getProductId(surface, personalization, 1), "avis"));
-  const addPack = (productId) => onAdd(makeCartItem(productId, "avis", { supportComposition: PRODUCTS[productId].defaultComposition }));
   return (
     <main id="main-content" className="v3-shop">
       <header className="v3-shop-hero">
         <nav className="v3-breadcrumb" aria-label="Fil d’Ariane"><a href="/">Accueil</a><span>/</span><b>Boutique</b></nav>
-        <span className="v3-eyebrow">LA BOUTIQUE TAPOTE</span>
-        <h1>Trois formats.<br />Deux finitions. C’est tout.</h1>
+        <span className="v3-eyebrow">3 FORMATS · 2 FINITIONS</span>
+        <h1>Choisissez votre Tapote.</h1>
         <p>Chaque support arrive avec NFC + QR configurés, testés et reliés à une destination que vous pourrez changer gratuitement.</p>
       </header>
       <section className="v3-shop-controls" aria-label="Filtres de la boutique">
         <div className="v3-shop-categories">
-          {[{ id: "tous", label: "Tous" }, { id: "chevalet", label: "Chevalets" }, { id: "plaque", label: "Plaques" }, { id: "carte", label: "Cartes" }, { id: "packs", label: "Packs" }].map((item) => <button type="button" aria-pressed={category === item.id} className={category === item.id ? "is-selected" : ""} onClick={() => setCategory(item.id)} key={item.id}>{item.label}</button>)}
+          {[{ id: "supports", label: "Les 3 supports" }, { id: "packs", label: "Packs · dès 17,80 € / support" }].map((item) => <button type="button" aria-pressed={view === item.id} className={view === item.id ? "is-selected" : ""} onClick={() => setView(item.id)} key={item.id}>{item.label}</button>)}
         </div>
         <div className="v3-shop-range">
           <span>Votre finition</span>
@@ -727,51 +870,25 @@ function ShopPage({ onAdd, initialCategory = "tous" }) {
           <button type="button" aria-pressed={personalization === "custom"} className={personalization === "custom" ? "is-selected" : ""} onClick={() => setPersonalization("custom")}><strong>À votre image</strong><small>Dès 29 €</small></button>
         </div>
       </section>
-      {category !== "packs" && <section className="v3-shop-grid" aria-label="Supports Tapote" key={`${category}-${personalization}`}>
-        {visibleProducts.map((item) => {
+      {view === "supports" && <section className="v3-shop-grid" aria-label="Supports Tapote" key={`supports-${personalization}`}>
+        {SHOP_ITEMS.map((item) => {
           const productId = getProductId(item.surface, personalization, 1);
           const product = PRODUCTS[productId];
+          const scene = HOME_SCENES[item.surface];
+          const preview = { surface: item.surface, actionId: "avis", brandName: scene.brandName, theme: scene.theme, primaryColor: personalization === "custom" ? DEVICE_THEMES[scene.theme].paper : "", secondaryColor: personalization === "custom" ? DEVICE_THEMES[scene.theme].accent : "", textColor: personalization === "custom" ? DEVICE_THEMES[scene.theme].ink : "", designStyle: "signature", personalization };
           return <article className="v3-shop-card" data-variant={personalization} key={`${item.surface}-${personalization}`}>
-            <a className="v3-shop-card-image" href={`/produits/${item.slug}`}><img src={item.image} alt={`${product.shortName} Tapote ${personalization === "ready" ? "prêt à l’emploi" : "personnalisé"}`} loading="lazy" /><span>{product.badge}</span><small>{personalization === "ready" ? "Design Tapote" : "Logo + couleurs + BAT"}</small></a>
-            <div className="v3-shop-card-copy"><small>{personalization === "ready" ? "PRÊT À L’EMPLOI" : "À VOTRE IMAGE"}</small><h2>{product.shortName}</h2><p>{item.promise}</p><ul><li><Check /> NFC + QR configurés</li><li><Check /> Lien modifiable à vie</li><li><Check /> {personalization === "ready" ? "Design Tapote au choix" : "Logo, brief et BAT inclus"}</li></ul><div><strong>{formatMoney(product.price)} <small>{taxLabel}</small></strong>{personalization === "ready" ? <button type="button" onClick={() => addProduct(item.surface)}>Ajouter <Plus /></button> : <a className="v3-shop-configure" href={`/personnaliser?support=${item.surface}`}>Personnaliser <ArrowRight /></a>}</div><a href={`/produits/${item.slug}`}>Voir la fiche produit <ArrowRight /></a></div>
+            <a className="v3-shop-card-image" href={`/produits/${item.slug}?mode=${personalization}`}><ProductScene image={scene.image} alt={`${product.shortName} Tapote ${personalization === "ready" ? "prêt à l’emploi" : "personnalisé"} dans une scène réelle`} nativeAction={scene.nativeAction} preview={preview} compact /><span>{product.badge}</span><b className="v3-shop-card-price-chip">{formatMoney(product.price)} {taxLabel}</b><small>{personalization === "ready" ? "Design Tapote" : "Logo + couleurs + BAT"}</small></a>
+            <div className="v3-shop-card-copy"><small>{personalization === "ready" ? "PRÊT À L’EMPLOI" : "À VOTRE IMAGE"}</small><h2>{product.shortName}</h2><p>{item.promise}</p><div><strong>{formatMoney(product.price)} <small>{taxLabel}</small></strong>{personalization === "ready" ? <button type="button" onClick={() => addProduct(item.surface)}>Ajouter · Avis <Plus /></button> : <a className="v3-shop-configure" href={`/produits/${item.slug}?mode=custom`}>Personnaliser <ArrowRight /></a>}</div><ul><li><Check /> {item.spec}</li><li><Check /> NFC + QR configurés et testés</li><li><Check /> {personalization === "ready" ? "Design Tapote · lien modifiable" : "Logo, couleurs et BAT inclus"}</li></ul><a href={`/produits/${item.slug}?mode=${personalization}`}>Voir la fiche produit <ArrowRight /></a></div>
           </article>;
         })}
       </section>}
-      {(category === "tous" || category === "packs") && <section className="v3-shop-packs" key={`packs-${personalization}`}>
-        <div className="v3-section-heading"><span className="v3-eyebrow">LES PACKS</span><h2>Plus de points de contact.<br />Moins cher par support.</h2><p>Mixez plaques et chevalets. Chaque support peut conserver son propre lien.</p></div>
-        <div>{packIds.map((productId) => { const product = PRODUCTS[productId]; return <article className={product.supportCount === 2 ? "is-featured" : ""} key={productId}><span>{product.badge}</span><h3>{product.name}</h3><p>{product.description}</p><strong>{formatMoney(product.price)} <small>{taxLabel}</small></strong><em>{product.format}</em><ul>{product.features.map((feature) => <li key={feature}><Check /> {feature}</li>)}</ul><button type="button" onClick={() => addPack(productId)}>Ajouter ce pack <ArrowRight /></button></article>; })}</div>
+      {view === "packs" && <section className="v3-shop-packs" key={`packs-${personalization}`}>
+        <div className="v3-section-heading"><span className="v3-eyebrow">LES PACKS</span><h2>Plus de points de contact.<br />Moins cher par support.</h2><p>Mixez plaques et chevalets. Chaque support peut conserver son propre lien. Les cartes restent disponibles à l’unité.</p></div>
+        <div>{packIds.map((productId) => { const product = PRODUCTS[productId]; const savings = Math.max(0, product.value - product.price); return <article className={product.supportCount === 2 ? "is-featured" : ""} key={productId}><span>{product.badge}</span><h3>{product.name}</h3><strong>{formatMoney(product.price)} <small>{taxLabel}</small></strong><b className="v3-pack-economy"><span>{formatMoney(Math.round(product.price / product.supportCount))} / support</span><em>Vous économisez {formatMoney(savings)}</em></b><p>{product.description}</p><em>{product.format}</em><ul>{product.features.map((feature) => <li key={feature}><Check /> {feature}</li>)}</ul><a className="v3-shop-pack-configure" href={`/produits/chevalet?mode=${personalization}&count=${product.supportCount}&action=avis`}>Choisir la composition <ArrowRight /></a></article>; })}</div>
         <p>10 supports ou plus ? <a href="/devis">Demandez votre tarif volume</a>.</p>
       </section>}
       <section className="v3-proof-band" aria-label="Garanties Tapote"><span><ShieldCheck /> Paiement sécurisé</span><span><FileCheck2 /> BAT inclus en personnalisé</span><span><PackageCheck /> NFC + QR contrôlés</span><span><Link2 /> Modifications gratuites</span></section>
     </main>
-  );
-}
-
-function ProductFamily() {
-  const rows = [
-    { slug: "chevalet", image: "/assets/products/tapote-template-chevalet-v1.webp", price: PRODUCTS.comptoir_standard.price, copy: "Vertical et lisible à distance, au comptoir." },
-    { slug: "plaque", image: "/assets/products/tapote-plaque-avis-studio-v2.webp", price: PRODUCTS.plaque_standard.price, copy: "À plat, compacte et naturelle à tapoter." },
-    { slug: "carte", image: "/assets/products/tapote-template-carte-v1.webp", price: PRODUCTS.carte_standard.price, copy: "Présentée en main, le bon lien vous suit." },
-  ];
-  return (
-    <section className="v3-section v3-product-family">
-      <div className="v3-section-heading"><span className="v3-eyebrow">TROIS FORMATS. AUCUNE CONFUSION.</span><h2>Choisissez où le geste se passe.</h2><p>La technologie est la même. Seul le bon format change.</p></div>
-      <div className="v3-family-grid">
-        {rows.map((row) => <a href={`/produits/${row.slug}`} key={row.slug}><div><img src={row.image} alt="" loading="lazy" /></div><span>{PRODUCT_PAGES[row.slug].kicker}</span><h3>{PRODUCT_PAGES[row.slug].name}</h3><p>{row.copy}</p><strong>Dès {formatMoney(row.price)}</strong><em>Découvrir <ArrowRight size={15} /></em></a>)}
-      </div>
-    </section>
-  );
-}
-
-function DesignChoiceSection() {
-  return (
-    <section className="v3-design-section">
-      <div className="v3-design-intro"><span className="v3-eyebrow v3-eyebrow-dark">DEUX FAÇONS DE COMMENCER</span><h2>Simple maintenant.<br />Personnalisable quand vous voulez.</h2><p>Le fonctionnement ne change pas : NFC + QR, destination au choix et lien modifiable à distance sans abonnement.</p></div>
-      <div className="v3-design-cards">
-        <article className="v3-ready-card"><span>PRÊT À L’EMPLOI</span><h3>Un beau design Tapote.<br />Votre lien. C’est tout.</h3><strong>Dès 19 €</strong><ul><li><Check /> Design imprimable Tapote au choix</li><li><Check /> Destination configurée pour vous</li><li><Check /> NFC + QR contrôlés avant l’envoi</li></ul><a href="/produits/carte">Voir la gamme <ArrowRight /></a></article>
-        <article className="v3-custom-card"><span>À VOTRE IMAGE</span><h3>Votre logo, votre brief.<br />Un BAT fait pour vous.</h3><strong>Dès 29 €</strong><ul><li><Check /> Création graphique sur demande</li><li><Check /> BAT avant fabrication</li><li><Check /> Une petite correction incluse</li></ul><a href="/personnaliser">Préparer mon projet <ArrowRight /></a></article>
-      </div>
-    </section>
   );
 }
 
@@ -825,33 +942,83 @@ function FaqSection() {
   return <section className="v3-section v3-faq"><div className="v3-section-heading"><span className="v3-eyebrow">QUESTIONS FRÉQUENTES</span><h2>Tout ce qui doit être clair.</h2></div><div>{questions.map(([question, answer]) => <details key={question}><summary>{question}<Plus /></summary><p>{answer}</p></details>)}</div></section>;
 }
 
-function ProductPage({ page, onAdd }) {
+function ProductPage({ page, onAdd, forcedMode = "" }) {
   const data = PRODUCT_PAGES[page];
-  const [activeImage, setActiveImage] = useState(0);
-  const [preview, setPreview] = useState({ surface: data?.key || "comptoir", actionId: "avis", brandName: "VOTRE MARQUE", theme: "blue", designStyle: "signature", customHeadline: "", personalization: "ready" });
+  const params = new URLSearchParams(window.location.search);
+  const requestedAction = ACTIONS[params.get("action")] ? params.get("action") : "avis";
+  const requestedMode = forcedMode || (params.get("mode") === "custom" ? "custom" : "ready");
+  const requestedCount = [2, 5].includes(Number(params.get("count"))) ? Number(params.get("count")) : 1;
+  const requestedCompositionParam = params.get("composition");
+  const requestedComposition = requestedCount > 1
+    ? requestedCompositionParam === "plaques" ? { comptoir: 0, plaque: requestedCount }
+      : requestedCompositionParam === "chevalets" ? { comptoir: requestedCount, plaque: 0 }
+        : requestedCount === 5 ? { comptoir: 2, plaque: 3 } : { comptoir: 1, plaque: 1 }
+    : undefined;
+  const scene = HOME_SCENES[data?.key || "comptoir"];
+  const [preview, setPreview] = useState({
+    surface: compositionSurface(requestedCount, requestedComposition, data?.key || "comptoir"),
+    actionId: requestedAction,
+    brandName: scene.brandName,
+    theme: scene.theme,
+    designStyle: "signature",
+    customHeadline: "",
+    personalization: requestedMode,
+    count: requestedCount,
+    composition: requestedComposition,
+  });
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("action", preview.actionId);
+    url.searchParams.set("mode", preview.personalization);
+    if (preview.count > 1) {
+      url.searchParams.set("count", String(preview.count));
+      url.searchParams.set("composition", compositionParam(preview.composition));
+    } else {
+      url.searchParams.delete("count");
+      url.searchParams.delete("composition");
+    }
+    window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+  }, [preview.actionId, preview.composition, preview.count, preview.personalization]);
+  useEffect(() => {
+    if (!data) return;
+    const productLabel = preview.count > 1
+      ? `Pack ${compositionLabel(preview.composition) || `${preview.count} supports`}`
+      : data.name;
+    const title = `${productLabel} NFC + QR | Tapote`;
+    const description = `${productLabel} Tapote pour ouvrir ${ACTIONS[preview.actionId]?.name || "le lien de votre choix"}. NFC + QR configurés, lien modifiable à vie.`;
+    document.title = title;
+    setMetaContent("name", "description", description);
+    setMetaContent("property", "og:title", title);
+    setMetaContent("property", "og:description", description);
+    setMetaContent("name", "twitter:title", title);
+    setMetaContent("name", "twitter:description", description);
+  }, [data, preview.actionId, preview.composition, preview.count]);
   if (!data) return <NotFound />;
+  const presentation = productPresentation(data, preview);
+  const readyPrice = PRODUCTS[getProductId(data.key, "ready", preview.count || 1)].price;
+  const customPrice = PRODUCTS[getProductId(data.key, "custom", preview.count || 1)].price;
   const related = SHOP_ITEMS.filter((item) => item.slug !== page);
   return (
     <main id="main-content">
       <section className="v3-product-hero">
-        <div className="v3-product-gallery">
-          {activeImage === 1 ? <LiveDesignStage key={`gallery-${activeImage}`} className="v3-product-main-image" preview={preview} sceneImage={data.gallery[1]} sceneAlt={`${data.name} Tapote en situation`} /> : <div className="v3-product-main-image" key={`gallery-${activeImage}`}><img src={data.gallery[activeImage]} alt={activeImage === 0 ? data.imageAlt : `${data.name} Tapote en situation réelle`} fetchPriority={activeImage === 0 ? "high" : "auto"} /></div>}
-          <div className="v3-product-thumbs">{data.gallery.map((image, index) => { const previewImage = index === 1 ? printDesignFor(preview.surface, preview.actionId) || image : image; return <button type="button" className={activeImage === index ? "is-selected" : ""} aria-pressed={activeImage === index} onClick={() => setActiveImage(index)} key={image}><img src={previewImage} alt="" /><span>{index === 0 ? "Photo produit" : index === 1 ? "Design en direct" : "En situation"}</span></button>; })}</div>
+        <div className="v3-product-gallery v3-product-live-gallery">
+          <ProductScene key={`${preview.surface}-${preview.actionId}-${preview.personalization}-${preview.designStyle}-${preview.primaryColor}-${preview.secondaryColor}-${preview.textColor}-${preview.brandName}`} image={scene.image} alt={`${presentation.label} Tapote en situation réelle avec un téléphone affichant ${ACTIONS[preview.actionId]?.name || "le lien choisi"}`} nativeAction={scene.nativeAction} preview={preview} className="v3-product-main-image" />
+          <div className="v3-product-live-caption"><span><i /> APERÇU SYNCHRONISÉ</span><strong>Le support imprimé et l’écran changent ensemble.</strong><small>La photo reste la même pour comparer sans perdre le contexte.</small></div>
         </div>
         <div className="v3-product-buy-column">
-          <nav className="v3-breadcrumb" aria-label="Fil d’Ariane"><a href="/">Accueil</a><span>/</span><a href="/boutique">Boutique</a><span>/</span><b>{data.name}</b></nav>
-          <span className="v3-eyebrow">{data.kicker}</span><h1>{data.name}</h1><p className="v3-product-lead">{data.description}</p><div className="v3-product-price-line"><span>Prêt à l’emploi <strong>{formatMoney(PRODUCTS[getProductId(data.key, "ready", 1)].price)}</strong></span><span>À votre image <strong>{formatMoney(PRODUCTS[getProductId(data.key, "custom", 1)].price)}</strong></span><small>{taxLabel} · sans abonnement requis</small></div>
-          <BuyBox onAdd={onAdd} initialSurface={data.key} productOnly title={data.title} onPreviewChange={setPreview} />
+          <nav className="v3-breadcrumb" aria-label="Fil d’Ariane"><a href="/">Accueil</a><span>/</span><a href="/boutique">Boutique</a><span>/</span><b>{presentation.label}</b></nav>
+          <span className="v3-eyebrow">{presentation.kicker}</span><h1>{presentation.label}</h1><p className="v3-product-lead">{presentation.description}</p><div className="v3-product-price-line"><span>{preview.count > 1 ? "Pack prêt à l’emploi" : "Prêt à l’emploi"} <strong>{formatMoney(readyPrice)}</strong></span><span>{preview.count > 1 ? "Pack à votre image" : "À votre image"} <strong>{formatMoney(customPrice)}</strong></span><small>{taxLabel} · sans abonnement requis</small></div>
+          <BuyBox onAdd={onAdd} initialSurface={data.key} initialAction={requestedAction} initialCount={requestedCount} initialComposition={requestedComposition} initialPersonalization={requestedMode} initialTheme={scene.theme} initialBrandName={scene.brandName} productOnly title={presentation.title} onPreviewChange={setPreview} draftKey={`product:${data.key}`} />
         </div>
       </section>
-      <section className="v3-product-facts"><div><MapPin /><span><strong>Où le placer</strong>{data.placements}</span></div><div><Layers3 /><span><strong>Format</strong>{data.size}</span></div><div><ShieldCheck /><span><strong>Contrôle</strong>NFC + QR testés avant envoi</span></div><div><Link2 /><span><strong>Après réception</strong>Lien modifiable à distance</span></div></section>
-      <section className="v3-section v3-detail-story"><div><span className="v3-eyebrow">VOTRE TAPOTE, PAS CELUI DE TOUT LE MONDE</span><h2>Assez simple pour être utilisé.<br />Assez beau pour rester visible.</h2><p>Un support connecté ne sert que s’il attire le regard, explique le geste et respecte le lieu où il est posé. Chaque design Tapote hiérarchise votre marque, l’action et les zones NFC/QR sans surcharge.</p></div><ProductArt surface={data.key} actionId="avis" brandName="MAISON ÉCLAT" theme="sand" /></section>
+      <section className="v3-product-facts"><div><MapPin /><span><strong>Où le placer</strong>{presentation.placements}</span></div><div><Layers3 /><span><strong>Format</strong>{presentation.size}</span></div><div><ShieldCheck /><span><strong>Contrôle</strong>{preview.count > 1 ? `${preview.count} NFC + QR testés séparément` : "NFC + QR testés avant envoi"}</span></div><div><Link2 /><span><strong>Après réception</strong>{preview.count > 1 ? "Un lien modifiable par support" : "Lien modifiable à distance"}</span></div></section>
+      <section className="v3-section v3-detail-story"><div><span className="v3-eyebrow">VOTRE TAPOTE, PAS CELUI DE TOUT LE MONDE</span><h2>Assez simple pour être utilisé.<br />Assez beau pour rester visible.</h2><p>Un support connecté ne sert que s’il attire le regard, explique le geste et respecte le lieu où il est posé. Chaque design Tapote hiérarchise votre marque, l’action et les zones NFC/QR sans surcharge.</p></div><div className={`v3-detail-product-art ${preview.surface === "mix" ? "is-mix" : ""}`}>{preview.surface === "mix" ? <><ProductArt {...preview} surface="comptoir" /><ProductArt {...preview} surface="plaque" /></> : <ProductArt {...preview} surface={preview.surface} />}</div></section>
       <section className="v3-section v3-product-details">
         <div className="v3-section-heading"><span className="v3-eyebrow">EN DÉTAIL</span><h2>Tout est clair avant d’acheter.</h2><p>Le support, la configuration et le service de changement de lien forment un seul produit.</p></div>
         <div className="v3-product-detail-grid">
-          <article><SmartphoneNfc /><h3>Caractéristiques</h3><ul>{data.technical.map((detail) => <li key={detail}><Check /> {detail}</li>)}</ul></article>
-          <article><Sparkles /><h3>Ce que vous recevez</h3><p>{data.inBox}</p><ul><li><Check /> Encodage individuel</li><li><Check /> Test NFC et QR avant envoi</li><li><Check /> Accès gratuit pour modifier le lien</li></ul></article>
-          <article><MapPin /><h3>Cas d’usage</h3><ul>{data.uses.map((use) => <li key={use}><Check /> {use}</li>)}</ul></article>
+          <article><SmartphoneNfc /><h3>Caractéristiques</h3><ul>{presentation.technical.map((detail) => <li key={detail}><Check /> {detail}</li>)}</ul></article>
+          <article><Sparkles /><h3>Ce que vous recevez</h3><p>{presentation.inBox}</p><ul><li><Check /> Encodage individuel</li><li><Check /> Test NFC et QR avant envoi</li><li><Check /> Accès gratuit pour modifier le lien</li></ul></article>
+          <article><MapPin /><h3>Cas d’usage</h3><ul>{presentation.uses.map((use) => <li key={use}><Check /> {use}</li>)}</ul></article>
         </div>
       </section>
       <HowStrip />
@@ -884,10 +1051,14 @@ function SectorPage({ slug, onAdd }) {
   if (!sector) return <NotFound />;
   const surface = sectorDefaultSurface(sector);
   const recommendedCount = sector.recommendedProductId === "pack_cinq" ? 5 : sector.recommendedProductId === "pack_duo" ? 2 : 1;
-  const recommendation = recommendedCount === 1 ? "1 carte recommandée · les packs restent disponibles" : `Pack ${recommendedCount} recommandé · achat à l’unité toujours possible`;
+  const recommendation = preview.surface === "carte"
+    ? "Carte à l’unité recommandée · ajoutez-en ensuite selon votre équipe"
+    : recommendedCount === 1
+      ? "1 support recommandé · les packs restent disponibles"
+      : `Pack ${recommendedCount} recommandé · achat à l’unité toujours possible`;
   return (
     <main id="main-content">
-      <section className="v3-sector-hero"><SectorScene sector={sector} preview={preview} className="v3-sector-image" /><div className="v3-sector-buy"><nav className="v3-breadcrumb" aria-label="Fil d’Ariane"><a href="/">Accueil</a><span>/</span><a href="/secteurs">Secteurs</a><span>/</span><b>{sector.title}</b></nav><span className="v3-eyebrow">TAPOTE POUR {sector.title.toUpperCase()}</span><h1>{sector.title}.<br />Le bon geste.</h1><p>{sector.description} Changez de support ou d’utilisation : le décor reste le même, le design et l’écran s’adaptent instantanément.</p><div className="v3-sector-recommendation"><Sparkles /> {recommendation}</div><BuyBox onAdd={onAdd} compact allowAllSurfaces initialSurface={surface} initialAction={sector.actionIds[0]} initialCount={recommendedCount} initialComposition={sector.composition} initialTheme={sector.theme} targetId={sector.id} onPreviewChange={setPreview} /></div></section>
+      <section className="v3-sector-hero"><SectorScene sector={sector} preview={preview} className="v3-sector-image" /><div className="v3-sector-buy"><nav className="v3-breadcrumb" aria-label="Fil d’Ariane"><a href="/">Accueil</a><span>/</span><a href="/secteurs">Secteurs</a><span>/</span><b>{sector.title}</b></nav><span className="v3-eyebrow">TAPOTE POUR {sector.title.toUpperCase()}</span><h1>{sector.title}.<br />Le bon geste.</h1><p>{sector.description} Changez de support ou d’utilisation : le décor reste le même, le design et l’écran s’adaptent instantanément.</p><div className="v3-sector-recommendation"><Sparkles /> {recommendation}</div><BuyBox onAdd={onAdd} compact allowAllSurfaces initialSurface={surface} initialAction={sector.actionIds[0]} initialCount={recommendedCount} initialComposition={sector.composition} initialTheme={sector.theme} initialBrandName={sector.exampleBrand || "VOTRE MARQUE"} targetId={sector.id} onPreviewChange={setPreview} /></div></section>
       <HowStrip />
     </main>
   );
@@ -896,29 +1067,24 @@ function SectorPage({ slug, onAdd }) {
 function CustomizePage({ onAdd }) {
   const params = new URLSearchParams(window.location.search);
   const requestedSupport = params.get("support");
-  const requestedAction = params.get("action");
-  const requestedTarget = params.get("target");
-  const requestedQuantity = Number(params.get("quantity"));
-  const initialProduct = ["comptoir", "plaque", "carte"].includes(requestedSupport) ? requestedSupport : "comptoir";
-  const initialAction = ACTIONS[requestedAction] ? requestedAction : "avis";
-  const initialTarget = TARGETS[requestedTarget] ? requestedTarget : "cafe";
-  const initialQuantity = [1, 2, 5].includes(requestedQuantity) ? requestedQuantity : 1;
-  return (
-    <main id="main-content" className="v3-customize-page">
-      <header><span className="v3-eyebrow">À VOTRE IMAGE</span><h1>Préparez votre Tapote.</h1><p>Donnez votre logo et votre brief. Tapote prépare ensuite un BAT sur mesure à valider avant production.</p></header>
-      <div className="v3-configurator-shell"><Configurator initialProduct={initialProduct} initialAction={initialAction} initialTarget={initialTarget} initialQuantity={initialQuantity} onAdd={onAdd} /></div>
-    </main>
-  );
+  const page = requestedSupport === "plaque" ? "plaque" : requestedSupport === "carte" ? "carte" : "chevalet";
+  const action = ACTIONS[params.get("action")] ? params.get("action") : "avis";
+  useEffect(() => {
+    window.history.replaceState({}, "", `/produits/${page}?mode=custom&action=${action}`);
+  }, [action, page]);
+  return <ProductPage page={page} onAdd={onAdd} forcedMode="custom" />;
 }
 
 function HowPage() {
+  const preview = { surface: "comptoir", actionId: "avis", brandName: "CAFÉ NOMA", theme: "blue", designStyle: "signature", personalization: "ready" };
   return (
     <main id="main-content">
-      <header className="v3-how-hero"><span className="v3-eyebrow v3-eyebrow-dark">SIMPLE PAR CONCEPTION</span><h1>Le NFC ouvre.<br />Le QR rassure.<br />Tapote dirige.</h1><p>Les deux accès pointent vers une adresse Tapote sécurisée. C’est cette redirection que vous pouvez changer à distance, sans réencoder physiquement le support.</p></header>
+      <header className="v3-how-hero"><div><span className="v3-eyebrow v3-eyebrow-dark">SANS APP · SANS FRICTION</span><h1>Tapote ouvre exactement la bonne page.</h1><p>Votre client approche son téléphone ou scanne le QR. L’avis, le menu, la réservation ou votre page s’ouvre immédiatement.</p><a href="/boutique">Choisir mon Tapote <ArrowRight /></a></div><ProductScene image={HOME_SCENES.comptoir.image} alt="Un client utilise un chevalet Tapote avec son téléphone" nativeAction={HOME_SCENES.comptoir.nativeAction} preview={preview} className="v3-how-scene" /></header>
       <section className="v3-link-flow"><article><SmartphoneNfc /><span>1</span><h2>Le client tapote</h2><p>Ou scanne le QR code. Aucune application n’est nécessaire.</p></article><ArrowRight /><article><Zap /><span>2</span><h2>Tapote redirige</h2><p>Le lien court du support appelle votre destination actuelle.</p></article><ArrowRight /><article><Globe2 /><span>3</span><h2>La bonne page s’ouvre</h2><p>Avis, menu, réservation, réseau social ou toute autre URL.</p></article></section>
       <section className="v3-section v3-change-link"><div><span className="v3-eyebrow">ET SI LE LIEN CHANGE ?</span><h2>Vous ne touchez pas au support.</h2><p>Depuis votre espace, vous remplacez la destination. Le NFC et le QR continuent de fonctionner, car ils pointent toujours vers le même lien Tapote.</p><ul><li><Check /> Modifications illimitées</li><li><Check /> Gratuites, sans Pilot</li><li><Check /> Prises en compte à distance</li></ul></div><div className="v3-link-console"><span>Destination active</span><strong>tapote.fr/t/<b>cafe-noma</b></strong><em>ouvre</em><div>https://g.page/r/…/review</div><span className="v3-link-console-action">Modifier la destination</span></div></section>
       <PilotSection />
       <FaqSection />
+      <section className="v3-final-buy"><span>PRÊT À PASSER AU BON GESTE ?</span><h2>Choisissez le format.<br />On prépare le reste.</h2><a href="/boutique">Choisir mon format <ArrowRight /></a></section>
     </main>
   );
 }
@@ -926,10 +1092,13 @@ function HowPage() {
 function CartLine({ item, onQuantity, onRemove }) {
   const product = PRODUCTS[item.productId];
   const action = ACTIONS[item.actionId];
+  const cartTitle = product.kind === "pack"
+    ? `${product.supportCount} supports · ${product.personalization === "ready" ? "Prêts à l’emploi" : "À votre image"}`
+    : product.name.replace(/ · .+$/, "");
   return (
     <article className="v3-cart-line">
-      <div className="v3-cart-art"><DevicePreview productId={previewId(item.productId)} actionId={item.actionId} brandName={item.brandName || "VOTRE MARQUE"} theme={item.theme} primaryColor={item.primaryColor} secondaryColor={item.secondaryColor} designStyle={item.designStyle} customHeadline={item.customHeadline} compact /></div>
-      <div className="v3-cart-copy"><span>{product.personalization === "ready" ? "PRÊT À L’EMPLOI" : product.personalization === "matched" ? "ASSORTIE" : "À VOTRE IMAGE"}</span><h2>{product.name.replace(/ · .+$/, "")}</h2><p>{action.name}{product.kind === "pack" && item.supportComposition ? ` · ${compositionLabel(item.supportComposition)}` : ""}</p><strong>{formatMoney(product.price * item.quantity)}</strong></div>
+      <div className="v3-cart-art"><DevicePreview productId={previewId(item.productId)} actionId={item.actionId} brandName={item.brandName || "VOTRE MARQUE"} brandLogo={getCachedLogoPreview(item.brandLogoId)} theme={item.theme} primaryColor={item.primaryColor} secondaryColor={item.secondaryColor} textColor={item.textColor} designStyle={item.designStyle} compact /></div>
+      <div className="v3-cart-copy"><span>{product.personalization === "ready" ? "PRÊT À L’EMPLOI" : product.personalization === "matched" ? "ASSORTIE" : "À VOTRE IMAGE"}</span><h2>{cartTitle}</h2><p>{action.name}{product.kind === "pack" && item.supportComposition ? ` · ${compositionLabel(item.supportComposition)}` : ""}</p><strong>{formatMoney(product.price * item.quantity)}</strong></div>
       {onQuantity && <div className="v3-cart-actions"><div className="v3-cart-quantity"><button type="button" onClick={() => onQuantity(-1)} disabled={item.quantity <= 1} aria-label="Diminuer"><Minus /></button><b>{item.quantity}</b><button type="button" onClick={() => onQuantity(1)} aria-label="Augmenter"><Plus /></button></div><button className="v3-cart-remove" type="button" onClick={onRemove}><Trash2 /> Supprimer</button></div>}
     </article>
   );
@@ -939,7 +1108,8 @@ function OrderSummary({ cart, action }) {
   const subtotal = cart.reduce((sum, item) => sum + PRODUCTS[item.productId].price * item.quantity, 0);
   const shipping = calculateShipping(subtotal);
   const freeShippingRemaining = Math.max(0, SHIPPING.freeThreshold - subtotal);
-  return <aside className="v3-order-summary"><span>RÉCAPITULATIF</span><dl><div><dt>Sous-total</dt><dd>{formatMoney(subtotal)}</dd></div><div><dt>Livraison</dt><dd>{shipping ? formatMoney(shipping) : "Offerte"}</dd></div><div><dt>Total {taxLabel}</dt><dd>{formatMoney(subtotal + shipping)}</dd></div></dl>{freeShippingRemaining > 0 ? <div className="v3-shipping-progress"><span>Encore <strong>{formatMoney(freeShippingRemaining)}</strong> pour la livraison offerte</span><i><b style={{ width: `${Math.min(100, subtotal / SHIPPING.freeThreshold * 100)}%` }} /></i></div> : <div className="v3-shipping-progress is-complete"><span><Check /> Livraison offerte débloquée</span></div>}<ul><li><ShieldCheck /> Paiement sécurisé par Stripe</li><li><PackageCheck /> NFC + QR contrôlés avant l’envoi</li><li><Link2 /> Lien modifiable à vie</li></ul>{action}</aside>;
+  const hasCustom = cart.some((item) => ["custom", "matched"].includes(PRODUCTS[item.productId].personalization));
+  return <aside className="v3-order-summary"><span>RÉCAPITULATIF</span><dl><div><dt>Sous-total</dt><dd>{formatMoney(subtotal)}</dd></div><div><dt>Livraison</dt><dd>{shipping ? formatMoney(shipping) : "Offerte"}</dd></div><div><dt>Total {taxLabel}</dt><dd>{formatMoney(subtotal + shipping)}</dd></div></dl>{freeShippingRemaining > 0 ? <div className="v3-shipping-progress"><span>Encore <strong>{formatMoney(freeShippingRemaining)}</strong> pour la livraison offerte</span><i><b style={{ width: `${Math.min(100, subtotal / SHIPPING.freeThreshold * 100)}%` }} /></i></div> : <div className="v3-shipping-progress is-complete"><span><Check /> Livraison offerte débloquée</span></div>}<ul><li><ShieldCheck /> Paiement sécurisé par Stripe</li><li><PackageCheck /> NFC testé + QR de secours inclus</li>{hasCustom && <li><FileCheck2 /> BAT validé avant impression</li>}<li><Link2 /> Lien modifiable à vie</li></ul>{action}</aside>;
 }
 
 function CartPage({ cart, setCart, onAdd }) {
@@ -948,9 +1118,11 @@ function CartPage({ cart, setCart, onAdd }) {
     .filter((item) => item.quantity > 0));
   const supportTotal = physicalSupportCount(cart);
   const requiresQuote = supportTotal >= 10;
-  const hasSupport = cart.some((item) => PRODUCTS[item.productId].personalization === "custom" && ["support", "pack"].includes(PRODUCTS[item.productId].kind));
+  const customSources = cart.filter((item) => PRODUCTS[item.productId].personalization === "custom" && ["support", "pack"].includes(PRODUCTS[item.productId].kind));
+  const customSourceIdentities = new Set(customSources.map(matchingIdentityKey));
+  const hasSupport = customSources.length > 0;
   const hasMatchedCard = cart.some((item) => item.productId === "carte_assortie");
-  const matchingSource = cart.find((item) => ["support", "pack"].includes(PRODUCTS[item.productId].kind));
+  const matchingSource = customSourceIdentities.size === 1 ? customSources[0] : null;
   const addMatchedCard = () => {
     if (!matchingSource) return;
     onAdd(makeCartItem("carte_assortie", matchingSource.actionId, {
@@ -958,6 +1130,7 @@ function CartPage({ cart, setCart, onAdd }) {
       theme: matchingSource.theme,
       primaryColor: matchingSource.primaryColor,
       secondaryColor: matchingSource.secondaryColor,
+      textColor: matchingSource.textColor,
       targetId: matchingSource.targetId,
       designStyle: matchingSource.designStyle,
       customHeadline: matchingSource.customHeadline,
@@ -969,7 +1142,7 @@ function CartPage({ cart, setCart, onAdd }) {
   return (
     <main id="main-content" className="v3-purchase-page">
       <header><span className="v3-eyebrow">VOTRE COMMANDE</span><h1>Votre panier.</h1><p>Simple à vérifier. Facile à modifier.</p></header>
-      {!cart.length ? <section className="v3-empty-cart"><ShoppingBag /><h2>Votre panier est vide.</h2><p>Commencez par le support le plus utile à votre activité.</p><a href="/boutique">Voir les produits <ArrowRight /></a></section> : <div className="v3-purchase-layout"><section className="v3-cart-lines">{cart.map((item, index) => <CartLine item={item} onQuantity={(delta) => changeQuantity(index, delta)} onRemove={() => setCart((current) => current.filter((_, itemIndex) => itemIndex !== index))} key={`${itemFingerprint(item)}-${index}`} />)}{hasSupport && !hasMatchedCard && <button className="v3-cart-upsell" type="button" onClick={addMatchedCard}><Plus /><span><strong>Ajouter la carte assortie — 19 €</strong><small>Même identité graphique et même action que votre support personnalisé.</small></span></button>}{requiresQuote && <div className="v3-volume-notice"><Layers3 /><span><strong>{supportTotal} supports : un devis sera plus juste.</strong><small>À partir de 10, nous vérifions la composition, les lieux et le coût de production avant de vous proposer le meilleur tarif.</small></span></div>}</section><OrderSummary cart={cart} action={requiresQuote ? <a className="v3-primary-cta" href="/devis">Demander un devis <ArrowRight /></a> : <a className="v3-primary-cta" href="/commande">Continuer vers la commande <ArrowRight /></a>} /></div>}
+      {!cart.length ? <section className="v3-empty-cart"><ShoppingBag /><h2>Votre panier est vide.</h2><p>Commencez par le support le plus utile à votre activité.</p><a href="/boutique">Voir les produits <ArrowRight /></a></section> : <div className="v3-purchase-layout"><section className="v3-cart-lines">{cart.map((item, index) => <CartLine item={item} onQuantity={(delta) => changeQuantity(index, delta)} onRemove={() => setCart((current) => current.filter((_, itemIndex) => itemIndex !== index))} key={`${itemFingerprint(item)}-${index}`} />)}{hasSupport && !hasMatchedCard && matchingSource && <button className="v3-cart-upsell" type="button" onClick={addMatchedCard}><Plus /><span><strong>Ajouter la carte assortie — 19 €</strong><small>Même identité graphique et même action que votre support personnalisé.</small></span></button>}{hasSupport && !hasMatchedCard && !matchingSource && <div className="v3-volume-notice"><Layers3 /><span><strong>Plusieurs identités sont dans ce panier.</strong><small>Configurez séparément la carte à assortir pour choisir sans ambiguïté sa marque et son usage.</small></span></div>}{requiresQuote && <div className="v3-volume-notice"><Layers3 /><span><strong>{supportTotal} supports : un devis sera plus juste.</strong><small>À partir de 10, nous vérifions la composition, les lieux et le coût de production avant de vous proposer le meilleur tarif.</small></span></div>}</section><OrderSummary cart={cart} action={requiresQuote ? <a className="v3-primary-cta" href="/devis">Demander un devis <ArrowRight /></a> : <a className="v3-primary-cta" href="/commande">Continuer vers la commande <ArrowRight /></a>} /></div>}
     </main>
   );
 }
@@ -996,7 +1169,7 @@ function CheckoutPage({ cart }) {
   return (
     <main id="main-content" className="v3-purchase-page">
       <header><span className="v3-eyebrow">COORDONNÉES & PAIEMENT</span><h1>Finalisez votre commande.</h1><p>Stripe recueillera ensuite vos adresses de facturation et de livraison.</p>{checkoutCanceled && <p className="v3-checkout-canceled" role="status">Le paiement a été annulé. Votre panier est intact et rien n’a été débité.</p>}</header>
-      <div className="v3-purchase-layout"><form className="v3-checkout-form" onSubmit={submit}><label><span>Nom de l’entreprise *</span><input name="businessName" value={form.businessName} onChange={update} required autoComplete="organization" /></label><label><span>E-mail de commande *</span><input type="email" name="email" value={form.email} onChange={update} required autoComplete="email" /></label><label><span>Lien principal à ouvrir <small>(facultatif maintenant)</small></span><input type="url" name="destinationUrl" value={form.destinationUrl} onChange={update} placeholder="https://…" pattern="https://.*" /></label><div className="v3-checkout-help"><Clock3 /><span>Vous ne connaissez pas encore le lien ? Laissez ce champ vide : nous vous aidons à le retrouver après la commande, puis vous pourrez le modifier à vie.</span></div>{hasPack && <div className="v3-checkout-help"><Link2 /><span>Ce lien sera appliqué par défaut. Après la commande, vous pourrez attribuer gratuitement un lien différent à chaque support.</span></div>}<label className="v3-checkbox"><input type="checkbox" name="professionalCustomer" checked={form.professionalCustomer} onChange={update} required /><span>Je commande pour mon activité professionnelle.</span></label><label className="v3-checkbox"><input type="checkbox" name="termsAccepted" checked={form.termsAccepted} onChange={update} required /><span>J’accepte les <a href="/cgv" target="_blank">CGV</a> et la <a href="/confidentialite" target="_blank">politique de confidentialité</a>.</span></label><button className="v3-primary-cta" type="submit" disabled={status === "loading"}>{status === "loading" ? "Connexion à Stripe…" : <>Payer en toute sécurité <ArrowRight /></>}</button>{error && <p className="v3-form-error" role="alert">{error}</p>}</form><div><section className="v3-checkout-lines">{cart.map((item, index) => <CartLine item={item} key={`${itemFingerprint(item)}-${index}`} />)}</section><OrderSummary cart={cart} /></div></div>
+      <div className="v3-purchase-layout"><form className="v3-checkout-form" onSubmit={submit}><label><span>Nom de l’entreprise *</span><input name="businessName" value={form.businessName} onChange={update} required autoComplete="organization" /></label><label><span>E-mail de commande *</span><input type="email" name="email" value={form.email} onChange={update} required autoComplete="email" /></label><label><span>Lien principal à ouvrir <small>(facultatif maintenant)</small></span><input type="url" name="destinationUrl" value={form.destinationUrl} onChange={update} placeholder="https://…" pattern="https://.*" /></label><div className="v3-checkout-help"><Clock3 /><span>Vous ne connaissez pas encore le lien ? Laissez ce champ vide : nous vous aidons à le retrouver après la commande, puis vous pourrez le modifier à vie.</span></div>{hasPack && <div className="v3-checkout-help"><Link2 /><span>Ce lien sera appliqué par défaut. Après la commande, vous pourrez attribuer gratuitement un lien différent à chaque support.</span></div>}<label className="v3-checkbox"><input type="checkbox" name="professionalCustomer" checked={form.professionalCustomer} onChange={update} required /><span>Je commande pour mon activité professionnelle.</span></label><label className="v3-checkbox"><input type="checkbox" name="termsAccepted" checked={form.termsAccepted} onChange={update} required /><span>J’accepte les <a href="/cgv" target="_blank">CGV</a> et la <a href="/confidentialite" target="_blank">politique de confidentialité</a>.</span></label><button className="v3-primary-cta" type="submit" disabled={status === "loading"}>{status === "loading" ? "Connexion à Stripe…" : <>Payer en toute sécurité <ArrowRight /></>}</button><div className="v3-checkout-payment-note"><ShieldCheck /><span><strong>Carte bancaire via Stripe</strong><small>Tapote ne stocke jamais vos données bancaires.</small></span></div>{error && <p className="v3-form-error" role="alert">{error}</p>}</form><div><section className="v3-checkout-lines">{cart.map((item, index) => <CartLine item={item} key={`${itemFingerprint(item)}-${index}`} />)}</section><OrderSummary cart={cart} /></div></div>
     </main>
   );
 }
@@ -1056,6 +1229,7 @@ function QuotePage() {
 function ConfirmationPage({ setCart }) {
   const sessionId = new URLSearchParams(window.location.search).get("session_id") || "";
   const [status, setStatus] = useState(sessionId ? "checking" : "error");
+  const [orderReference, setOrderReference] = useState("");
   useEffect(() => {
     if (!sessionId) return undefined;
     let active = true;
@@ -1068,6 +1242,7 @@ function ConfirmationPage({ setCart }) {
         if (!active) return;
         const nextStatus = ["paid", "demo", "expired", "payment_failed", "processing"].includes(data.status) ? data.status : "error";
         setStatus(nextStatus);
+        if (data.reference) setOrderReference(`TAP-${String(data.reference).split("-")[0].toUpperCase()}`);
         if (["paid", "demo"].includes(data.status)) {
           setCart([]);
           return;
@@ -1092,16 +1267,47 @@ function ConfirmationPage({ setCart }) {
     error: ["VÉRIFICATION IMPOSSIBLE", "Nous ne pouvons pas confirmer la commande.", "Vérifiez votre e-mail ou contactez Tapote avant de recommencer un paiement."],
   }[status] || ["VÉRIFICATION", "Nous vérifions votre paiement.", "Patientez quelques instants."];
   const retryAllowed = ["expired", "payment_failed"].includes(status);
-  return <main id="main-content" className={`v3-confirmation ${success ? "is-success" : ""}`}><div>{success ? <CheckCircle2 /> : ["checking", "processing", "pending"].includes(status) ? <CreditCard /> : <X />}</div><span className="v3-eyebrow">{content[0]}</span><h1>{content[1]}</h1><p>{content[2]}</p>{retryAllowed && <a href="/commande">Reprendre la commande <ArrowRight /></a>}{!retryAllowed && <a href={status === "error" ? "/panier" : "/"}>{status === "error" ? "Voir mon panier" : "Retour à l’accueil"} <ArrowRight /></a>}</main>;
+  return <main id="main-content" className={`v3-confirmation ${success ? "is-success" : ""}`}><div>{success ? <CheckCircle2 /> : ["checking", "processing", "pending"].includes(status) ? <CreditCard /> : <X />}</div><span className="v3-eyebrow">{content[0]}</span><h1>{content[1]}</h1>{orderReference && <strong className="v3-order-reference">Référence {orderReference}</strong>}<p>{content[2]}</p>{retryAllowed && <a href="/commande">Reprendre la commande <ArrowRight /></a>}{!retryAllowed && <a href={status === "error" ? "/panier" : "/"}>{status === "error" ? "Voir mon panier" : "Retour à l’accueil"} <ArrowRight /></a>}</main>;
 }
 
 function LegalPage({ type }) {
   const content = {
-    "mentions-legales": ["Mentions légales", `Éditeur : ${LEGAL_DETAILS.company}`, `Adresse : ${LEGAL_DETAILS.address}`, `Immatriculation : ${LEGAL_DETAILS.registration}`, `Contact : ${LEGAL_DETAILS.contact}`, `Hébergeur : ${LEGAL_DETAILS.host}`],
-    cgv: ["Conditions générales de vente", "La boutique Tapote est destinée aux professionnels. Les prix, contenus de la commande, délais annoncés et conditions applicables sont récapitulés avant le paiement.", "Pour les créations personnalisées, la fabrication commence après validation du BAT. La destination du lien peut être fournie lors de la commande ou après celle-ci.", `Contact contractuel : ${LEGAL_DETAILS.contact}`],
-    confidentialite: ["Politique de confidentialité", "Tapote traite les informations nécessaires à la commande, à la fabrication, à la livraison, au support et à la gestion de vos liens.", "Les paiements sont traités par Stripe. Les données ne sont pas vendues.", `Pour exercer vos droits : ${LEGAL_DETAILS.contact}`],
+    "mentions-legales": {
+      title: "Mentions légales",
+      intro: "Informations relatives à l’éditeur et au fonctionnement du site tapote.fr.",
+      sections: [
+        ["Éditeur", `${LEGAL_DETAILS.company} · ${LEGAL_DETAILS.capital}\n${LEGAL_DETAILS.address}\n${LEGAL_DETAILS.registration} · ${LEGAL_DETAILS.vat}`],
+        ["Publication et contact", `Direction de la publication : ${LEGAL_DETAILS.director}\nContact : ${LEGAL_DETAILS.contact}`],
+        ["Hébergement", LEGAL_DETAILS.host],
+        ["Propriété intellectuelle", "La marque Tapote, les textes, interfaces, visuels de produits et éléments graphiques du site sont protégés. Toute reproduction ou exploitation non autorisée est interdite."],
+      ],
+    },
+    cgv: {
+      title: "Conditions générales de vente",
+      intro: `Version ${LEGAL_DETAILS.version} · Boutique réservée aux clients professionnels.`,
+      sections: [
+        ["1. Offre et commande", "Les caractéristiques essentielles, la finition, la quantité, la personnalisation et le prix sont affichés avant paiement. La commande devient ferme après confirmation du paiement. Tapote Pilot n’est pas inclus et aucun abonnement n’est présélectionné."],
+        ["2. Prix, réductions et paiement", `Les montants unitaires et les réductions de packs sont affichés en euros ${taxLabel} avant validation. Le paiement est comptant, par carte via Stripe ; aucun escompte pour paiement anticipé n’est appliqué. Les coordonnées bancaires ne sont jamais stockées par Tapote. En cas de somme exceptionnellement exigible et impayée à son échéance, les pénalités courent dès le lendemain, sans rappel, au taux de refinancement de la BCE majoré de 10 points et au minimum à trois fois le taux d’intérêt légal. Une indemnité forfaitaire de 40 € pour frais de recouvrement est due, sans préjudice des frais supplémentaires justifiés.`],
+        ["3. Personnalisation et BAT", "Pour la gamme À votre image, le logo, les couleurs, le brief et la destination sont repris dans un BAT numérique. La fabrication commence après validation. Le client reste responsable de la vérification des textes, liens, logos et droits d’utilisation des éléments transmis."],
+        ["4. Préparation et livraison", `La livraison standard en France métropolitaine coûte ${formatMoney(SHIPPING.standardPrice)} et est offerte dès ${formatMoney(SHIPPING.freeThreshold)}. Le délai applicable est confirmé lors de la prise en charge ; pour un support personnalisé, il commence après validation du BAT.`],
+        ["5. Conformité et réclamations", `Chaque NFC et chaque QR code sont contrôlés avant expédition. Une non-conformité ou une avarie doit être signalée avec les éléments utiles afin d’organiser la prise en charge. Contact et retours : ${LEGAL_DETAILS.returnsAddress}`],
+        ["6. Annulation et responsabilité", "Une demande d’annulation peut être étudiée avant validation du BAT ou lancement de la préparation. Tapote ne répond pas de la disponibilité ni du contenu des destinations externes choisies par le client. Les responsabilités qui ne peuvent légalement être exclues restent applicables."],
+        ["7. Droit applicable", `Les présentes conditions sont soumises au droit français. Les parties rechercheront d’abord une solution amiable. Contact contractuel : ${LEGAL_DETAILS.contact}.`],
+      ],
+    },
+    confidentialite: {
+      title: "Politique de confidentialité",
+      intro: "Tapote limite les données collectées à ce qui est utile pour répondre, fabriquer, livrer et sécuriser le service.",
+      sections: [
+        ["Données et finalités", "Coordonnées professionnelles, commande, fichiers de personnalisation, destinations et données techniques sont utilisés pour exécuter la commande, assurer le support, prévenir les abus et respecter les obligations comptables."],
+        ["Bases légales", "Les traitements reposent selon le cas sur l’exécution du contrat, une obligation légale ou l’intérêt légitime de sécuriser et améliorer le service. Les données ne sont pas vendues."],
+        ["Prestataires", "Stripe traite le paiement ; Supabase héberge les données et fichiers nécessaires ; Resend peut acheminer les e-mails transactionnels ; l’hébergeur technique sert le site. Seules les données nécessaires leur sont transmises."],
+        ["Durées", `Les pièces et données de facturation sont archivées pendant 10 ans lorsqu’une obligation comptable l’impose. Pour les autres données, Tapote applique la politique suivante : ${LEGAL_DETAILS.dataRetention}`],
+        ["Vos droits", `Vous pouvez demander l’accès, la rectification, l’effacement ou la limitation lorsque ces droits s’appliquent, ainsi que vous opposer à certains traitements. Contact : ${LEGAL_DETAILS.privacyContact}. Vous pouvez également saisir la CNIL.`],
+      ],
+    },
   }[type];
-  return <main id="main-content" className="v3-legal"><span className="v3-eyebrow">INFORMATIONS</span><h1>{content[0]}</h1>{content.slice(1).map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</main>;
+  return <main id="main-content" className="v3-legal"><nav className="v3-breadcrumb" aria-label="Fil d’Ariane"><a href="/">Accueil</a><span>/</span><b>{content.title}</b></nav><span className="v3-eyebrow">INFORMATIONS CONTRACTUELLES</span><h1>{content.title}</h1><p className="v3-legal-intro">{content.intro}</p><div className="v3-legal-sections">{content.sections.map(([title, body]) => <section key={title}><h2>{title}</h2>{body.split("\n").map((line) => <p key={line}>{line}</p>)}</section>)}</div><p className="v3-legal-updated">Document contractuel : {LEGAL_DETAILS.version}</p></main>;
 }
 
 function NotFound() {
@@ -1116,13 +1322,17 @@ export default function StorefrontV3() {
   useEffect(() => { window.scrollTo(0, 0); }, [path]);
   useEffect(() => {
     const [title, description] = pageMetadata(path);
-    const privateRoute = path.startsWith("/panier") || path.startsWith("/commande");
+    const canonicalUrl = `https://tapote.fr${path === "/" ? "" : path}`;
+    const privateRoute = path.startsWith("/panier") || path.startsWith("/commande") || !isKnownStorefrontPath(path);
     document.title = title;
-    document.querySelector('meta[name="description"]')?.setAttribute("content", description);
-    document.querySelector('meta[name="robots"]')?.setAttribute("content", privateRoute ? "noindex,nofollow" : "index,follow,max-image-preview:large");
-    document.querySelector('meta[property="og:title"]')?.setAttribute("content", title);
-    document.querySelector('meta[property="og:description"]')?.setAttribute("content", description);
-    document.querySelector('link[rel="canonical"]')?.setAttribute("href", `https://tapote.fr${path === "/" ? "" : path}`);
+    setMetaContent("name", "description", description);
+    setMetaContent("name", "robots", privateRoute ? "noindex,nofollow" : "index,follow,max-image-preview:large");
+    setMetaContent("property", "og:title", title);
+    setMetaContent("property", "og:description", description);
+    setMetaContent("property", "og:url", canonicalUrl);
+    setMetaContent("name", "twitter:title", title);
+    setMetaContent("name", "twitter:description", description);
+    setCanonicalUrl(canonicalUrl);
   }, [path]);
   const cartCount = useMemo(() => cart.reduce((sum, item) => sum + item.quantity, 0), [cart]);
   const addToCart = (item) => {
@@ -1133,19 +1343,23 @@ export default function StorefrontV3() {
       if (index < 0) return [...current, normalized];
       return current.map((entry, itemIndex) => itemIndex === index ? { ...entry, quantity: Math.min(MAX_ITEM_QUANTITY, entry.quantity + normalized.quantity) } : entry);
     });
-    setCartNotice(PRODUCTS[normalized.productId].name);
+    const product = PRODUCTS[normalized.productId];
+    const notice = product.kind === "pack"
+      ? `${product.supportCount} supports · ${product.personalization === "custom" ? "À votre image" : "Prêts à l’emploi"} · ${ACTIONS[normalized.actionId].name}${normalized.supportComposition ? ` · ${compositionLabel(normalized.supportComposition)}` : ""}`
+      : `${product.name.replace(/ · .+$/, "")} · ${ACTIONS[normalized.actionId].name}`;
+    setCartNotice(notice);
   };
   let page;
   if (path === "/") page = <HomePage onAdd={addToCart} />;
   else if (path === "/boutique") page = <ShopPage onAdd={addToCart} />;
-  else if (path === "/categorie/chevalets-nfc") page = <ShopPage onAdd={addToCart} initialCategory="chevalet" />;
-  else if (path === "/categorie/plaques-nfc") page = <ShopPage onAdd={addToCart} initialCategory="plaque" />;
-  else if (path === "/categorie/cartes-nfc") page = <ShopPage onAdd={addToCart} initialCategory="carte" />;
-  else if (path === "/categorie/packs-nfc") page = <ShopPage onAdd={addToCart} initialCategory="packs" />;
-  else if (path.startsWith("/produits/")) page = <ProductPage page={path.split("/")[2]} onAdd={addToCart} />;
+  else if (path === "/categorie/chevalets-nfc") page = <ProductPage page="chevalet" onAdd={addToCart} />;
+  else if (path === "/categorie/plaques-nfc") page = <ProductPage page="plaque" onAdd={addToCart} />;
+  else if (path === "/categorie/cartes-nfc") page = <ProductPage page="carte" onAdd={addToCart} />;
+  else if (["/categorie/packs-nfc", "/categorie/packs"].includes(path)) page = <ShopPage onAdd={addToCart} initialCategory="packs" />;
+  else if (path.startsWith("/produits/") && PRODUCT_PAGES[path.split("/")[2]]) page = <ProductPage page={path.split("/")[2]} onAdd={addToCart} />;
   else if (path === "/designs") page = <DesignsPage />;
   else if (path === "/secteurs") page = <SectorsPage />;
-  else if (path.startsWith("/secteurs/")) page = <SectorPage slug={path.split("/")[2]} onAdd={addToCart} />;
+  else if (path.startsWith("/secteurs/") && findSectorBySlug(path.split("/")[2])) page = <SectorPage slug={path.split("/")[2]} onAdd={addToCart} />;
   else if (path === "/personnaliser") page = <CustomizePage onAdd={addToCart} />;
   else if (path === "/comment-ca-marche") page = <HowPage />;
   else if (path === "/panier") page = <CartPage cart={cart} setCart={setCart} onAdd={addToCart} />;

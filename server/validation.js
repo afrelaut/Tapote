@@ -28,6 +28,7 @@ const cartItemSchema = z.object({
   theme: z.enum(themes).optional().default("blue"),
   primaryColor: optionalHexColor,
   secondaryColor: optionalHexColor,
+  textColor: optionalHexColor,
   targetId: z.enum(targetIds).optional().default("cafe"),
   designStyle: z.enum(designStyleIds).optional().default("signature"),
   customHeadline: optionalText(64),

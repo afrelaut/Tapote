@@ -30,14 +30,14 @@ export function readableInk(background) {
   return relativeLuminance(background) > 0.42 ? "#111111" : "#ffffff";
 }
 
-export function resolveDeviceColors(theme = "blue", primaryColor = "", secondaryColor = "") {
+export function resolveDeviceColors(theme = "blue", primaryColor = "", secondaryColor = "", textColor = "") {
   const base = DEVICE_THEMES[theme] || DEVICE_THEMES.blue;
   const paper = normalizeHexColor(primaryColor, base.paper);
   const accent = normalizeHexColor(secondaryColor, base.accent);
   return {
     paper,
     accent,
-    ink: primaryColor ? readableInk(paper) : base.ink,
+    ink: normalizeHexColor(textColor, primaryColor ? readableInk(paper) : base.ink),
     accentInk: secondaryColor ? readableInk(accent) : base.accentInk,
   };
 }
