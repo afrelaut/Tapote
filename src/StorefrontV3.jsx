@@ -906,6 +906,7 @@ function HomePage({ onAdd }) {
         <ProductScene key={`demo-${demoAction}`} image="/assets/products/tapote-bg-cafe-v1.webp" alt={`Démonstration réaliste du chevalet ouvrant ${ACTIONS[demoAction].name}`} nativeAction="avis" preview={{ surface: "comptoir", actionId: demoAction, brandName: "CAFÉ NOMA", theme: "blue", designStyle: "signature", personalization: "ready" }} className="v3-demo-player" />
       </section>
 
+      <WhyTapote />
       <DesignLibraryPreview />
       <HowStrip />
       <SectorPreview />
@@ -1021,7 +1022,19 @@ function ShopPage({ onAdd, initialCategory = "tous" }) {
         <div>{packIds.map((productId) => { const product = PRODUCTS[productId]; const savings = Math.max(0, product.value - product.price); return <article className={product.supportCount === 2 ? "is-featured" : ""} key={productId}><span>{product.badge}</span><h3>{product.name}</h3><strong>{formatMoney(product.price)} <small>{taxLabel}</small></strong><b className="v3-pack-economy"><span>{formatMoney(Math.round(product.price / product.supportCount))} / support</span><em>Vous économisez {formatMoney(savings)}</em></b><p>{product.description}</p><em>{product.format}</em><ul>{product.features.map((feature) => <li key={feature}><Check /> {feature}</li>)}</ul><a className="v3-shop-pack-configure" href={`/produits/chevalet?mode=${personalization}&count=${product.supportCount}&action=avis`}>Choisir la composition <ArrowRight /></a></article>; })}</div>
         <p>10 supports ou plus ? <a href="/devis">Demandez votre tarif volume</a>.</p>
       </section>}
+      <section className="v3-shop-volume" aria-label="Devis volume et multi-sites">
+        <div>
+          <span className="v3-eyebrow">VOLUME & MULTI-SITES</span>
+          <h2>Plusieurs points de vente ?<br />Toute une équipe à équiper ?</h2>
+          <p>À partir de 10 supports, on établit un tarif dégressif et on garde une identité cohérente sur tous vos lieux. Réponse sous 24 à 48 h ouvrées.</p>
+        </div>
+        <div className="v3-shop-volume-side">
+          <ul><li><Check /> Tarif dégressif dès 10 supports</li><li><Check /> Un interlocuteur dédié</li><li><Check /> BAT et facturation groupés</li></ul>
+          <a href="/devis">Demander un devis volume <ArrowRight /></a>
+        </div>
+      </section>
       <section className="v3-proof-band" aria-label="Garanties Tapote"><span><ShieldCheck /> Paiement sécurisé</span><span><FileCheck2 /> BAT inclus en personnalisé</span><span><PackageCheck /> NFC + QR contrôlés</span><span><Link2 /> Modifications gratuites</span></section>
+      <WhyTapote />
     </main>
   );
 }
@@ -1094,6 +1107,34 @@ function HowStrip() {
         <article><b>02</b><Upload /><h3>Donnez le lien</h3><p>Maintenant, après la commande ou plus tard.</p></article>
         <article><b>03</b><FileCheck2 /><h3>Validez le BAT</h3><p>Pour la gamme personnalisée, rien ne part sans votre accord.</p></article>
         <article><b>04</b><PackageCheck /><h3>Posez et tapotez</h3><p>NFC et QR sont encodés, testés et prêts.</p></article>
+      </div>
+    </section>
+  );
+}
+
+const WHY_TAPOTE = [
+  { icon: MapPin, title: "Fabriqué et encodé en France", copy: "Chaque support est monté, encodé et contrôlé chez nous avant l’envoi — pas de sous-traitance opaque." },
+  { icon: FileCheck2, title: "BAT inclus, rien ne part sans vous", copy: "En version personnalisée, vous validez le visuel exact avant qu’il parte en production." },
+  { icon: Link2, title: "Le lien reste modifiable à vie", copy: "Changez la destination quand vous voulez, sans réimprimer et sans abonnement obligatoire." },
+  { icon: SmartphoneNfc, title: "NFC + QR testés un par un", copy: "Les deux accès sont vérifiés sur téléphone, support par support, avant la livraison." },
+];
+
+function WhyTapote() {
+  return (
+    <section className="v3-section v3-why">
+      <div className="v3-why-head">
+        <span className="v3-eyebrow"><ShieldCheck size={14} /> POURQUOI TAPOTE</span>
+        <h2>Le soin d’un produit fini.<br />La liberté d’un lien vivant.</h2>
+        <p>Tapote démarre en série pilote : les premiers supports sont en test terrain, accompagnés directement par l’équipe. Ce qu’on garantit, on le contrôle nous-mêmes.</p>
+      </div>
+      <div className="v3-why-grid">
+        {WHY_TAPOTE.map(({ icon: Icon, title, copy }) => (
+          <article key={title}>
+            <i aria-hidden="true"><Icon /></i>
+            <h3>{title}</h3>
+            <p>{copy}</p>
+          </article>
+        ))}
       </div>
     </section>
   );
