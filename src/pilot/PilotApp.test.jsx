@@ -25,6 +25,7 @@ describe("Tapote Pilot", () => {
 
     expect(await screen.findByRole("heading", { name: "Vue d’ensemble" })).toBeInTheDocument();
     expect(screen.getByText(/Mode démonstration/)).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Gestion/i })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Produits" }));
     expect(screen.getByRole("heading", { name: "Produits" })).toBeInTheDocument();

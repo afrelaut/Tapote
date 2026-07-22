@@ -27,6 +27,10 @@ function formatRelativeTime(value) {
 }
 
 function mapOrder(row) {
+  const derivedPilotStatus = row.pilot_status
+    || (row.status === "ready" ? "ready_for_activation"
+      : row.status === "shipped" ? "shipped"
+        : ["paid", "bat", "supply", "assembly", "quality"].includes(row.status) ? "in_production" : null);
   return {
     recordId: row.id,
     id: row.order_number,
@@ -47,7 +51,7 @@ function mapOrder(row) {
     tracking: row.tracking_number || "",
     note: row.note || "Aucune note atelier.",
     sourceOrderId: row.source_order_id || null,
-    pilotStatus: row.pilot_status || null,
+    pilotStatus: derivedPilotStatus,
     pilotOrganizationId: row.pilot_organization_id || null,
     pilotActivatedAt: row.pilot_activated_at || null,
   };
@@ -280,6 +284,42 @@ export async function advanceManagementEncodedProduct(organizationId, product, n
   });
   throwIfError(error);
   return data;
+}
+
+export async function assignManagementEncodedProduct(organizationId, productId, clientId, orderId) {
+  const { data, error } = await assertClient().rpc("assign_management_encoded_product", {
+    target_organization_id: organizationId,
+    target_product_unit_id: productId,
+    target_client_id: clientId,
+    target_order_id: orderId,
+  });
+  throwIfError(error);
+  return data;
+}
+
+export async function activateManagementOrderPilot(managementOrderId, form) {
+  const session = await getManagementSession();
+  if (!session?.access_token) throw new Error("Session Gestion expirée.");
+  const response = await fetch(`/api/management/orders/${encodeURIComponent(managementOrderId)}/activate-pilot`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    credentials: "same-origin",
+    body: JSON.stringify({
+      locationName: form.locationName.trim(),
+      targetUrl: form.targetUrl.trim(),
+    }),
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error(body.error || "L’espace Pilot n’a pas pu être activé.");
+    error.status = response.status;
+    throw error;
+  }
+  return body;
 }
 
 async function recordActivity(organizationId, kind, description, metadata = {}) {

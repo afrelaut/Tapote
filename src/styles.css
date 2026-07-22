@@ -243,7 +243,9 @@ a { color: inherit; }
 .customer-brand > span { width: 25px; height: 25px; display: grid; place-items: center; border: 1px solid currentColor; border-radius: 50%; font-family: var(--font-display); font-size: 10px; }
 .customer-brand b { font-size: 8px; font-weight: 850; letter-spacing: .16em; }
 .customer-brand > .generated-brand-mark { position: relative; width: 40px; height: 36px; display: grid; place-items: center; overflow: visible; border: 0; border-radius: 0; }
-.generated-brand-mark > svg { width: 34px; height: 34px; stroke-width: 1.7; }
+.generated-brand-mark > svg { width: 34px; height: 34px; overflow: visible; fill: none; stroke: currentColor; stroke-width: 1.35; stroke-linecap: round; stroke-linejoin: round; }
+.generated-brand-mark > svg > :not(text) { opacity: .42; }
+.generated-brand-mark > svg text { fill: currentColor; stroke: none; font-family: var(--font-display); font-size: 14px; font-weight: 900; letter-spacing: -.08em; }
 .generated-brand-mark > b { position: relative; z-index: 2; grid-column: 1 / -1; grid-row: 1 / -1; align-self: center; font-family: var(--font-display); font-size: 12px !important; letter-spacing: 0 !important; }
 .generated-brand-mark > i { width: 13px; height: 13px; display: block; border: 1.5px solid currentColor; border-radius: 50% 50% 46% 54%; }
 .generated-brand-mark.is-variant-0 > i { grid-column: 1 / -1; grid-row: 1 / -1; width: 26px; height: 26px; border-radius: 46% 54% 50% 50%; transform: rotate(12deg); }

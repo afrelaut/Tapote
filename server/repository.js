@@ -96,6 +96,14 @@ class DevelopmentRepository {
     return null;
   }
 
+  async getManagementOrderPilotContext() {
+    return null;
+  }
+
+  async getStorefrontCatalog() {
+    return null;
+  }
+
   async resolveTapoteLink(shortCode) {
     return this.pilotLinks.get(shortCode) || null;
   }
@@ -355,10 +363,15 @@ class PostgresRepository {
          storefront.customer_business_name,
          storefront.destination_url
        from management_orders management
+       join platform_settings settings
+         on settings.management_organization_id = management.organization_id
        join organization_members membership
          on membership.organization_id = management.organization_id
         and membership.user_id = $2
         and membership.role in ('owner', 'admin', 'manager')
+       join management_profiles profile
+         on profile.organization_id = management.organization_id
+        and profile.user_id = membership.user_id
        left join orders storefront on storefront.id = management.source_order_id
        where management.id = $1`,
       [managementOrderId, managementUserId],
@@ -420,6 +433,87 @@ class PostgresRepository {
         } : null,
       })),
     };
+  }
+
+  async getManagementOrderPilotContext(managementOrderId, managementUserId) {
+    const result = await this.pool.query(
+      `select
+         management.id,
+         management.order_number,
+         management.status,
+         management.pilot_status,
+         management.pilot_organization_id,
+         management.pilot_activated_at,
+         clients.id as client_id,
+         clients.name as client_name,
+         clients.email as client_email,
+         count(units.id) filter (where units.status = 'assigned')::integer as assigned_products,
+         count(units.id)::integer as total_products
+       from management_orders management
+       join platform_settings settings
+         on settings.management_organization_id = management.organization_id
+       join organization_members membership
+         on membership.organization_id = management.organization_id
+        and membership.user_id = $2
+        and membership.role in ('owner', 'admin', 'manager')
+       join management_profiles profile
+         on profile.organization_id = management.organization_id
+        and profile.user_id = membership.user_id
+       join management_clients clients
+         on clients.organization_id = management.organization_id
+        and clients.id = management.client_id
+       left join management_product_units units
+         on units.organization_id = management.organization_id
+        and units.order_id = management.id
+        and units.client_id = management.client_id
+       where management.id = $1
+       group by management.id, clients.id`,
+      [managementOrderId, managementUserId],
+    );
+    if (!result.rowCount) return null;
+    const row = result.rows[0];
+    return {
+      id: row.id,
+      orderNumber: row.order_number,
+      status: row.status,
+      pilotStatus: row.pilot_status || null,
+      pilotOrganizationId: row.pilot_organization_id || null,
+      pilotActivatedAt: row.pilot_activated_at || null,
+      clientId: row.client_id,
+      clientName: row.client_name,
+      clientEmail: row.client_email,
+      assignedProducts: row.assigned_products || 0,
+      totalProducts: row.total_products || 0,
+    };
+  }
+
+  async getStorefrontCatalog() {
+    const result = await this.pool.query(
+      `select products.external_product_id,
+         products.name,
+         products.price_cents,
+         products.online,
+         case when inventory.id is null then null
+           else greatest(inventory.stock_quantity - inventory.reserved_quantity, 0)
+         end as available_stock
+       from platform_settings settings
+       join management_storefront_products products
+         on products.organization_id = settings.management_organization_id
+       left join management_inventory_items inventory
+         on inventory.organization_id = products.organization_id
+        and inventory.id = products.inventory_item_id
+        and inventory.archived_at is null
+       where settings.id = true
+         and products.external_product_id is not null
+       order by products.name`,
+    );
+    return result.rows.map((row) => ({
+      productId: row.external_product_id,
+      name: row.name,
+      price: row.price_cents,
+      online: row.online,
+      availableStock: row.available_stock === null ? null : Number(row.available_stock),
+    }));
   }
 
   async resolveTapoteLink(shortCode) {

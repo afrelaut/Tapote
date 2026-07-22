@@ -59,7 +59,9 @@ function renderWorkshopItem(item, index, currency) {
       <tr><td style="padding:4px 12px 4px 0;color:#6c6860">Marque</td><td style="padding:4px 0">${displayValue(customization.brandName)}</td></tr>
       <tr><td style="padding:4px 12px 4px 0;color:#6c6860">Couleurs</td><td style="padding:4px 0">${escapeHtml(colors)}</td></tr>
       <tr><td style="padding:4px 12px 4px 0;color:#6c6860">Style / secteur</td><td style="padding:4px 0">${displayValue(customization.designStyle)} · ${displayValue(customization.targetId)}</td></tr>
-      <tr><td style="padding:4px 12px 4px 0;color:#6c6860">Brief / message</td><td style="padding:4px 0">${displayValue(customization.customHeadline)}</td></tr>
+      <tr><td style="padding:4px 12px 4px 0;color:#6c6860">Message principal</td><td style="padding:4px 0">${displayValue(customization.customHeadline)}</td></tr>
+      <tr><td style="padding:4px 12px 4px 0;color:#6c6860">Phrase secondaire</td><td style="padding:4px 0">${displayValue(customization.customSubline)}</td></tr>
+      <tr><td style="padding:4px 12px 4px 0;color:#6c6860">Appel à l’action</td><td style="padding:4px 0">${displayValue(customization.customTapLabel)}</td></tr>
       <tr><td style="padding:4px 12px 4px 0;color:#6c6860">Logo</td><td style="padding:4px 0">${customization.brandLogoId ? `ID ${escapeHtml(customization.brandLogoId)}${customization.logoFileName ? ` · ${escapeHtml(customization.logoFileName)}` : ""}` : "Aucun logo importé"}</td></tr>
       <tr><td style="padding:4px 12px 4px 0;color:#6c6860">Destination</td><td style="padding:4px 0;word-break:break-all">${destination ? escapeHtml(destination) : "Non renseignée"}</td></tr>
     </table>
@@ -120,7 +122,7 @@ function renderWorkshopNotification(payload) {
         <tr><td style="padding:5px 12px 5px 0;color:#6c6860">Destination générale</td><td style="padding:5px 0;word-break:break-all">${fallbackDestination ? escapeHtml(fallbackDestination) : "Non renseignée"}</td></tr>
       </table>
       ${detailedItems || '<p style="padding:16px;background:#fff4df;border-radius:12px">Le détail des lignes n’a pas été retrouvé. Vérifier la commande dans Supabase et Stripe.</p>'}
-      <p style="margin:24px 0 0;padding:16px;background:#eef2ff;border-radius:12px;line-height:1.55"><strong>Contrôle atelier :</strong> vérifier chaque destination, récupérer le logo par son ID si présent, préparer le BAT pour les supports personnalisés, puis tester NFC et QR avant expédition.</p>
+      <p style="margin:24px 0 0;padding:16px;background:#eef2ff;border-radius:12px;line-height:1.55"><strong>Contrôle atelier :</strong> reprendre le fichier enregistré par le studio, vérifier chaque destination et le logo, puis tester NFC et QR avant expédition. Ne pas modifier la création du client.</p>
     `, `${statusContent[1]} · ${reference(payload)}`),
   };
 }
@@ -132,9 +134,9 @@ function renderCustomerConfirmation(payload, config) {
   const readyLeadTime = config.readyOrderLeadTime || "le délai exact vous sera confirmé dès la prise en charge par notre atelier.";
   const steps = personalized
     ? [
-      ["Brief reçu", "Votre logo, vos couleurs et votre destination sont transmis à notre atelier."],
-      ["BAT à valider", "Nous vous envoyons la maquette numérique avant toute mise en production."],
-      ["Production et contrôle", "Après votre validation, chaque NFC et QR code est configuré et testé avant expédition."],
+      ["Création enregistrée", "Le visuel configuré dans le studio est transmis tel quel à notre atelier."],
+      ["Contrôle technique", "Nous vérifions la lisibilité, la destination, le NFC et le QR sans modifier votre création."],
+      ["Production et expédition", "Votre support est imprimé, contrôlé puis préparé pour l’envoi."],
     ]
     : [
       ["Commande confirmée", "Votre design Tapote et votre destination sont transmis à l’atelier."],
@@ -158,7 +160,7 @@ function renderCustomerConfirmation(payload, config) {
       </table>
       <h2 style="margin:30px 0 16px;font-size:22px">Et maintenant ?</h2>
       ${steps.map(([title, description], index) => `<div style="display:flex;gap:14px;margin:0 0 16px"><div style="flex:0 0 30px;height:30px;border-radius:50%;background:#2458ff;color:#fff;text-align:center;line-height:30px;font-weight:800">${index + 1}</div><div><strong>${escapeHtml(title)}</strong><p style="margin:4px 0 0;color:#6c6860;line-height:1.5">${escapeHtml(description)}</p></div></div>`).join("")}
-      <p style="margin:26px 0 0;padding:17px;background:#f4f2ee;border-radius:12px;line-height:1.6"><strong>Délai :</strong> ${personalized ? "le délai de production et de livraison vous sera confirmé avec le BAT. Il démarre après votre validation." : escapeHtml(readyLeadTime)}<br><strong>Une question ?</strong> Répondez à cet e-mail${supportEmail ? ` ou écrivez à <a style="color:#2458ff" href="mailto:${escapeHtml(supportEmail)}">${escapeHtml(supportEmail)}</a>` : ""}.</p>
+      <p style="margin:26px 0 0;padding:17px;background:#f4f2ee;border-radius:12px;line-height:1.6"><strong>Délai :</strong> ${personalized ? "la préparation commence après votre paiement ; le délai exact vous sera confirmé par notre atelier." : escapeHtml(readyLeadTime)}<br><strong>Une question ?</strong> Répondez à cet e-mail${supportEmail ? ` ou écrivez à <a style="color:#2458ff" href="mailto:${escapeHtml(supportEmail)}">${escapeHtml(supportEmail)}</a>` : ""}.</p>
     `, `Commande ${reference(payload)} confirmée`),
   };
 }

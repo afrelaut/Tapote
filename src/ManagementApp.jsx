@@ -46,7 +46,9 @@ import {
 import { ACTIONS, PRODUCTS } from "../shared/catalog.js";
 import ManagementAuth, { ManagementPasswordSetup } from "./management/ManagementAuth.jsx";
 import {
+  activateManagementOrderPilot,
   advanceManagementEncodedProduct,
+  assignManagementEncodedProduct,
   createManagementEncodedProduct,
   createManagementClient,
   createManagementInventoryItem,
@@ -65,7 +67,7 @@ import {
 import { isManagementConfigured } from "./management/supabase.js";
 import "./management.css";
 
-const statusFlow = ["paid", "bat", "supply", "assembly", "quality", "ready", "shipped"];
+const statusFlow = ["payment_pending", "paid", "bat", "supply", "assembly", "quality", "ready", "shipped"];
 const tapoteShortCodePattern = /^[a-f0-9]{10}$/i;
 const tapoteRedirectBaseUrl = String(import.meta.env.VITE_REDIRECT_BASE_URL || "https://t.tapote.fr").trim().replace(/\/$/, "");
 
@@ -86,8 +88,9 @@ function hasSameManagementIdentity(currentSession, nextSession) {
 }
 
 const statusMeta = {
+  payment_pending: { label: "Paiement à confirmer", tone: "orange", action: "Confirmer le paiement" },
   paid: { label: "Payée", tone: "blue", action: "Préparer le BAT" },
-  bat: { label: "BAT à valider", tone: "amber", action: "BAT validé" },
+  bat: { label: "Fichier à contrôler", tone: "amber", action: "Contrôle terminé" },
   supply: { label: "Matériel réservé", tone: "purple", action: "Lancer l’assemblage" },
   assembly: { label: "Assemblage", tone: "orange", action: "Passer au contrôle" },
   quality: { label: "Contrôle qualité", tone: "teal", action: "Commande prête" },
@@ -170,6 +173,12 @@ const initialData = {
 };
 
 const navGroups = [
+  {
+    label: "Espaces clients",
+    links: [
+      { id: "pilot", label: "Accéder à Pilot", icon: Radio, href: "/pilot" },
+    ],
+  },
   {
     label: "Pilotage",
     links: [
@@ -297,6 +306,15 @@ function Sidebar({ currentView, onNavigate, open, onClose, openSettings, counts,
               <span>{group.label}</span>
               {group.links.map((link) => {
                 const Icon = link.icon;
+                if (link.href) {
+                  return (
+                    <a key={link.id} href={link.href} onClick={onClose}>
+                      <Icon size={18} strokeWidth={1.8} />
+                      <b>{link.label}</b>
+                      <ExternalLink size={14} />
+                    </a>
+                  );
+                }
                 return (
                   <button key={link.id} className={cx(currentView === link.id && "is-active")} onClick={() => { onNavigate(link.id); onClose(); }}>
                     <Icon size={18} strokeWidth={1.8} />
@@ -496,7 +514,7 @@ function OrdersView({ data, clientMap, search, openOrder, exportOrders }) {
       <section className="pilot-list-surface">
         <div className="pilot-list-toolbar">
           <div className="pilot-tabs">
-            {[['active', 'Actives'], ['all', 'Toutes'], ['bat', 'BAT'], ['assembly', 'Assemblage'], ['ready', 'À expédier'], ['shipped', 'Expédiées']].map(([id, label]) => <button key={id} className={filter === id ? "is-active" : ""} onClick={() => setFilter(id)}>{label}</button>)}
+            {[['active', 'Actives'], ['payment_pending', 'À encaisser'], ['all', 'Toutes'], ['bat', 'BAT'], ['assembly', 'Assemblage'], ['ready', 'À expédier'], ['shipped', 'Expédiées']].map(([id, label]) => <button key={id} className={filter === id ? "is-active" : ""} onClick={() => setFilter(id)}>{label}</button>)}
           </div>
           <button className="pilot-secondary" onClick={exportOrders}><Download size={16} />Exporter CSV</button>
         </div>
@@ -571,7 +589,7 @@ function EncodingStatusBadge({ status }) {
   return <span className={`pilot-status pilot-status-${meta.tone}`}><i />{meta.label}</span>;
 }
 
-function EncodingView({ data, clientMap, search, onCreate, onAdvance, onEncode, onTest }) {
+function EncodingView({ data, clientMap, search, onCreate, onAdvance, onAssign, onEncode, onTest }) {
   const products = (data.encodedProducts || []).filter((product) => (
     `${product.serialNumber} ${product.label} ${product.supportType} ${product.chipType} ${product.chipBatch} ${clientMap[product.clientId]?.name || ""}`
       .toLowerCase()
@@ -586,6 +604,7 @@ function EncodingView({ data, clientMap, search, onCreate, onAdvance, onEncode, 
     const meta = encodingStatusMeta[product.status];
     if (!meta?.next) return;
     if (meta.next === "tested") onTest(product);
+    else if (meta.next === "assigned") onAssign(product);
     else onAdvance(product, meta.next);
   };
 
@@ -787,7 +806,9 @@ function OrderCustomizationLine({ line }) {
       <div><dt>Composition</dt><dd>{formatComposition(customization.supportComposition)}</dd></div>
       <div><dt>Marque</dt><dd>{customization.brandName || "Non renseignée"}</dd></div>
       <div><dt>Style</dt><dd>{customization.designStyle || customization.theme || "Standard"}</dd></div>
-      <div className="is-wide"><dt>Accroche / brief</dt><dd>{customization.customHeadline || "Aucune accroche spécifique"}{customization.brief ? ` · ${customization.brief}` : ""}</dd></div>
+      <div className="is-wide"><dt>Message imprimé</dt><dd>{customization.customHeadline || "Message Tapote par défaut"}</dd></div>
+      {customization.customSubline && <div className="is-wide"><dt>Phrase secondaire</dt><dd>{customization.customSubline}</dd></div>}
+      {customization.customTapLabel && <div><dt>Appel à l’action</dt><dd>{customization.customTapLabel}</dd></div>}
       {customization.destinationUrl && <div className="is-wide"><dt>Lien demandé</dt><dd className="pilot-order-url">{customization.destinationUrl}</dd></div>}
     </dl>
     {colors.length > 0 && <div className="pilot-order-colors">{colors.map(([label, value]) => <span key={label}><i style={{ backgroundColor: value }} />{label} <b>{value}</b></span>)}</div>}
@@ -795,7 +816,7 @@ function OrderCustomizationLine({ line }) {
   </article>;
 }
 
-function OrderDrawer({ order, client, onClose, advanceOrder, onOpenClient, details, detailsState }) {
+function OrderDrawer({ order, client, onClose, advanceOrder, onOpenClient, onActivatePilot, assignedProducts, details, detailsState }) {
   if (!order || !client) return null;
   const currentIndex = statusFlow.indexOf(order.status);
   return (
@@ -805,7 +826,7 @@ function OrderDrawer({ order, client, onClose, advanceOrder, onOpenClient, detai
         <header><div><span>COMMANDE</span><h2 id="pilot-order-title">{order.id}</h2></div><button onClick={onClose} aria-label="Fermer"><X size={20} /></button></header>
         <div className="pilot-drawer-client"><span>{initials(client.name)}</span><div><b>{client.name}</b><small>{client.contact} · {client.email}</small></div><button onClick={() => onOpenClient(client.id)} aria-label={`Ouvrir le client ${client.name}`}><ExternalLink size={15} /></button></div>
         <div className="pilot-drawer-status"><StatusBadge status={order.status} /><span>Échéance <b>{order.due}</b></span></div>
-        {order.sourceOrderId && <div className={`pilot-integration-state pilot-integration-${order.pilotStatus || "paid"}`}><Radio size={17} /><div><b>{order.pilotStatus === "active" ? "Pilot activé" : order.pilotStatus === "ready_for_activation" ? "Pilot prêt à activer" : "Commande web synchronisée"}</b><span>{order.pilotStatus === "active" ? "Le client dispose de son espace et de ses liens actifs." : "Le suivi tapote.fr → production → Pilot est relié automatiquement."}</span></div></div>}
+        <div className={`pilot-integration-state pilot-integration-${order.pilotStatus || "in_production"}`}><Radio size={17} /><div><b>{order.pilotStatus === "active" ? "Pilot activé" : order.pilotStatus === "ready_for_activation" || order.status === "ready" ? "Pilot prêt à activer" : "Préparation de l’espace Pilot"}</b><span>{order.pilotStatus === "active" ? "Le client dispose de son espace et de ses liens actifs." : order.status === "ready" ? `${assignedProducts} support${assignedProducts > 1 ? "s" : ""} affecté${assignedProducts > 1 ? "s" : ""} · activation contrôlée par Gestion.` : "L’espace client sera activable quand la commande et les supports seront prêts."}</span></div>{order.pilotStatus === "active" && order.pilotOrganizationId ? <a href={`/pilot?organization=${order.pilotOrganizationId}`} target="_blank" rel="noreferrer">Ouvrir Pilot <ExternalLink size={13} /></a> : ["ready", "shipped"].includes(order.status) ? <button onClick={() => onActivatePilot(order)}>Activer Pilot <ArrowRight size={13} /></button> : null}</div>
         <section className="pilot-drawer-section"><span>DÉTAILS</span><dl><div><dt>Produit</dt><dd>{order.product}</dd></div><div><dt>Quantité</dt><dd>{order.quantity}</dd></div><div><dt>Destination</dt><dd>{order.destination}</dd></div><div><dt>Montant</dt><dd>{formatEuro(order.total)}</dd></div><div><dt>Responsable</dt><dd>{order.owner}</dd></div><div><dt>Canal</dt><dd>{order.channel}</dd></div></dl></section>
         {order.sourceOrderId && <section className="pilot-drawer-section pilot-custom-order-section"><span>FABRICATION & PERSONNALISATION</span>
           {detailsState === "loading" && <div className="pilot-order-details-state"><LoaderCircle className="is-spinning" size={18} />Chargement sécurisé des lignes…</div>}
@@ -885,6 +906,38 @@ function NewEncodedProductModal({ clients, orders, onClose, onCreate }) {
   );
 }
 
+function ProductAssignmentModal({ product, clients, orders, onClose, onAssign }) {
+  const eligibleOrders = orders.filter((order) => !isClosedOrder(order) && order.status !== "payment_pending");
+  const initialOrder = eligibleOrders.find((order) => (order.recordId || order.id) === product.orderId)
+    || eligibleOrders.find((order) => order.clientId === product.clientId)
+    || eligibleOrders[0];
+  const [orderId, setOrderId] = useState(initialOrder?.recordId || "");
+  const order = orders.find((candidate) => candidate.recordId === orderId);
+  const client = clients.find((candidate) => candidate.id === order?.clientId);
+  const submit = (event) => {
+    event.preventDefault();
+    if (order && client) onAssign(product, client.id, order.recordId);
+  };
+  return <div className="pilot-modal-layer"><button className="pilot-modal-backdrop" onClick={onClose} aria-label="Fermer" /><form className="pilot-modal" onSubmit={submit} role="dialog" aria-modal="true" aria-labelledby="pilot-assign-title">
+    <header><div><span>AFFECTATION CLIENT</span><h2 id="pilot-assign-title">Relier le support à une commande</h2><p>{product.serialNumber} · cette étape rendra ensuite l’activation Pilot possible.</p></div><button type="button" onClick={onClose} aria-label="Fermer"><X size={20} /></button></header>
+    <div className="pilot-form-grid"><label className="is-wide"><span>Commande client</span><select value={orderId} onChange={(event) => setOrderId(event.target.value)} required><option value="">Choisir une commande payée</option>{eligibleOrders.map((candidate) => <option key={candidate.recordId} value={candidate.recordId}>{candidate.id} · {clients.find((item) => item.id === candidate.clientId)?.name || "Client"} · {candidate.product}</option>)}</select></label><label><span>Client vérifié</span><input value={client?.name || "—"} readOnly /></label><label><span>E-mail Pilot</span><input value={client?.email || "—"} readOnly /></label></div>
+    <div className="pilot-encoding-rule"><BadgeCheck size={18} /><p><b>Affectation contrôlée :</b> le client de la commande sera celui qui recevra l’espace Pilot. Le brouillon atelier reste privé jusqu’à l’activation.</p></div>
+    <footer><button type="button" className="pilot-secondary" onClick={onClose}>Annuler</button><button className="pilot-primary" type="submit" disabled={!order || !client}><PackageCheck size={16} />Affecter à la commande</button></footer>
+  </form></div>;
+}
+
+function PilotActivationModal({ order, client, assignedProducts, onClose, onActivate }) {
+  const [form, setForm] = useState({ locationName: client.name || "Établissement principal", targetUrl: "" });
+  const submit = (event) => { event.preventDefault(); onActivate(order, form); };
+  return <div className="pilot-modal-layer"><button className="pilot-modal-backdrop" onClick={onClose} aria-label="Fermer" /><form className="pilot-modal" onSubmit={submit} role="dialog" aria-modal="true" aria-labelledby="pilot-activation-title">
+    <header><div><span>MISE EN SERVICE</span><h2 id="pilot-activation-title">Activer l’espace Pilot</h2><p>{order.id} · {client.name}</p></div><button type="button" onClick={onClose} aria-label="Fermer"><X size={20} /></button></header>
+    <div className="pilot-activation-summary"><div><BadgeCheck size={18} /><span><b>{assignedProducts} support{assignedProducts > 1 ? "s" : ""} prêt{assignedProducts > 1 ? "s" : ""}</b><small>Numéro de série et lien court conservés</small></span></div><div><UserRound size={18} /><span><b>{client.email}</b><small>Compte client Pilot ou invitation sécurisée</small></span></div></div>
+    <div className="pilot-form-grid"><label className="is-wide"><span>Nom de l’établissement</span><input value={form.locationName} onChange={(event) => setForm({ ...form, locationName: event.target.value })} maxLength="150" required /></label><label className="is-wide"><span>Nouveau lien HTTPS <em>facultatif</em></span><input type="url" value={form.targetUrl} onChange={(event) => setForm({ ...form, targetUrl: event.target.value })} placeholder="Laisser vide pour conserver le lien encodé" pattern="https://.*" /></label></div>
+    <div className="pilot-encoding-rule"><Radio size={18} /><p><b>Activation atomique :</b> l’espace client, l’établissement et les supports sont reliés ensemble. En cas d’erreur, rien n’est publié à moitié.</p></div>
+    <footer><button type="button" className="pilot-secondary" onClick={onClose}>Annuler</button><button className="pilot-primary" type="submit" disabled={!client.email || client.email === "—"}><Zap size={16} />Activer Pilot</button></footer>
+  </form></div>;
+}
+
 function EncodingTestModal({ product, onClose, onValidate }) {
   const [tests, setTests] = useState({ iphone: false, android: false, qr: false });
   const complete = tests.iphone && tests.android && tests.qr;
@@ -913,9 +966,9 @@ function NewOrderModal({ clients, onClose, onCreate }) {
   const submit = (event) => { event.preventDefault(); onCreate({ ...form, quantity: Number(form.quantity), total }); };
   return (
     <div className="pilot-modal-layer"><button className="pilot-modal-backdrop" onClick={onClose} aria-label="Fermer" /><form className="pilot-modal" onSubmit={submit} role="dialog" aria-modal="true" aria-labelledby="pilot-new-order-title">
-      <header><div><span>NOUVELLE VENTE</span><h2 id="pilot-new-order-title">Créer une commande</h2><p>Elle sera ajoutée à la file opérationnelle immédiatement.</p></div><button type="button" onClick={onClose} aria-label="Fermer"><X size={20} /></button></header>
+      <header><div><span>NOUVELLE VENTE</span><h2 id="pilot-new-order-title">Créer une commande</h2><p>Elle restera à encaisser avant d’entrer en production.</p></div><button type="button" onClick={onClose} aria-label="Fermer"><X size={20} /></button></header>
       <div className="pilot-form-grid"><label><span>Client</span><select value={form.clientId} onChange={(event) => setForm({ ...form, clientId: event.target.value })}>{clients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}</select></label><label><span>Canal</span><select value={form.channel} onChange={(event) => setForm({ ...form, channel: event.target.value })}><option>Boutique</option><option>Devis</option><option>Téléphone</option></select></label><label className="is-wide"><span>Produit</span><select value={form.product} onChange={(event) => setForm({ ...form, product: event.target.value })}>{Object.keys(productPrices).map((product) => <option key={product}>{product}</option>)}</select></label><label><span>Quantité</span><input type="number" min="1" max="50" value={form.quantity} onChange={(event) => setForm({ ...form, quantity: event.target.value })} /></label><label><span>Échéance</span><input type="date" min={dateInputValue(today)} value={form.due} onChange={(event) => setForm({ ...form, due: event.target.value })} required /></label><label className="is-wide"><span>Destination programmée</span><select value={form.destination} onChange={(event) => setForm({ ...form, destination: event.target.value })}><option>Avis Google</option><option>Menu</option><option>Réservation</option><option>Instagram</option><option>Fidélité</option></select></label></div>
-      <div className="pilot-order-total"><span>Total TTC</span><strong>{formatEuro(total)}</strong></div>
+      <div className="pilot-order-total"><span>Total TTC · paiement à confirmer</span><strong>{formatEuro(total)}</strong></div>
       <footer><button type="button" className="pilot-secondary" onClick={onClose}>Annuler</button><button className="pilot-primary" type="submit"><Plus size={16} />Créer la commande</button></footer>
     </form></div>
   );
@@ -988,6 +1041,8 @@ export default function TapoteManagementApp() {
   const [newEncodedProductOpen, setNewEncodedProductOpen] = useState(false);
   const [mobileEncodingProduct, setMobileEncodingProduct] = useState(null);
   const [encodingTestProduct, setEncodingTestProduct] = useState(null);
+  const [assignmentProduct, setAssignmentProduct] = useState(null);
+  const [pilotActivationOrder, setPilotActivationOrder] = useState(null);
   const [shippingOrder, setShippingOrder] = useState(null);
   const [stockReceipt, setStockReceipt] = useState(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -1079,7 +1134,7 @@ export default function TapoteManagementApp() {
     return () => window.clearTimeout(timer);
   }, [toast]);
   useEffect(() => {
-    if (!selectedOrder && !newOrderOpen && !newClientOpen && !newInventoryOpen && !newEncodedProductOpen && !mobileEncodingProduct && !encodingTestProduct && !shippingOrder && !stockReceipt && !settingsOpen) return undefined;
+    if (!selectedOrder && !newOrderOpen && !newClientOpen && !newInventoryOpen && !newEncodedProductOpen && !mobileEncodingProduct && !encodingTestProduct && !assignmentProduct && !pilotActivationOrder && !shippingOrder && !stockReceipt && !settingsOpen) return undefined;
     const onKeyDown = (event) => {
       if (event.key !== "Escape") return;
       setSelectedOrder(null);
@@ -1089,6 +1144,8 @@ export default function TapoteManagementApp() {
       setNewEncodedProductOpen(false);
       setMobileEncodingProduct(null);
       setEncodingTestProduct(null);
+      setAssignmentProduct(null);
+      setPilotActivationOrder(null);
       setShippingOrder(null);
       setStockReceipt(null);
       setSettingsOpen(false);
@@ -1099,7 +1156,7 @@ export default function TapoteManagementApp() {
       document.body.style.overflow = "";
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [encodingTestProduct, mobileEncodingProduct, newClientOpen, newEncodedProductOpen, newInventoryOpen, newOrderOpen, selectedOrder, settingsOpen, shippingOrder, stockReceipt]);
+  }, [assignmentProduct, encodingTestProduct, mobileEncodingProduct, newClientOpen, newEncodedProductOpen, newInventoryOpen, newOrderOpen, pilotActivationOrder, selectedOrder, settingsOpen, shippingOrder, stockReceipt]);
 
   const refreshData = useCallback(async ({ quiet = false } = {}) => {
     if (!access) return;
@@ -1153,7 +1210,9 @@ export default function TapoteManagementApp() {
     const ready = data.orders.filter((item) => item.status === "ready");
     const lowStock = data.inventory.filter((item) => item.stock - item.reserved <= item.threshold);
     const bat = data.orders.filter((item) => item.status === "bat");
+    const payments = data.orders.filter((item) => item.status === "payment_pending");
     return [
+      payments.length > 0 && { id: "payments", icon: "order", tone: "orange", view: "orders", title: `${payments.length} paiement${payments.length > 1 ? "s" : ""} à confirmer`, detail: "La production reste bloquée jusqu’à validation du règlement" },
       ready.length > 0 && { id: "shipping", icon: "shipping", tone: "green", view: "shipping", title: `${ready.length} colis prêt${ready.length > 1 ? "s" : ""} à expédier`, detail: "À remettre au transporteur avant 16 h" },
       lowStock.length > 0 && { id: "stock", icon: "stock", tone: "orange", view: "supply", title: `${lowStock.length} alertes de stock`, detail: `${lowStock[0].name} est sous son seuil de sécurité` },
       bat.length > 0 && { id: "bat", icon: "bat", tone: "blue", view: "production", title: `${bat.length} BAT en attente`, detail: "Validation nécessaire avant lancement atelier" },
@@ -1322,6 +1381,36 @@ export default function TapoteManagementApp() {
       setSyncing(false);
     }
   };
+  const assignEncodedProduct = async (product, clientId, orderId) => {
+    if (!access) return;
+    setSyncing(true);
+    try {
+      await assignManagementEncodedProduct(access.organizationId, product.id, clientId, orderId);
+      await refreshData({ quiet: true });
+      setAssignmentProduct(null);
+      showToast("Support affecté. La commande pourra activer l’espace Pilot dès qu’elle sera prête.");
+    } catch (error) {
+      showToast(toUserMessage(error, "Le support n’a pas pu être affecté."));
+    } finally {
+      setSyncing(false);
+    }
+  };
+  const activatePilot = async (orderToActivate, form) => {
+    setSyncing(true);
+    try {
+      const result = await activateManagementOrderPilot(orderToActivate.recordId, form);
+      await refreshData({ quiet: true });
+      setPilotActivationOrder(null);
+      setSelectedOrder(orderToActivate.id);
+      showToast(result.status === "invited"
+        ? `Invitation Pilot envoyée à ${clientMap[orderToActivate.clientId]?.email}. L’activation sera disponible après confirmation.`
+        : `Pilot activé avec ${result.productsCreated} support${result.productsCreated > 1 ? "s" : ""}.`);
+    } catch (error) {
+      showToast(toUserMessage(error, "L’espace Pilot n’a pas pu être activé."));
+    } finally {
+      setSyncing(false);
+    }
+  };
   const toggleProduct = async (productId) => {
     const nextOnline = !data.storefront.find((product) => product.id === productId)?.online;
     if (!access) return;
@@ -1376,19 +1465,21 @@ export default function TapoteManagementApp() {
           {view === "orders" && <OrdersView {...viewProps} exportOrders={exportOrders} />}
           {view === "clients" && <ClientsView {...viewProps} selectedClient={selectedClient} setSelectedClient={setSelectedClient} clientOrders={(id) => data.orders.filter((item) => item.clientId === id)} onNewClient={() => setNewClientOpen(true)} />}
           {view === "production" && <ProductionView {...viewProps} />}
-          {view === "encoding" && <EncodingView {...viewProps} onCreate={() => setNewEncodedProductOpen(true)} onAdvance={advanceEncodedProduct} onEncode={setMobileEncodingProduct} onTest={setEncodingTestProduct} />}
+          {view === "encoding" && <EncodingView {...viewProps} onCreate={() => setNewEncodedProductOpen(true)} onAdvance={advanceEncodedProduct} onAssign={setAssignmentProduct} onEncode={setMobileEncodingProduct} onTest={setEncodingTestProduct} />}
           {view === "supply" && <SupplyView {...viewProps} adjustStock={requestStockReceipt} onNewInventory={() => setNewInventoryOpen(true)} />}
           {view === "shipping" && <ShippingView {...viewProps} markShipped={markShipped} />}
           {view === "ecommerce" && <EcommerceView {...viewProps} toggleProduct={toggleProduct} refreshData={refreshData} syncing={syncing} lastSyncedAt={lastSyncedAt} />}
         </main>
       </div>
-      <OrderDrawer order={order} client={order ? clientMap[order.clientId] : null} details={selectedOrderDetails} detailsState={selectedOrderDetailsState} onClose={() => setSelectedOrder(null)} advanceOrder={advanceOrder} onOpenClient={(clientId) => { setSelectedOrder(null); setSelectedClient(clientId); setView("clients"); }} />
+      <OrderDrawer order={order} client={order ? clientMap[order.clientId] : null} assignedProducts={order ? data.encodedProducts.filter((product) => product.orderId === order.recordId && product.status === "assigned").length : 0} details={selectedOrderDetails} detailsState={selectedOrderDetailsState} onClose={() => setSelectedOrder(null)} advanceOrder={advanceOrder} onActivatePilot={setPilotActivationOrder} onOpenClient={(clientId) => { setSelectedOrder(null); setSelectedClient(clientId); setView("clients"); }} />
       {newOrderOpen && <NewOrderModal clients={data.clients} onClose={() => setNewOrderOpen(false)} onCreate={createOrder} />}
       {newClientOpen && <NewClientModal onClose={() => setNewClientOpen(false)} onCreate={createClient} />}
       {newInventoryOpen && <NewInventoryModal onClose={() => setNewInventoryOpen(false)} onCreate={createInventory} />}
       {newEncodedProductOpen && <NewEncodedProductModal clients={data.clients} orders={data.orders} onClose={() => setNewEncodedProductOpen(false)} onCreate={createEncodedProduct} />}
       {mobileEncodingProduct && <MobileNfcEncodingModal product={mobileEncodingProduct} onClose={() => setMobileEncodingProduct(null)} onEncoded={(product) => advanceEncodedProduct(product, "encoded")} />}
       {encodingTestProduct && <EncodingTestModal product={encodingTestProduct} onClose={() => setEncodingTestProduct(null)} onValidate={(tests) => advanceEncodedProduct(encodingTestProduct, "tested", tests)} />}
+      {assignmentProduct && <ProductAssignmentModal product={assignmentProduct} clients={data.clients} orders={data.orders} onClose={() => setAssignmentProduct(null)} onAssign={assignEncodedProduct} />}
+      {pilotActivationOrder && clientMap[pilotActivationOrder.clientId] && <PilotActivationModal order={pilotActivationOrder} client={clientMap[pilotActivationOrder.clientId]} assignedProducts={data.encodedProducts.filter((product) => product.orderId === pilotActivationOrder.recordId && product.status === "assigned").length} onClose={() => setPilotActivationOrder(null)} onActivate={activatePilot} />}
       {shippingOrder && <ShipmentModal order={data.orders.find((item) => item.id === shippingOrder)} client={clientMap[data.orders.find((item) => item.id === shippingOrder)?.clientId]} onClose={() => setShippingOrder(null)} onShip={(tracking) => advanceOrder(shippingOrder, tracking)} />}
       {stockReceipt && data.inventory.some((item) => item.id === stockReceipt.stockId) && <StockReceiptModal item={data.inventory.find((item) => item.id === stockReceipt.stockId)} suggestedQuantity={stockReceipt.suggestedQuantity} onClose={() => setStockReceipt(null)} onReceive={(quantity) => receiveStock(stockReceipt.stockId, quantity)} />}
       {settingsOpen && <SettingsModal access={access} settings={data.settings} onClose={() => setSettingsOpen(false)} onSync={() => refreshData()} syncing={syncing} lastSyncedAt={lastSyncedAt} onSignOut={async () => { await signOutManager(); setSettingsOpen(false); setAuthState("signedOut"); }} />}

@@ -46,6 +46,12 @@ const actionLabels = {
   autre: "Autre",
 };
 
+function pilotWorkspaceLabel(workspace) {
+  return workspace?.membership?.accessScope === "management"
+    ? "Administration Pilot"
+    : workspace?.organization?.name || "Pilot";
+}
+
 function formatNumber(value) {
   return new Intl.NumberFormat("fr-FR").format(value || 0);
 }
@@ -365,7 +371,7 @@ function Overview({ workspace, analytics, period, setPeriod, locationId, setLoca
   return (
     <>
       <header className="pilot-view-heading">
-        <div className="pilot-heading-copy"><span className="pilot-kicker">PILOT · {workspace.organization.name}</span><h1>Vue d’ensemble</h1><p>Les performances de vos produits Tapote, sans jargon.</p></div>
+        <div className="pilot-heading-copy"><span className="pilot-kicker">PILOT · {pilotWorkspaceLabel(workspace)}</span><h1>Vue d’ensemble</h1><p>Les performances de vos produits Tapote, sans jargon.</p></div>
         <span className="pilot-free-promise"><Check size={16} /><span><b>Inclus à vie</b>Liens modifiables sans limite</span></span>
       </header>
 
@@ -490,7 +496,7 @@ function ProductsView({ workspace, analytics, openProduct, exportCsv, period }) 
   );
 }
 
-function HistoryView({ workspace }) {
+function HistoryView({ workspace, onChangeLink }) {
   const productsByLink = new Map(workspace.products.map((product) => [product.linkId, product]));
   return (
     <>
@@ -507,7 +513,11 @@ function HistoryView({ workspace }) {
             </article>
           );
         })}
-        {!workspace.auditLogs.length && <p className="pilot-empty-line">Aucun changement enregistré pour le moment.</p>}
+        {!workspace.auditLogs.length && <section className="pilot-history-empty">
+          <span><History size={22} /></span>
+          <div><strong>Votre historique commence ici.</strong><p>Chaque changement de destination sera daté et rattaché au bon support.</p></div>
+          <button type="button" onClick={onChangeLink}><Link2 size={16} />Changer un lien</button>
+        </section>}
       </div>
     </>
   );
@@ -521,7 +531,7 @@ function SupportView() {
         <CircleHelp size={32} />
         <h2>Un produit ne réagit pas<br />comme prévu ?</h2>
         <p>Indiquez le numéro de série visible dans sa fiche et décrivez le geste effectué. Tapote vérifiera le lien, le NFC et le QR.</p>
-        <a href="/devis" target="_blank" rel="noreferrer">Contacter Tapote <ArrowRight size={17} /></a>
+        <a href="mailto:contact@tapote.fr?subject=Support%20Tapote%20Pilot">Écrire au support Tapote <ArrowRight size={17} /></a>
       </section>
       <section className="pilot-support-facts">
         <div><b>01</b><strong>NFC silencieux</strong><p>Essayez sans coque, approchez le haut du téléphone, puis testez le QR.</p></div>
@@ -664,6 +674,7 @@ export default function PilotApp() {
   const [workspace, setWorkspace] = useState(null);
   const [workspaceLoading, setWorkspaceLoading] = useState(true);
   const [workspaceError, setWorkspaceError] = useState("");
+  const [managementOrganizationId, setManagementOrganizationId] = useState(null);
   const [view, setView] = useState("overview");
   const [period, setPeriod] = useState(30);
   const [locationId, setLocationId] = useState("all");
@@ -712,16 +723,20 @@ export default function PilotApp() {
   useEffect(() => {
     if (!session) return undefined;
     let active = true;
-    const request = demoMode ? Promise.resolve(createDemoWorkspace()) : loadPilotWorkspace(pilotSupabase, session.user.id);
+    const request = demoMode
+      ? Promise.resolve(createDemoWorkspace())
+      : loadPilotWorkspace(pilotSupabase, { organizationId: managementOrganizationId || undefined });
     request.then((result) => { if (active) { setWorkspace(result); setWorkspaceError(""); } }).catch(() => {
       if (active) setWorkspaceError("Pilot n’a pas pu charger vos données. Vérifiez votre connexion puis réessayez.");
     }).finally(() => { if (active) setWorkspaceLoading(false); });
     return () => { active = false; };
-  }, [session, demoMode]);
+  }, [session, demoMode, managementOrganizationId]);
 
   const analytics = useMemo(() => workspace ? analyticsFor(workspace, period, locationId) : null, [workspace, period, locationId]);
   const selectedProduct = workspace?.products.find((product) => product.id === selectedProductId) || null;
-  const canEdit = workspace && workspace.membership.role !== "viewer";
+  const canEdit = workspace
+    && workspace.membership.accessScope !== "management"
+    && workspace.membership.role !== "viewer";
 
   const showToast = (message) => {
     setToast(message);
@@ -790,8 +805,31 @@ export default function PilotApp() {
       <a className="skip-link" href="#pilot-main">Aller au contenu</a>
       <aside className={`pilot-client-sidebar ${menuOpen ? "is-open" : ""}`}>
         <div className="pilot-client-sidebar-top"><PilotLogo dark /><button type="button" onClick={() => setMenuOpen(false)} aria-label="Fermer le menu"><X size={20} /></button></div>
-        <div className="pilot-organization"><span>ESPACE CLIENT</span><strong>{workspace.organization.name}</strong><small><i />{demoMode ? "Démonstration" : "Données à jour"}</small></div>
-        <button className="pilot-sidebar-change" type="button" onClick={() => { setSelectedProductId(workspace.products[0]?.id || null); setMenuOpen(false); }} disabled={!workspace.products.length}><Link2 size={18} /><span>Changer un lien</span><ArrowRight size={16} /></button>
+        <div className="pilot-organization">
+          <span>{workspace.membership.accessScope === "management" ? "ACCÈS ÉQUIPE · PILOT" : "ESPACE CLIENT"}</span>
+          <strong>{pilotWorkspaceLabel(workspace)}</strong>
+          {workspace.membership.accessScope === "management" && workspace.availableOrganizations.length > 0 && (
+            <select
+              aria-label="Espace Pilot administré"
+              value={workspace.organization.id}
+              onChange={(event) => {
+                setWorkspaceLoading(true);
+                setManagementOrganizationId(event.target.value);
+                setLocationId("all");
+                setSelectedProductId(null);
+                setView("overview");
+              }}
+            >
+              {workspace.availableOrganizations.map((organization) => <option value={organization.id} key={organization.id}>{organization.name}</option>)}
+            </select>
+          )}
+          <small><i />{demoMode
+            ? "Démonstration"
+            : workspace.membership.accessScope === "management"
+              ? workspace.organization.name
+              : "Données à jour"}</small>
+        </div>
+        <button className="pilot-sidebar-change" type="button" onClick={() => { setSelectedProductId(workspace.products[0]?.id || null); setMenuOpen(false); }} disabled={!workspace.products.length}><Link2 size={18} /><span>{workspace.membership.accessScope === "management" ? "Consulter un support" : "Changer un lien"}</span><ArrowRight size={16} /></button>
         <nav aria-label="Navigation Pilot">
           {Object.entries(views).map(([key, item]) => {
             const Icon = item.icon;
@@ -811,7 +849,7 @@ export default function PilotApp() {
         {demoMode && <div className="pilot-demo-banner"><Sparkles size={16} /><span><b>Mode démonstration</b> · Les données affichées sont des exemples.</span></div>}
         {view === "overview" && <Overview workspace={workspace} analytics={analytics} period={period} setPeriod={setPeriod} locationId={locationId} setLocationId={setLocationId} openProduct={setSelectedProductId} showProducts={() => changeView("products")} />}
         {view === "products" && <ProductsView workspace={workspace} analytics={analyticsFor(workspace, period, "all")} openProduct={setSelectedProductId} exportCsv={exportCsv} period={period} />}
-        {view === "history" && <HistoryView workspace={workspace} />}
+        {view === "history" && <HistoryView workspace={workspace} onChangeLink={() => setSelectedProductId(workspace.products[0]?.id || null)} />}
         {view === "support" && <SupportView />}
       </main>
 

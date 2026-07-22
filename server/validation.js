@@ -32,6 +32,8 @@ const cartItemSchema = z.object({
   targetId: z.enum(targetIds).optional().default("cafe"),
   designStyle: z.enum(designStyleIds).optional().default("signature"),
   customHeadline: optionalText(64),
+  customSubline: optionalText(90),
+  customTapLabel: optionalText(32),
   destinationUrl: optionalHttpsUrl,
   brandLogoId: z.uuid().optional().or(z.literal("")),
   logoFileName: optionalText(120),
@@ -69,6 +71,11 @@ export const checkoutStatusSchema = z.object({
 export const tapoteRedirectSchema = z.object({
   code: z.string().trim().regex(/^[a-f0-9]{10}$/i, "Ce lien Tapote n’est pas valide."),
   source: z.enum(["nfc", "qr", "unknown"]).default("unknown"),
+}).strict();
+
+export const pilotActivationSchema = z.object({
+  locationName: z.string().trim().min(1, "Indique le nom de l’établissement.").max(150),
+  targetUrl: optionalHttpsUrl,
 }).strict();
 
 export function parseRequest(schema, value) {

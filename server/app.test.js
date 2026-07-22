@@ -45,13 +45,25 @@ const checkoutBody = (attemptId = "7e58b0a4-0c28-4a1b-a2c4-40fc8dc87a58") => ({
   termsAccepted: true,
 });
 
+const storefrontHtml = `<!doctype html><html lang="fr"><head>
+  <title>Accueil</title>
+  <meta name="description" content="Accueil">
+  <meta name="robots" content="index">
+  <link rel="canonical" href="https://tapote.fr/">
+  <meta property="og:title" content="Accueil">
+  <meta property="og:description" content="Accueil">
+  <meta property="og:url" content="https://tapote.fr/">
+  <meta name="twitter:title" content="Accueil">
+  <meta name="twitter:description" content="Accueil">
+</head><body><div id="root"></div></body></html>`;
+
 function makeContext(env = {}, stripe = null, overrides = {}) {
   const config = loadConfig({ NODE_ENV: "test", PUBLIC_URL: "http://localhost:5173", ...legalEnv, ...env });
   const repository = overrides.repository || createRepository(config);
   const storage = overrides.storage || { durable: false, healthCheck: vi.fn(async () => true), upload: vi.fn() };
   const logger = createLogger({ ...config, logLevel: "silent" });
   const outboxWorker = overrides.outboxWorker || { runOnce: vi.fn(async () => undefined) };
-  const app = createApp({ config, repository, storage, logger, outboxWorker, stripe });
+  const app = createApp({ config, repository, storage, logger, outboxWorker, stripe, storefrontHtml: overrides.storefrontHtml });
   return { app, config, repository, storage, outboxWorker };
 }
 
@@ -70,6 +82,9 @@ describe("API Tapote", () => {
   it("sert des métadonnées produit et secteur exploitables sans JavaScript", () => {
     const product = storefrontMetaForPath("/produits/plaque?ignored=true", "https://tapote.fr");
     const sector = storefrontMetaForPath("/secteurs/auto-ecoles", "https://tapote.fr/");
+    const quote = storefrontMetaForPath("/devis", "https://tapote.fr");
+    const legal = storefrontMetaForPath("/cgv", "https://tapote.fr");
+    const privatePage = storefrontMetaForPath("/panier", "https://tapote.fr");
     const missing = storefrontMetaForPath("/produits/invente", "https://tapote.fr");
     const template = '<html><head><title>Accueil</title><meta name="description" content="Accueil"><meta name="robots" content="index"><link rel="canonical" href="https://tapote.fr/"><meta property="og:title" content="Accueil"><meta property="og:description" content="Accueil"><meta property="og:url" content="https://tapote.fr/"><meta name="twitter:title" content="Accueil"><meta name="twitter:description" content="Accueil"></head></html>';
     const rendered = injectStorefrontMeta(template, "/produits/plaque", "https://tapote.fr");
@@ -78,9 +93,48 @@ describe("API Tapote", () => {
     expect(product.canonical).toBe("https://tapote.fr/produits/plaque");
     expect(sector.title).toContain("Auto-écoles");
     expect(sector.canonical).toBe("https://tapote.fr/secteurs/auto-ecoles");
+    expect(quote).toMatchObject({
+      title: "Devis volume et multi-sites | Tapote",
+      canonical: "https://tapote.fr/devis",
+      robots: "index,follow,max-image-preview:large",
+    });
+    expect(legal.title).toBe("Conditions générales de vente B2B | Tapote");
+    expect(privatePage.robots).toBe("noindex,nofollow");
     expect(missing.robots).toBe("noindex,nofollow");
     expect(rendered).toContain("<title>Plaque verticale NFC + QR | Tapote</title>");
     expect(rendered).toContain('property="og:url" content="https://tapote.fr/produits/plaque"');
+  });
+
+  it("sert le HTML SEO public avec un vrai statut 404 sans casser les espaces SPA privés", async () => {
+    const { app } = makeContext(
+      { NODE_ENV: "production", PUBLIC_URL: "https://tapote.fr" },
+      null,
+      { storefrontHtml },
+    );
+
+    const quote = await request(app).get("/devis").set("Accept", "text/html");
+    expect(quote.status).toBe(200);
+    expect(quote.type).toMatch(/html/);
+    expect(quote.text).toContain("<title>Devis volume et multi-sites | Tapote</title>");
+    expect(quote.text).toContain('name="robots" content="index,follow,max-image-preview:large"');
+    expect(quote.text).toContain('rel="canonical" href="https://tapote.fr/devis"');
+    expect(quote.headers["x-robots-tag"]).toBe("index,follow,max-image-preview:large");
+
+    const missing = await request(app).get("/secteurs/invente").set("Accept", "text/html");
+    expect(missing.status).toBe(404);
+    expect(missing.text).toContain("<title>Page introuvable | Tapote</title>");
+    expect(missing.text).toContain('name="robots" content="noindex,nofollow"');
+    expect(missing.headers["cache-control"]).toBe("no-store");
+    expect(missing.headers["x-robots-tag"]).toBe("noindex,nofollow");
+
+    const missingHead = await request(app).head("/produits/invente").set("Accept", "text/html");
+    expect(missingHead.status).toBe(404);
+
+    for (const path of ["/pilot", "/pilot/produits", "/gestion", "/gestion/commandes"]) {
+      const spa = await request(app).get(path).set("Accept", "text/html");
+      expect(spa.status, path).toBe(200);
+      expect(spa.headers["x-robots-tag"], path).toBe("noindex,nofollow");
+    }
   });
 
   it("autorise uniquement les attributs de style inline nécessaires à React", async () => {
@@ -93,10 +147,11 @@ describe("API Tapote", () => {
   });
 
   it("ne crée jamais de commande démo en production", async () => {
-    const { app } = makeContext({ NODE_ENV: "production", PUBLIC_URL: "https://tapote.fr", ALLOW_DEMO_CHECKOUT: "true" });
+    const { app, repository } = makeContext({ NODE_ENV: "production", PUBLIC_URL: "https://tapote.fr", ALLOW_DEMO_CHECKOUT: "true" });
     const response = await request(app).post("/api/checkout").send(checkoutBody());
     expect(response.status).toBe(503);
     expect(response.body.demo).toBeUndefined();
+    expect(repository.orders.size).toBe(0);
   });
 
   it("autorise explicitement une démo locale et vérifie son statut", async () => {
@@ -112,6 +167,27 @@ describe("API Tapote", () => {
     const sessionId = new URL(checkout.body.url).searchParams.get("session_id");
     const status = await request(app).get(`/api/checkout/status?session_id=${encodeURIComponent(sessionId)}`);
     expect(status.body).toEqual({ status: "demo", reference: checkoutBody().attemptId });
+  });
+
+  it("publie le catalogue Gestion et refuse un produit mis hors ligne avant toute commande", async () => {
+    const context = makeContext();
+    context.repository.durable = true;
+    context.repository.getStorefrontCatalog = vi.fn(async () => [{
+      productId: "comptoir",
+      name: "Le Chevalet A6",
+      price: 3900,
+      online: false,
+      availableStock: null,
+    }]);
+
+    const catalog = await request(context.app).get("/api/catalog");
+    expect(catalog.status).toBe(200);
+    expect(catalog.body.products[0]).toEqual(expect.objectContaining({ productId: "comptoir", online: false }));
+
+    const checkout = await request(context.app).post("/api/checkout").send(checkoutBody());
+    expect(checkout.status).toBe(409);
+    expect(checkout.body.error).toContain("n’est plus disponible");
+    expect(context.repository.orders.size).toBe(0);
   });
 
   it("renvoie Stripe vers l’origine active du storefront en développement", async () => {
@@ -198,7 +274,7 @@ describe("API Tapote", () => {
     expect(checkout.line_items[0].price_data.unit_amount).toBe(3900);
     expect(checkout.shipping_options[0].shipping_rate_data.fixed_amount.amount).toBe(490);
     expect(checkout.shipping_options[0].shipping_rate_data.delivery_estimate).toBeUndefined();
-    expect(checkout.custom_text.shipping_address.message).toMatch(/BAT/i);
+    expect(checkout.custom_text.shipping_address.message).toMatch(/création enregistrée au panier/i);
     expect(checkout.tax_id_collection).toEqual({ enabled: true });
     expect(checkout.invoice_creation).toMatchObject({
       enabled: true,
@@ -612,6 +688,69 @@ describe("API Tapote", () => {
       }),
     }));
     expect(JSON.stringify(response.body)).not.toContain("orders/2026-07-21/private-logo.png");
+  });
+
+  it("protège et valide l’activation Pilot d’une commande Gestion", async () => {
+    const orderId = "7e58b0a4-0c28-4a1b-a2c4-40fc8dc87a59";
+    const repository = { durable: true, healthCheck: vi.fn(async () => true), getManagementOrderPilotContext: vi.fn() };
+    const storage = { durable: true, healthCheck: vi.fn(async () => true), authenticateManagementUser: vi.fn(async () => null), provisionPilotWorkspace: vi.fn() };
+    const context = makeContext({}, null, { repository, storage });
+
+    const unauthorized = await request(context.app)
+      .post(`/api/management/orders/${orderId}/activate-pilot`)
+      .send({ locationName: "Café Test", targetUrl: "" });
+    expect(unauthorized.status).toBe(401);
+    expect(repository.getManagementOrderPilotContext).not.toHaveBeenCalled();
+
+    const invalid = await request(context.app)
+      .post(`/api/management/orders/${orderId}/activate-pilot`)
+      .send({ locationName: "Café Test", targetUrl: "http://non-securise.test" });
+    expect(invalid.status).toBe(400);
+    expect(storage.provisionPilotWorkspace).not.toHaveBeenCalled();
+  });
+
+  it("active Pilot depuis une commande manuelle prête et retourne le nombre de supports", async () => {
+    const orderId = "7e58b0a4-0c28-4a1b-a2c4-40fc8dc87a59";
+    const userId = "8f68b0a4-0c28-4a1b-a2c4-40fc8dc87a60";
+    const order = {
+      id: orderId,
+      orderNumber: "TPT-1049",
+      status: "ready",
+      clientName: "Café Test",
+      clientEmail: "client@example.com",
+      assignedProducts: 1,
+    };
+    const repository = {
+      durable: true,
+      healthCheck: vi.fn(async () => true),
+      getManagementOrderPilotContext: vi.fn(async () => order),
+    };
+    const storage = {
+      durable: true,
+      healthCheck: vi.fn(async () => true),
+      authenticateManagementUser: vi.fn(async () => ({ id: userId })),
+      provisionPilotWorkspace: vi.fn(async () => ({
+        status: "active",
+        organizationId: "9a78b0a4-0c28-4a1b-a2c4-40fc8dc87a61",
+        productsCreated: 1,
+      })),
+    };
+    const context = makeContext({}, null, { repository, storage });
+
+    const response = await request(context.app)
+      .post(`/api/management/orders/${orderId}/activate-pilot`)
+      .set("Authorization", "Bearer management-token")
+      .send({ locationName: "Café Test", targetUrl: "https://example.com/avis" });
+
+    expect(response.status).toBe(200);
+    expect(repository.getManagementOrderPilotContext).toHaveBeenCalledWith(orderId, userId);
+    expect(storage.provisionPilotWorkspace).toHaveBeenCalledWith(expect.objectContaining({
+      actorUserId: userId,
+      order,
+      locationName: "Café Test",
+      targetUrl: "https://example.com/avis",
+    }));
+    expect(response.body).toEqual(expect.objectContaining({ status: "active", productsCreated: 1 }));
   });
 
   it("retourne un vrai 404 JSON pour toute route API inconnue", async () => {

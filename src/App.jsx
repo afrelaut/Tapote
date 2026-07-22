@@ -103,6 +103,8 @@ const createPackCartItem = (product) => ({
   targetId: "cafe",
   designStyle: "signature",
   customHeadline: "",
+  customSubline: "",
+  customTapLabel: "",
   destinationUrl: "",
   brandLogoId: "",
   logoFileName: "",
@@ -224,6 +226,8 @@ function loadCart() {
         targetId: TARGETS[item.targetId] ? item.targetId : "cafe",
         designStyle: DESIGN_STYLES[item.designStyle] ? item.designStyle : "signature",
         customHeadline: String(item.customHeadline || "").slice(0, 64),
+        customSubline: String(item.customSubline || "").slice(0, 90),
+        customTapLabel: String(item.customTapLabel || "").slice(0, 32),
         destinationUrl: String(item.destinationUrl || "").slice(0, 500),
         brandLogoId: uuidPattern.test(item.brandLogoId || "") ? item.brandLogoId : "",
         logoFileName: String(item.logoFileName || "").slice(0, 120),
@@ -368,28 +372,50 @@ function useModalA11y(open, onClose) {
   return dialogRef;
 }
 
+const DEMO_BRAND_IDENTITIES = {
+  "CAFE NOMA": ["CN", 0],
+  "MAISON LEVAIN": ["ML", 1],
+  "L'ATELIER 21": ["A21", 2],
+  "ATELIER 21": ["A21", 2],
+  "STUDIO LUNE": ["SL", 3],
+  "MAISON CALME": ["MC", 3],
+  "LE LIEN LOCAL": ["LL", 5],
+  "LIGNE NOIRE": ["LN", 4],
+  "ATELIER MARTIN": ["AM", 2],
+  "HOTEL RIVAGE": ["HR", 4],
+  "CAMPING DES PINS": ["CP", 1],
+  "FLEURS SAUVAGES": ["FS", 3],
+  "MOBILE CLUB": ["MC", 0],
+  "CAMPUS 22": ["C22", 2],
+  "LA GALERIE": ["LG", 5],
+  "STUDIO GABRIEL": ["SG", 3],
+  "LA MAISON DOUCE": ["MD", 1],
+  "CABINET RIVOLI": ["CR", 0],
+  "MOTION CLUB": ["MC", 5],
+  "AGENCE HORIZON": ["AH", 4],
+};
+
 export function GeneratedBrandMark({ name }) {
   const safeName = name || "VOTRE MARQUE";
   const hash = [...safeName].reduce((sum, character) => sum + character.charCodeAt(0), 0);
   const normalized = safeName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
-  const semanticVariants = [
-    [/CAFE|COMPTOIR|ATELIER 21/, 4],
-    [/LEVAIN|BOULANGER|SUCRE/, 5],
-    [/LUNE|BEAUTE|CALME|NUDE/, 6],
-    [/CABINET|CLINIQUE|DENTAL|PHARMACIE|ECOUTE/, 7],
-    [/HOTEL|RIVAGE|HORIZON|HORIZONS|TOURISME/, 8],
-    [/DRIVE|AUTO|VTC|MOBILE/, 9],
-    [/AGENCE|DOMAINE|MAISON|BUREAU/, 10],
-    [/MOTION|SPORT|ANCRAGE/, 3],
-    [/LILAS|MUSEAU|VETERINAIRE/, 11],
-    [/FLEURS|PINS|SAUVAGES/, 1],
-    [/GALERIE|MOMENT|CAMPUS/, 2],
-  ];
-  const variant = semanticVariants.find(([pattern]) => pattern.test(normalized))?.[1] ?? hash % 12;
-  const BrandIcon = [Sparkles, Gift, Grid2X2, Wifi, UtensilsCrossed, Store, Sparkles, Plus, Globe2, Link2, BriefcaseBusiness, MessageCircle][variant];
+  const stopWords = new Set(["DE", "DES", "DU", "LA", "LE", "LES", "L", "ET"]);
+  const words = normalized.split(/[^A-Z0-9]+/).filter((word) => word && !stopWords.has(word));
+  const initials = (words.length > 1 ? `${words[0][0]}${words.at(-1)[0]}` : words[0]?.slice(0, 2) || "VM").slice(0, 2);
+  const [brandInitials, brandVariant] = DEMO_BRAND_IDENTITIES[normalized] || [];
+  const markInitials = brandInitials || initials;
+  const variant = brandVariant ?? hash % 6;
   return (
     <span className={`generated-brand-mark is-variant-${variant}`} aria-hidden="true">
-      <BrandIcon />
+      <svg viewBox="0 0 48 48" focusable="false">
+        {variant === 0 && <><circle cx="24" cy="24" r="18" /><path d="M9 24h30M24 9v30" /></>}
+        {variant === 1 && <><path d="M8 32 24 8l16 24-16 8Z" /><path d="m15 31 18-13" /></>}
+        {variant === 2 && <><rect x="8" y="8" width="32" height="32" rx="9" /><path d="M8 25h32M24 8v32" /></>}
+        {variant === 3 && <><path d="M24 6c11 0 18 7 18 18s-7 18-18 18S6 35 6 24 13 6 24 6Z" /><path d="M12 34 36 14" /></>}
+        {variant === 4 && <><path d="M7 14h34L32 40H16Z" /><path d="M12 21h24" /></>}
+        {variant === 5 && <><path d="M24 6 42 24 24 42 6 24Z" /><circle cx="24" cy="24" r="11" /></>}
+        <text x="24" y="28.5" textAnchor="middle">{markInitials}</text>
+      </svg>
     </span>
   );
 }
@@ -408,42 +434,68 @@ export function PlatformGlyph({ id, className = "" }) {
 function ActionIdentity({ action }) {
   if (action.id === "avis") return <span className="action-brand action-brand-google"><PlatformGlyph id="google" /><b>Avis Google</b><span className="action-brand-rating" aria-hidden="true">★★★★★</span></span>;
   if (["instagram", "facebook", "linkedin", "tiktok", "whatsapp"].includes(action.id)) return <span className={`action-brand action-brand-${action.id}`}><PlatformGlyph id={action.id} /><b>{action.name}</b></span>;
-  if (action.id === "paiement") return <span className="action-brand action-brand-payment"><b>Apple Pay</b><i>ou</i><b>G Pay</b></span>;
+  if (action.id === "paiement") return <span className="action-brand action-brand-payment"><CreditCard size={14} aria-hidden="true" /><b>Paiement sécurisé</b></span>;
   const ActionIcon = actionIcons[action.icon] || Link2;
   return <span className={`action-brand action-brand-${action.id}`}><ActionIcon size={14} aria-hidden="true" /><b>{action.badge}</b></span>;
 }
 
-function PreviewInsert({ action, brandName, brandLogo, colors, productId, designStyle = "signature", customHeadline = "" }) {
-  const tapLabel = productId === "sticker" ? "Approchez ici" : "Approchez votre téléphone";
-  const headline = customHeadline.trim() || action.headline;
+function ActionCampaignArt({ action }) {
+  const platformId = action.id === "avis" ? "google" : ["instagram", "facebook", "linkedin", "tiktok", "whatsapp"].includes(action.id) ? action.id : "";
+  const ActionIcon = actionIcons[action.icon] || Link2;
   return (
-    <div className={`printed-insert insert-style-${designStyle} insert-action-${action.id}`} style={{ "--insert-paper": colors.paper, "--insert-ink": colors.ink, "--insert-accent": colors.accent, "--insert-accent-ink": colors.accentInk }}>
-      <div className={`customer-brand ${brandLogo ? "customer-brand-has-logo" : ""}`}>
-        {brandLogo ? <img src={brandLogo} alt="Logo client importé" /> : <GeneratedBrandMark name={brandName} />}
-        {(brandName || !brandLogo) && <b>{brandName || "VOTRE MARQUE"}</b>}
-      </div>
-      <div className="action-signature"><ActionIdentity action={action} /></div>
-      <div className="device-purpose">{action.purpose || action.name}</div>
-      <div className="device-headline">{headline}</div>
-      <div className="device-subline">{action.subline}</div>
-      <div className="tap-zone">
-        <span className="tap-zone-nfc"><SmartphoneNfc size={30} aria-hidden="true" /><strong>{tapLabel}</strong><small>NFC · sans application</small></span>
-        <span className="tap-zone-qr" role="img" aria-label="Ou scannez le QR code"><img src="/brand/tapote-qr-demo.svg" alt="" /><small>OU SCANNEZ</small></span>
-      </div>
-      <div className="maker-signature"><img src="/brand/tapote-avatar.svg" alt="" /> TAPOTE</div>
+    <div className={`campaign-art campaign-art-${action.visualKey || action.id}`} aria-hidden="true">
+      <span className="campaign-art-mark">{platformId ? <PlatformGlyph id={platformId} /> : <ActionIcon />}</span>
+      <span className="campaign-art-orbit is-orbit-one" />
+      <span className="campaign-art-orbit is-orbit-two" />
+      <span className="campaign-art-track is-track-one" />
+      <span className="campaign-art-track is-track-two" />
     </div>
   );
 }
 
-export function DevicePreview({ productId = "comptoir", actionId = "avis", compact = false, brandName = "CAFÉ NOMA", brandLogo = "", theme = "blue", primaryColor = "", secondaryColor = "", textColor = "", designStyle = "signature", customHeadline = "" }) {
+function PreviewInsert({ action, brandName, brandLogo, colors, productId = "comptoir", designStyle = "signature", customHeadline = "", customSubline = "", customTapLabel = "" }) {
+  const tapLabel = customTapLabel.trim() || "Tapotez ici";
+  const headline = customHeadline.trim() || action.campaignHeadline || action.headline;
+  const purpose = action.tapoteFor ? `TAPOTEZ POUR ${action.tapoteFor}` : action.purpose || action.name;
+  const subline = customSubline.trim() || action.campaignSubline || action.subline;
+  const tapoteSuffix = headline.match(/Tapotez\.$/i)?.[0] || "";
+  const headlineLead = tapoteSuffix ? headline.slice(0, -tapoteSuffix.length) : headline;
+  return (
+    <div className={`printed-insert insert-style-campaign insert-action-${action.id} insert-visual-${action.visualKey || action.id}`} data-template={designStyle} data-visual={action.visualKey || action.id} style={{ "--insert-paper": colors.paper, "--insert-ink": colors.ink, "--insert-accent": colors.accent, "--insert-accent-ink": colors.accentInk }}>
+      <ActionCampaignArt action={action} />
+      <div className="print-header">
+        <div className={`customer-brand ${brandLogo ? "customer-brand-has-logo" : ""}`}>
+          {brandLogo ? <img src={brandLogo} alt="Logo client importé" /> : <GeneratedBrandMark name={brandName} />}
+          {(brandName || !brandLogo) && <b>{brandName || "VOTRE MARQUE"}</b>}
+        </div>
+        <div className="action-signature"><ActionIdentity action={action} /></div>
+      </div>
+      <div className="print-copy">
+        <div className="device-purpose">{purpose}</div>
+        <div className="device-headline">
+          {headlineLead}
+          {tapoteSuffix && <span className="tapote-word">{tapoteSuffix}</span>}
+        </div>
+        <div className="device-subline">{subline}</div>
+      </div>
+      <div className={`tap-zone ${productId === "carte" ? "is-card-front-nfc" : ""}`}>
+        <span className="tap-zone-nfc"><span className="nfc-beacon"><SmartphoneNfc size={30} aria-hidden="true" /><i /><i /></span><em>NFC</em><strong>{tapLabel}</strong><small>Sans application</small></span>
+        {productId !== "carte" && <span className="tap-zone-qr" role="img" aria-label="Ou scannez le QR code"><img src="/brand/tapote-qr-demo.svg" alt="" /><small>OU SCANNEZ</small></span>}
+      </div>
+      <div className="maker-signature"><span><img src="/brand/tapote-avatar.svg" alt="" /> TAPOTE</span><small>{productId === "carte" ? "QR AU VERSO · LIEN MODIFIABLE" : "NFC + QR · LIEN MODIFIABLE"}</small></div>
+    </div>
+  );
+}
+
+export function DevicePreview({ productId = "comptoir", actionId = "avis", compact = false, brandName = "CAFÉ NOMA", brandLogo = "", theme = "blue", primaryColor = "", secondaryColor = "", textColor = "", designStyle = "signature", customHeadline = "", customSubline = "", customTapLabel = "", personalization = "ready" }) {
   const action = ACTIONS[actionId];
   const colors = resolveDeviceColors(theme, primaryColor, secondaryColor, textColor);
   const product = PRODUCTS[productId] || PRODUCTS.comptoir;
   return (
-    <div className={`device-preview device-preview-canonical device-preview-${productId} ${compact ? "device-preview-compact" : ""}`} aria-label={`Aperçu de ${product.name} pour ${action.name}`}>
+    <div className={`device-preview device-preview-canonical device-preview-${productId} is-personalization-${personalization} ${compact ? "device-preview-compact" : ""}`} data-surface={productId} data-design-style={designStyle} data-action={action.id} data-personalization={personalization} aria-label={`Aperçu de ${product.name} pour ${action.name}`}>
       {productId === "table6" && <span className="device-quantity">×6</span>}
       <div className={productId === "comptoir" || productId === "table6" ? "acrylic-sheet" : "product-face"}>
-        <PreviewInsert action={action} brandName={brandName} brandLogo={brandLogo} colors={colors} productId={productId} designStyle={designStyle} customHeadline={customHeadline} />
+        <PreviewInsert action={action} brandName={brandName} brandLogo={brandLogo} colors={colors} productId={productId} designStyle={designStyle} customHeadline={customHeadline} customSubline={customSubline} customTapLabel={customTapLabel} />
       </div>
       {(productId === "comptoir" || productId === "table6") && <div className="acrylic-foot" aria-hidden="true" />}
     </div>
@@ -500,13 +552,13 @@ function Hero() {
             <a className="button button-secondary" href="#devis"><span>Obtenir un devis</span><ArrowRight size={17} /></a>
           </div>
           <a className="hero-demo-link" href="#demo"><i><Play size={11} fill="currentColor" /></i><span>Voir le geste<small>8 secondes</small></span></a>
-          <span>Comptoir A6 49 € {priceTaxLabel} · BAT inclus · contrôle NFC + QR avant envoi</span>
+          <span>Comptoir A6 49 € {priceTaxLabel} · création enregistrée · contrôle NFC + QR avant envoi</span>
         </div>
       </div>
       <div className="hero-caption">
         <span>Premier lot reçu · tests terrain en cours</span><span>49 € {priceTaxLabel}</span>
         <strong>Le Comptoir A6 · Avis</strong>
-        <span>NFC centré + QR visible</span><span>BAT inclus</span>
+        <span>NFC centré + QR visible</span><span>Aperçu d’impression en direct</span>
       </div>
     </section>
   );
@@ -646,15 +698,14 @@ export function Configurator({ initialProduct, initialAction = "avis", initialTa
   const [quantity, setQuantity] = useState([1, 2, 5].includes(initialQuantity) ? initialQuantity : 1);
   const [added, setAdded] = useState(false);
   const [brandName, setBrandName] = useState("CAFÉ NOMA");
-  // Le configurateur est volontairement une demande de création : la direction
-  // graphique est préparée au BAT, plutôt que de faire croire qu'un simple
-  // sélecteur de couleurs constitue une personnalisation finale.
   const [theme, setTheme] = useState("blue");
   const [primaryColor, setPrimaryColor] = useState(DEVICE_THEMES.blue.paper);
   const [secondaryColor, setSecondaryColor] = useState(DEVICE_THEMES.blue.accent);
   const [paletteDetected, setPaletteDetected] = useState(false);
   const [designStyle, setDesignStyle] = useState("signature");
   const [customHeadline, setCustomHeadline] = useState("");
+  const [customSubline, setCustomSubline] = useState("");
+  const [customTapLabel, setCustomTapLabel] = useState("");
   const [destinationUrl, setDestinationUrl] = useState("");
   const [brandLogo, setBrandLogo] = useState("");
   const [brandLogoId, setBrandLogoId] = useState("");
@@ -687,6 +738,8 @@ export function Configurator({ initialProduct, initialAction = "avis", initialTa
     setActionId(id);
     setActionCategory(ACTIONS[id].category);
     setCustomHeadline("");
+    setCustomSubline("");
+    setCustomTapLabel("");
   };
 
   const selectCategory = (id) => {
@@ -722,6 +775,8 @@ export function Configurator({ initialProduct, initialAction = "avis", initialTa
       targetId,
       designStyle,
       customHeadline,
+      customSubline,
+      customTapLabel,
       destinationUrl,
       brandLogoId,
       logoFileName,
@@ -801,13 +856,13 @@ export function Configurator({ initialProduct, initialAction = "avis", initialTa
       <div className="configurator-preview">
         <div className="preview-orbit preview-orbit-one" />
         <div className="preview-orbit preview-orbit-two" />
-        <DevicePreview productId={productId} actionId={actionId} brandName={brandName} brandLogo={brandLogo} theme={theme} primaryColor={primaryColor} secondaryColor={secondaryColor} designStyle={designStyle} customHeadline={customHeadline} />
-        <span className="preview-note"><b>APERÇU EN DIRECT</b>{product.format} · BAT final envoyé avant production</span>
+        <DevicePreview productId={productId} actionId={actionId} brandName={brandName} brandLogo={brandLogo} theme={theme} primaryColor={primaryColor} secondaryColor={secondaryColor} designStyle={designStyle} customHeadline={customHeadline} customSubline={customSubline} customTapLabel={customTapLabel} />
+        <span className="preview-note"><b>APERÇU EN DIRECT</b>{product.format} · votre création finale</span>
       </div>
       <div className="configurator-panel">
         <span className="kicker kicker-light">CRÉEZ LE VÔTRE</span>
         <h2>Voyez-le avant<br />de le commander.</h2>
-        <p className="config-intro">Trois étapes suffisent. Tapote recommande le bon support et affine la direction graphique avec toi au BAT.</p>
+        <p className="config-intro">Trois étapes suffisent. Choisissez le support, puis finalisez directement le style, les textes et les couleurs.</p>
         <fieldset>
           <legend>1. Où sera placé votre Tapote ?</legend>
           <div className="target-grid">
@@ -868,23 +923,28 @@ export function Configurator({ initialProduct, initialAction = "avis", initialTa
           </div>
           {brandLogo && <div className={`logo-file logo-file-${logoStatus}`}>
             <span className="logo-file-preview"><img src={brandLogo} alt="Aperçu du logo importé" /></span>
-            <span className="logo-file-copy"><b>{logoFileName}</b><small>{logoStatus === "success" ? "Logo prêt pour le BAT" : logoStatus === "loading" ? "Transmission sécurisée…" : "Aperçu local uniquement"}</small></span>
+            <span className="logo-file-copy"><b>{logoFileName}</b><small>{logoStatus === "success" ? "Logo intégré à la création" : logoStatus === "loading" ? "Transmission sécurisée…" : "Aperçu local uniquement"}</small></span>
             {logoStatus === "error" && pendingLogoFile && <button type="button" className="logo-retry" onClick={() => transmitLogo(pendingLogoFile)}>Réessayer</button>}
             <button type="button" className="logo-remove" onClick={removeLogo} aria-label="Supprimer le logo"><X size={14} /></button>
           </div>}
-          {(logoStatus === "success" || logoError) && <p className={`logo-status logo-status-${logoStatus}`} role="status" aria-live="polite">{logoError || "Le logo est enregistré avec la configuration et apparaîtra sur le BAT final."}</p>}
+          {(logoStatus === "success" || logoError) && <p className={`logo-status logo-status-${logoStatus}`} role="status" aria-live="polite">{logoError || "Le logo est enregistré et déjà visible dans la création finale."}</p>}
           <div className="config-options config-style-options" aria-labelledby="style-options-title">
             <div className="config-options-heading">
-              <strong id="style-options-title">Votre demande de design</strong>
-              <small>Décrivez l’univers souhaité : Tapote prépare un vrai BAT, pas un modèle coloré à la volée.</small>
+              <strong id="style-options-title">Studio d’impression en direct</strong>
+              <small>Chaque choix modifie immédiatement le fichier qui sera produit.</small>
             </div>
-            <label className="headline-control"><span>Votre brief <small>facultatif</small></span><input aria-label="Votre brief" value={customHeadline} onChange={(event) => setCustomHeadline(event.target.value.slice(0, 64))} placeholder="Ex. élégant, chaleureux, minimal ; texte à mettre en avant…" /><em>{customHeadline.length}/64</em></label>
-            <p className="config-bat-note">Logo, brief et action sont repris par notre équipe. Vous recevez un BAT réaliste à valider avant toute impression.</p>
+            <div className="design-style-grid">
+              {Object.values(DESIGN_STYLES).map((style) => <button type="button" key={style.id} aria-pressed={designStyle === style.id} className={designStyle === style.id ? "design-style-active" : ""} onClick={() => setDesignStyle(style.id)}><strong>{style.name}</strong><small>{style.description}</small></button>)}
+            </div>
+            <label className="headline-control"><span>Message principal</span><input aria-label="Message principal imprimé" value={customHeadline} onChange={(event) => setCustomHeadline(event.target.value.slice(0, 64))} placeholder={ACTIONS[actionId].campaignHeadline || ACTIONS[actionId].headline} /><em>{customHeadline.length}/64</em></label>
+            <label className="headline-control"><span>Phrase secondaire</span><input aria-label="Phrase secondaire imprimée" value={customSubline} onChange={(event) => setCustomSubline(event.target.value.slice(0, 90))} placeholder={ACTIONS[actionId].campaignSubline || ACTIONS[actionId].subline} /><em>{customSubline.length}/90</em></label>
+            <label className="headline-control"><span>Appel à l’action</span><input aria-label="Appel à l’action imprimé" value={customTapLabel} onChange={(event) => setCustomTapLabel(event.target.value.slice(0, 32))} placeholder="Tapotez ici" /><em>{customTapLabel.length}/32</em></label>
+            <p className="config-bat-note"><strong>Vous commandez ce que vous voyez.</strong> Contrôlez l’aperçu avant l’ajout au panier : la création enregistrée part directement en préparation.</p>
           </div>
         </fieldset>
-        <div className="config-guarantees"><span><Check size={13} /> NFC + QR testés</span><span><Check size={13} /> BAT avant impression</span><span><Check size={13} /> Aucun abonnement imposé</span></div>
+        <div className="config-guarantees"><span><Check size={13} /> NFC + QR testés</span><span><Check size={13} /> Création enregistrée</span><span><Check size={13} /> Aucun abonnement imposé</span></div>
         <div className="config-summary">
-          <div><span>{quantityLabel}</span><small>{TARGETS[targetId].name} · {ACTIONS[actionId].name} · BAT préparé sur mesure</small></div>
+          <div><span>{quantityLabel}</span><small>{TARGETS[targetId].name} · {ACTIONS[actionId].name} · aperçu finalisé en direct</small></div>
           {productId !== "carte" && <div className="config-quantity" role="group" aria-label={`Quantité de ${product.shortName.toLowerCase()}s`}>
             <span>Quantité</span>
             <span className="config-quantity-options">
@@ -914,7 +974,7 @@ function ProductShowcaseSection() {
     ["04", Link2, "Vous gardez la main", "La destination peut évoluer dans Pilot, sans réimprimer le support."],
   ];
   const facts = [
-    ["01", FileCheck2, "BAT avant production", "Le visuel final est validé avec le client avant impression ou fabrication."],
+    ["01", FileCheck2, "Création finalisée en direct", "Le visuel affiché et contrôlé dans le studio devient le fichier de production."],
     ["02", QrCode, "Deux gestes vraiment visibles", "Le téléphone NFC et le QR occupent chacun une zone claire, immédiatement compréhensible."],
     ["03", PackageCheck, "Double contrôle", "Le lien NFC et le QR sont testés avant l’expédition de chaque objet."],
   ];
@@ -963,7 +1023,7 @@ function ProductShowcaseSection() {
 function HowItWorks() {
   const steps = [
     ["Vous choisissez", "Le point de contact, l’action et votre univers de marque se règlent dans l’aperçu.", "Support · objectif · style"],
-    ["On finalise", "Un humain contrôle la hiérarchie, agrandit le QR et vous envoie le BAT avant impression.", "BAT · encodage · contrôle"],
+    ["On contrôle", "Notre équipe vérifie les marges, le contraste et la lecture du QR sans modifier votre création.", "Fichier · encodage · contrôle"],
     ["Vous le posez", "NFC et QR sont déjà configurés et testés. L’équipe n’a plus qu’à montrer le geste.", "Prêt à agir"],
   ];
   return (
@@ -1273,7 +1333,7 @@ function PurchaseLine({ item, index, onQuantity }) {
   const previewProductId = packStories[item.productId]?.productId || item.productId;
   return (
     <article className="purchase-line">
-          <div className="purchase-line-art"><DevicePreview productId={previewProductId} actionId={item.actionId} brandName={item.brandName} theme={item.theme} primaryColor={item.primaryColor} secondaryColor={item.secondaryColor} textColor={item.textColor} designStyle={item.designStyle} customHeadline={item.customHeadline} compact /></div>
+          <div className="purchase-line-art"><DevicePreview productId={previewProductId} actionId={item.actionId} brandName={item.brandName} theme={item.theme} primaryColor={item.primaryColor} secondaryColor={item.secondaryColor} textColor={item.textColor} designStyle={item.designStyle} customHeadline={item.customHeadline} customSubline={item.customSubline} customTapLabel={item.customTapLabel} compact /></div>
       <div className="purchase-line-copy">
         <span>{product.kind === "pack" ? "PACK PROFESSIONNEL" : "OBJET TAPOTE"}</span>
         <h2>{product.name}</h2>
@@ -1507,8 +1567,8 @@ function CartDrawer({ open, onClose, cart, setCart, onCheckout }) {
             const previewProductId = packStories[item.productId]?.productId || item.productId;
             return (
               <div className="cart-item" key={`${item.productId}-${item.actionId}-${index}`}>
-        <div className="cart-item-art"><DevicePreview productId={previewProductId} actionId={item.actionId} brandName={item.brandName} theme={item.theme} primaryColor={item.primaryColor} secondaryColor={item.secondaryColor} textColor={item.textColor} designStyle={item.designStyle} customHeadline={item.customHeadline} compact /></div>
-                <div className="cart-item-copy"><strong>{product.name}</strong><span>{product.kind === "pack" ? product.format : `${action.name} · ${DESIGN_STYLES[item.designStyle]?.name || "Signature"}${item.brandLogoId ? " · logo transmis" : ""}`}</span><small>{product.kind === "pack" ? "Personnalisation et liens confirmés au BAT" : item.destinationUrl ? "Lien individuel configuré" : "Lien à confirmer au paiement"} · {item.quantity > 1 ? `${formatMoney(product.price * item.quantity)} ${priceTaxLabel} (${formatMoney(product.price)} / unité)` : `${formatMoney(product.price)} ${priceTaxLabel}`}</small></div>
+        <div className="cart-item-art"><DevicePreview productId={previewProductId} actionId={item.actionId} brandName={item.brandName} theme={item.theme} primaryColor={item.primaryColor} secondaryColor={item.secondaryColor} textColor={item.textColor} designStyle={item.designStyle} customHeadline={item.customHeadline} customSubline={item.customSubline} customTapLabel={item.customTapLabel} compact /></div>
+                <div className="cart-item-copy"><strong>{product.name}</strong><span>{product.kind === "pack" ? product.format : `${action.name} · ${DESIGN_STYLES[item.designStyle]?.name || "Signature"}${item.brandLogoId ? " · logo transmis" : ""}`}</span><small>{product.kind === "pack" ? "Création et liens enregistrés" : item.destinationUrl ? "Lien individuel configuré" : "Lien à confirmer au paiement"} · {item.quantity > 1 ? `${formatMoney(product.price * item.quantity)} ${priceTaxLabel} (${formatMoney(product.price)} / unité)` : `${formatMoney(product.price)} ${priceTaxLabel}`}</small></div>
                 <div className="quantity"><button onClick={() => changeQuantity(index, -1)} aria-label={`Diminuer la quantité de ${product.name}`}><Minus size={13} /></button><b>{item.quantity}</b><button onClick={() => changeQuantity(index, 1)} disabled={item.quantity >= MAX_ITEM_QUANTITY} aria-label={`Augmenter la quantité de ${product.name}`}><Plus size={13} /></button></div>
               </div>
             );
@@ -1620,6 +1680,8 @@ function StorefrontApp() {
         && entry.targetId === normalizedItem.targetId
         && entry.designStyle === normalizedItem.designStyle
         && entry.customHeadline === normalizedItem.customHeadline
+        && entry.customSubline === normalizedItem.customSubline
+        && entry.customTapLabel === normalizedItem.customTapLabel
         && entry.destinationUrl === normalizedItem.destinationUrl
         && entry.brandLogoId === normalizedItem.brandLogoId);
       if (existing < 0) return [...current, normalizedItem];

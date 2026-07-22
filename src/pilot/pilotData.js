@@ -122,19 +122,106 @@ function throwIf(error) {
   if (error) throw error;
 }
 
-export async function loadPilotWorkspace(client, userId) {
-  const membershipResult = await client
-    .from("organization_members")
-    .select("organization_id,role,created_at")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-  throwIf(membershipResult.error);
-  if (!membershipResult.data) return null;
+function isMissingMembershipRpc(error) {
+  if (!error) return false;
+  if (["PGRST202", "42883"].includes(error.code)) return true;
+  const message = `${error.message || ""} ${error.details || ""}`.toLowerCase();
+  return message.includes("get_my_pilot_membership")
+    && (message.includes("could not find") || message.includes("does not exist") || message.includes("schema cache"));
+}
 
-  const organizationId = membershipResult.data.organization_id;
-  const since = new Date(Date.now() - DAY * 90).toISOString();
+function isMissingManagementOrganizationsRpc(error) {
+  if (!error) return false;
+  if (["PGRST202", "42883"].includes(error.code)) return true;
+  const message = `${error.message || ""} ${error.details || ""}`.toLowerCase();
+  return message.includes("get_my_management_pilot_organizations")
+    && (message.includes("could not find") || message.includes("does not exist") || message.includes("schema cache"));
+}
+
+async function loadLegacyPilotMembership(client) {
+  const userResult = await client.auth.getUser();
+  throwIf(userResult.error);
+  const userId = userResult.data?.user?.id;
+  if (!userId) return null;
+
+  const [membershipsResult, managementProfilesResult] = await Promise.all([
+    client
+      .from("organization_members")
+      .select("organization_id,role,created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: true }),
+    client
+      .from("management_profiles")
+      .select("organization_id")
+      .eq("user_id", userId),
+  ]);
+  throwIf(membershipsResult.error);
+  throwIf(managementProfilesResult.error);
+
+  const managementOrganizationIds = new Set(
+    (managementProfilesResult.data || []).map((profile) => profile.organization_id),
+  );
+  const pilotMemberships = (membershipsResult.data || []).filter(
+    (membership) => !managementOrganizationIds.has(membership.organization_id),
+  );
+  // Compatibility path for projects where the new RPC has not reached the
+  // schema cache yet. It may resolve a real Pilot membership only; it must
+  // never manufacture Gestion access from client-visible membership tables.
+  if (pilotMemberships.length === 1) return { ...pilotMemberships[0], access_scope: "pilot" };
+  return null;
+}
+
+async function loadManagementPilotMembership(client, requestedOrganizationId) {
+  const result = await client.rpc("get_my_management_pilot_organizations");
+  if (result.error) {
+    if (isMissingManagementOrganizationsRpc(result.error)) {
+      return { rpcMissing: true, membership: null };
+    }
+    throw result.error;
+  }
+  const organizations = result.data || [];
+  if (!organizations.length) return { rpcMissing: false, membership: null };
+  const selected = requestedOrganizationId
+    ? organizations.find((organization) => organization.organization_id === requestedOrganizationId)
+    : organizations[0];
+  if (!selected) return { rpcMissing: false, membership: null };
+  return {
+    rpcMissing: false,
+    membership: {
+      organization_id: selected.organization_id,
+      role: selected.role,
+      access_scope: "management",
+      available_organizations: organizations.map((organization) => ({
+        id: organization.organization_id,
+        name: organization.organization_name,
+      })),
+    },
+  };
+}
+
+async function loadPilotMembership(client, requestedOrganizationId) {
+  const membershipResult = await client.rpc("get_my_pilot_membership");
+  if (!membershipResult.error && membershipResult.data?.[0]) {
+    return { ...membershipResult.data[0], access_scope: "pilot" };
+  }
+  if (!membershipResult.error) {
+    const managementResult = await loadManagementPilotMembership(client, requestedOrganizationId);
+    return managementResult.membership;
+  }
+  if (!isMissingMembershipRpc(membershipResult.error)) throw membershipResult.error;
+  const managementResult = await loadManagementPilotMembership(client, requestedOrganizationId);
+  if (managementResult.membership) return managementResult.membership;
+  if (!managementResult.rpcMissing) return null;
+  return loadLegacyPilotMembership(client);
+}
+
+export async function loadPilotWorkspace(client, options = {}) {
+  const membership = await loadPilotMembership(client, options.organizationId);
+  if (!membership) return null;
+
+  const organizationId = membership.organization_id;
+  // The 90-day comparison needs the preceding 90 days as its baseline.
+  const since = new Date(Date.now() - DAY * 180).toISOString();
   const [organizationResult, locationsResult, linksResult, productsResult, metricsResult, auditResult] = await Promise.all([
     client.from("organizations").select("id,name").eq("id", organizationId).single(),
     client.from("locations").select("id,name,address,timezone").eq("organization_id", organizationId).order("name"),
@@ -168,9 +255,11 @@ export async function loadPilotWorkspace(client, userId) {
     };
   });
 
+  const visibleLinkIds = new Set(products.map((product) => product.linkId));
   return {
     organization: organizationResult.data,
-    membership: { role: membershipResult.data.role },
+    membership: { role: membership.role, accessScope: membership.access_scope || "pilot" },
+    availableOrganizations: membership.available_organizations || [],
     locations,
     products,
     metrics: (metricsResult.data || []).map((row) => ({
@@ -180,7 +269,7 @@ export async function loadPilotWorkspace(client, userId) {
       interactions: Number(row.interactions) || 0,
       lastInteraction: row.last_interaction,
     })),
-    auditLogs: (auditResult.data || []).map((row) => ({
+    auditLogs: (auditResult.data || []).filter((row) => visibleLinkIds.has(row.entity_id)).map((row) => ({
       id: row.id,
       action: row.action,
       entityId: row.entity_id,

@@ -14,7 +14,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ACTIONS, calculateShipping, matchingIdentityKey, PRODUCTS } from "../shared/catalog.js";
 import { getProductionChecks } from "./config.js";
-import { checkoutSchema, checkoutStatusSchema, leadSchema, parseRequest, tapoteRedirectSchema } from "./validation.js";
+import { checkoutSchema, checkoutStatusSchema, leadSchema, parseRequest, pilotActivationSchema, tapoteRedirectSchema } from "./validation.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const distDir = join(__dirname, "..", "dist");
@@ -77,7 +77,7 @@ const routeMeta = new Map([
   ["/boutique", ["Boutique NFC + QR | Tapote", "Choisissez un chevalet, une plaque verticale, une Carte NFC ou un pack Tapote, prêt à l’emploi ou adapté à votre identité."]],
   ["/designs", ["Designs Tapote pour chaque usage", "Comparez les designs Tapote pour avis, menu, réservation, réseaux sociaux, Wi-Fi, paiement et autres liens professionnels."]],
   ["/secteurs", ["Tapote pour votre secteur | 15 usages concrets", "Trouvez le support NFC + QR, le placement et l’usage Tapote adaptés à votre métier."]],
-  ["/personnaliser", ["Personnaliser votre Tapote", "Préparez une Tapote à votre image avec votre logo, vos couleurs, votre texte et un BAT à valider avant production."]],
+  ["/personnaliser", ["Personnaliser votre Tapote", "Créez votre Tapote en direct avec votre logo, vos couleurs, vos textes et votre destination, puis commandez le visuel affiché."]],
   ["/comment-ca-marche", ["Comment fonctionne Tapote ?", "NFC ou QR : le client approche son téléphone et ouvre instantanément l’avis, le menu, la réservation ou le lien choisi."]],
   ["/produits/chevalet", ["Chevalet A6 NFC + QR | Tapote", "Un chevalet vertical et visible pour déclencher avis, réservation, menu, Wi-Fi ou tout autre lien au comptoir."]],
   ["/produits/plaque", ["Plaque verticale NFC + QR | Tapote", "Une plaque PMMA présentée debout, personnalisable et synchronisée avec le lien affiché sur le téléphone."]],
@@ -87,6 +87,13 @@ const routeMeta = new Map([
   ["/categorie/cartes-nfc", ["Cartes NFC + QR | Tapote", "Découvrez les Cartes NFC Tapote prêtes à l’emploi, personnalisées ou assorties à vos supports."]],
   ["/categorie/packs-nfc", ["Packs NFC + QR professionnels | Tapote", "Multipliez les points de contact avec les packs de chevalets et plaques Tapote configurés et testés."]],
   ["/categorie/packs", ["Packs NFC + QR professionnels | Tapote", "Multipliez les points de contact avec les packs de chevalets et plaques Tapote configurés et testés."]],
+  ["/devis", ["Devis volume et multi-sites | Tapote", "Décrivez votre besoin de 10 supports ou plus et recevez une proposition Tapote claire, sans engagement et adaptée à vos lieux."]],
+  ["/mentions-legales", ["Mentions légales | Tapote", "Consultez les informations relatives à l’éditeur, à la publication et à l’hébergement du site Tapote."]],
+  ["/cgv", ["Conditions générales de vente B2B | Tapote", "Consultez les conditions applicables aux commandes professionnelles de supports NFC + QR Tapote."]],
+  ["/confidentialite", ["Politique de confidentialité | Tapote", "Découvrez comment Tapote traite les données professionnelles et comment exercer vos droits."]],
+  ["/panier", ["Votre panier | Tapote", "Vérifiez les supports Tapote ajoutés au panier, leur composition et les frais de livraison."]],
+  ["/commande", ["Finaliser la commande | Tapote", "Finalisez votre commande professionnelle de supports Tapote via le paiement sécurisé Stripe."]],
+  ["/commande/confirmee", ["Suivi de commande | Tapote", "Consultez la confirmation et le statut de votre commande Tapote."]],
 ]);
 
 const sectorMetaTitles = new Map([
@@ -107,7 +114,7 @@ const sectorMetaTitles = new Map([
   ["animaux-soins", "Animaux & soins"],
 ]);
 
-const privateStorefrontPrefixes = ["/panier", "/commande", "/devis", "/connexion", "/gestion", "/pilot"];
+const privateStorefrontPrefixes = ["/panier", "/commande", "/connexion", "/gestion", "/pilot"];
 const normalizeStorefrontPath = (pathname) => (String(pathname || "/").split(/[?#]/, 1)[0].replace(/\/+$/, "") || "/");
 
 export function storefrontMetaForPath(pathname, publicUrl = "https://tapote.fr") {
@@ -305,7 +312,7 @@ function stripeStatus(session, storedOrder) {
   return "processing";
 }
 
-export function createApp({ config, repository, storage, logger, outboxWorker, stripe: injectedStripe } = {}) {
+export function createApp({ config, repository, storage, logger, outboxWorker, stripe: injectedStripe, storefrontHtml: injectedStorefrontHtml } = {}) {
   const stripe = injectedStripe ?? (config.stripeSecretKey ? new Stripe(config.stripeSecretKey) : null);
   const app = express();
   const checkoutLimiter = limiter(60 * 60 * 1_000, 20, "Trop de tentatives de paiement. Réessaie dans quelques minutes.");
@@ -376,12 +383,19 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
   app.use(express.json({ limit: "200kb", strict: true }));
 
   app.get("/api/health", (_request, response) => response.json({ ok: true }));
-  app.get("/api/ready", async (_request, response) => {
+  app.get("/api/ready", async (request, response) => {
     try {
       await Promise.all([repository.healthCheck(), storage.healthCheck()]);
       const readiness = getProductionChecks(config, { repository, storage });
+      if (!readiness.ready) {
+        const missingChecks = Object.entries(readiness.checks)
+          .filter(([, ready]) => !ready)
+          .map(([name]) => name);
+        request.log.warn({ missingChecks }, "Readiness production incomplète");
+      }
       return response.status(readiness.ready ? 200 : 503).json({ ready: readiness.ready });
-    } catch {
+    } catch (error) {
+      request.log.error({ err: error }, "Readiness production indisponible");
       return response.status(503).json({ ready: false });
     }
   });
@@ -490,6 +504,54 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
     }
   });
 
+  app.get("/api/catalog", statusLimiter, async (_request, response, next) => {
+    response.set("Cache-Control", "public, max-age=30, stale-while-revalidate=120");
+    try {
+      const persisted = await repository.getStorefrontCatalog?.();
+      const products = persisted?.length ? persisted : Object.values(PRODUCTS).map((product) => ({
+        productId: product.id,
+        name: product.name,
+        price: product.price,
+        online: true,
+        availableStock: null,
+      }));
+      return response.json({ products });
+    } catch (error) {
+      return next(error);
+    }
+  });
+
+  app.post("/api/management/orders/:orderId/activate-pilot", statusLimiter, async (request, response, next) => {
+    response.set({
+      "Cache-Control": "private, no-store, max-age=0",
+      "X-Robots-Tag": "noindex, nofollow",
+    });
+    if (!uuidPattern.test(request.params.orderId || "")) {
+      return response.status(400).json({ error: "Identifiant de commande invalide." });
+    }
+    const parsed = parseRequest(pilotActivationSchema, request.body);
+    if (parsed.error) return response.status(400).json({ error: parsed.error });
+    try {
+      const user = await storage.authenticateManagementUser?.(bearerToken(request));
+      if (!user?.id) return response.status(401).json({ error: "Session Gestion invalide ou expirée." });
+      const order = await repository.getManagementOrderPilotContext(request.params.orderId, user.id);
+      if (!order) return response.status(404).json({ error: "Commande introuvable." });
+      if (!order.clientEmail) return response.status(409).json({ error: "Ajoute une adresse e-mail au client avant d’activer Pilot." });
+      const activation = await storage.provisionPilotWorkspace({
+        actorUserId: user.id,
+        order,
+        locationName: parsed.data.locationName,
+        targetUrl: parsed.data.targetUrl,
+      });
+      return response.status(activation.status === "invited" ? 202 : 200).json(activation);
+    } catch (error) {
+      if (error?.statusCode) {
+        return response.status(error.statusCode).json({ error: error.publicMessage || "L’activation Pilot a échoué." });
+      }
+      return next(error);
+    }
+  });
+
   app.post("/api/checkout", checkoutLimiter, async (request, response, next) => {
     const parsed = parseRequest(checkoutSchema, request.body);
     if (parsed.error) return response.status(400).json({ error: parsed.error });
@@ -526,6 +588,8 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
             targetId: matchingSupport.targetId,
             designStyle: matchingSupport.designStyle,
             customHeadline: matchingSupport.customHeadline,
+            customSubline: matchingSupport.customSubline,
+            customTapLabel: matchingSupport.customTapLabel,
             destinationUrl: matchingSupport.destinationUrl,
             brandLogoId: matchingSupport.brandLogoId,
             logoFileName: matchingSupport.logoFileName,
@@ -559,6 +623,8 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
             targetId: effectiveItem.targetId,
             designStyle: effectiveItem.designStyle,
             customHeadline: effectiveItem.customHeadline,
+            customSubline: effectiveItem.customSubline,
+            customTapLabel: effectiveItem.customTapLabel,
             destinationUrl: effectiveItem.destinationUrl || customer.destinationUrl,
             brandLogoId: effectiveItem.brandLogoId || null,
             logoFileName: effectiveItem.logoFileName,
@@ -577,6 +643,20 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
         return response.status(400).json({ error: "À partir de 10 supports, demandez un devis afin de recevoir un tarif adapté à votre composition." });
       }
 
+      if (repository.durable && repository.getStorefrontCatalog) {
+        const publishedCatalog = await repository.getStorefrontCatalog();
+        if (Array.isArray(publishedCatalog)) {
+          const publishedById = new Map(publishedCatalog.map((entry) => [entry.productId, entry]));
+          const unavailableItem = validItems.find(({ product }) => {
+            const published = publishedById.get(product.id);
+            return !published?.online || published.price !== product.price || published.availableStock === 0;
+          });
+          if (unavailableItem) {
+            return response.status(409).json({ error: `${unavailableItem.product.name} n’est plus disponible. Actualise la boutique avant de continuer.` });
+          }
+        }
+      }
+
       const orderItems = validItems.map(({ product, action, quantity, customization }) => ({
         productId: product.id,
         actionId: action.id,
@@ -586,6 +666,24 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
       }));
       const subtotal = validItems.reduce((sum, { product, quantity }) => sum + product.price * quantity, 0);
       const shippingAmount = calculateShipping(subtotal);
+
+      // Fail closed before persisting anything. A checkout disabled by missing
+      // production dependencies must never leave an orphan pending order.
+      const readiness = getProductionChecks(config, { repository, storage });
+      const sandboxCheckout = config.isProduction
+        && config.stripeSandboxCheckoutEnabled
+        && config.stripeSecretKey.startsWith("sk_test_");
+      const missingChecks = Object.entries(readiness.checks)
+        .filter(([name, ready]) => !ready && !(sandboxCheckout && name === "stripeLive"))
+        .map(([name]) => name);
+      if (config.isProduction && missingChecks.length > 0) {
+        request.log.error({ missingChecks }, "Checkout bloqué par la readiness");
+        return response.status(503).json({ error: "La boutique finalise sa configuration. Réessaie un peu plus tard." });
+      }
+      if (!config.legalReady || !config.legalVersion) {
+        return response.status(503).json({ error: "La vente est verrouillée tant que les informations légales ne sont pas validées." });
+      }
+
       const pendingOrder = await repository.createPendingOrder({
         orderToken: attemptId,
         customer,
@@ -603,21 +701,6 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
         const demoId = `demo_${randomUUID()}`;
         await repository.markDemoOrder(attemptId, demoId);
         return response.json({ demo: true, url: `${returnUrl}/commande/confirmee?session_id=${encodeURIComponent(demoId)}` });
-      }
-
-      const readiness = getProductionChecks(config, { repository, storage });
-      const sandboxCheckout = config.isProduction
-        && config.stripeSandboxCheckoutEnabled
-        && config.stripeSecretKey.startsWith("sk_test_");
-      const missingChecks = Object.entries(readiness.checks)
-        .filter(([name, ready]) => !ready && !(sandboxCheckout && name === "stripeLive"))
-        .map(([name]) => name);
-      if (config.isProduction && missingChecks.length > 0) {
-        request.log.error({ missingChecks }, "Checkout bloqué par la readiness");
-        return response.status(503).json({ error: "La boutique finalise sa configuration. Réessaie un peu plus tard." });
-      }
-      if (!config.legalReady || !config.legalVersion) {
-        return response.status(503).json({ error: "La vente est verrouillée tant que les informations légales ne sont pas validées." });
       }
 
       const lineItems = validItems.map(({ product, action, quantity, customization }) => ({
@@ -684,7 +767,7 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
         metadata: { orderToken: attemptId, businessName: customer.businessName, customerType: "business" },
         custom_text: {
           shipping_address: { message: personalizedOrder
-            ? "Commande personnalisée : la préparation commence après validation de votre BAT. Chaque support sera ensuite configuré et testé avant expédition."
+            ? "Commande personnalisée : la création enregistrée au panier part directement en préparation. Chaque support sera configuré et testé avant expédition."
             : "Commande professionnelle : chaque support sera préparé, configuré et testé avant expédition." },
           submit: { message: `En payant, vous confirmez agir à titre professionnel et accepter les CGV B2B ${config.legalVersion}.` },
         },
@@ -745,13 +828,21 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
       }
     },
   }));
-  let storefrontTemplate;
+  let storefrontTemplate = injectedStorefrontHtml;
   app.use(async (request, response, next) => {
     if (!config.isProduction || !["GET", "HEAD"].includes(request.method) || !request.accepts("html")) return next();
     try {
       storefrontTemplate ||= await readFile(join(distDir, "index.html"), "utf8");
-      const status = isKnownFrontendPath(request.path) ? 200 : 404;
-      return response.status(status).type("html").send(injectStorefrontMeta(storefrontTemplate, request.path, config.publicUrl));
+      const knownFrontendPath = isKnownFrontendPath(request.path);
+      const meta = storefrontMetaForPath(request.path, config.publicUrl);
+      response.set({
+        "Cache-Control": knownFrontendPath ? "no-cache" : "no-store",
+        "X-Robots-Tag": meta.robots,
+      });
+      return response
+        .status(knownFrontendPath ? 200 : 404)
+        .type("html")
+        .send(injectStorefrontMeta(storefrontTemplate, request.path, config.publicUrl));
     } catch (error) {
       return next(error);
     }

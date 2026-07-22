@@ -5,6 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const repository = vi.hoisted(() => ({
   advanceManagementEncodedProduct: vi.fn(),
+  activateManagementOrderPilot: vi.fn(),
+  assignManagementEncodedProduct: vi.fn(),
   createManagementEncodedProduct: vi.fn(),
   createManagementClient: vi.fn(),
   createManagementInventoryItem: vi.fn(),
@@ -93,6 +95,24 @@ afterEach(() => {
 });
 
 describe("TAPOTE Gestion", () => {
+  it("propose l'accès unidirectionnel vers Pilot", async () => {
+    render(<TapoteManagementApp />);
+
+    await screen.findByRole("heading", { name: "Vue d’ensemble" });
+    expect(screen.getByRole("link", { name: /Accéder à Pilot/ })).toHaveAttribute("href", "/pilot");
+    expect(screen.queryByText("TAPOTE Gestion", { selector: "main *" })).not.toBeInTheDocument();
+  });
+
+  it("refuse un compte Pilot dépourvu de profil Gestion explicite", async () => {
+    repository.getManagementAccess.mockResolvedValue(null);
+
+    render(<TapoteManagementApp />);
+
+    expect(await screen.findByText("Ce compte n’est pas autorisé à accéder à TAPOTE Gestion.")).toBeInTheDocument();
+    expect(repository.loadManagementData).not.toHaveBeenCalled();
+    expect(screen.queryByRole("heading", { name: "Vue d’ensemble" })).not.toBeInTheDocument();
+  });
+
   it("affiche uniquement des indicateurs calculés depuis les données réelles", async () => {
     render(<TapoteManagementApp />);
 
@@ -112,6 +132,33 @@ describe("TAPOTE Gestion", () => {
     fireEvent.click(screen.getByRole("button", { name: /Commandes/ }));
     expect(screen.getByText("TPT-1050")).toBeInTheDocument();
     expect(screen.queryByText("TPT-1048")).not.toBeInTheDocument();
+  });
+
+  it("bloque une vente manuelle avant confirmation explicite du paiement", async () => {
+    const pendingOrder = {
+      ...workspace.orders[0],
+      recordId: "row-pending",
+      id: "TPT-1051",
+      status: "payment_pending",
+      payment: "En attente",
+      sourceOrderId: null,
+    };
+    repository.loadManagementData.mockResolvedValue({ ...workspace, orders: [pendingOrder] });
+
+    render(<TapoteManagementApp />);
+    await screen.findByRole("heading", { name: "Vue d’ensemble" });
+    fireEvent.click(screen.getByRole("button", { name: /Commandes/ }));
+    expect(screen.getByText("Paiement à confirmer")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Ouvrir TPT-1051" }));
+    fireEvent.click(screen.getByRole("button", { name: /Confirmer le paiement/ }));
+
+    await waitFor(() => expect(repository.updateManagementOrderStatus).toHaveBeenCalledWith(
+      "org-1",
+      expect.objectContaining({ id: "TPT-1051", payment: "En attente" }),
+      "paid",
+      "",
+    ));
   });
 
   it("expose toutes les informations de fabrication et le logo privé signé", async () => {

@@ -28,6 +28,13 @@ class DevelopmentStorage {
   async createSignedDownload() {
     return null;
   }
+
+  async provisionPilotWorkspace() {
+    const error = new Error("L’activation Pilot nécessite Supabase.");
+    error.statusCode = 503;
+    error.publicMessage = "L’activation Pilot est indisponible dans cet environnement.";
+    throw error;
+  }
 }
 
 class SupabaseStorage {
@@ -35,6 +42,7 @@ class SupabaseStorage {
 
   constructor(config) {
     this.bucket = config.supabaseBucket;
+    this.publicUrl = config.publicUrl;
     this.client = createClient(config.supabaseUrl, config.supabaseSecretKey, {
       auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
       global: { headers: { "X-Client-Info": "tapote-api" } },
@@ -77,6 +85,66 @@ class SupabaseStorage {
       throw new Error(`Signature du logo impossible : ${error?.message || "URL absente"}`);
     }
     return { url: data.signedUrl, expiresIn: ttl };
+  }
+
+  async findUserByEmail(email) {
+    const normalizedEmail = String(email || "").trim().toLowerCase();
+    for (let page = 1; page <= 10; page += 1) {
+      const { data, error } = await this.client.auth.admin.listUsers({ page, perPage: 1000 });
+      if (error) throw new Error(`Recherche du compte Pilot impossible : ${error.message}`);
+      const user = data?.users?.find((candidate) => candidate.email?.toLowerCase() === normalizedEmail);
+      if (user) return user;
+      if (!data?.users?.length || data.users.length < 1000) break;
+    }
+    return null;
+  }
+
+  async provisionPilotWorkspace({ actorUserId, order, locationName, targetUrl }) {
+    let customerUser = await this.findUserByEmail(order.clientEmail);
+    if (!customerUser) {
+      const { data, error } = await this.client.auth.admin.inviteUserByEmail(order.clientEmail, {
+        redirectTo: `${this.publicUrl}/pilot`,
+        data: { business_name: order.clientName, invited_from: "tapote_gestion" },
+      });
+      if (error || !data?.user) {
+        const invitationError = new Error(error?.message || "Invitation Pilot impossible.");
+        invitationError.statusCode = 502;
+        invitationError.publicMessage = "L’invitation Pilot n’a pas pu être envoyée.";
+        throw invitationError;
+      }
+      return { status: "invited", customerUserId: data.user.id, email: order.clientEmail };
+    }
+
+    if (!customerUser.email_confirmed_at) {
+      return { status: "invited", customerUserId: customerUser.id, email: order.clientEmail };
+    }
+
+    const { data, error } = await this.client.rpc("activate_management_order_pilot_as_service", {
+      target_actor_user_id: actorUserId,
+      target_management_order_id: order.id,
+      target_customer_user_id: customerUser.id,
+      target_location_name: locationName,
+      target_url: targetUrl || null,
+    });
+    if (error) {
+      const activationError = new Error(error.message);
+      activationError.statusCode = ["42501"].includes(error.code) ? 403 : 409;
+      activationError.publicMessage = ({
+        assigned_products_required: "Affecte au moins un support verrouillé à cette commande avant d’activer Pilot.",
+        order_not_ready_for_pilot: "La commande doit être prête avant l’activation de Pilot.",
+        customer_email_mismatch: "L’adresse du compte Pilot ne correspond pas au client de la commande.",
+        valid_https_destination_required: "Ajoute un lien HTTPS valide au support avant l’activation.",
+      })[error.message] || "L’espace Pilot n’a pas pu être activé. Vérifie la commande et les supports affectés.";
+      throw activationError;
+    }
+    const activation = Array.isArray(data) ? data[0] : data;
+    return {
+      status: "active",
+      customerUserId: customerUser.id,
+      organizationId: activation?.organization_id,
+      locationId: activation?.location_id,
+      productsCreated: activation?.products_created || 0,
+    };
   }
 }
 

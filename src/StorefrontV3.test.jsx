@@ -11,6 +11,7 @@ function renderRoute(path) {
 
 beforeEach(() => {
   window.localStorage.clear();
+  window.sessionStorage.clear();
   vi.stubGlobal("scrollTo", vi.fn());
 });
 
@@ -20,31 +21,89 @@ afterEach(() => {
 });
 
 describe("Boutique Tapote V3", () => {
-  it("rend le service et Pilot tangibles dès l’accueil", () => {
+  it("rend le menu mobile modal au clavier et restaure le focus", () => {
     renderRoute("/");
 
-    expect(screen.getByRole("heading", { name: /Vous choisissez\. On prépare\. Vous posez/i })).toBeVisible();
-    expect(screen.getByRole("region", { name: /Aperçu de Tapote Pilot/i })).toBeVisible();
-    expect(screen.getByText("294")).toBeVisible();
+    const toggle = screen.getByRole("button", { name: "Ouvrir le menu" });
+    const main = document.getElementById("main-content");
+    toggle.focus();
+    fireEvent.click(toggle);
 
-    fireEvent.click(screen.getByRole("button", { name: "7 j" }));
+    const firstMenuLink = screen.getByRole("link", { name: "Boutique", exact: true });
+    expect(firstMenuLink).toHaveFocus();
+    expect(main).toHaveAttribute("inert");
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
 
-    expect(screen.getByText("86")).toBeVisible();
-    expect(screen.getByText("61 NFC · 25 QR")).toBeVisible();
-    expect(screen.getByRole("link", { name: /Voir les 3 supports/i })).toHaveAttribute("href", "/boutique");
+    fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
+    expect(toggle).toHaveFocus();
+    fireEvent.keyDown(document, { key: "Tab" });
+    expect(firstMenuLink).toHaveFocus();
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(toggle).toHaveFocus();
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(main).not.toHaveAttribute("inert");
+  });
+
+  it("déplace le focus du lien d’évitement vers le contenu principal", () => {
+    renderRoute("/");
+
+    fireEvent.click(screen.getByRole("link", { name: "Aller au contenu" }));
+
+    const main = document.getElementById("main-content");
+    expect(main).toHaveAttribute("tabindex", "-1");
+    expect(main).toHaveFocus();
+  });
+
+  it("nomme la recherche, les filtres de secteurs et le champ anti-robot", () => {
+    renderRoute("/secteurs");
+
+    expect(screen.getByRole("searchbox", { name: "Rechercher un secteur" })).toBeVisible();
+    expect(screen.getByRole("group", { name: "Filtrer par catégorie de secteur" })).toBeVisible();
+
+    cleanup();
+    renderRoute("/devis");
+    const honeypot = document.querySelector('input[name="website"]');
+    expect(honeypot).toHaveAttribute("tabindex", "-1");
+    expect(honeypot).toHaveAttribute("aria-hidden", "true");
+    expect(honeypot.labels[0]).toHaveTextContent("Site web");
+  });
+
+  it("retire la structure des mockups décoratifs du plan de page", () => {
+    renderRoute("/produits/chevalet?mode=custom&action=site");
+
+    const simulatedPage = document.querySelector(".v3-safari-app > .v3-safari-page");
+    expect(simulatedPage.closest('[aria-hidden="true"]')).toHaveClass("v3-live-phone-canvas");
+    expect(document.querySelector(".v3-safari-app > main")).not.toBeInTheDocument();
+    expect(screen.getAllByRole("main")).toHaveLength(1);
+    expect(document.querySelector(".v3-product-art")).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("présente une offre e-commerce simple sans détourner vers Pilot", () => {
+    renderRoute("/");
+
+    expect(screen.getByRole("heading", { name: /Commencez simple/i })).toBeVisible();
+    expect(screen.getByRole("heading", { name: /Votre marque passe devant/i })).toBeVisible();
+    expect(screen.getByText(/Duo dès 55/)).toBeVisible();
+    expect(screen.queryByText(/Tapote Pilot/i)).not.toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: /Créer mon Tapote/i }).some((link) => link.getAttribute("href") === "/personnaliser")).toBe(true);
   });
 
   it("propose une galerie complète de designs par action", () => {
     renderRoute("/designs");
 
     expect(screen.getByRole("heading", { name: /Le bon design/i })).toBeVisible();
-    expect(screen.getByRole("heading", { name: /La suite sur Instagram/i })).toBeVisible();
-    expect(screen.getByRole("heading", { name: /Retrouvez-nous ici/i })).toBeVisible();
-    expect(screen.getAllByText(/Partir de ce design/i)).toHaveLength(18);
-    expect(document.querySelectorAll(".v3-design-specimen .device-purpose")).toHaveLength(18);
-    expect(screen.getAllByText("Laissez un avis Google").length).toBeGreaterThanOrEqual(2);
-    expect(screen.getByText("Suivez-nous sur Instagram")).toBeVisible();
-    expect(screen.getByText("Consultez le menu")).toBeVisible();
+    expect(screen.getByRole("heading", { name: /Vous avez aimé \?/i })).toBeVisible();
+    expect(screen.getByRole("heading", { name: /Les coulisses \? Tapotez/i })).toBeVisible();
+    expect(screen.getByRole("heading", { name: /Restons proches\. Tapotez/i })).toBeVisible();
+    expect(screen.getAllByText(/Partir de ce design/i)).toHaveLength(19);
+    expect(document.querySelectorAll(".v3-design-specimen .device-purpose")).toHaveLength(19);
+    expect([...document.querySelectorAll(".v3-design-specimen .tap-zone-nfc strong")].every((node) => node.textContent === "Tapotez ici")).toBe(true);
+    expect([...document.querySelectorAll(".v3-design-specimen .device-headline")].every((node) => /Tapotez\.$/i.test(node.textContent))).toBe(true);
+    expect(document.querySelectorAll(".v3-design-specimen .tapote-word")).toHaveLength(19);
+    expect(screen.getAllByText("TAPOTEZ POUR PARTAGER VOTRE AVIS").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText("TAPOTEZ POUR VOIR LES COULISSES")).toBeVisible();
+    expect(screen.getByText("TAPOTEZ POUR DÉCOUVRIR LA CARTE")).toBeVisible();
   });
 
   it("couvre quinze familles de secteurs avec une offre recommandée mais non imposée", () => {
@@ -101,11 +160,61 @@ describe("Boutique Tapote V3", () => {
     expect(window.location.search).toContain("action=menu");
   });
 
+  it("restaure atomiquement l’identité du mockup prêt à l’emploi", () => {
+    renderRoute("/secteurs/boulangeries-patisseries");
+
+    fireEvent.click(screen.getByRole("button", { name: /Studio en direct/i }));
+    fireEvent.change(screen.getByLabelText("Nom de votre entreprise"), { target: { value: "BOULANGERIE RICO" } });
+    fireEvent.change(screen.getByLabelText("Couleur principale"), { target: { value: "#123456" } });
+    expect(document.querySelectorAll(".v3-sector-scene-support .customer-brand b")[0]).toHaveTextContent("BOULANGERIE RICO");
+
+    fireEvent.click(screen.getByRole("button", { name: /Prêt à l’emploi/i }));
+
+    const readySupportBrands = [...document.querySelectorAll(".v3-sector-scene-support .customer-brand b")];
+    expect(readySupportBrands).toHaveLength(2);
+    expect(readySupportBrands.every((brand) => brand.textContent === "MAISON LEVAIN")).toBe(true);
+    expect(document.querySelector(".v3-sector-scene-screen .v3-live-phone-brand small")).toHaveTextContent("MAISON LEVAIN");
+    expect(document.querySelector(".v3-sector-scene-screen").style.getPropertyValue("--v3-phone-primary")).toBe("#402d24");
+    expect(document.querySelector(".v3-sector-scene-screen").style.getPropertyValue("--v3-phone-accent")).toBe("#b95632");
+
+    fireEvent.click(screen.getByRole("button", { name: /Studio en direct/i }));
+    expect(screen.getByLabelText("Nom de votre entreprise")).toHaveValue("BOULANGERIE RICO");
+    expect(screen.getByLabelText("Couleur principale")).toHaveValue("#123456");
+  });
+
+  it("masque le logo client en prêt à l’emploi puis le restaure avec le brouillon", () => {
+    const uploadedLogo = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E";
+    window.sessionStorage.setItem("tapote-logo-preview-v1:logo-test", uploadedLogo);
+    window.sessionStorage.setItem("tapote-config-draft-v2:product:comptoir", JSON.stringify({
+      actionId: "avis",
+      count: 1,
+      composition: { comptoir: 1, plaque: 0 },
+      brandName: "CAFÉ RICO",
+      brandLogoId: "logo-test",
+      logoFileName: "rico.svg",
+      designStyle: "signature",
+      customHeadline: "",
+      primaryColor: "#173b57",
+      secondaryColor: "#f4b942",
+      textColor: "#ffffff",
+    }));
+    renderRoute("/produits/chevalet?mode=custom&action=avis");
+
+    expect(document.querySelectorAll('.v3-product-main-image img[alt="Logo client importé"]').length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole("button", { name: /Prêt à l’emploi/i }));
+    expect(document.querySelectorAll('.v3-product-main-image img[alt="Logo client importé"]')).toHaveLength(0);
+    expect(document.querySelector(".v3-product-main-image .customer-brand b")).toHaveTextContent("CAFÉ NOMA");
+
+    fireEvent.click(screen.getByRole("button", { name: /Studio en direct/i }));
+    expect(document.querySelectorAll('.v3-product-main-image img[alt="Logo client importé"]').length).toBeGreaterThan(0);
+    expect(screen.getByLabelText("Nom de votre entreprise")).toHaveValue("CAFÉ RICO");
+  });
+
   it("rend des écrans dédiés et reconnaissables pour les apps et réglages", () => {
     renderRoute("/produits/chevalet?mode=custom&action=avis");
 
     expect(document.querySelector(".v3-phone-google-stars")).toHaveTextContent("★★★★★");
-    expect(screen.getByText("Publier un avis")).toBeVisible();
+    expect(screen.getAllByText("Publier un avis")[0]).toBeVisible();
 
     fireEvent.change(screen.getByLabelText("Le lien à ouvrir"), { target: { value: "instagram" } });
     expect(document.querySelector(".v3-instagram-app")).toBeInTheDocument();
@@ -131,7 +240,7 @@ describe("Boutique Tapote V3", () => {
     expect(document.querySelector(".v3-apple-pay-app")).toHaveTextContent("contact masqué");
 
     fireEvent.change(screen.getByLabelText("Le lien à ouvrir"), { target: { value: "site" } });
-    expect(document.querySelector(".v3-safari-app")).toHaveTextContent("cafenoma.fr");
+    expect(document.querySelector(".v3-safari-app")).toHaveTextContent("votremarque.fr");
 
     fireEvent.change(screen.getByLabelText("Le lien à ouvrir"), { target: { value: "tiktok" } });
     expect(document.querySelectorAll(".v3-tiktok-app > footer > nav svg")).toHaveLength(5);
@@ -195,25 +304,63 @@ describe("Boutique Tapote V3", () => {
     fireEvent.click(screen.getByRole("button", { name: /Packs · dès 17,80/i }));
     fireEvent.click(screen.getByRole("button", { name: /À votre image/i }));
 
-    const links = screen.getAllByRole("link", { name: /Choisir la composition/i });
-    expect(links).toHaveLength(2);
-    expect(links[0]).toHaveAttribute("href", expect.stringContaining("mode=custom&count=2"));
-    expect(links[1]).toHaveAttribute("href", expect.stringContaining("mode=custom&count=5"));
+    expect(screen.getByRole("heading", { name: /Équipez plus.*Payez moins/i })).toBeVisible();
+    const starterLink = screen.getByRole("link", { name: /Composer mon pack de 2/i });
+    const bestValueLink = screen.getByRole("link", { name: /Équiper mon établissement/i });
+    expect(starterLink).toHaveAttribute("href", expect.stringContaining("mode=custom&count=2"));
+    expect(bestValueLink).toHaveAttribute("href", expect.stringContaining("mode=custom&count=5"));
+    expect(bestValueLink.closest("article")).toHaveClass("is-best-value");
+    expect(screen.getByText(/Vous économisez 86/)).toBeVisible();
     expect(screen.queryByRole("button", { name: /Ajouter ce pack/i })).not.toBeInTheDocument();
   });
 
-  it("conserve l’action choisie dans l’URL et garde le brief pour le BAT", () => {
+  it("enregistre exactement les textes et la destination configurés dans le studio", () => {
     renderRoute("/produits/chevalet?mode=custom&action=avis");
 
     fireEvent.change(screen.getByLabelText("Le lien à ouvrir"), { target: { value: "instagram" } });
-    fireEvent.change(screen.getByLabelText("Brief de design"), { target: { value: "Univers premium chaleureux" } });
+    fireEvent.change(screen.getByLabelText("Message principal imprimé"), { target: { value: "Découvrez nos coulisses" } });
+    fireEvent.change(screen.getByLabelText("Phrase secondaire imprimée"), { target: { value: "Nouveautés chaque semaine" } });
+    fireEvent.change(screen.getByLabelText("Appel à l’action imprimé"), { target: { value: "Suivez-nous" } });
+    fireEvent.change(screen.getByLabelText("Adresse exacte à ouvrir"), { target: { value: "https://instagram.com/tapote" } });
 
     expect(window.location.search).toContain("action=instagram");
-    expect(screen.queryByText("Univers premium chaleureux")).not.toBeInTheDocument();
+    expect(document.querySelector(".v3-product-main-image .device-headline")).toHaveTextContent("Découvrez nos coulisses");
+    expect(document.querySelector(".v3-product-main-image .device-subline")).toHaveTextContent("Nouveautés chaque semaine");
+    expect(document.querySelector(".v3-product-main-image .tap-zone-nfc strong")).toHaveTextContent("Suivez-nous");
     fireEvent.click(screen.getByRole("button", { name: /Ajouter au panier/i }));
     expect(JSON.parse(window.localStorage.getItem("tapote-cart-v3"))).toEqual([
-      expect.objectContaining({ actionId: "instagram", customHeadline: "Univers premium chaleureux" }),
+      expect.objectContaining({ actionId: "instagram", customHeadline: "Découvrez nos coulisses", customSubline: "Nouveautés chaque semaine", customTapLabel: "Suivez-nous", destinationUrl: "https://instagram.com/tapote" }),
     ]);
+  });
+
+  it("ne transforme jamais la marque de démonstration en identité client", () => {
+    renderRoute("/produits/chevalet?mode=custom&action=avis");
+
+    expect(screen.getByLabelText("Nom de votre entreprise")).toHaveValue("");
+    expect(document.querySelector(".v3-product-main-image .customer-brand b")).toHaveTextContent("VOTRE MARQUE");
+    fireEvent.click(screen.getByRole("button", { name: /Ajouter au panier/i }));
+    expect(JSON.parse(window.localStorage.getItem("tapote-cart-v3"))).toEqual([
+      expect.objectContaining({ brandName: "" }),
+    ]);
+  });
+
+  it("garde les mêmes destinations et leur ordre dans les deux finitions", () => {
+    renderRoute("/produits/chevalet?mode=ready&action=avis");
+
+    const destination = screen.getByLabelText("Le lien à ouvrir");
+    const readyOptions = [...destination.options].map((option) => `${option.value}:${option.textContent}`);
+    expect(readyOptions).toContain("autre:Autre URL");
+    fireEvent.click(screen.getByRole("button", { name: /Studio en direct/i }));
+    const customOptions = [...screen.getByLabelText("Le lien à ouvrir").options].map((option) => `${option.value}:${option.textContent}`);
+    expect(customOptions).toEqual(readyOptions);
+  });
+
+  it("affiche le total de la quantité sélectionnée pour chaque finition", () => {
+    renderRoute("/produits/chevalet?mode=custom&count=2&action=avis");
+
+    const choices = document.querySelector(".v3-design-choice");
+    expect(choices).toHaveTextContent(/Prêt à l’emploi.*55\s*€/s);
+    expect(choices).toHaveTextContent(/Studio en direct.*69\s*€/s);
   });
 
   it("synchronise toute la fiche avec la composition d’un pack de plaques", () => {
@@ -223,7 +370,7 @@ describe("Boutique Tapote V3", () => {
     expect(screen.getByLabelText("Fil d’Ariane")).toHaveTextContent("Pack 2 plaques");
     expect(screen.getByText(/2 plaques PMMA cohérentes/i)).toBeVisible();
     expect(screen.getByText("2 plaques 12 × 12")).toBeVisible();
-    expect(screen.getByText("2 NFC + QR testés séparément")).toBeVisible();
+    expect(screen.getByText("2 NFC encodés + 2 QR contrôlés")).toBeVisible();
     expect(screen.getByText(/2 supports imprimés dans une identité cohérente/i)).toBeVisible();
     expect(screen.queryByText("1 chevalet, 1 insert imprimé, 1 puce NFC configurée et son QR code associé.")).not.toBeInTheDocument();
   });
@@ -239,7 +386,7 @@ describe("Boutique Tapote V3", () => {
     renderRoute("/cgv");
 
     expect(screen.getByRole("heading", { name: "Conditions générales de vente", level: 1 })).toBeVisible();
-    expect(screen.getByRole("heading", { name: /Personnalisation et BAT/i })).toBeVisible();
+    expect(screen.getByRole("heading", { name: /Personnalisation en direct/i })).toBeVisible();
     expect(screen.getByRole("heading", { name: /Conformité et réclamations/i })).toBeVisible();
   });
 
@@ -259,7 +406,7 @@ describe("Boutique Tapote V3", () => {
 
     expect(screen.getByRole("heading", { name: /Vous ne touchez pas au support/i })).toBeVisible();
     expect(screen.getByText("Modifications illimitées")).toBeVisible();
-    expect(screen.getByText("Gratuites, sans Pilot")).toBeVisible();
+    expect(screen.getByText("Sans abonnement obligatoire")).toBeVisible();
   });
 
   it("envoie la demande de devis volume vers l’API existante", async () => {
@@ -275,6 +422,38 @@ describe("Boutique Tapote V3", () => {
 
     await waitFor(() => expect(fetchSpy).toHaveBeenCalledWith("/api/lead", expect.objectContaining({ method: "POST" })));
     expect(await screen.findByText(/Demande reçue/i)).toBeVisible();
+  });
+
+  it("récapitule et prépare la modification d’un article personnalisé", () => {
+    window.localStorage.setItem("tapote-cart-v3", JSON.stringify([{
+      productId: "comptoir",
+      actionId: "reservation",
+      quantity: 1,
+      brandName: "STUDIO TEST",
+      theme: "blue",
+      targetId: "salon",
+      designStyle: "signature",
+      customHeadline: "On se revoit ? Tapotez.",
+      customSubline: "Réservez votre prochain créneau",
+      customTapLabel: "Réserver",
+      destinationUrl: "https://example.com/reserver",
+      brandLogoId: "",
+      logoFileName: "",
+      supportComposition: { comptoir: 1, plaque: 0 },
+    }]));
+
+    renderRoute("/panier");
+
+    expect(screen.getAllByText("STUDIO TEST").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("Lien configuré")).toBeVisible();
+    const edit = screen.getByRole("link", { name: /Modifier/i });
+    expect(edit).toHaveAttribute("href", expect.stringContaining("edit=0"));
+    fireEvent.click(edit);
+    expect(JSON.parse(window.sessionStorage.getItem("tapote-config-draft-v2:cart:0"))).toEqual(expect.objectContaining({
+      brandName: "STUDIO TEST",
+      destinationUrl: "https://example.com/reserver",
+      customTapLabel: "Réserver",
+    }));
   });
 
   it("remplace le paiement par un devis à partir de 10 supports", () => {

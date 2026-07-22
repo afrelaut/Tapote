@@ -27,6 +27,8 @@ const paidJob = {
         targetId: "cafe",
         designStyle: "signature",
         customHeadline: "Votre avis nous aide.",
+        customSubline: "Merci pour votre confiance.",
+        customTapLabel: "Donnez votre avis",
         destinationUrl: "https://example.com/avis-comptoir",
         brandLogoId: "3cc6307e-8790-4e73-a8bd-707665c9379e",
         logoFileName: "logo-cafe.png",
@@ -58,13 +60,15 @@ describe("notifications transactionnelles", () => {
     expect(messages[0].html).toContain("Le Chevalet A6");
     expect(messages[0].html).toContain("#123456");
     expect(messages[0].html).toContain("Votre avis nous aide.");
+    expect(messages[0].html).toContain("Merci pour votre confiance.");
+    expect(messages[0].html).toContain("Donnez votre avis");
     expect(messages[0].html).toContain("3cc6307e-8790-4e73-a8bd-707665c9379e");
     expect(messages[0].html).toContain("https://example.com/avis-comptoir");
 
     expect(messages[1]).toMatchObject({ channel: "client", to: "client@example.com" });
     expect(messages[1].subject).toContain("Commande Tapote confirmée");
-    expect(messages[1].html).toContain("BAT à valider");
-    expect(messages[1].html).toContain("le délai de production et de livraison vous sera confirmé");
+    expect(messages[1].html).toContain("Création enregistrée");
+    expect(messages[1].html).toContain("la préparation commence après votre paiement");
     expect(messages[1].html).toContain("bonjour@tapote.fr");
   });
 
@@ -93,7 +97,7 @@ describe("notifications transactionnelles", () => {
       },
     }, config);
 
-    expect(messages[1].html).not.toContain("BAT à valider");
+    expect(messages[1].html).not.toContain("Création enregistrée");
     expect(messages[1].html).toContain("le délai exact vous sera confirmé");
   });
 

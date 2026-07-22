@@ -31,17 +31,19 @@ afterEach(() => {
 });
 
 describe("Configurateur Tapote", () => {
-  it("affiche uniquement les trois supports personnalisables et le brief de création", () => {
+  it("affiche les trois supports et le studio d’impression complet", () => {
     const { container } = render(<Configurator initialProduct="comptoir" onAdd={vi.fn()} />);
 
     expect(screen.getByText("Choisissez votre support")).toBeVisible();
-    expect(screen.getByText("Votre demande de design")).toBeVisible();
+    expect(screen.getByText("Studio d’impression en direct")).toBeVisible();
     expect(screen.getByRole("button", { name: /PlaqueAvis.*39\s*€/i })).toBeVisible();
     expect(screen.getByRole("button", { name: /Chevalet/i })).toBeVisible();
     expect(screen.getByRole("button", { name: /Carte/i })).toBeVisible();
     expect(screen.queryByRole("button", { name: /Vitrine/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Prêt(?:e)? à l’emploi/i })).not.toBeInTheDocument();
-    expect(screen.getByLabelText("Votre brief")).toBeVisible();
+    expect(screen.getByLabelText("Message principal imprimé")).toBeVisible();
+    expect(screen.getByLabelText("Phrase secondaire imprimée")).toBeVisible();
+    expect(screen.getByLabelText("Appel à l’action imprimé")).toBeVisible();
     expect(container.querySelector("details")).not.toBeInTheDocument();
   });
 
@@ -89,11 +91,12 @@ describe("Configurateur Tapote", () => {
     expect(screen.getByRole("button", { name: "Pack de 2 ajouté au panier" })).toBeInTheDocument();
   });
 
-  it("conserve un aperçu contrasté pendant la préparation du BAT", () => {
+  it("conserve un aperçu contrasté pendant la personnalisation directe", () => {
     const { container } = render(<Configurator initialProduct="comptoir" onAdd={vi.fn()} />);
 
     const insert = container.querySelector(".printed-insert");
-    expect(insert).toHaveClass("insert-style-signature");
+    expect(insert).toHaveClass("insert-style-campaign");
+    expect(insert).toHaveAttribute("data-template", "signature");
     expect(insert).toHaveStyle({ "--insert-accent-ink": "#ffffff" });
   });
 
@@ -106,7 +109,7 @@ describe("Configurateur Tapote", () => {
     fireEvent.change(screen.getByLabelText("Importer le logo du commerce"), { target: { files: [logoFile()] } });
 
     expect(await screen.findByAltText("Aperçu du logo importé")).toBeInTheDocument();
-    await waitFor(() => expect(screen.getByText("Logo prêt pour le BAT")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Logo intégré à la création")).toBeInTheDocument());
     fireEvent.click(screen.getByRole("button", { name: "Ajouter au panier" }));
     expect(onAdd).toHaveBeenCalledWith(expect.objectContaining({ brandLogoId: uploadId, logoFileName: "logo-client.png" }));
   });
@@ -141,7 +144,7 @@ describe("Configurateur Tapote", () => {
 
     expect(screen.getByLabelText("Aperçu de La Plaque 12 × 12 pour Réservation")).toBeInTheDocument();
     expect(screen.getByDisplayValue("STUDIO LUNE")).toBeInTheDocument();
-    expect(screen.getByText("On se revoit quand ?")).toBeInTheDocument();
+    expect(document.querySelector(".device-headline")).toHaveTextContent("On se revoit ? Tapotez.");
   });
 });
 

@@ -177,7 +177,8 @@
   text-transform: uppercase;
 }
 
-.pilot-nav-group > button {
+.pilot-nav-group > button,
+.pilot-nav-group > a {
   position: relative;
   width: 100%;
   height: 42px;
@@ -191,19 +192,23 @@
   color: #a6a39b;
   text-align: left;
   transition: 160ms ease;
+  text-decoration: none;
 }
 
-.pilot-nav-group > button:hover {
+.pilot-nav-group > button:hover,
+.pilot-nav-group > a:hover {
   color: #fff;
   background: rgba(255, 255, 255, 0.055);
 }
 
-.pilot-nav-group > button.is-active {
+.pilot-nav-group > button.is-active,
+.pilot-nav-group > a.is-active {
   background: #2a2925;
   color: #fff;
 }
 
-.pilot-nav-group > button.is-active::before {
+.pilot-nav-group > button.is-active::before,
+.pilot-nav-group > a.is-active::before {
   position: absolute;
   inset: 9px auto 9px -14px;
   width: 3px;
@@ -1027,8 +1032,11 @@
 .pilot-drawer-status { display: flex; align-items: center; justify-content: space-between; padding: 14px 23px; background: #f7f4ee; border-bottom: 1px solid var(--pilot-line); }
 .pilot-integration-state { display: flex; align-items: flex-start; gap: 11px; padding: 14px 23px; border-bottom: 1px solid #d9e1f6; background: #f0f4ff; color: #2946f5; }
 .pilot-integration-state > div { display: grid; gap: 3px; }
+.pilot-integration-state > div:nth-child(2) { flex: 1; }
 .pilot-integration-state b { font-size: 11px; }
 .pilot-integration-state span { color: #64708d; font-size: 9px; line-height: 1.45; }
+.pilot-integration-state > button,
+.pilot-integration-state > a { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 5px; min-height: 30px; padding: 0 10px; border: 1px solid currentColor; border-radius: 8px; color: inherit; font-size: 9px; font-weight: 800; }
 .pilot-integration-active { border-color: #cce2d5; background: #edf8f2; color: #23704d; }
 .pilot-integration-active span { color: #557064; }
 .pilot-drawer-status > span { color: #7e7a72; font-size: 8px; }
@@ -1882,6 +1890,12 @@
 .pilot-encoding-rule { display: flex; align-items: flex-start; gap: 11px; margin: 0 29px 22px; padding: 14px; border: 1px solid #c9d6fa; border-radius: 11px; background: #eef3ff; color: #38517e; }
 .pilot-encoding-rule svg { flex: 0 0 auto; color: #315ed6; }
 .pilot-encoding-rule p { margin: 0; font-size: 12px; line-height: 1.5; }
+.pilot-activation-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 22px 29px 0; }
+.pilot-activation-summary > div { display: flex; align-items: flex-start; gap: 10px; padding: 13px; border: 1px solid var(--pilot-line); border-radius: 11px; background: #f8f6f0; }
+.pilot-activation-summary svg { flex: 0 0 auto; color: var(--pilot-accent); }
+.pilot-activation-summary span { display: grid; gap: 3px; min-width: 0; }
+.pilot-activation-summary b { overflow: hidden; font-size: 11px; text-overflow: ellipsis; }
+.pilot-activation-summary small { color: #77736a; font-size: 9px; line-height: 1.35; }
 .pilot-test-modal { width: min(600px, 100%); }
 .pilot-nfc-modal { width: min(650px, 100%); }
 .pilot-nfc-body { display: grid; gap: 17px; padding: 24px 29px 12px; }
@@ -1927,6 +1941,7 @@
   .pilot-encoding-row .pilot-secondary { width: 100%; }
   .pilot-encoding-actions .pilot-link-action { width: 100%; text-align: center; }
   .pilot-encoding-rule { margin-right: 19px; margin-left: 19px; }
+  .pilot-activation-summary { grid-template-columns: 1fr; padding-right: 19px; padding-left: 19px; }
   .pilot-nfc-body { padding-right: 19px; padding-left: 19px; }
   .pilot-test-checklist { padding-right: 19px; padding-left: 19px; }
   .pilot-test-modal > .pilot-form-help { margin-right: 19px; margin-left: 19px; }

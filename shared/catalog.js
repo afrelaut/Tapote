@@ -19,6 +19,8 @@ export const matchingIdentityKey = (item = {}) => JSON.stringify({
   destinationUrl: item.destinationUrl || "",
   designStyle: item.designStyle || "",
   customHeadline: item.customHeadline || "",
+  customSubline: item.customSubline || "",
+  customTapLabel: item.customTapLabel || "",
 });
 
 export const PRODUCTS = {
@@ -138,7 +140,7 @@ export const PRODUCTS = {
     format: "2 plaques ou chevalets au choix · livraison offerte",
     badge: "Le plus choisi",
     defaultAction: "avis",
-    features: ["Supports au choix", "Logo, brief et message inclus", "Deux liens modifiables à vie"],
+    features: ["Supports au choix", "Logo, couleurs et textes personnalisables", "Deux liens modifiables à vie"],
   },
   pack_cinq_standard: {
     id: "pack_cinq_standard",
@@ -197,24 +199,24 @@ export const MULTISITE_TIERS = [
 ];
 
 export const ACTIONS = {
-  avis: { id: "avis", name: "Avis Google", purpose: "Laissez un avis Google", headline: "Votre avis compte.", subline: "30 secondes suffisent", category: "confiance", icon: "star", badge: "AVIS GOOGLE" },
-  formulaire: { id: "formulaire", name: "Formulaire / demande", purpose: "Remplissez le formulaire", headline: "Votre demande commence ici.", subline: "Devis, inscription ou retour", category: "contact", icon: "message", badge: "FORMULAIRE" },
-  menu: { id: "menu", name: "Menu", purpose: "Consultez le menu", headline: "La carte, juste ici.", subline: "Toujours à jour", category: "service", icon: "menu", badge: "MENU" },
-  reservation: { id: "reservation", name: "Réservation", purpose: "Réservez votre créneau", headline: "On se revoit quand ?", subline: "Réservez en 30 secondes", category: "service", icon: "calendar", badge: "RÉSERVATION" },
-  commande: { id: "commande", name: "Commander", purpose: "Commandez en ligne", headline: "Votre envie, maintenant.", subline: "Click & collect ou livraison", category: "service", icon: "bag", badge: "COMMANDE" },
-  paiement: { id: "paiement", name: "Paiement", purpose: "Réglez ici", headline: "Réglez en un geste.", subline: "Simple et sécurisé", category: "service", icon: "card", badge: "PAIEMENT" },
-  pourboire: { id: "pourboire", name: "Pourboire", purpose: "Laissez un pourboire", headline: "Un merci pour l’équipe ?", subline: "Direct et sans espèces", category: "service", icon: "coins", badge: "POURBOIRE" },
-  fidelite: { id: "fidelite", name: "Fidélité", purpose: "Rejoignez notre fidélité", headline: "Vos points vous attendent.", subline: "Revenez, on s’occupe du reste", category: "relation", icon: "gift", badge: "FIDÉLITÉ" },
-  instagram: { id: "instagram", name: "Instagram", purpose: "Suivez-nous sur Instagram", headline: "Suivez le mouvement.", subline: "Les coulisses sont ici", category: "relation", icon: "instagram", badge: "INSTAGRAM" },
-  tiktok: { id: "tiktok", name: "TikTok", purpose: "Suivez-nous sur TikTok", headline: "La suite se passe ici.", subline: "Suivez nos créations", category: "relation", icon: "music", badge: "TIKTOK" },
-  facebook: { id: "facebook", name: "Facebook", purpose: "Retrouvez-nous sur Facebook", headline: "Restons en contact.", subline: "Actualités et communauté", category: "relation", icon: "facebook", badge: "FACEBOOK" },
-  linkedin: { id: "linkedin", name: "LinkedIn", purpose: "Connectons-nous sur LinkedIn", headline: "Connectons nos projets.", subline: "Retrouvez-nous en ligne", category: "relation", icon: "linkedin", badge: "LINKEDIN" },
-  wifi: { id: "wifi", name: "Wi-Fi", purpose: "Connectez-vous au Wi-Fi", headline: "Connectez-vous ici.", subline: "Sans demander le mot de passe", category: "acces", icon: "wifi", badge: "WI-FI INVITÉ" },
-  site: { id: "site", name: "Site internet", purpose: "Visitez notre site", headline: "Découvrez notre univers.", subline: "Tout commence ici", category: "acces", icon: "globe", badge: "SITE INTERNET" },
-  contact: { id: "contact", name: "Contact", purpose: "Enregistrez nos coordonnées", headline: "Gardons le contact.", subline: "Coordonnées en un geste", category: "acces", icon: "mail", badge: "CONTACT" },
-  whatsapp: { id: "whatsapp", name: "WhatsApp", purpose: "Écrivez-nous sur WhatsApp", headline: "Écrivez-nous ici.", subline: "Une réponse, simplement", category: "acces", icon: "message", badge: "WHATSAPP" },
-  multiliens: { id: "multiliens", name: "Page multi-liens", purpose: "Accédez à tous nos liens", headline: "Tout est juste ici.", subline: "Vos liens, une seule entrée", category: "acces", icon: "grid", badge: "VOS LIENS" },
-  autre: { id: "autre", name: "Autre lien", purpose: "Ouvrez le lien", headline: "Le bon lien. Maintenant.", subline: "Une destination sur mesure", category: "acces", icon: "link", badge: "LIEN PERSONNALISÉ" },
+  avis: { id: "avis", name: "Avis Google", purpose: "Laissez un avis Google", tapoteFor: "PARTAGER VOTRE AVIS", campaignHeadline: "Vous avez aimé ? Tapotez.", campaignSubline: "30 secondes suffisent", visualKey: "rating", headline: "Votre avis compte.", subline: "30 secondes suffisent", category: "confiance", icon: "star", badge: "AVIS GOOGLE" },
+  formulaire: { id: "formulaire", name: "Formulaire / demande", purpose: "Remplissez le formulaire", tapoteFor: "LANCER VOTRE DEMANDE", campaignHeadline: "Un projet ? Tapotez.", campaignSubline: "On vous répond rapidement", visualKey: "form", headline: "Votre demande commence ici.", subline: "Devis, inscription ou retour", category: "contact", icon: "message", badge: "FORMULAIRE" },
+  menu: { id: "menu", name: "Menu", purpose: "Consultez le menu", tapoteFor: "DÉCOUVRIR LA CARTE", campaignHeadline: "Une envie ? Tapotez.", campaignSubline: "La carte toujours à jour", visualKey: "menu", headline: "La carte, juste ici.", subline: "Toujours à jour", category: "service", icon: "menu", badge: "MENU" },
+  reservation: { id: "reservation", name: "Réservation", purpose: "Réservez votre créneau", tapoteFor: "RÉSERVER VOTRE MOMENT", campaignHeadline: "On se revoit ? Tapotez.", campaignSubline: "Votre créneau en 30 secondes", visualKey: "calendar", headline: "On se revoit quand ?", subline: "Réservez en 30 secondes", category: "service", icon: "calendar", badge: "RÉSERVATION" },
+  commande: { id: "commande", name: "Commander", purpose: "Commandez en ligne", tapoteFor: "COMMANDER", campaignHeadline: "Ça vous tente ? Tapotez.", campaignSubline: "Click & collect ou livraison", visualKey: "order", headline: "Votre envie, maintenant.", subline: "Click & collect ou livraison", category: "service", icon: "bag", badge: "COMMANDE" },
+  paiement: { id: "paiement", name: "Paiement", purpose: "Réglez ici", tapoteFor: "RÉGLER EN UN GESTE", campaignHeadline: "Pour régler ? Tapotez.", campaignSubline: "Simple, rapide et sécurisé", visualKey: "payment", headline: "Réglez en un geste.", subline: "Simple et sécurisé", category: "service", icon: "card", badge: "PAIEMENT" },
+  pourboire: { id: "pourboire", name: "Pourboire", purpose: "Laissez un pourboire", tapoteFor: "DIRE MERCI", campaignHeadline: "Un merci ? Tapotez.", campaignSubline: "Simple, discret, sans espèces", visualKey: "thanks", headline: "Un merci pour l’équipe ?", subline: "Direct et sans espèces", category: "service", icon: "coins", badge: "POURBOIRE" },
+  fidelite: { id: "fidelite", name: "Fidélité", purpose: "Rejoignez notre fidélité", tapoteFor: "REJOINDRE LES HABITUÉS", campaignHeadline: "Des avantages ? Tapotez.", campaignSubline: "À chaque visite, ça compte", visualKey: "loyalty", headline: "Vos points vous attendent.", subline: "Revenez, on s’occupe du reste", category: "relation", icon: "gift", badge: "FIDÉLITÉ" },
+  instagram: { id: "instagram", name: "Instagram", purpose: "Suivez-nous sur Instagram", tapoteFor: "VOIR LES COULISSES", campaignHeadline: "Les coulisses ? Tapotez.", campaignSubline: "Créations, nouveautés, moments forts", visualKey: "instagram", headline: "Suivez le mouvement.", subline: "Les coulisses sont ici", category: "relation", icon: "instagram", badge: "INSTAGRAM" },
+  tiktok: { id: "tiktok", name: "TikTok", purpose: "Suivez-nous sur TikTok", tapoteFor: "PASSER EN COULISSES", campaignHeadline: "La suite ? Tapotez.", campaignSubline: "Nos créations, sans recherche", visualKey: "tiktok", headline: "La suite se passe ici.", subline: "Suivez nos créations", category: "relation", icon: "music", badge: "TIKTOK" },
+  facebook: { id: "facebook", name: "Facebook", purpose: "Retrouvez-nous sur Facebook", tapoteFor: "REJOINDRE LA COMMUNAUTÉ", campaignHeadline: "Restons proches. Tapotez.", campaignSubline: "Actualités et communauté locale", visualKey: "facebook", headline: "Restons en contact.", subline: "Actualités et communauté", category: "relation", icon: "facebook", badge: "FACEBOOK" },
+  linkedin: { id: "linkedin", name: "LinkedIn", purpose: "Connectons-nous sur LinkedIn", tapoteFor: "CONNECTER NOS PROJETS", campaignHeadline: "Un projet commun ? Tapotez.", campaignSubline: "Le bon contact, au bon moment", visualKey: "linkedin", headline: "Connectons nos projets.", subline: "Retrouvez-nous en ligne", category: "relation", icon: "linkedin", badge: "LINKEDIN" },
+  wifi: { id: "wifi", name: "Wi-Fi", purpose: "Connectez-vous au Wi-Fi", tapoteFor: "VOUS CONNECTER", campaignHeadline: "Besoin du Wi‑Fi ? Tapotez.", campaignSubline: "Le réseau invité en un geste", visualKey: "wifi", headline: "Connectez-vous ici.", subline: "Sans demander le mot de passe", category: "acces", icon: "wifi", badge: "WI-FI INVITÉ" },
+  site: { id: "site", name: "Site internet", purpose: "Visitez notre site", tapoteFor: "DÉCOUVRIR LA SUITE", campaignHeadline: "Envie d’en voir plus ? Tapotez.", campaignSubline: "Votre univers s’ouvre ici", visualKey: "web", headline: "Découvrez notre univers.", subline: "Tout commence ici", category: "acces", icon: "globe", badge: "SITE INTERNET" },
+  contact: { id: "contact", name: "Contact", purpose: "Enregistrez nos coordonnées", tapoteFor: "GARDER LE CONTACT", campaignHeadline: "On se rappelle ? Tapotez.", campaignSubline: "Nos coordonnées en un geste", visualKey: "contact", headline: "Gardons le contact.", subline: "Coordonnées en un geste", category: "acces", icon: "mail", badge: "CONTACT" },
+  whatsapp: { id: "whatsapp", name: "WhatsApp", purpose: "Écrivez-nous sur WhatsApp", tapoteFor: "NOUS ÉCRIRE", campaignHeadline: "Une question ? Tapotez.", campaignSubline: "La conversation est déjà prête", visualKey: "whatsapp", headline: "Écrivez-nous ici.", subline: "Une réponse, simplement", category: "acces", icon: "message", badge: "WHATSAPP" },
+  multiliens: { id: "multiliens", name: "Page multi-liens", purpose: "Accédez à tous nos liens", tapoteFor: "TOUT RETROUVER", campaignHeadline: "Tout retrouver ? Tapotez.", campaignSubline: "Services, horaires et liens utiles", visualKey: "links", headline: "Tout est juste ici.", subline: "Vos liens, une seule entrée", category: "acces", icon: "grid", badge: "VOS LIENS" },
+  autre: { id: "autre", name: "Autre URL", purpose: "Ouvrez le lien", tapoteFor: "OUVRIR LE BON LIEN", campaignHeadline: "Le bon lien ? Tapotez.", campaignSubline: "Votre destination sur mesure", visualKey: "link", headline: "Le bon lien. Maintenant.", subline: "Une destination sur mesure", category: "acces", icon: "link", badge: "LIEN PERSONNALISÉ" },
 };
 
 export const ACTION_CATEGORIES = {
@@ -272,6 +274,7 @@ export const TARGETS = {
 };
 
 export const DESIGN_STYLES = {
+  pulse: { id: "pulse", name: "Pulse", description: "Le geste qui attire l’œil" },
   signature: { id: "signature", name: "Signature", description: "La marque en premier" },
   platform: { id: "platform", name: "Action", description: "L’objectif très lisible" },
   editorial: { id: "editorial", name: "Éditorial", description: "Une accroche forte" },
