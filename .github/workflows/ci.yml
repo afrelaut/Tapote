@@ -29,7 +29,11 @@ jobs:
       - run: npm audit --omit=dev --audit-level=high
       - run: npx playwright-core install --with-deps chromium
       - name: Start storefront for browser audit
-        run: npm run dev:web -- --host 127.0.0.1 --port 5173 > /tmp/tapote-vite.log 2>&1 &
+        env:
+          NODE_ENV: production
+          API_PORT: 5173
+          PUBLIC_URL: http://127.0.0.1:5173
+        run: npm start > /tmp/tapote-server.log 2>&1 &
       - name: Wait for storefront
         run: |
           for attempt in {1..30}; do
@@ -38,6 +42,6 @@ jobs:
             fi
             sleep 1
           done
-          cat /tmp/tapote-vite.log
+          cat /tmp/tapote-server.log
           exit 1
       - run: npm run test:e2e
