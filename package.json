@@ -16,6 +16,7 @@
     "test:watch": "vitest",
     "lint": "eslint . --max-warnings=0",
     "test:e2e": "node scripts/playwright-audit-storefront-v3.mjs",
+    "test:phones": "node scripts/audit-phones-sitewide.mjs",
     "ci": "npm run lint && npm test && npm run build && npm audit --omit=dev --audit-level=high",
     "supabase:migrate": "supabase db push",
     "supabase:provision-storage": "node scripts/provision-storage.js",
