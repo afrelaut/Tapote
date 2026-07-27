@@ -1,0 +1,10 @@
+BEGIN:VCARD
+VERSION:3.0
+N:Berger;Jules;;;
+FN:Jules Berger
+ORG:Tapote
+TITLE:Fondateur
+TEL;TYPE=CELL:+33610235078
+EMAIL;TYPE=INTERNET:aymeric@tapote.fr
+URL:https://tapote.fr
+END:VCARD

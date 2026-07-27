@@ -5,7 +5,7 @@ const baseUrl = process.env.V3_AUDIT_URL || "http://localhost:5173";
 const outputDir = "output/playwright/phone-bottom-audit";
 const scenes = [
   ["cafe", "cafes-bars", "tapote-bg-cafe-v1.webp"],
-  ["restaurant", "@designs", "tapote-bg-restaurant-v1.webp"],
+  ["restaurant", "restaurants-traiteurs-food-trucks", "tapote-bg-restaurant-live-screen-v1.webp"],
   ["boulangerie", "boulangeries-patisseries", "tapote-bg-boulangerie-v1.webp"],
   ["beaute", "beaute-coiffure-bien-etre", "tapote-bg-beaute-v1.webp"],
   ["medical", "cabinets-medicaux-paramedicaux", "tapote-bg-medical-v1.webp"],
@@ -21,6 +21,7 @@ const scenes = [
   ["animaux", "animaux-soins", "tapote-bg-animaux-v1.webp"],
 ];
 const sceneFilter = process.env.V3_AUDIT_SCENE;
+const actionFilter = process.env.V3_AUDIT_ACTION;
 const selectedScenes = sceneFilter ? scenes.filter(([name]) => name === sceneFilter) : scenes;
 
 await mkdir(outputDir, { recursive: true });
@@ -28,10 +29,12 @@ const browser = await chromium.launch({ channel: "chrome", headless: true });
 const page = await browser.newPage({ viewport: { width: 1254, height: 1254 }, deviceScaleFactor: 1 });
 
 for (const [name, slug, asset] of selectedScenes) {
-  await page.goto(slug === "@designs" ? `${baseUrl}/designs` : `${baseUrl}/secteurs/${slug}`, { waitUntil: "networkidle" });
-  const scene = slug === "@designs"
-    ? page.locator(`img.v3-sector-scene-background[src*="${asset}"]`).first().locator("..")
-    : page.locator(".v3-sector-hero .v3-sector-scene");
+  await page.goto(`${baseUrl}/secteurs/${slug}`, { waitUntil: "networkidle" });
+  if (actionFilter) {
+    await page.locator('select[aria-label="Le lien à ouvrir"]').selectOption(actionFilter);
+    await page.locator(`.v3-sector-hero .v3-live-phone-screen[data-phone-action="${actionFilter}"]`).waitFor();
+  }
+  const scene = page.locator(".v3-sector-hero .v3-sector-scene");
   await scene.evaluate((element) => {
     Object.assign(element.style, {
       position: "fixed",

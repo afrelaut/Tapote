@@ -3,6 +3,7 @@ import AxeBuilder from "@axe-core/playwright";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { PRODUCTS } from "../shared/catalog.js";
+import { SECTORS } from "../src/storefront/sectorData.js";
 
 const baseUrl = process.env.TAPOTE_AUDIT_URL || "http://127.0.0.1:5173";
 const outputDir = path.resolve("output/playwright/v3-final");
@@ -187,6 +188,93 @@ async function auditPage(context, pathname, name, action) {
   return page;
 }
 
+async function auditSceneCollection(page, name, minimum = 1) {
+  const scenes = await page.locator(".v3-sector-scene").evaluateAll((items) => items.map((scene, index) => ({
+    index: index + 1,
+    backgrounds: scene.querySelectorAll(".v3-sector-scene-background").length,
+    supports: scene.querySelectorAll(".v3-sector-scene-support").length,
+    screens: scene.querySelectorAll(".v3-sector-scene-screen").length,
+    phones: scene.querySelectorAll(".v3-live-phone-svg").length,
+    brokenImages: [...scene.querySelectorAll("img")].filter((image) => !image.complete || image.naturalWidth === 0).length,
+  })));
+  assert(`toutes-scenes-completes-${name}`, scenes.length >= minimum && scenes.every((scene) => scene.backgrounds === 1 && scene.supports === 1 && scene.screens === 1 && scene.phones === 1 && scene.brokenImages === 0), scenes);
+}
+
+async function auditPrimarySceneRoutes(context, entries, name, selector) {
+  const page = await context.newPage();
+  const results = [];
+  for (const entry of entries) {
+    const pageErrors = [];
+    const onConsole = (message) => { if (message.type() === "error") pageErrors.push(`console: ${message.text()}`); };
+    const onPageError = (error) => pageErrors.push(`pageerror: ${error.message}`);
+    page.on("console", onConsole);
+    page.on("pageerror", onPageError);
+    const response = await page.goto(`${baseUrl}${entry.pathname}`, { waitUntil: "domcontentloaded" });
+    const scene = page.locator(selector);
+    await scene.waitFor({ state: "visible", timeout: 10_000 });
+    await page.waitForFunction((primarySelector) => {
+      const primaryScene = document.querySelector(primarySelector);
+      return Boolean(primaryScene && [...primaryScene.querySelectorAll("img")].every((image) => image.complete && image.naturalWidth > 0));
+    }, selector, { timeout: 10_000 });
+    const metrics = await scene.evaluate((primaryScene) => ({
+      backgrounds: primaryScene.querySelectorAll(".v3-sector-scene-background").length,
+      supports: primaryScene.querySelectorAll(".v3-sector-scene-support").length,
+      screens: primaryScene.querySelectorAll(".v3-sector-scene-screen").length,
+      phones: primaryScene.querySelectorAll(".v3-live-phone-svg").length,
+      brokenImages: [...primaryScene.querySelectorAll("img")].filter((image) => !image.complete || image.naturalWidth === 0).length,
+    }));
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    results.push({
+      ...entry,
+      status: response?.status(),
+      overflow,
+      pageErrors,
+      ...metrics,
+    });
+    page.off("console", onConsole);
+    page.off("pageerror", onPageError);
+  }
+  await page.close();
+  assert(name, results.length === entries.length && results.every((result) => result.status === 200 && result.overflow <= 1 && result.pageErrors.length === 0 && result.backgrounds === 1 && result.supports === 1 && result.screens === 1 && result.phones === 1 && result.brokenImages === 0), results);
+}
+
+async function auditPublicRouteSweep(context, pathnames) {
+  const page = await context.newPage();
+  const results = [];
+  for (const pathname of pathnames) {
+    const pageErrors = [];
+    const onConsole = (message) => { if (message.type() === "error") pageErrors.push(`console: ${message.text()}`); };
+    const onPageError = (error) => pageErrors.push(`pageerror: ${error.message}`);
+    page.on("console", onConsole);
+    page.on("pageerror", onPageError);
+    const response = await page.goto(`${baseUrl}${pathname}`, { waitUntil: "domcontentloaded" });
+    await page.locator("main h1").waitFor({ state: "visible", timeout: 10_000 });
+    await hydrateLazyAssets(page);
+    const metrics = await page.evaluate(() => {
+      const rendered = (element) => {
+        const style = getComputedStyle(element);
+        const box = element.getBoundingClientRect();
+        return style.display !== "none" && style.visibility !== "hidden" && box.width > 0 && box.height > 0;
+      };
+      const main = document.querySelectorAll("main");
+      const h1 = document.querySelectorAll("h1");
+      return {
+        mains: main.length,
+        h1s: h1.length,
+        h1InsideMain: main.length === 1 && h1.length === 1 && main[0].contains(h1[0]),
+        title: document.title,
+        overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        brokenVisibleImages: [...document.images].filter((image) => rendered(image) && (!image.complete || image.naturalWidth === 0)).length,
+      };
+    });
+    results.push({ pathname, status: response?.status(), pageErrors, ...metrics });
+    page.off("console", onConsole);
+    page.off("pageerror", onPageError);
+  }
+  await page.close();
+  assert("toutes-routes-publiques-valides", results.every((result) => result.status === 200 && result.pageErrors.length === 0 && result.mains === 1 && result.h1s === 1 && result.h1InsideMain && result.title && result.overflow <= 1 && result.brokenVisibleImages === 0), results);
+}
+
 const desktop = await browser.newContext({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 1 });
 await mockLogoUpload(desktop);
 const reset = await desktop.newPage();
@@ -198,6 +286,7 @@ const home = await auditPage(desktop, "/", "Accueil desktop", async (page) => {
   assert("achat-direct-home", await page.getByRole("button", { name: /Ajouter le prêt/i }).isVisible());
   assert("trois-supports-home", await page.getByRole("button", { name: /Chevalet A6|Plaque 12|Carte NFC/ }).count() === 3);
   assert("scene-home-complete", await page.locator(".v3-home-product-scene .v3-sector-scene-background, .v3-home-product-scene .v3-sector-scene-support, .v3-home-product-scene .v3-sector-scene-screen").count() === 3);
+  await auditSceneCollection(page, "accueil", 8);
   const offers = page.locator(".v3-offer-lines article");
   assert("offre-commerce-lisible-home", await offers.count() === 3 && await offers.filter({ hasText: "À VOTRE IMAGE · RECOMMANDÉ" }).count() === 1);
   assert("service-et-cta-final-home", await page.locator(".v3-why").getByRole("heading", { name: /Un objet prêt à servir/i }).isVisible() && await page.locator(".v3-home-final").getByRole("link", { name: /Créer mon Tapote/i }).isVisible());
@@ -208,6 +297,7 @@ await home.close();
 const shop = await auditPage(desktop, "/boutique", "Boutique desktop", async (page) => {
   assert("trois-supports-boutique", await page.locator(".v3-shop-card").count() === 3);
   assert("prix-et-actions-visibles", await page.locator(".v3-shop-card .v3-shop-card-price-chip").count() === 3 && await page.getByRole("button", { name: /Ajouter ·/ }).count() === 3);
+  await auditSceneCollection(page, "boutique", 3);
   const previewGeometry = await page.locator(".v3-shop-card-image").evaluateAll((frames) => frames.map((frame) => {
     const scene = frame.querySelector(".v3-sector-scene");
     const frameBox = frame.getBoundingClientRect();
@@ -250,15 +340,31 @@ const directory = await auditPage(desktop, "/secteurs", "Annuaire secteurs", asy
   const count = await page.locator(".v3-sector-directory-grid > a").count();
   assert("secteurs-regroupes", count === 15, count);
   assert("scene-complete-par-secteur", await page.locator(".v3-sector-directory-grid > a .v3-sector-scene-background").count() === count && await page.locator(".v3-sector-directory-grid > a .v3-sector-scene-support").count() === count && await page.locator(".v3-sector-directory-grid > a .v3-sector-scene-screen").count() === count);
+  await auditSceneCollection(page, "annuaire-secteurs", 15);
   await page.screenshot({ path: path.join(outputDir, "03-secteurs.png"), fullPage: true });
 });
 await directory.close();
 
+let readyDesignRouteEntries = [];
 const designs = await auditPage(desktop, "/designs", "Galerie designs", async (page) => {
   const specimens = page.locator(".v3-design-specimen");
   assert("bloc-promotionnel-designs-retire", await page.locator(".v3-designs-custom-cta").count() === 0);
   const links = await specimens.evaluateAll((items) => items.map((item) => item.getAttribute("href")));
+  readyDesignRouteEntries = links.map((pathname, index) => ({ pathname, label: `design-${index + 1}` }));
   assert("dix-neuf-designs-disponibles", await specimens.count() === 19, await specimens.count());
+  await auditSceneCollection(page, "galerie-designs", 19);
+  const galleryPainting = await specimens.evaluateAll((items) => items.map((item) => getComputedStyle(item).contentVisibility));
+  assert("dix-neuf-designs-peints-meme-hors-ecran", galleryPainting.length === 19 && galleryPainting.every((value) => value === "visible"), galleryPainting);
+  const finalCardAlignment = await page.locator(".v3-designs-grid").evaluate((grid) => {
+    const card = grid.lastElementChild;
+    const gridBox = grid.getBoundingClientRect();
+    const cardBox = card?.getBoundingClientRect();
+    return {
+      cardCount: grid.children.length,
+      centered: Boolean(cardBox && Math.abs((cardBox.left + cardBox.width / 2) - (gridBox.left + gridBox.width / 2)) < 1),
+    };
+  });
+  assert("derniere-campagne-centree", finalCardAlignment.cardCount === 19 && finalCardAlignment.centered, finalCardAlignment);
   assert("designs-ouvrent-la-fiche-exacte", links.length === 19 && links.every((href) => href?.includes("mode=ready") && href.includes("design=") && href.includes("action=")), links);
   const purposeLabels = await specimens.locator(".device-purpose").allTextContents();
   assert("utilite-lisible-sur-chaque-design", purposeLabels.length === 19 && purposeLabels.every((label) => label.trim().split(/\s+/).length >= 2), purposeLabels);
@@ -316,6 +422,32 @@ const designs = await auditPage(desktop, "/designs", "Galerie designs", async (p
   await page.screenshot({ path: path.join(outputDir, "03a-designs.png"), fullPage: true });
 });
 await designs.close();
+
+await auditPrimarySceneRoutes(desktop, readyDesignRouteEntries, "dix-neuf-fiches-design-completes", ".v3-product-main-image");
+await auditPrimarySceneRoutes(desktop, SECTORS.map((sector) => ({ pathname: `/secteurs/${sector.slug}`, label: sector.slug })), "quinze-pages-secteur-completes", ".v3-sector-hero .v3-sector-scene");
+await auditPublicRouteSweep(desktop, [
+  "/",
+  "/boutique",
+  "/categorie/chevalets-nfc",
+  "/categorie/plaques-nfc",
+  "/categorie/cartes-nfc",
+  "/categorie/packs-nfc",
+  "/categorie/packs",
+  "/produits/chevalet",
+  "/produits/plaque",
+  "/produits/carte",
+  "/designs",
+  "/secteurs",
+  "/personnaliser",
+  "/comment-ca-marche",
+  "/panier",
+  "/devis",
+  "/commande",
+  "/commande/confirmee",
+  "/mentions-legales",
+  "/cgv",
+  "/confidentialite",
+]);
 
 const readyTiktok = await auditPage(desktop, "/produits/plaque?mode=ready&design=tiktok&action=tiktok", "Design TikTok prêt à l’emploi", async (page) => {
   const scene = page.locator(".v3-product-main-image");

@@ -965,8 +965,6 @@ function LivePhoneScreen({ actionId = "avis", brandName = "VOTRE MARQUE", brandL
   const glassId = `tapote-phone-glass-${instanceId}`;
   const isRestaurantLiveScreen = sceneImage === "/assets/products/tapote-bg-restaurant-live-screen-v1.webp";
   const isLifestylePhone = Boolean(PHONE_SCENE_SECTORS[sceneImage]);
-  const [, , bottomRightRadius, bottomLeftRadius] = PHONE_SCREEN_CLIP_RADII[sceneImage]
-    || (isRestaurantLiveScreen ? [60, 60, 78, 94] : [60, 60, 82, 76]);
   const contentPath = isRestaurantLiveScreen
     ? actionId === "tiktok" ? PHONE_DARK_CONTENT_PATH : PHONE_DYNAMIC_CONTENT_PATH
     : isLifestylePhone ? roundedPhoneClipPath(sceneImage) : PHONE_CONTENT_PATH;
@@ -997,11 +995,6 @@ function LivePhoneScreen({ actionId = "avis", brandName = "VOTRE MARQUE", brandL
     // guaranteed-dark tone rather than the support's ink (light on dark themes).
     "--v3-phone-copy": brandDark,
     "--v3-phone-scene-image": sceneImage ? `url(${sceneImage})` : "none",
-    // SVG clips around foreignObject are not perfectly antialiased by every
-    // Chromium scale. Mirror only the two photographed lower radii on the
-    // HTML surface itself; the validated top edge and projection stay intact.
-    "--v3-phone-bottom-right-radius": `${bottomRightRadius}px`,
-    "--v3-phone-bottom-left-radius": `${bottomLeftRadius}px`,
   };
   const bareBrandAvatar = <div className="v3-live-brand-avatar">{brandLogo ? <img src={brandLogo} alt="" /> : <GeneratedBrandMark name={safeBrandName} />}</div>;
   const brandAvatar = <div className="v3-live-brand-avatar">{brandLogo ? <img src={brandLogo} alt="" /> : <GeneratedBrandMark name={safeBrandName} />}{socialNetwork && <b className={`is-${socialNetwork}`}><PlatformGlyph id={socialNetwork} /></b>}</div>;
@@ -1094,10 +1087,10 @@ const PHONE_SCREEN_CLIP_RADII = {
   "/assets/products/tapote-bg-auto-ecole-v1.webp": [60, 60, 105, 81],
   "/assets/products/tapote-bg-automobile-v1.webp": [58, 58, 77, 59],
   "/assets/products/tapote-bg-artisan-v1.webp": [54, 54, 67, 55],
-  "/assets/products/tapote-bg-agence-v1.webp": [60, 60, 107.25, 76],
+  "/assets/products/tapote-bg-agence-v1.webp": [60, 60, 92, 76],
   "/assets/products/tapote-bg-sport-v1.webp": [60, 60, 108, 77],
-  "/assets/products/tapote-bg-formation-v1.webp": [60, 60, 95, 71],
-  "/assets/products/tapote-bg-evenement-v1.webp": [60, 60, 107, 83],
+  "/assets/products/tapote-bg-formation-v1.webp": [60, 60, 95, 58],
+  "/assets/products/tapote-bg-evenement-v1.webp": [60, 60, 92, 83],
   "/assets/products/tapote-bg-animaux-v1.webp": [58, 58, 70, 77],
 };
 

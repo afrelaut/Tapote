@@ -1,0 +1,10 @@
+BEGIN:VCARD
+VERSION:3.0
+N:Frelaut;Aymeric;;;
+FN:Aymeric Frelaut
+ORG:Tapote
+TITLE:Fondateur
+TEL;TYPE=CELL:+33663150449
+EMAIL;TYPE=INTERNET:aymeric@tapote.fr
+URL:https://tapote.fr
+END:VCARD
