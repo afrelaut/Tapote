@@ -18,3 +18,14 @@ coverage/
 output/
 tmp/
 public/assets/tapote-hero-counter-v2.png
+
+# Chaîne print : sorties de travail, toutes régénérables par les scripts de
+# designs/print-ready/scripts. Seuls les fichiers -courbes (texte tracé) et les
+# logos vectorisés sont versionnés, parce que ce sont eux qui partent à
+# l'imprimeur.
+__pycache__/
+designs/print-ready/explorations/
+designs/print-ready/**/_*.html
+# Étape intermédiaire : polices embarquées mais texte encore vivant. L'imprimeur
+# refuse ce format, et le laisser dans le dépôt invite à l'envoyer par erreur.
+designs/print-ready/svg/*-autonome.svg
