@@ -586,7 +586,6 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
             secondaryColor: matchingSupport.secondaryColor,
             textColor: matchingSupport.textColor,
             targetId: matchingSupport.targetId,
-            designStyle: matchingSupport.designStyle,
             customHeadline: matchingSupport.customHeadline,
             customSubline: matchingSupport.customSubline,
             customTapLabel: matchingSupport.customTapLabel,
@@ -621,7 +620,6 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
             secondaryColor: effectiveItem.secondaryColor,
             textColor: effectiveItem.textColor,
             targetId: effectiveItem.targetId,
-            designStyle: effectiveItem.designStyle,
             customHeadline: effectiveItem.customHeadline,
             customSubline: effectiveItem.customSubline,
             customTapLabel: effectiveItem.customTapLabel,
@@ -721,7 +719,6 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
               secondaryColor: customization.secondaryColor || "default",
               textColor: customization.textColor || "default",
               targetId: customization.targetId,
-              designStyle: customization.designStyle,
               brandLogoId: customization.brandLogoId || "none",
               supportComposition: customization.supportComposition
                 ? JSON.stringify(customization.supportComposition)

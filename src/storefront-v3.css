@@ -50,7 +50,6 @@ body.v3-menu-open { overflow: hidden; }
 .v3-hero-live-product { position: absolute; z-index: 2; inset: 9% 7% 11% auto; width: min(61%, 390px); display: grid; align-content: center; justify-items: center; color: #fff; }
 .v3-hero-live-product > span { align-self: start; justify-self: start; margin-bottom: -10px; padding: 8px 10px; color: #fff; background: rgb(8 10 17 / 72%); border: 1px solid rgb(255 255 255 / 20%); border-radius: 999px; font-size: 9px; font-weight: 800; letter-spacing: .1em; }
 .v3-hero-live-product .v3-product-art { width: 100%; max-width: 330px; filter: drop-shadow(0 32px 24px rgb(0 0 0 / 42%)); transform: rotate(2deg); animation: v3-product-arrive .8s cubic-bezier(.2,.8,.2,1) both; }
-.v3-hero-live-product .device-preview { width: 100%; }
 .v3-hero-live-product > img { width: min(74%, 280px); max-height: 500px; object-fit: contain; filter: drop-shadow(0 32px 24px rgb(0 0 0 / 42%)); animation: v3-product-arrive .8s cubic-bezier(.2,.8,.2,1) both; }
 .v3-hero-live-product > small { margin-top: -8px; padding: 8px 11px; color: rgb(255 255 255 / 84%); background: rgb(8 10 17 / 60%); border-radius: 999px; font-size: 10px; }
 @keyframes v3-product-arrive { from { opacity: 0; transform: translateY(26px) rotate(5deg) scale(.96); } to { opacity: 1; transform: translateY(0) rotate(2deg) scale(1); } }
@@ -99,12 +98,16 @@ body.v3-menu-open { overflow: hidden; }
 .v3-choice-row-three { grid-template-columns: repeat(3, 1fr); }
 .v3-choice-row button { min-height: 44px; border: 1px solid var(--v3-line); border-radius: 11px; background: #fff; color: #454a54; font-size: 12px; font-weight: 700; cursor: pointer; }
 .v3-choice-row button.is-selected { color: #fff; background: var(--v3-ink); border-color: var(--v3-ink); }
-.v3-quantity-choice { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+/* margin-top : le badge « Populaire » chevauche le bord haut du bouton, il lui
+   faut de la place au-dessus de la grille. */
+.v3-quantity-choice { margin-top: 9px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
 .v3-quantity-choice button { position: relative; min-height: 78px; padding: 12px; display: grid; grid-template-columns: 36px 42px; grid-template-rows: 18px 22px; align-content: center; align-items: center; justify-content: center; column-gap: 10px; text-align: left; border: 1px solid var(--v3-line); border-radius: 12px; background: #fff; cursor: pointer; }
 .v3-quantity-choice button strong { grid-column: 1; grid-row: 1 / 3; width: 100%; align-self: center; justify-self: end; text-align: right; font-size: 28px; font-variant-numeric: tabular-nums; line-height: 1; }
 .v3-quantity-choice button span { grid-column: 2; grid-row: 1; align-self: end; color: var(--v3-muted); font-size: 10px; line-height: 1.15; }
 .v3-quantity-choice button b { grid-column: 2; grid-row: 2; align-self: start; font-size: 13px; font-variant-numeric: tabular-nums; line-height: 1.15; }
-.v3-quantity-choice button em { position: absolute; right: 7px; top: 7px; padding: 3px 5px; color: var(--v3-blue); background: #e7edff; border-radius: 999px; font-size: 8px; font-style: normal; font-weight: 800; text-transform: uppercase; }
+/* Posé à cheval sur le bord haut plutôt que dans le coin : dans le coin il
+   recouvrait le mot « supports ». */
+.v3-quantity-choice button em { position: absolute; left: 50%; top: 0; transform: translate(-50%, -50%); padding: 3px 7px; color: var(--v3-blue); background: #e7edff; border-radius: 999px; font-size: 8px; font-style: normal; font-weight: 800; text-transform: uppercase; }
 .v3-quantity-choice button.is-selected { color: #fff; background: var(--v3-blue); border-color: var(--v3-blue); }
 .v3-quantity-choice button.is-selected span { color: #fff; }
 .v3-quantity-choice button.is-selected em { color: #fff; background: #10399f; }
@@ -218,7 +221,40 @@ body.v3-menu-open { overflow: hidden; }
 .v3-demo-label { position: absolute; z-index: 4; left: 22px; top: 20px; display: flex; align-items: center; gap: 7px; font-size: 10px; font-weight: 750; letter-spacing: .1em; }
 .v3-demo-label i { width: 7px; height: 7px; background: #ff5e56; border-radius: 50%; box-shadow: 0 0 0 7px rgb(255 94 86 / 15%); }
 .v3-demo-player .v3-product-art { position: absolute; width: 330px; left: 12%; bottom: -3%; transform: rotate(-4deg); }
-.v3-product-art .device-preview { width: 100%; }
+
+/* ---------- L'objet physique ----------
+   Le cadre reproduit le support réel autour de l'insert imprimé : chevalet
+   transparent, plaque PMMA ou carte PVC. L'insert se met à l'échelle tout seul
+   (voir storefront/insert-artwork.css), donc aucune media query ici. */
+
+.v3-product-art { position: relative; width: 100%; display: flex; flex-direction: column; align-items: center; }
+/* flex-shrink: 0 — sans quoi le cadre est comprimé par le conteneur et l'insert
+   perd son ratio d'impression (le A6 s'écrasait d'environ 4 %). */
+.v3-product-frame { position: relative; width: 100%; flex: 0 0 auto; }
+
+/* Chevalet A6 : insert glissé dans un chevalet transparent posé sur son pied. */
+.v3-product-chevalet .v3-product-frame {
+  padding: 2.6%;
+  background: linear-gradient(155deg, rgb(255 255 255 / 44%), rgb(255 255 255 / 10%) 42%, rgb(255 255 255 / 28%));
+  border: 1px solid rgb(255 255 255 / 52%);
+  border-radius: 10px;
+  box-shadow: 0 26px 48px rgb(9 12 20 / 26%), inset 0 1px 0 rgb(255 255 255 / 70%);
+}
+.v3-product-chevalet .tp-insert { border-radius: 4px; box-shadow: 0 2px 10px rgb(0 0 0 / 22%); }
+.v3-product-stand {
+  width: 46%; height: 10px; margin-top: -1px;
+  background: linear-gradient(180deg, rgb(255 255 255 / 46%), rgb(255 255 255 / 12%));
+  border: 1px solid rgb(255 255 255 / 42%); border-top: 0; border-radius: 0 0 9px 9px;
+  box-shadow: 0 14px 22px rgb(9 12 20 / 22%);
+}
+
+/* Plaque 12 × 12 : panneau PMMA rigide. */
+.v3-product-plaque .v3-product-frame { border-radius: 14px; box-shadow: 0 24px 46px rgb(9 12 20 / 28%), 0 0 0 1px rgb(255 255 255 / 20%); }
+.v3-product-plaque .tp-insert { border-radius: 14px; }
+
+/* Carte NFC : format carte bancaire. */
+.v3-product-carte .v3-product-frame { border-radius: 16px; box-shadow: 0 18px 38px rgb(9 12 20 / 30%), 0 0 0 1px rgb(255 255 255 / 16%); }
+.v3-product-carte .tp-insert { border-radius: 16px; }
 .v3-demo-phone { position: absolute; z-index: 3; right: 10%; top: 18%; width: 210px; height: 415px; padding: 44px 18px 20px; display: flex; flex-direction: column; align-items: center; color: #111; background: #fbfbfb; border: 8px solid #050506; border-radius: 36px; box-shadow: 0 35px 70px rgb(0 0 0 / 50%); animation: v3-phone-tap 5.5s ease-in-out infinite; }
 .v3-demo-phone::before { content: ""; position: absolute; top: 9px; width: 72px; height: 17px; background: #050506; border-radius: 999px; }
 .v3-demo-phone span { color: #7c818a; font-size: 9px; }
@@ -525,7 +561,6 @@ body.v3-menu-open { overflow: hidden; }
 .v3-live-stage-scene { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; object-fit: cover; opacity: 1; }
 .v3-live-preview-label { position: absolute; z-index: 2; top: 20px; left: 20px; padding: 8px 10px; color: #303846; background: rgb(255 255 255 / 80%); border: 1px solid rgb(21 25 36 / 12%); border-radius: 999px; font-size: 9px; font-weight: 800; letter-spacing: .09em; }
 .v3-live-stage-product { position: relative; z-index: 1; width: min(68%, 390px); filter: drop-shadow(0 28px 24px rgb(20 28 44 / 25%)); transition: transform .25s ease; }
-.v3-live-stage-product .device-preview { width: 100%; }
 .v3-print-design-preview { position: relative; z-index: 1; width: min(70%, 390px); max-height: 72%; object-fit: contain; filter: drop-shadow(0 25px 19px rgb(20 28 44 / 20%)); }
 .v3-print-design-preview.is-comptoir { width: min(50%, 300px); }
 .v3-print-design-preview.is-carte { width: min(76%, 420px); }
@@ -598,7 +633,6 @@ body.v3-menu-open { overflow: hidden; }
 .v3-detail-story h2 { margin: 15px 0 25px; font-family: "Archivo Black", sans-serif; font-size: clamp(42px, 5vw, 72px); line-height: .96; letter-spacing: -.055em; }
 .v3-detail-story p { max-width: 610px; color: var(--v3-muted); line-height: 1.7; }
 .v3-detail-story .v3-product-art { width: 100%; max-width: 520px; margin: auto; }
-.v3-detail-story .v3-product-art .device-preview { width: 100%; }
 .v3-detail-product-art { position: relative; min-height: 420px; display: grid; place-items: center; }
 .v3-detail-product-art > .v3-product-art { grid-area: 1 / 1; }
 .v3-detail-product-art.is-mix > .v3-product-art:first-child { width: min(76%, 390px); transform: translate(-12%, -3%) rotate(-3deg); }
@@ -646,7 +680,6 @@ body.v3-menu-open { overflow: hidden; }
 .v3-sector-scene-stage { position: absolute; z-index: 0; top: 50%; left: 0; width: 100%; height: auto; aspect-ratio: 1; overflow: visible; transform: translateY(-50%); }
 .v3-sector-scene::after { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(180deg, transparent 60%, rgb(9 11 16 / 12%)); }
 .v3-sector-scene-support { position: absolute; z-index: 4; filter: drop-shadow(0 19px 15px rgb(0 0 0 / 28%)); animation: v3-sector-support-in .24s cubic-bezier(.2,.8,.2,1) both; transform-origin: bottom center; }
-.v3-sector-scene-support .device-preview { width: 100%; }
 .v3-sector-scene.is-surface-comptoir .v3-sector-scene-support { left: 3.8%; bottom: 3.5%; width: 43%; transform: rotate(-3.2deg); }
 .v3-sector-scene.is-surface-plaque .v3-sector-scene-support { left: 5.5%; bottom: 8%; width: 45%; transform: perspective(900px) rotateX(10deg) rotateZ(2deg); filter: drop-shadow(0 15px 12px rgb(0 0 0 / 24%)); }
 .v3-sector-scene.is-surface-carte .v3-sector-scene-support { left: 8%; bottom: 20%; width: 39%; transform: perspective(820px) rotateY(-5deg) rotateZ(1deg); }
@@ -741,7 +774,7 @@ body.v3-menu-open { overflow: hidden; }
 .v3-cart-lines, .v3-checkout-lines { display: grid; gap: 10px; }
 .v3-cart-line { min-height: 165px; padding: 18px; display: grid; grid-template-columns: 135px 1fr auto; gap: 20px; align-items: center; background: #fff; border: 1px solid var(--v3-line); border-radius: 18px; }
 .v3-cart-art { height: 125px; display: grid; place-items: center; overflow: hidden; background: #eef0f3; border-radius: 12px; }
-.v3-cart-art .device-preview { width: 100px; }
+.v3-cart-art .v3-product-art { width: 100px; }
 .v3-cart-copy > span { color: var(--v3-blue); font-size: 9px; font-weight: 800; letter-spacing: .09em; }
 .v3-cart-copy h2 { margin: 6px 0; font-size: 19px; }
 .v3-cart-copy p { margin: 0 0 13px; color: var(--v3-muted); font-size: 11px; }
@@ -1281,7 +1314,7 @@ body.v3-menu-open { overflow: hidden; }
 .v3-live-phone-canvas .v3-live-phone-browser > span { font-size: 28px; font-weight: 400; line-height: .7; }
 .v3-live-phone-canvas .v3-live-phone-browser i { font-size: 12px; }
 .v3-live-phone-service { min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
-.v3-live-phone-service .platform-glyph { width: 21px; height: 21px; }
+.v3-live-phone-service .tp-glyph { width: 21px; height: 21px; }
 .v3-live-phone-service > svg { width: 19px; height: 19px; flex: 0 0 auto; stroke-width: 1.8; }
 .v3-live-phone-service b { overflow: hidden; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
 .v3-live-phone-canvas .v3-live-phone-content { padding-top: 24px; justify-content: flex-start; }
@@ -1303,7 +1336,7 @@ body.v3-menu-open { overflow: hidden; }
 .v3-phone-google-card, .v3-phone-menu-card, .v3-phone-booking-card, .v3-phone-order-card, .v3-phone-payment-card, .v3-phone-loyalty-card, .v3-phone-wifi-card, .v3-phone-website-card, .v3-phone-contact-card, .v3-phone-whatsapp-card, .v3-phone-links-card, .v3-phone-form-card { width: 100%; box-sizing: border-box; color: #222631; background: #fff; border: 1px solid #e1e4e8; border-radius: 17px; box-shadow: 0 10px 28px rgb(29 39 56 / 6%); }
 .v3-phone-google-card { padding: 17px; display: grid; gap: 12px; }
 .v3-phone-google-card > header { display: flex; align-items: center; gap: 10px; }
-.v3-phone-google-card .platform-glyph { width: 27px; height: 27px; }
+.v3-phone-google-card .tp-glyph { width: 27px; height: 27px; }
 .v3-phone-google-card > header > span { display: grid; gap: 2px; }
 .v3-phone-google-card b { font-size: 14px; }
 .v3-phone-google-card small { color: #757b86; font-size: 9px; }
@@ -1400,7 +1433,7 @@ body.v3-menu-open { overflow: hidden; }
 .v3-phone-contact-card > div p b, .v3-phone-links-card > div p b { overflow: hidden; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
 .v3-phone-whatsapp-card { padding: 15px; display: grid; gap: 14px; background: #efeae2; }
 .v3-phone-whatsapp-card > div { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; }
-.v3-phone-whatsapp-card .platform-glyph { width: 30px; height: 30px; }
+.v3-phone-whatsapp-card .tp-glyph { width: 30px; height: 30px; }
 .v3-phone-whatsapp-card > div b { font-size: 12px; }
 .v3-phone-whatsapp-card > div span { color: #16805a; font-size: 8px; }
 .v3-phone-whatsapp-card p { max-width: 78%; margin: 0; padding: 10px; color: #2e343c; background: #fff; border-radius: 3px 11px 11px; font-size: 10px; }
@@ -1465,7 +1498,7 @@ body.v3-menu-open { overflow: hidden; }
 .v3-live-phone-screen.is-action-tiktok .v3-live-phone-home { z-index: 10; bottom: 11px; left: 37%; width: 26%; height: 4px; background: #fff; }
 .v3-facebook-app, .v3-linkedin-app { flex: 1; min-height: 0; margin: -24px -27px -43px; display: flex; flex-direction: column; color: #111827; background: #f0f2f5; overflow: hidden; }
 .v3-facebook-app > header, .v3-linkedin-app > header { min-height: 42px; padding: 0 16px; display: flex; align-items: center; gap: 8px; background: #fff; border-bottom: 1px solid #e1e4e8; }
-.v3-facebook-app > header > .platform-glyph, .v3-linkedin-app > header > .platform-glyph { width: 24px; height: 24px; box-sizing: border-box; }
+.v3-facebook-app > header > .tp-glyph, .v3-linkedin-app > header > .tp-glyph { width: 24px; height: 24px; box-sizing: border-box; }
 .v3-facebook-app > header > strong { color: #0866ff; font-size: 23px; letter-spacing: -.055em; }
 .v3-facebook-app > header > span { margin-left: auto; display: flex; gap: 8px; }
 .v3-facebook-app > header > span svg { width: 28px; height: 28px; padding: 6px; box-sizing: border-box; background: #edf0f4; border-radius: 50%; stroke-width: 2.2; }
@@ -1612,7 +1645,7 @@ body.v3-menu-open { overflow: hidden; }
 .v3-live-phone-screen.is-restaurant-screen .v3-safari-app > footer { background: rgb(239 234 230 / 97%); }
 .v3-live-phone-screen.is-restaurant-screen :is(.v3-facebook-app, .v3-linkedin-app) { color: #111820; }
 .v3-live-phone-screen.is-restaurant-screen .v3-facebook-app > header > strong { color: #0866ff; font-size: 25px; }
-.v3-live-phone-screen.is-restaurant-screen .v3-linkedin-app > header > .platform-glyph { width: 27px; height: 27px; }
+.v3-live-phone-screen.is-restaurant-screen .v3-linkedin-app > header > .tp-glyph { width: 27px; height: 27px; }
 .v3-live-phone-screen.is-restaurant-screen .v3-linkedin-app > header > span { color: #4d5966; background: #e7edf2; font-size: 10px; }
 .v3-live-phone-screen.is-restaurant-screen :is(.v3-facebook-cover, .v3-linkedin-cover, .v3-facebook-app > article > div, .v3-linkedin-app > article > div) { filter: saturate(1.1) contrast(1.06); }
 .v3-live-phone-screen.is-restaurant-screen :is(.v3-facebook-app, .v3-linkedin-app) h3 { color: #10151b; font-size: 19px; }
@@ -1662,16 +1695,16 @@ body.v3-menu-open { overflow: hidden; }
 .v3-live-brand-avatar { position: relative; flex: 0 0 auto; width: clamp(24px, 4vw, 48px); aspect-ratio: 1; display: grid; place-items: center; color: #fff; background: var(--v3-phone-primary, #161310); border: 1px solid rgb(17 24 39 / 8%); border-radius: 26%; overflow: visible; }
 .v3-live-brand-avatar > img { width: 100%; height: 100%; padding: 9%; object-fit: contain; background: #fff; border-radius: inherit; }
 .v3-live-brand-avatar > span { font-size: clamp(11px, 1.8vw, 23px); font-weight: 900; }
-.v3-live-brand-avatar > .generated-brand-mark { width: 70%; height: 70%; color: currentColor; }
-.v3-live-brand-avatar > .generated-brand-mark svg { width: 100%; height: 100%; }
+.v3-live-brand-avatar > .tp-brand-mark { width: 70%; height: 70%; color: currentColor; }
+.v3-live-brand-avatar > .tp-brand-mark svg { width: 100%; height: 100%; }
 .v3-live-brand-avatar > b { position: absolute; right: -11%; bottom: -11%; width: 41%; aspect-ratio: 1; display: grid; place-items: center; color: #fff; background: #111; border: 2px solid #fff; border-radius: 50%; font-size: .42em; line-height: 1; }
 .v3-live-brand-avatar > b.is-facebook { background: #0866ff; }
 .v3-live-brand-avatar > b.is-linkedin { background: #0a66c2; border-radius: 25%; }
 .v3-live-brand-avatar > b.is-instagram { background: linear-gradient(145deg, #6228d7, #ee2a7b 58%, #ffd15c); }
 .v3-live-brand-avatar > b.is-tiktok { background: #050505; text-shadow: -1px 0 #25f4ee, 1px 0 #fe2c55; }
-.v3-live-brand-avatar > b:has(.platform-glyph) { padding: 0; overflow: hidden; background: #fff; }
-.v3-live-brand-avatar > b .platform-glyph { width: 100%; height: 100%; font-size: 1em; }
-.v3-live-brand-avatar > b .platform-glyph svg { width: 100%; height: 100%; }
+.v3-live-brand-avatar > b:has(.tp-glyph) { padding: 0; overflow: hidden; background: #fff; }
+.v3-live-brand-avatar > b .tp-glyph { width: 100%; height: 100%; font-size: 1em; }
+.v3-live-brand-avatar > b .tp-glyph svg { width: 100%; height: 100%; }
 .v3-live-phone-screen.is-action-instagram .v3-live-phone-cta { background: linear-gradient(90deg, #833ab4, #fd1d1d, #fcb045); }
 .v3-live-phone-screen.is-action-facebook .v3-live-phone-cta { background: #1877f2; }
 .v3-live-phone-screen.is-action-linkedin .v3-live-phone-cta { background: #0a66c2; }
@@ -1869,1309 +1902,6 @@ body.v3-menu-open { overflow: hidden; }
   .v3-sector-buy .v3-choice-row-three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
-/* --------------------------------------------------------------------------
-   BAT TAPOTE — une composition d'impression commune, déclinée par support.
-   Le support physique reste immobile ; seules l'identité et l'impression
-   changent. La zone NFC + QR est volontairement verrouillée dans le tiers bas.
-   -------------------------------------------------------------------------- */
-.device-preview-canonical {
-  --print-edge: color-mix(in srgb, var(--insert-ink) 18%, transparent);
-  --print-soft: color-mix(in srgb, var(--insert-ink) 7%, transparent);
-  --print-muted: color-mix(in srgb, var(--insert-ink) 61%, transparent);
-}
-
-.device-preview-canonical .printed-insert {
-  position: relative;
-  isolation: isolate;
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) !important;
-  grid-template-rows: auto minmax(0, 1fr) auto auto !important;
-  align-items: stretch !important;
-  gap: 0 !important;
-  color: var(--insert-ink);
-  background:
-    linear-gradient(117deg, rgb(255 255 255 / 8%), transparent 27% 72%, rgb(0 0 0 / 2.5%)),
-    var(--insert-paper) !important;
-  box-shadow: inset 0 0 0 .32cqw rgb(255 255 255 / 24%);
-}
-
-.device-preview-canonical .printed-insert > :not(.campaign-art) {
-  position: relative;
-  z-index: 2;
-}
-
-/* Une affiche, pas un simple formulaire : chaque destination possède son
-   propre art vectoriel, recolorable et donc compatible avec le logo client. */
-.device-preview-canonical .campaign-art {
-  position: absolute;
-  z-index: 0;
-  inset: 18cqw 0 46cqw;
-  overflow: hidden;
-  pointer-events: none;
-  opacity: .98;
-}
-
-.device-preview-canonical .campaign-art-mark {
-  position: absolute;
-  right: -3cqw;
-  top: 4cqw;
-  width: 32cqw;
-  height: 32cqw;
-  display: grid;
-  place-items: center;
-  padding: 4.5cqw;
-  color: var(--insert-ink);
-  background: color-mix(in srgb, var(--insert-paper) 88%, var(--insert-ink));
-  border: .4cqw solid color-mix(in srgb, var(--insert-ink) 14%, var(--insert-paper));
-  border-radius: 50%;
-  box-shadow: 0 2cqw 7cqw color-mix(in srgb, var(--insert-ink) 8%, transparent);
-  opacity: 1;
-  transform: rotate(-8deg);
-}
-
-.device-preview-canonical .campaign-art-mark > svg,
-.device-preview-canonical .campaign-art-mark > .platform-glyph {
-  width: 100%;
-  height: 100%;
-  opacity: .26;
-}
-
-.device-preview-canonical :is(.campaign-art-instagram, .campaign-art-facebook, .campaign-art-linkedin, .campaign-art-tiktok, .campaign-art-whatsapp, .campaign-art-rating) .campaign-art-mark > .platform-glyph {
-  opacity: .58;
-}
-
-.device-preview-canonical .campaign-art-orbit,
-.device-preview-canonical .campaign-art-track {
-  position: absolute;
-  display: block;
-}
-
-.device-preview-canonical .campaign-art-orbit {
-  right: 1cqw;
-  top: 8cqw;
-  width: 24cqw;
-  aspect-ratio: 1;
-  border: .55cqw solid color-mix(in srgb, var(--insert-accent) 26%, var(--insert-paper));
-  border-radius: 50%;
-  opacity: 1;
-}
-
-.device-preview-canonical .campaign-art-orbit.is-orbit-two {
-  right: -5cqw;
-  top: 2cqw;
-  width: 38cqw;
-  border-color: color-mix(in srgb, var(--insert-accent) 14%, var(--insert-paper));
-  opacity: 1;
-}
-
-.device-preview-canonical .campaign-art-track {
-  left: 0;
-  bottom: 7cqw;
-  width: 43cqw;
-  height: .52cqw;
-  background: color-mix(in srgb, var(--insert-accent) 22%, var(--insert-paper));
-  opacity: 1;
-}
-
-.device-preview-canonical .campaign-art-track.is-track-two {
-  bottom: 3.5cqw;
-  width: 26cqw;
-  background: color-mix(in srgb, var(--insert-accent) 12%, var(--insert-paper));
-  opacity: 1;
-}
-
-.device-preview-canonical .print-header {
-  min-width: 0;
-  min-height: 18cqw;
-  padding-bottom: 3.1cqw;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 3.5cqw;
-  border-bottom: .38cqw solid var(--print-edge);
-}
-
-.device-preview-canonical .print-header .customer-brand,
-.device-preview-canonical .print-header .customer-brand-has-logo {
-  width: auto !important;
-  min-width: 0;
-  height: auto !important;
-  min-height: 13cqw;
-  margin: 0;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-content: center;
-  align-items: center;
-  justify-content: start;
-  gap: 2.3cqw !important;
-  text-align: left;
-}
-
-.device-preview-canonical .print-header .customer-brand > .generated-brand-mark,
-.device-preview-canonical .print-header .customer-brand > span {
-  grid-column: 1;
-  width: 12.6cqw !important;
-  height: 12.6cqw !important;
-  color: var(--insert-paper);
-  background: var(--insert-ink);
-  border: 0;
-  border-radius: 2.4cqw;
-}
-
-.device-preview-canonical .print-header .customer-brand > .generated-brand-mark svg {
-  width: 8.2cqw;
-  height: 8.2cqw;
-}
-
-.device-preview-canonical .print-header .customer-brand img {
-  grid-column: 1;
-  width: auto !important;
-  max-width: 20cqw !important;
-  height: 12.6cqw;
-  max-height: 12.6cqw !important;
-  padding: .8cqw;
-  object-fit: contain;
-  background: rgb(255 255 255 / 88%);
-  border-radius: 2.2cqw;
-  box-shadow: inset 0 0 0 .3cqw rgb(0 0 0 / 7%);
-}
-
-.device-preview-canonical .print-header .customer-brand b {
-  grid-column: 2;
-  min-width: 0;
-  overflow: hidden;
-  display: -webkit-box;
-  font-size: 2.6cqw !important;
-  line-height: 1.15;
-  letter-spacing: .115em;
-  text-align: left;
-  text-overflow: ellipsis;
-  white-space: normal;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-
-.device-preview-canonical .print-header .action-signature {
-  min-width: 0;
-  min-height: 0 !important;
-  margin: 0 !important;
-  padding: 0;
-  justify-self: end;
-  gap: 1.1cqw;
-  font-size: 2.1cqw !important;
-  line-height: 1;
-  letter-spacing: .045em;
-  white-space: nowrap;
-}
-
-.device-preview-canonical .print-header .action-signature svg,
-.device-preview-canonical .print-header .action-signature .platform-glyph {
-  width: 4.6cqw;
-  height: 4.6cqw;
-}
-
-.device-preview-canonical .print-header .action-signature :is(.action-brand-google, .action-brand-instagram, .action-brand-facebook, .action-brand-linkedin, .action-brand-tiktok, .action-brand-whatsapp, .action-brand-payment) {
-  padding: 1.25cqw 1.7cqw;
-  color: #171719;
-  background: #fff;
-  border: .28cqw solid rgb(0 0 0 / 9%);
-  border-radius: 999px;
-  box-shadow: 0 .8cqw 2.2cqw rgb(0 0 0 / 8%);
-}
-.device-preview-canonical .print-header .action-signature .action-brand-google > b { color: #171719; }
-
-.device-preview-canonical .print-copy {
-  min-width: 0;
-  min-height: 0;
-  padding: 4.4cqw 0 3.5cqw;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-}
-
-.device-preview-canonical .print-copy .device-purpose {
-  max-width: 78cqw;
-  margin: 0 !important;
-  color: var(--insert-accent);
-  font-family: var(--font-body);
-  font-size: 2.42cqw !important;
-  font-weight: 900;
-  line-height: 1.08;
-  letter-spacing: .135em;
-  text-align: left;
-  text-transform: uppercase;
-  text-wrap: balance;
-}
-
-.device-preview-canonical .print-copy .device-headline {
-  max-width: 88cqw;
-  margin: 2.2cqw 0 0 !important;
-  font-family: var(--font-display);
-  font-size: 8.8cqw !important;
-  line-height: .9;
-  letter-spacing: -.052em;
-  text-align: left;
-  text-wrap: balance;
-}
-
-.device-preview-canonical .device-headline .tapote-word {
-  display: inline-block;
-  white-space: nowrap;
-  text-decoration: underline;
-  text-decoration-color: var(--insert-accent);
-  text-decoration-thickness: .075em;
-  text-underline-offset: .09em;
-}
-
-.device-preview-canonical .print-copy .device-subline {
-  margin: 1.4cqw 0 0 !important;
-  color: var(--print-muted);
-  font-size: 2.12cqw !important;
-  line-height: 1.3;
-  text-align: left;
-}
-
-.device-preview-canonical .tap-zone {
-  width: 100% !important;
-  min-height: 35cqw !important;
-  margin: 0 !important;
-  padding: 3.1cqw !important;
-  align-self: end;
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) 23cqw !important;
-  gap: 3cqw !important;
-  color: var(--insert-accent-ink);
-  background: var(--insert-accent);
-  border: .32cqw solid rgb(255 255 255 / 12%);
-  border-radius: 3.2cqw !important;
-  box-shadow: inset 0 0 0 .3cqw rgb(0 0 0 / 5%), 0 1.6cqw 4.6cqw rgb(0 0 0 / 8%);
-}
-
-/* Identité du lien : le commerçant possède la partie haute, le service signe
-   la zone d'action. Les couleurs officielles ne remplacent jamais la marque. */
-.device-preview-canonical .insert-action-instagram .tap-zone {
-  color: #fff;
-  background: linear-gradient(132deg, #833ab4 0%, #fd1d1d 55%, #fcb045 100%);
-}
-.device-preview-canonical .insert-action-facebook .tap-zone { color: #fff; background: #1877f2; }
-.device-preview-canonical .insert-action-linkedin .tap-zone { color: #fff; background: #0a66c2; }
-.device-preview-canonical .insert-action-whatsapp .tap-zone { color: #072f1c; background: #25d366; }
-.device-preview-canonical .insert-action-tiktok .tap-zone {
-  color: #fff;
-  background: linear-gradient(112deg, #101014 0 62%, #25f4ee 62% 65%, #fe2c55 65% 68%, #101014 68%);
-}
-.device-preview-canonical .insert-action-paiement .tap-zone { color: #fff; background: #111; }
-
-/* À votre image : la palette client reprend la main sur la couleur d'action.
-   Le vrai logo de destination reste identifiable dans l'en-tête et le motif. */
-.device-preview-canonical.is-personalization-custom .tap-zone {
-  color: var(--insert-accent-ink);
-  background: var(--insert-accent);
-}
-.device-preview-canonical.is-personalization-custom .campaign-art-mark {
-  background: color-mix(in srgb, var(--insert-paper) 82%, var(--insert-ink));
-  border-color: color-mix(in srgb, var(--insert-ink) 22%, var(--insert-paper));
-}
-.device-preview-canonical.is-personalization-custom .campaign-art-mark > svg {
-  opacity: .34;
-}
-
-/* Les motifs racontent l'usage avant même de lire le titre. */
-.device-preview-canonical .campaign-art-menu .campaign-art-track {
-  width: 55cqw;
-  box-shadow: 0 -5cqw 0 var(--insert-accent), 0 -10cqw 0 var(--insert-accent);
-}
-.device-preview-canonical .campaign-art-menu .campaign-art-orbit { border-style: dashed; }
-.device-preview-canonical .campaign-art-calendar {
-  background: none;
-  opacity: .9;
-}
-.device-preview-canonical .campaign-art-calendar::before {
-  content: "";
-  position: absolute;
-  right: -2cqw;
-  top: 1cqw;
-  width: 39cqw;
-  height: 34cqw;
-  background: radial-gradient(circle, var(--insert-accent) 0 .78cqw, transparent .95cqw) 0 0 / 7cqw 7cqw;
-  opacity: .68;
-}
-.device-preview-canonical .campaign-art-calendar .campaign-art-mark > svg { opacity: .34; }
-.device-preview-canonical .campaign-art-order .campaign-art-track {
-  left: -6cqw;
-  bottom: 10cqw;
-  width: 68cqw;
-  transform: rotate(-10deg);
-  box-shadow: 0 4cqw 0 color-mix(in srgb, var(--insert-accent) 65%, transparent);
-}
-.device-preview-canonical .campaign-art-payment .campaign-art-orbit,
-.device-preview-canonical .campaign-art-wifi .campaign-art-orbit {
-  border-left-color: transparent;
-  border-bottom-color: transparent;
-  transform: rotate(-45deg);
-}
-.device-preview-canonical .campaign-art-thanks {
-  background: none;
-  opacity: .9;
-}
-.device-preview-canonical .campaign-art-thanks::before {
-  content: "";
-  position: absolute;
-  right: -1cqw;
-  top: 3cqw;
-  width: 38cqw;
-  height: 32cqw;
-  background: radial-gradient(circle, var(--insert-accent) 0 .55cqw, transparent .72cqw) 0 0 / 5.5cqw 5.5cqw;
-  opacity: .62;
-}
-.device-preview-canonical .campaign-art-loyalty .campaign-art-orbit { border-style: dotted; border-width: 1.1cqw; }
-.device-preview-canonical .campaign-art-form .campaign-art-track {
-  left: 5cqw;
-  width: 46cqw;
-  height: 2.2cqw;
-  border-radius: 999px;
-  box-shadow: 0 -7cqw 0 var(--insert-accent), 0 -14cqw 0 var(--insert-accent);
-}
-.device-preview-canonical .campaign-art-web,
-.device-preview-canonical .campaign-art-links {
-  background: none;
-}
-.device-preview-canonical .campaign-art-web::before,
-.device-preview-canonical .campaign-art-links::before {
-  content: "";
-  position: absolute;
-  right: -2cqw;
-  top: 0;
-  width: 42cqw;
-  height: 36cqw;
-  background:
-    linear-gradient(90deg, transparent 47%, color-mix(in srgb, var(--insert-accent) 18%, transparent) 48% 52%, transparent 53%),
-    linear-gradient(transparent 47%, color-mix(in srgb, var(--insert-accent) 18%, transparent) 48% 52%, transparent 53%);
-  background-size: 9cqw 9cqw;
-  opacity: .58;
-}
-.device-preview-canonical .campaign-art-contact .campaign-art-orbit,
-.device-preview-canonical .campaign-art-link .campaign-art-orbit { border-radius: 35% 65% 62% 38%; }
-
-.device-preview-canonical .tap-zone > .tap-zone-nfc {
-  position: relative;
-  min-width: 0;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-}
-
-.device-preview-canonical .tap-zone-nfc .nfc-beacon {
-  position: relative;
-  width: 13cqw;
-  height: 13cqw;
-  display: grid;
-  place-items: center;
-  color: currentColor;
-  background: rgb(255 255 255 / 14%);
-  border: .45cqw solid currentColor;
-  border-radius: 50%;
-  box-shadow: inset 0 0 0 1.7cqw rgb(255 255 255 / 6%);
-}
-
-.device-preview-canonical .tap-zone-nfc .nfc-beacon svg {
-  position: relative;
-  z-index: 2;
-  width: 8.4cqw !important;
-  height: 8.4cqw !important;
-  stroke-width: 1.65;
-}
-
-.device-preview-canonical .tap-zone-nfc .nfc-beacon i {
-  position: absolute;
-  inset: -2.1cqw;
-  border: .35cqw solid currentColor;
-  border-radius: 50%;
-  opacity: .25;
-}
-
-.device-preview-canonical .tap-zone-nfc .nfc-beacon i + i {
-  inset: -4cqw;
-  opacity: .12;
-}
-
-.device-preview-canonical .tap-zone-nfc > em {
-  position: static;
-  margin-top: 1.15cqw;
-  padding: .75cqw 1.25cqw;
-  color: inherit;
-  background: rgb(255 255 255 / 13%);
-  border: .28cqw solid currentColor;
-  border-radius: 999px;
-  font-size: 1.6cqw;
-  font-style: normal;
-  font-weight: 950;
-  line-height: 1;
-  letter-spacing: .12em;
-}
-
-.device-preview-canonical .tap-zone-nfc strong {
-  max-width: 45cqw;
-  margin: 1.35cqw 0 0 !important;
-  font-size: 3.1cqw !important;
-  line-height: 1.02;
-  text-align: center;
-}
-
-.device-preview-canonical .tap-zone-nfc small {
-  margin: 1.1cqw 0 0 !important;
-  font-size: 1.35cqw !important;
-  opacity: .75;
-}
-
-.device-preview-canonical .tap-zone > .tap-zone-qr {
-  width: 100% !important;
-  min-height: 25cqw !important;
-  padding: 1.7cqw !important;
-  background: #fff;
-  border: .3cqw solid rgb(0 0 0 / 7%);
-  border-radius: 2.2cqw !important;
-  box-shadow: 0 1.2cqw 2.8cqw rgb(0 0 0 / 10%);
-}
-
-.device-preview-canonical .tap-zone-qr img {
-  width: 19.5cqw !important;
-  height: 19.5cqw !important;
-}
-
-.device-preview-canonical .tap-zone-qr small {
-  margin-top: .8cqw;
-  color: #111;
-  font-size: 1.25cqw !important;
-  letter-spacing: .02em;
-}
-
-.device-preview-canonical .maker-signature {
-  width: 100%;
-  height: auto !important;
-  min-height: 15cqw;
-  padding-top: 2.2cqw;
-  display: flex !important;
-  align-items: center;
-  justify-content: space-between;
-  gap: 2cqw;
-  color: var(--print-muted);
-  font-size: 1.35cqw !important;
-  line-height: 1;
-  letter-spacing: .12em;
-}
-
-.device-preview-canonical .maker-signature > span {
-  display: inline-flex;
-  align-items: center;
-  gap: .9cqw;
-}
-
-.device-preview-canonical .maker-signature > small {
-  overflow: hidden;
-  font-size: 1.3cqw;
-  font-weight: 750;
-  letter-spacing: .08em;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.device-preview-canonical .maker-signature img {
-  width: 2.6cqw !important;
-  height: 2.6cqw !important;
-}
-
-/* Le chevalet A6 doit fonctionner avec l’antenne haute d’un iPhone comme avec
-   la zone centrale de nombreux Android. La réserve basse remonte le centre NFC
-   autour de 62 % de la hauteur imprimée sans déplacer les autres supports. */
-.device-preview-canonical:is(.device-preview-comptoir, .device-preview-table6) .maker-signature {
-  min-height: 25cqw;
-  padding-bottom: 1cqw;
-  align-items: flex-end;
-}
-
-/* Pulse : l'édition manifeste Tapote. Le bénéfice devient la vedette et la
-   cible NFC forme un repère visuel mémorisable, sans réduire le QR de secours. */
-.device-preview-canonical .insert-style-pulse {
-  background:
-    linear-gradient(135deg, rgb(255 255 255 / 6%), transparent 42%),
-    var(--insert-paper) !important;
-}
-.device-preview-canonical .insert-style-pulse .print-header {
-  border-bottom: .55cqw solid var(--insert-accent);
-}
-.device-preview-canonical .insert-style-pulse .print-header .action-signature {
-  padding: 0;
-  color: inherit;
-  background: transparent;
-  border-radius: 0;
-}
-.device-preview-canonical .insert-style-pulse .print-copy {
-  justify-content: center;
-}
-.device-preview-canonical .insert-style-pulse .print-copy .device-purpose {
-  max-width: none;
-  color: var(--insert-accent);
-  font-family: var(--font-body);
-  font-size: 2.15cqw !important;
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: .16em;
-  text-transform: uppercase;
-}
-.device-preview-canonical .insert-style-pulse .print-copy .device-headline {
-  max-width: 91cqw;
-  margin-top: 2.3cqw !important;
-  font-family: var(--font-display);
-  font-size: 9.4cqw !important;
-  line-height: .88;
-  letter-spacing: -.055em;
-}
-.device-preview-canonical .insert-style-pulse .print-copy .device-subline {
-  max-width: 70cqw;
-  font-size: 1.7cqw !important;
-}
-.device-preview-canonical .insert-style-pulse .tap-zone {
-  position: relative;
-  overflow: hidden;
-  background:
-    radial-gradient(circle at 24% 50%, rgb(255 255 255 / 19%) 0 9cqw, transparent 9.3cqw),
-    var(--insert-accent);
-}
-.device-preview-canonical .insert-style-pulse .tap-zone::before,
-.device-preview-canonical .insert-style-pulse .tap-zone::after {
-  content: "";
-  position: absolute;
-  left: 24%;
-  top: 50%;
-  width: 17cqw;
-  aspect-ratio: 1;
-  border: .55cqw solid currentColor;
-  border-radius: 50%;
-  opacity: .34;
-  transform: translate(-50%, -50%);
-}
-.device-preview-canonical .insert-style-pulse .tap-zone::after {
-  width: 25cqw;
-  opacity: .18;
-}
-.device-preview-canonical .insert-style-pulse .tap-zone > * {
-  position: relative;
-  z-index: 1;
-}
-.device-preview-canonical .insert-style-pulse .tap-zone-nfc svg {
-  filter: drop-shadow(0 .7cqw 1.4cqw rgb(0 0 0 / 12%));
-}
-.device-preview-canonical .insert-style-pulse .maker-signature {
-  color: var(--insert-ink);
-  opacity: .62;
-}
-
-/* Signature : identité centrée et message fortement assumé. */
-.device-preview-canonical [data-design-style="signature"] { color: inherit; }
-.device-preview-canonical .insert-style-signature .print-header {
-  grid-template-columns: minmax(0, 1fr);
-  justify-items: center;
-  gap: 1.4cqw;
-}
-.device-preview-canonical .insert-style-signature .print-header .customer-brand {
-  justify-self: center;
-}
-.device-preview-canonical .insert-style-signature .print-header .action-signature {
-  justify-self: center;
-}
-.device-preview-canonical .insert-style-signature .print-copy {
-  align-items: center;
-}
-.device-preview-canonical .insert-style-signature .print-copy :is(.device-purpose, .device-headline, .device-subline) {
-  text-align: center;
-}
-
-/* Editorial : grille nette et vraie hiérarchie typographique. */
-.device-preview-canonical .insert-style-editorial .print-copy {
-  padding-left: 4cqw;
-  border-left: 1.05cqw solid var(--insert-accent);
-}
-.device-preview-canonical .insert-style-editorial .print-copy .device-purpose {
-  font-size: 2.08cqw !important;
-}
-
-/* Impact / plateforme : bandeau de destination intégré, sans badge flottant. */
-.device-preview-canonical .insert-style-platform .print-header {
-  margin: -6.2cqw -6.2cqw 0;
-  padding: 4.5cqw 6.2cqw 3.5cqw;
-  color: var(--insert-accent-ink);
-  background: var(--insert-accent);
-  border-bottom: 0;
-}
-.device-preview-canonical .insert-style-platform .print-header .customer-brand > .generated-brand-mark,
-.device-preview-canonical .insert-style-platform .print-header .customer-brand > span {
-  color: var(--insert-accent);
-  background: var(--insert-accent-ink);
-}
-.device-preview-canonical .insert-style-platform .print-header .action-signature {
-  padding: 0;
-  color: inherit;
-  background: transparent;
-  border-radius: 0;
-}
-.device-preview-canonical .insert-style-platform .print-copy .device-purpose {
-  font-size: 2.08cqw !important;
-}
-
-/* Minimal : matière claire, filet technique, NFC monochrome. */
-.device-preview-canonical .insert-style-minimal {
-  box-shadow: inset 0 0 0 .48cqw var(--print-edge);
-}
-.device-preview-canonical .insert-style-minimal .tap-zone {
-  --tap-zone-ink: var(--insert-ink);
-  color: var(--insert-ink);
-  background: transparent;
-  border: .55cqw solid var(--insert-ink);
-  box-shadow: none;
-}
-
-/* Plaque : cadrage plus compact pour conserver une vraie zone de respiration. */
-.device-preview-canonical:is(.device-preview-plaque, .device-preview-mini, .device-preview-sticker) .printed-insert {
-  padding: 4.8cqw !important;
-}
-.device-preview-canonical:is(.device-preview-plaque, .device-preview-mini, .device-preview-sticker) .print-header {
-  min-height: 16cqw;
-  padding-bottom: 2.4cqw;
-}
-.device-preview-canonical:is(.device-preview-plaque, .device-preview-mini, .device-preview-sticker) .print-copy {
-  padding: 3.2cqw 0 2.8cqw;
-}
-.device-preview-canonical:is(.device-preview-plaque, .device-preview-mini, .device-preview-sticker) .print-copy .device-purpose {
-  font-size: 1.95cqw !important;
-}
-.device-preview-canonical:is(.device-preview-plaque, .device-preview-mini, .device-preview-sticker) .print-copy .device-headline {
-  font-size: 7.7cqw !important;
-}
-.device-preview-canonical:is(.device-preview-plaque, .device-preview-mini, .device-preview-sticker) .tap-zone {
-  min-height: 31cqw !important;
-}
-.device-preview-canonical:is(.device-preview-plaque, .device-preview-mini, .device-preview-sticker) .maker-signature {
-  min-height: 10cqw;
-}
-.device-preview-canonical:is(.device-preview-plaque, .device-preview-mini, .device-preview-sticker) .insert-style-platform .print-header {
-  margin: -4.8cqw -4.8cqw 0;
-  padding: 3.7cqw 4.8cqw 3cqw;
-}
-
-/* Carte PVC : deux colonnes stables, geste à gauche et QR à droite. */
-.device-preview-canonical.device-preview-carte .printed-insert {
-  padding: 4.7cqw !important;
-  grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr) !important;
-  grid-template-rows: auto minmax(0, 1fr) auto !important;
-  column-gap: 5cqw !important;
-}
-.device-preview-canonical.device-preview-carte .print-header {
-  grid-column: 1;
-  grid-row: 1;
-  min-height: 12cqw;
-  padding: 0 0 2cqw;
-  grid-template-columns: minmax(0, 1fr);
-  justify-items: start;
-  gap: 1cqw;
-}
-.device-preview-canonical.device-preview-carte .print-header .customer-brand {
-  min-height: 7.5cqw;
-  gap: 1.4cqw !important;
-}
-.device-preview-canonical.device-preview-carte .print-header .customer-brand > .generated-brand-mark,
-.device-preview-canonical.device-preview-carte .print-header .customer-brand > span {
-  width: 8cqw !important;
-  height: 8cqw !important;
-  border-radius: 1.8cqw;
-}
-.device-preview-canonical.device-preview-carte .print-header .customer-brand img {
-  max-width: 12cqw !important;
-  height: 8cqw;
-  max-height: 8cqw !important;
-}
-.device-preview-canonical.device-preview-carte .print-header .customer-brand b {
-  font-size: 1.75cqw !important;
-}
-.device-preview-canonical.device-preview-carte .print-header .action-signature {
-  justify-self: start;
-  font-size: 1.6cqw !important;
-}
-.device-preview-canonical.device-preview-carte .print-copy {
-  grid-column: 1;
-  grid-row: 2;
-  padding: 2.2cqw 0 0;
-  justify-content: flex-start;
-}
-.device-preview-canonical.device-preview-carte .print-copy .device-purpose {
-  font-size: 1.45cqw !important;
-}
-.device-preview-canonical.device-preview-carte .print-copy .device-headline {
-  display: block !important;
-  max-width: 46cqw;
-  margin-top: 1.25cqw !important;
-  font-size: 5cqw !important;
-  line-height: .9;
-}
-.device-preview-canonical.device-preview-carte .print-copy .device-subline {
-  display: block !important;
-  max-width: 42cqw;
-  margin-top: 1cqw !important;
-  font-size: 1.35cqw !important;
-}
-.device-preview-canonical.device-preview-carte .tap-zone {
-  grid-column: 2;
-  grid-row: 1 / 4;
-  min-height: 0 !important;
-  height: 100%;
-  padding: 3cqw !important;
-  grid-template-columns: minmax(0, 1fr) 25cqw !important;
-  gap: 2.2cqw !important;
-}
-.device-preview-canonical.device-preview-carte .tap-zone > .tap-zone-qr {
-  min-height: 29cqw !important;
-}
-.device-preview-canonical.device-preview-carte .tap-zone-qr img {
-  width: 22cqw !important;
-  height: 22cqw !important;
-}
-.device-preview-canonical.device-preview-carte .tap-zone-nfc .nfc-beacon {
-  width: 10cqw;
-  height: 10cqw;
-}
-.device-preview-canonical.device-preview-carte .tap-zone-nfc .nfc-beacon svg {
-  width: 6.4cqw !important;
-  height: 6.4cqw !important;
-}
-.device-preview-canonical.device-preview-carte .tap-zone-nfc .nfc-beacon i { inset: -1.4cqw; }
-.device-preview-canonical.device-preview-carte .tap-zone-nfc .nfc-beacon i + i { inset: -2.5cqw; }
-.device-preview-canonical.device-preview-carte .tap-zone-nfc > em { font-size: 1.2cqw; }
-.device-preview-canonical.device-preview-carte .tap-zone-nfc strong { max-width: 16cqw; font-size: 2cqw !important; }
-.device-preview-canonical.device-preview-carte .tap-zone-nfc small { font-size: 1.05cqw !important; }
-.device-preview-canonical.device-preview-carte .maker-signature {
-  display: none !important;
-}
-.device-preview-canonical.device-preview-carte .insert-style-platform .print-header {
-  margin: 0;
-  padding: 0 0 2cqw;
-  color: var(--insert-ink);
-  background: transparent;
-  border-bottom: .38cqw solid var(--print-edge);
-}
-.device-preview-canonical.device-preview-carte .insert-style-pulse .print-copy .device-purpose {
-  font-size: 1.5cqw !important;
-}
-.device-preview-canonical.device-preview-carte .insert-style-pulse .print-copy .device-headline {
-  display: block !important;
-  margin-top: 1.5cqw !important;
-  font-size: 5.5cqw !important;
-}
-.device-preview-canonical.device-preview-carte .insert-style-pulse .tap-zone::before,
-.device-preview-canonical.device-preview-carte .insert-style-pulse .tap-zone::after {
-  left: 28%;
-  width: 13cqw;
-}
-.device-preview-canonical.device-preview-carte .insert-style-pulse .tap-zone::after {
-  width: 20cqw;
-}
-.device-preview-canonical.device-preview-carte .insert-style-editorial .print-copy {
-  padding-left: 2.5cqw;
-  border-left-width: .7cqw;
-}
-
-/* Matières : bords, épaisseur et reflets lisibles sans effet plastique factice. */
-.device-preview-canonical.device-preview-comptoir,
-.device-preview-canonical.device-preview-table6 {
-  background:
-    linear-gradient(103deg, rgb(255 255 255 / 88%) 0 1.1%, transparent 2% 95%, rgb(184 207 219 / 28%) 98%),
-    linear-gradient(145deg, rgb(255 255 255 / 46%), rgb(190 214 226 / 15%));
-  border-color: rgb(255 255 255 / 78%);
-  box-shadow: 0 18px 34px rgb(0 0 0 / 24%), inset 1.3cqw 0 1.2cqw rgb(255 255 255 / 34%), inset -1cqw 0 1.4cqw rgb(116 151 169 / 15%);
-}
-.device-preview-canonical.device-preview-plaque,
-.device-preview-canonical.device-preview-mini,
-.device-preview-canonical.device-preview-sticker {
-  background: linear-gradient(145deg, rgb(255 255 255 / 96%), rgb(221 230 235 / 82%));
-  box-shadow: 0 18px 34px rgb(0 0 0 / 22%), inset .8cqw .6cqw 1.1cqw rgb(255 255 255 / 55%);
-}
-.device-preview-canonical.device-preview-carte {
-  /* This element establishes the query container for its children, so its
-     own cqw values would resolve against an outer viewport/container. Keep
-     the physical rim proportional to the card itself instead. */
-  padding: 1.15%;
-  background: linear-gradient(145deg, #f8f7f3, #d9d7d0);
-  border: 1px solid rgb(255 255 255 / 72%);
-  border-radius: 7% / 11%;
-  box-shadow: 0 24px 46px rgb(0 0 0 / 28%), inset 0 -3px 5px rgb(0 0 0 / 7%);
-}
-.device-preview-canonical.device-preview-carte .printed-insert { border-radius: 4.2cqw; }
-
-/* Les changements de palette ne doivent jamais refaire entrer le support. */
-.v3-sector-scene-support {
-  animation: none;
-}
-.v3-sector-scene-support .printed-insert {
-  transition: background-color .24s ease, color .24s ease;
-}
-
-/* --------------------------------------------------------------------------
-   SYSTÈME D'IMPRESSION — une base commune sécurise les zones NFC et QR ; les
-   cinq compositions du Studio font ensuite varier la hiérarchie, l'accent et
-   le rythme sans compromettre la lisibilité ni les marges de fabrication.
-   -------------------------------------------------------------------------- */
-.device-preview-canonical .insert-style-campaign .print-header {
-  margin: 0;
-  padding: 0 0 3.1cqw;
-  grid-template-columns: minmax(0, 1fr) auto;
-  justify-items: stretch;
-  color: var(--insert-ink);
-  background: transparent;
-  border-bottom: .38cqw solid var(--print-edge);
-}
-
-.device-preview-canonical .insert-style-campaign .print-header .customer-brand {
-  justify-self: start;
-}
-
-.device-preview-canonical .insert-style-campaign .print-header .action-signature {
-  justify-self: end;
-}
-
-.device-preview-canonical .insert-style-campaign .print-copy {
-  padding-left: 0;
-  align-items: flex-start;
-  border-left: 0;
-}
-
-.device-preview-canonical .insert-style-campaign .print-copy :is(.device-purpose, .device-headline, .device-subline) {
-  text-align: left;
-}
-
-.device-preview-canonical .insert-style-campaign .tap-zone {
-  overflow: visible;
-}
-
-/* Les cinq compositions du Studio modifient réellement le fichier imprimé.
-   Les écarts restent assez sobres pour préserver la lisibilité du NFC et du QR. */
-.device-preview-canonical:not(.device-preview-carte) .insert-style-campaign[data-template="pulse"] .campaign-art { opacity: .54; transform: scale(1.12); transform-origin: center; }
-.device-preview-canonical:not(.device-preview-carte) .insert-style-campaign[data-template="pulse"] .device-purpose { width: fit-content; padding: 1cqw 1.45cqw; color: var(--insert-accent-ink); background: var(--insert-accent); border-radius: 999px; letter-spacing: .1em; }
-.device-preview-canonical:not(.device-preview-carte) .insert-style-campaign[data-template="pulse"] .device-headline { font-size: 8.8cqw !important; line-height: .86 !important; }
-.device-preview-canonical:not(.device-preview-carte) .insert-style-campaign[data-template="pulse"] .tap-zone { box-shadow: 0 0 0 .7cqw color-mix(in srgb, var(--insert-accent) 45%, transparent); }
-.device-preview-canonical:not(.device-preview-carte) .insert-style-campaign[data-template="signature"] .print-header { margin: -1.2cqw -1.2cqw 0; padding: 1.8cqw 1.8cqw 3cqw; background: color-mix(in srgb, var(--insert-paper) 89%, var(--insert-ink)); border: .32cqw solid var(--print-edge); border-radius: 2.6cqw; }
-.device-preview-canonical:not(.device-preview-carte) .insert-style-campaign[data-template="signature"] .campaign-art { opacity: .78; transform: scale(.92); transform-origin: 80% 38%; }
-.device-preview-canonical:not(.device-preview-carte) .insert-style-campaign[data-template="platform"] .print-header { margin: -5cqw -5cqw 0; padding: 4.2cqw 5cqw 3.4cqw; color: var(--insert-accent-ink); background: var(--insert-accent); border: 0; border-radius: 0 0 3cqw 3cqw; }
-.device-preview-canonical:not(.device-preview-carte) .insert-style-campaign[data-template="platform"] .print-header :is(.customer-brand, .action-signature) { color: inherit; }
-.device-preview-canonical:not(.device-preview-carte) .insert-style-campaign[data-template="editorial"] .print-copy { padding-left: 3cqw; border-left: .75cqw solid var(--insert-accent); }
-.device-preview-canonical:not(.device-preview-carte) .insert-style-campaign[data-template="editorial"] .device-headline { font-family: Georgia, "Times New Roman", serif; font-weight: 800; letter-spacing: -.04em; }
-.device-preview-canonical:not(.device-preview-carte) .insert-style-campaign[data-template="minimal"] .campaign-art { display: none; }
-.device-preview-canonical:not(.device-preview-carte) .insert-style-campaign[data-template="minimal"] .print-copy { justify-content: center; }
-.device-preview-canonical:not(.device-preview-carte) .insert-style-campaign[data-template="minimal"] .device-purpose { color: var(--insert-ink); opacity: .62; }
-.device-preview-canonical:not(.device-preview-carte) .insert-style-campaign[data-template="minimal"] .tap-zone { color: var(--insert-ink); background: color-mix(in srgb, var(--insert-paper) 82%, var(--insert-ink)); border: .45cqw solid color-mix(in srgb, var(--insert-ink) 68%, var(--insert-paper)); box-shadow: inset 0 0 0 .32cqw color-mix(in srgb, var(--insert-paper) 68%, transparent); }
-.device-preview-canonical:not(.device-preview-carte) .insert-style-campaign[data-template="minimal"] .tap-zone-qr { color: #111; background: #fff; }
-.device-preview-canonical.device-preview-carte .insert-style-campaign[data-template="editorial"] .print-copy { padding-left: 2.5cqw; border-left: .6cqw solid var(--insert-accent); }
-.device-preview-canonical.device-preview-carte .insert-style-campaign[data-template="minimal"] .campaign-art { display: none; }
-
-/* Carte 85 × 54 mm : une vraie carte de contact, pas une affiche A6 réduite.
-   À gauche le commerce et le bénéfice ; à droite le geste NFC et le QR de
-   secours. Le QR conserve ~19 mm imprimés et le texte reste lisible. */
-.device-preview-canonical.device-preview-carte .insert-style-campaign {
-  padding: 4.2cqw !important;
-  grid-template-columns: minmax(0, 49cqw) minmax(0, 1fr) !important;
-  grid-template-rows: auto minmax(0, 1fr) !important;
-  column-gap: 4cqw !important;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .campaign-art {
-  display: none;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .campaign-art-mark {
-  right: -1cqw;
-  top: 4cqw;
-  width: 24cqw;
-  height: 24cqw;
-  padding: 4cqw;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .print-header {
-  grid-column: 1;
-  grid-row: 1;
-  min-height: 14cqw;
-  padding: 0 0 2.2cqw;
-  grid-template-columns: minmax(0, 1fr);
-  justify-items: start;
-  gap: 1.5cqw;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .print-header .customer-brand {
-  min-height: 8.5cqw;
-  gap: 1.7cqw !important;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .print-header .customer-brand > :is(.generated-brand-mark, span) {
-  width: 9.5cqw !important;
-  height: 9.5cqw !important;
-  border-radius: 2cqw;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .print-header .customer-brand > .generated-brand-mark svg {
-  width: 6.4cqw;
-  height: 6.4cqw;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .print-header .customer-brand img {
-  max-width: 14cqw !important;
-  height: 9.5cqw;
-  max-height: 9.5cqw !important;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .print-header .customer-brand b {
-  font-size: 2.65cqw !important;
-  letter-spacing: .085em;
-  display: block;
-  white-space: nowrap;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .print-header .action-signature {
-  justify-self: start;
-  font-size: 2.4cqw !important;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .print-header .action-signature :is(.action-brand-google, .action-brand-instagram, .action-brand-facebook, .action-brand-linkedin, .action-brand-tiktok, .action-brand-whatsapp, .action-brand-payment) {
-  padding: 1cqw 1.4cqw;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .print-header .action-signature :is(svg, .platform-glyph) {
-  width: 4.3cqw;
-  height: 4.3cqw;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .print-copy {
-  grid-column: 1;
-  grid-row: 2;
-  padding: 3cqw 0 1cqw;
-  justify-content: center;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .print-copy .device-purpose {
-  max-width: 46cqw;
-  font-size: 2.3cqw !important;
-  letter-spacing: .11em;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .print-copy .device-headline {
-  max-width: 47cqw;
-  margin-top: 1.7cqw !important;
-  font-size: 6.35cqw !important;
-  line-height: .88;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .print-copy .device-subline {
-  display: none !important;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .tap-zone {
-  grid-column: 2;
-  grid-row: 1 / 3;
-  height: 100%;
-  min-height: 0 !important;
-  padding: 2.4cqw !important;
-  grid-template-columns: minmax(10cqw, 1fr) 26cqw !important;
-  align-items: center;
-  gap: 1.6cqw !important;
-  border-radius: 3cqw !important;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .tap-zone > .tap-zone-qr {
-  width: 26cqw !important;
-  min-height: 0 !important;
-  height: auto;
-  padding: 1.4cqw !important;
-  align-self: center;
-  justify-self: end;
-  border-radius: 2cqw !important;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .tap-zone-qr img {
-  width: 21.5cqw !important;
-  height: 21.5cqw !important;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .tap-zone-nfc .nfc-beacon {
-  width: 11cqw;
-  height: 11cqw;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .tap-zone-nfc .nfc-beacon svg {
-  width: 7cqw !important;
-  height: 7cqw !important;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .tap-zone-nfc strong {
-  max-width: 11cqw;
-  font-size: 2.45cqw !important;
-  line-height: .95;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .tap-zone-nfc small {
-  display: none;
-}
-
-/* 2026 commerce refinement: one flagship offer, clearer proof and an editable cart. */
-.v3-header-primary {
-  min-height: 44px;
-  padding: 0 16px;
-  display: inline-flex;
-  align-items: center;
-  color: #fff !important;
-  background: var(--v3-blue);
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 800;
-  transition: transform .2s ease, background .2s ease;
-}
-.v3-header-primary:hover { color: #fff !important; background: #1747d1; transform: translateY(-1px); }
-.v3-footer-main > div:first-child small { max-width: 310px; color: #777c86; font-size: 11px; line-height: 1.55; }
-.v3-home-demo-link { margin-top: 13px; min-height: 32px; display: inline-flex; align-items: center; gap: 7px; color: #555c68; font-size: 10px; font-weight: 750; }
-.v3-home-demo-link:hover { color: var(--v3-blue); }
-.v3-demo-section { scroll-margin-top: 110px; }
-
-.v3-offer-architecture { color: #fff; background: #111216; }
-.v3-offer-architecture .v3-section-heading { max-width: 1050px; }
-.v3-offer-architecture .v3-eyebrow { color: #9db4ff; }
-.v3-offer-architecture .v3-section-heading p { color: #aeb2ba; }
-.v3-offer-lines { border-top: 1px solid rgb(255 255 255 / 16%); }
-.v3-offer-lines article {
-  min-height: 190px;
-  padding: 30px 0;
-  display: grid;
-  grid-template-columns: 70px minmax(0, 1.25fr) minmax(260px, .75fr);
-  gap: clamp(20px, 4vw, 70px);
-  align-items: center;
-  border-bottom: 1px solid rgb(255 255 255 / 16%);
-}
-.v3-offer-lines article > span { align-self: start; color: #969ca7; font-family: "Archivo Black", sans-serif; font-size: 20px; }
-.v3-offer-lines article small { color: #8faaff; font-size: 9px; font-weight: 850; letter-spacing: .12em; }
-.v3-offer-lines article h3 { margin: 10px 0 8px; font-family: "Archivo Black", sans-serif; font-size: clamp(27px, 3vw, 43px); line-height: .98; letter-spacing: -.05em; }
-.v3-offer-lines article p { max-width: 650px; margin: 0; color: #aeb2ba; font-size: 13px; line-height: 1.55; }
-.v3-offer-lines article > div:last-child { display: grid; justify-items: start; gap: 18px; }
-.v3-offer-lines article > div:last-child strong { color: #d7d9de; font-size: 12px; line-height: 1.45; }
-.v3-offer-lines article a { min-height: 46px; padding: 0 15px; display: inline-flex; align-items: center; gap: 9px; color: #111216; background: #fff; border-radius: 11px; font-size: 11px; font-weight: 850; }
-.v3-offer-lines article a svg { width: 15px; }
-.v3-offer-lines article.is-featured { position: relative; }
-.v3-offer-lines article.is-featured::before { content: ""; position: absolute; top: 0; bottom: 0; left: calc(clamp(24px, 7vw, 120px) * -1); width: 4px; background: var(--v3-blue); }
-.v3-offer-lines article.is-featured h3 { color: #b5c6ff; }
-.v3-offer-volume { margin: 28px 0 0; display: flex; align-items: center; gap: 8px; color: #aeb2ba; font-size: 12px; }
-.v3-offer-volume svg { width: 17px; color: #9db4ff; }
-.v3-offer-volume a { color: #fff; font-weight: 750; text-decoration: underline; text-underline-offset: 3px; }
-
-.v3-product-detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.v3-product-detail-grid article { min-height: 285px; }
-.v3-editing-cart-notice { margin: 0 0 12px; padding: 13px 15px; display: flex; align-items: center; gap: 10px; color: #173b57; background: #edf3ff; border: 1px solid #cfdcff; border-radius: 13px; }
-.v3-editing-cart-notice > svg { width: 20px; flex: 0 0 auto; color: var(--v3-blue); }
-.v3-editing-cart-notice > span { display: grid; gap: 2px; }
-.v3-editing-cart-notice strong { font-size: 11px; }
-.v3-editing-cart-notice small { color: #526279; font-size: 9px; }
-.v3-editing-cart-notice a { margin-left: auto; font-size: 10px; font-weight: 800; text-decoration: underline; }
-
-.v3-cart-line { grid-template-columns: 135px minmax(0, 1fr) 112px; }
-.v3-cart-copy h2 { margin-bottom: 10px; }
-.v3-cart-configuration { margin: 0 0 14px; display: grid; gap: 5px; }
-.v3-cart-configuration > div { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
-.v3-cart-configuration dt { min-width: 63px; color: #5f6671; font-size: 9px; }
-.v3-cart-configuration dd { margin: 0; overflow: hidden; color: #343942; font-size: 10px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
-.v3-cart-configuration dd.is-ready { color: #14704b; }
-.v3-cart-configuration dd.is-pending { color: #8a5a12; }
-.v3-cart-edit { min-height: 36px; padding: 0 10px; display: inline-flex; align-items: center; gap: 5px; color: var(--v3-blue); background: #edf2ff; border-radius: 9px; font-size: 9px; font-weight: 800; }
-.v3-cart-edit svg { width: 13px; }
-@media (max-width: 1060px) {
-  .v3-header nav { gap: 18px; }
-  .v3-header nav a { font-size: 12px; }
-  .v3-header-primary { display: none; }
-  .v3-offer-lines article { grid-template-columns: 48px 1fr; }
-  .v3-offer-lines article > div:last-child { grid-column: 2; }
-}
-
-@media (max-width: 760px) {
-  .v3-header-primary { display: none; }
-  .v3-commerce-buy { padding: 22px 12px 26px; }
-  .v3-commerce-buy > h1 { max-width: 340px; }
-  .v3-home-quick-buy fieldset > div { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .v3-home-quick-buy fieldset button { min-height: 52px; padding: 8px; }
-  .v3-home-quick-buy fieldset button small { display: none; }
-  .v3-home-demo-link { display: none; }
-  .v3-home-price { align-items: center; }
-  .v3-home-price > span { max-width: 72px; line-height: 1.15; }
-  .v3-home-price > small { max-width: 120px; text-align: right; line-height: 1.35; }
-  .v3-home-demo-link { width: 100%; justify-content: center; }
-  .v3-offer-architecture { padding-top: 74px; padding-bottom: 74px; }
-  .v3-offer-lines article { min-height: 0; padding: 26px 0; grid-template-columns: 38px minmax(0, 1fr); gap: 14px; }
-  .v3-offer-lines article > div:last-child { grid-column: 2; gap: 13px; }
-  .v3-offer-lines article h3 { font-size: 29px; }
-  .v3-offer-lines article p { font-size: 12px; }
-  .v3-offer-lines article.is-featured::before { left: -18px; }
-  .v3-offer-volume { align-items: flex-start; line-height: 1.5; }
-  .v3-product-detail-grid { grid-template-columns: 1fr; }
-  .v3-product-detail-grid article { min-height: 250px; }
-  .v3-cart-configuration dt { min-width: 58px; }
-  .v3-cart-edit { min-height: 44px; padding: 0 13px; }
-  .v3-cart-remove { min-height: 44px; padding: 0 5px; }
-}
-
-/* Card-only commerce system -------------------------------------------------
-   The front is intentionally NFC-first. The fallback QR belongs on the back,
-   so the 85 × 54 mm face no longer behaves like a compressed A6 poster. */
-.device-preview-canonical.device-preview-carte .insert-style-campaign {
-  padding: 5cqw 5.4cqw 4.2cqw !important;
-  display: grid !important;
-  grid-template-columns: minmax(0, 57cqw) minmax(0, 1fr) !important;
-  grid-template-rows: auto minmax(0, 1fr) auto !important;
-  column-gap: 4.5cqw !important;
-  row-gap: 1.5cqw !important;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .campaign-art {
-  display: block;
-  inset: 0;
-  opacity: .13;
-  pointer-events: none;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .campaign-art-mark {
-  top: 13cqw;
-  right: 5cqw;
-  width: 29cqw;
-  height: 29cqw;
-  padding: 6cqw;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .print-header {
-  grid-column: 1;
-  grid-row: 1;
-  min-height: 12cqw;
-  padding: 0 0 1.3cqw;
-  grid-template-columns: minmax(0, 1fr);
-  justify-items: start;
-  gap: 1.2cqw;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .print-header .customer-brand {
-  min-height: 8.8cqw;
-  gap: 1.8cqw !important;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .print-header .customer-brand > :is(.generated-brand-mark, span) {
-  width: 10cqw !important;
-  height: 10cqw !important;
-  border-radius: 2.3cqw;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .print-header .customer-brand b {
-  max-width: 39cqw;
-  overflow: hidden;
-  font-size: 2.8cqw !important;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .print-header .action-signature {
-  min-height: 0 !important;
-  margin: 0 !important;
-  font-size: 2.1cqw !important;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .print-copy {
-  grid-column: 1;
-  grid-row: 2;
-  min-width: 0;
-  padding: 1.2cqw 0 0;
-  justify-content: center;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .print-copy .device-purpose {
-  max-width: 51cqw;
-  font-size: 2.35cqw !important;
-  line-height: 1.15;
-  letter-spacing: .11em;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .print-copy .device-headline {
-  max-width: 53cqw;
-  margin-top: 1.6cqw !important;
-  font-size: 6.8cqw !important;
-  line-height: .87;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .tap-zone.is-card-front-nfc {
-  grid-column: 2;
-  grid-row: 1 / 4;
-  width: 100% !important;
-  height: 100%;
-  min-height: 0 !important;
-  margin: 0 !important;
-  padding: 4cqw 2.7cqw !important;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) !important;
-  place-items: center;
-  border-radius: 3.2cqw !important;
-  box-shadow: inset 0 0 0 .35cqw color-mix(in srgb, currentColor 16%, transparent), 0 2cqw 5cqw rgb(0 0 0 / 10%);
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .tap-zone.is-card-front-nfc .tap-zone-nfc {
-  width: 100%;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .tap-zone-nfc .nfc-beacon {
-  width: 16cqw;
-  height: 16cqw;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .tap-zone-nfc .nfc-beacon svg {
-  width: 10cqw !important;
-  height: 10cqw !important;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .tap-zone-nfc > em {
-  margin-top: 3cqw;
-  padding: .7cqw 1.5cqw;
-  color: inherit;
-  background: color-mix(in srgb, currentColor 13%, transparent);
-  border-radius: 999px;
-  font-size: 1.8cqw;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .tap-zone-nfc strong {
-  max-width: 24cqw;
-  margin-top: 1.5cqw !important;
-  font-size: 3.3cqw !important;
-  line-height: .98;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .tap-zone-nfc small {
-  display: block;
-  margin-top: 1cqw !important;
-  font-size: 1.25cqw !important;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .maker-signature {
-  grid-column: 1;
-  grid-row: 3;
-  min-height: 4.2cqw;
-  padding: .6cqw 0 0;
-  display: flex !important;
-  gap: 1.5cqw;
-}
-
-.device-preview-canonical.device-preview-carte .insert-style-campaign .maker-signature > small {
-  font-size: 1.1cqw;
-}
-
 .v3-card-two-sides {
   margin-top: 12px;
   padding: 12px;
@@ -3231,3 +1961,19 @@ body.v3-menu-open { overflow: hidden; }
 @media (max-width: 760px) {
   .v3-card-two-sides { grid-template-columns: 1fr; }
 }
+
+/* ---------- Choix de la déclinaison de couleur ----------
+   Deux options visuelles plutôt qu'un nuancier : le client voit la couleur du
+   support, pas un code hexadécimal. Le réglage fin reste accessible en dessous. */
+
+.v3-theme-choice { display: flex; gap: 10px; }
+.v3-theme-choice button { flex: 1; min-height: 44px; padding: 9px 12px; display: flex; align-items: center; gap: 10px; background: #fff; border: 1.5px solid var(--v3-line); border-radius: 13px; cursor: pointer; transition: border-color .18s ease, box-shadow .18s ease; }
+.v3-theme-choice button:hover { border-color: #b9bec9; }
+.v3-theme-choice button.is-selected { border-color: var(--v3-blue); box-shadow: 0 0 0 3px rgb(32 87 243 / 14%); }
+.v3-theme-choice button > span { display: grid; place-items: center; width: 30px; height: 30px; flex: 0 0 auto; border: 1px solid; border-radius: 8px; font-family: "Archivo Black", sans-serif; font-size: 12px; }
+.v3-theme-choice button > b { font-size: 13px; font-weight: 700; }
+
+.v3-advanced-colors { margin-top: 12px; }
+.v3-advanced-colors > summary { min-height: 34px; display: inline-flex; align-items: center; color: var(--v3-muted); font-size: 12.5px; font-weight: 650; cursor: pointer; }
+.v3-advanced-colors > summary:hover { color: var(--v3-ink); }
+.v3-advanced-colors[open] > summary { margin-bottom: 10px; }

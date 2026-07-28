@@ -25,7 +25,6 @@ const paidJob = {
         secondaryColor: "#abcdef",
         textColor: "#ffffff",
         targetId: "cafe",
-        designStyle: "signature",
         customHeadline: "Votre avis nous aide.",
         customSubline: "Merci pour votre confiance.",
         customTapLabel: "Donnez votre avis",

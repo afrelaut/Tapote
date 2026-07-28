@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   ACTIONS,
   calculateShipping,
-  DESIGN_STYLES,
   formatMoney,
   MULTISITE_TIERS,
   PILOT_PLANS,
@@ -99,7 +98,6 @@ describe("catalogue Tapote", () => {
   it("couvre les actions, secteurs et l’option Pilot annoncés", () => {
     expect(ACTIONS.avis.name).toBe("Avis Google");
     expect(ACTIONS.instagram.category).toBe("relation");
-    expect(DESIGN_STYLES.platform.name).toBe("Action");
     expect(Object.keys(TARGETS).length).toBeGreaterThanOrEqual(20);
     expect(PILOT_PLANS.pilot.price).toBe(900);
     expect(PILOT_PLANS.annual.price).toBe(8900);

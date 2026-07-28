@@ -1,0 +1,335 @@
+/* Insert imprimé — rendu web.
+   Toutes les tailles sont en `cqw` (1 % de la largeur de l'insert), donc une
+   seule feuille couvre la vignette de 90 px comme l'aperçu plein écran.
+   Aucune media query n'est nécessaire ici. */
+
+.tp-insert {
+  container-type: inline-size;
+  position: relative;
+  width: 100%;
+  aspect-ratio: var(--insert-ratio);
+  color: var(--insert-ink);
+  background: var(--insert-paper);
+  overflow: hidden;
+  isolation: isolate;
+  font-family: "Archivo", sans-serif;
+}
+
+.tp-insert-body {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* ---------- En-tête : emplacement logo + nom du commerce ---------- */
+
+.tp-insert-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.6cqw;
+  width: 100%;
+}
+
+.tp-insert-logo {
+  display: grid;
+  place-items: center;
+  width: 15cqw;
+  height: 15cqw;
+}
+
+.tp-insert-logo img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.tp-insert-logo .tp-brand-mark,
+.tp-insert-logo .tp-brand-mark svg {
+  width: 100%;
+  height: 100%;
+}
+
+.tp-insert-brand {
+  max-width: 88%;
+  font-size: 2.9cqw;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+  opacity: 0.9;
+}
+
+/* ---------- Bloc central : accroche, repère d'action, sous-titre ---------- */
+
+.tp-insert-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2.6cqw;
+  width: 100%;
+}
+
+.tp-insert-overline {
+  font-size: 1.9cqw;
+  font-weight: 700;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  opacity: 0.55;
+}
+
+.tp-insert-headline {
+  margin: 0;
+  max-width: 92%;
+  font-family: "Archivo Black", "Archivo", sans-serif;
+  font-weight: 900;
+  font-size: 9.6cqw;
+  line-height: 0.96;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+
+/* Chaque ligne occupe la sienne ; l'espace qui les sépare dans le DOM est
+   absorbée par la mise en page en blocs. */
+.tp-insert-headline span { display: block; }
+
+.tp-insert-subline {
+  margin: 0;
+  max-width: 84%;
+  font-size: 2.9cqw;
+  line-height: 1.3;
+  opacity: 0.72;
+}
+
+.tp-insert-mark {
+  display: flex;
+  justify-content: center;
+}
+
+.tp-insert-stars {
+  display: inline-flex;
+  gap: 1.1cqw;
+}
+
+.tp-insert-stars svg {
+  width: 6cqw;
+  height: 6cqw;
+}
+
+.tp-insert-platform {
+  display: inline-flex;
+  align-items: center;
+  gap: 1.6cqw;
+  padding: 1.1cqw 2.8cqw;
+  border: 0.35cqw solid color-mix(in srgb, var(--insert-ink) 26%, transparent);
+  border-radius: 99em;
+  font-size: 2.7cqw;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.tp-insert-platform .tp-glyph,
+.tp-insert-platform .tp-glyph svg {
+  width: 4cqw;
+  height: 4cqw;
+  display: block;
+}
+
+.tp-insert-action-tag {
+  padding: 1.1cqw 3cqw;
+  border: 0.35cqw solid color-mix(in srgb, var(--insert-ink) 26%, transparent);
+  border-radius: 99em;
+  font-size: 2.5cqw;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+/* ---------- Bloc action : la zone NFC et le QR ---------- */
+
+.tp-insert-action {
+  display: flex;
+  align-items: stretch;
+  width: 81.5cqw;
+  color: var(--insert-accent-ink);
+  background: var(--insert-accent);
+  border-radius: 4.2cqw;
+}
+
+.tp-insert-nfc,
+.tp-insert-qr {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2cqw;
+  padding: 3.4cqw 2cqw;
+  min-width: 0;
+}
+
+.tp-insert-qr {
+  flex: 0 0 40%;
+  border-left: 0.2cqw solid color-mix(in srgb, var(--insert-accent-ink) 28%, transparent);
+}
+
+.tp-insert-nfc-icon {
+  width: 13cqw;
+  height: 13cqw;
+  color: var(--insert-accent-ink);
+}
+
+.tp-insert-nfc-arcs {
+  stroke: #f7c85d;
+}
+
+.tp-insert-action strong {
+  font-family: "Archivo Black", "Archivo", sans-serif;
+  font-weight: 900;
+  font-size: 3.5cqw;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.tp-insert-action small {
+  font-size: 2.1cqw;
+  line-height: 1.25;
+  opacity: 0.8;
+}
+
+.tp-insert-qr img {
+  width: 22cqw;
+  height: 22cqw;
+  padding: 1.4cqw;
+  background: #fff;
+  border-radius: 1.6cqw;
+}
+
+/* ---------- Pied : signature Tapote ---------- */
+
+.tp-insert-foot {
+  font-size: 1.75cqw;
+  font-weight: 700;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+/* ---------- Chevalet A6 (105 × 148 mm) ---------- */
+
+.tp-insert-chevalet .tp-insert-body {
+  padding: 5.5cqw 5cqw 4.5cqw;
+  justify-content: space-between;
+}
+
+/* ---------- Plaque 12 × 12 (format carré, tout est plus ramassé) ---------- */
+
+.tp-insert-plaque .tp-insert-body {
+  padding: 5cqw 5cqw 4cqw;
+  justify-content: space-between;
+  gap: 2cqw;
+}
+
+.tp-insert-plaque .tp-insert-logo { width: 11cqw; height: 11cqw; }
+.tp-insert-plaque .tp-insert-brand { font-size: 2.4cqw; }
+.tp-insert-plaque .tp-insert-headline { font-size: 7.4cqw; }
+.tp-insert-plaque .tp-insert-subline { font-size: 2.4cqw; }
+.tp-insert-plaque .tp-insert-copy { gap: 1.9cqw; }
+.tp-insert-plaque .tp-insert-stars svg { width: 4.8cqw; height: 4.8cqw; }
+.tp-insert-plaque .tp-insert-action { width: 68cqw; border-radius: 3.5cqw; }
+.tp-insert-plaque .tp-insert-nfc,
+.tp-insert-plaque .tp-insert-qr { padding: 2.6cqw 1.6cqw; }
+.tp-insert-plaque .tp-insert-nfc-icon { width: 10cqw; height: 10cqw; }
+.tp-insert-plaque .tp-insert-action strong { font-size: 2.9cqw; }
+.tp-insert-plaque .tp-insert-action small { font-size: 1.75cqw; }
+.tp-insert-plaque .tp-insert-qr img { width: 17cqw; height: 17cqw; }
+.tp-insert-plaque .tp-insert-foot { font-size: 1.5cqw; }
+
+/* ---------- Carte NFC (85 × 54 mm) ----------
+   Format paysage : la colonne de gauche porte l'identité, la colonne de droite
+   ne garde que la zone NFC. Le QR passe au verso, comme à l'impression. */
+
+.tp-insert-carte .tp-insert-body {
+  flex-direction: row;
+  align-items: stretch;
+  padding: 5cqw;
+  gap: 4cqw;
+  text-align: left;
+}
+
+.tp-insert-carte .tp-insert-head,
+.tp-insert-carte .tp-insert-copy {
+  align-items: flex-start;
+  width: auto;
+}
+
+.tp-insert-carte .tp-insert-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.tp-insert-carte .tp-insert-head { flex-direction: row; align-items: center; gap: 2.2cqw; }
+.tp-insert-carte .tp-insert-logo { width: 8cqw; height: 8cqw; flex: 0 0 auto; }
+.tp-insert-carte .tp-insert-brand { font-size: 2.2cqw; letter-spacing: 0.18em; }
+.tp-insert-carte .tp-insert-headline { font-size: 7cqw; max-width: 100%; }
+.tp-insert-carte .tp-insert-subline { font-size: 2.2cqw; max-width: 100%; }
+.tp-insert-carte .tp-insert-copy { gap: 1.8cqw; }
+.tp-insert-carte .tp-insert-stars svg { width: 3.6cqw; height: 3.6cqw; }
+.tp-insert-carte .tp-insert-stars { gap: 0.7cqw; }
+
+.tp-insert-carte .tp-insert-action {
+  flex: 0 0 30%;
+  width: auto;
+  border-radius: 3.8cqw;
+}
+
+.tp-insert-carte .tp-insert-nfc { padding: 3cqw 1.6cqw; gap: 1cqw; }
+.tp-insert-carte .tp-insert-nfc-icon { width: 9cqw; height: 9cqw; }
+.tp-insert-carte .tp-insert-action strong { font-size: 2.5cqw; }
+.tp-insert-carte .tp-insert-action small { font-size: 1.6cqw; }
+.tp-insert-carte .tp-insert-foot { font-size: 1.5cqw; letter-spacing: 0.24em; }
+
+/* ---------- Monogramme de remplacement ---------- */
+
+.tp-brand-mark {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.tp-brand-mark svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.92;
+}
+
+.tp-brand-mark text {
+  fill: currentColor;
+  stroke: none;
+  font-family: "Archivo Black", "Archivo", sans-serif;
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+/* Pictogrammes de plateforme */
+
+.tp-glyph { display: inline-block; line-height: 0; }
+.tp-glyph svg { width: 100%; height: 100%; display: block; fill: none; stroke: currentColor; stroke-width: 1.7; }
+.tp-glyph-google svg { stroke: none; }
+.tp-glyph svg .is-filled { fill: currentColor; stroke: none; }
+.tp-glyph-tiktok svg .is-shadow { fill: currentColor; stroke: none; opacity: 0.32; }
