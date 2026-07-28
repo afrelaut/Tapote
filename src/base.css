@@ -1,0 +1,62 @@
+/* Socle global partagé par toutes les applications Tapote (boutique, Pilot,
+   Gestion, Connexion) : jetons de couleur, remises à zéro et les quelques
+   écrans qui existent en dehors d'une application — chargement de route et
+   erreur fatale.
+
+   Remplace l'ancien styles.css, qui portait en plus toute la boutique v2
+   (héros, configurateur, panier) désormais supprimée. */
+
+:root {
+  --ink: #161310;
+  --ink-soft: #29241f;
+  --paper: #f4efe6;
+  --paper-bright: #fffdf8;
+  --blue: #2458ff;
+  --blue-dark: #1b2fb8;
+  --yellow: #f2a91c;
+  --line: rgb(22 19 16 / 17%);
+  --muted: #6b655b;
+  --font-display: "Archivo Black", Arial Black, sans-serif;
+  --font-body: "Archivo", Arial, sans-serif;
+  color: var(--ink);
+  background: var(--paper);
+  font-family: var(--font-body);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+body { margin: 0; min-width: 320px; background: var(--paper); }
+body.no-scroll { overflow: hidden; }
+button, input, textarea { font: inherit; }
+button, a { -webkit-tap-highlight-color: transparent; }
+button { color: inherit; }
+a { color: inherit; }
+::selection { background: var(--yellow); color: var(--ink); }
+
+:where(a, button, [tabindex]):focus-visible { outline: 3px solid var(--yellow); outline-offset: 4px; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+
+.skip-link { position: fixed; z-index: 1000; top: 8px; left: 8px; padding: 12px 16px; color: #fff; background: var(--ink); text-decoration: none; font-weight: 800; transform: translateY(-150%); transition: transform 150ms ease; }
+.skip-link:focus { transform: none; }
+
+/* Écran d'attente pendant le chargement paresseux d'une application. */
+.route-loading { min-height: 100svh; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 16px; color: var(--muted); background: var(--paper-bright); font-size: 15px; }
+.route-loading img { width: 118px; height: auto; }
+
+/* Écran d'erreur de dernier recours (ErrorBoundary). */
+.fatal-error { min-height: 100svh; padding: 12vh 8vw; display: flex; align-items: flex-start; flex-direction: column; gap: 22px; background: var(--paper); }
+.fatal-error h1 { max-width: 900px; margin: 0; font-family: var(--font-display); font-size: clamp(42px, 8vw, 92px); line-height: .95; }
+.fatal-error p { color: var(--muted); }
+.fatal-logo { width: min(190px, 55vw); height: auto; display: block; }
+
+.button { min-height: 50px; display: inline-flex; align-items: center; justify-content: center; gap: 18px; padding: 0 22px; border: 0; font-size: 13px; font-weight: 800; cursor: pointer; transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease; }
+.button:hover:not(:disabled) { transform: translateY(-2px); }
+.button:disabled { cursor: wait; opacity: .6; }
+.button-primary { color: #fff; background: var(--blue); box-shadow: 6px 6px 0 var(--yellow); }
+.button-primary:hover { background: var(--blue-dark); box-shadow: 3px 3px 0 var(--yellow); }

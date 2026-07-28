@@ -15,4 +15,10 @@ export default defineConfig({
     host: "0.0.0.0",
     port: 4173,
   },
+  test: {
+    // .claude/worktrees contient des copies complètes du dépôt sur d'anciennes
+    // branches, sans node_modules propre : sans cette exclusion, vitest y
+    // relance des suites périmées qui échouent sur des dépendances mal résolues.
+    exclude: ["**/node_modules/**", "**/dist/**", ".claude/worktrees/**", "livrables/**"],
+  },
 });

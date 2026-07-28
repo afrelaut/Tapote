@@ -117,7 +117,9 @@ describe("TAPOTE Gestion", () => {
     render(<TapoteManagementApp />);
 
     expect(await screen.findByRole("heading", { name: "Vue d’ensemble" })).toBeInTheDocument();
-    expect(screen.getByText("97 €")).toBeInTheDocument();
+    // Le montant apparaît sur plusieurs cartes du tableau de bord ; ce test
+    // vérifie qu'il est calculé, pas qu'il n'est affiché qu'une fois.
+    expect(screen.getAllByText("97 €").length).toBeGreaterThan(0);
     expect(screen.getByText("2 commandes payées")).toBeInTheDocument();
     expect(screen.queryByText("Aucune urgence ouverte")).not.toBeInTheDocument();
     expect(screen.queryByText("1 127 €")).not.toBeInTheDocument();

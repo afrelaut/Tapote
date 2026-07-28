@@ -1,10 +1,37 @@
+// Le design Tapote par défaut, décliné en deux couleurs — et rien d'autre.
+//
+// Les valeurs sont celles des fichiers d'impression (designs/print-ready) :
+// papier #141414, encre #f4efe6, bloc action #2458ff. La déclinaison claire
+// inverse simplement papier et encre. Un client choisit entre deux options
+// lisibles, pas entre cinq nuances qu'il faut lui expliquer.
+
 export const DEVICE_THEMES = Object.freeze({
-  blue: { paper: "#161310", ink: "#f4efe6", accent: "#2946f5", accentInk: "#ffffff" },
-  rose: { paper: "#f0d6d3", ink: "#5a2d3c", accent: "#5a2d3c", accentInk: "#ffffff" },
-  green: { paper: "#173b32", ink: "#f7edcf", accent: "#d88a20", accentInk: "#17110c" },
-  sand: { paper: "#efe5d2", ink: "#402d24", accent: "#b95632", accentInk: "#ffffff" },
-  mono: { paper: "#f4f1e9", ink: "#111111", accent: "#111111", accentInk: "#f4f1e9" },
+  nuit: { paper: "#141414", ink: "#f4efe6", accent: "#2458ff", accentInk: "#ffffff" },
+  creme: { paper: "#f4efe6", ink: "#141414", accent: "#2458ff", accentInk: "#ffffff" },
 });
+
+export const DEFAULT_THEME = "nuit";
+
+export const THEME_LABELS = Object.freeze({
+  nuit: "Nuit",
+  creme: "Crème",
+});
+
+// Les paniers, brouillons et liens partagés d'avant la refonte portent encore
+// les anciens identifiants de thème : on les ramène sur la déclinaison la plus
+// proche plutôt que de casser une commande en cours.
+const LEGACY_THEME_ALIASES = {
+  blue: "nuit",
+  mono: "creme",
+  sand: "creme",
+  rose: "creme",
+  green: "nuit",
+};
+
+export function resolveThemeId(theme) {
+  if (DEVICE_THEMES[theme]) return theme;
+  return LEGACY_THEME_ALIASES[theme] || DEFAULT_THEME;
+}
 
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 
@@ -37,8 +64,11 @@ export function contrastRatio(first, second) {
   return (luminances[0] + 0.05) / (luminances[1] + 0.05);
 }
 
-export function resolveDeviceColors(theme = "blue", primaryColor = "", secondaryColor = "", textColor = "") {
-  const base = DEVICE_THEMES[theme] || DEVICE_THEMES.blue;
+// La couleur choisie par le client ne passe que si elle reste lisible : sous
+// 4,5:1 on retombe sur l'encre qui contraste, pour ne jamais imprimer un
+// support illisible.
+export function resolveDeviceColors(theme = DEFAULT_THEME, primaryColor = "", secondaryColor = "", textColor = "") {
+  const base = DEVICE_THEMES[resolveThemeId(theme)];
   const paper = normalizeHexColor(primaryColor, base.paper);
   const accent = normalizeHexColor(secondaryColor, base.accent);
   const requestedInk = normalizeHexColor(textColor, primaryColor ? readableInk(paper) : base.ink);

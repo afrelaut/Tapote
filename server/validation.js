@@ -1,11 +1,19 @@
 import { z } from "zod";
-import { ACTIONS, DESIGN_STYLES, PRODUCTS, TARGETS } from "../shared/catalog.js";
+import { ACTIONS, PRODUCTS, TARGETS } from "../shared/catalog.js";
 
 const productIds = Object.keys(PRODUCTS);
 const actionIds = Object.keys(ACTIONS);
-const themes = ["blue", "rose", "green", "sand", "mono"];
+// Le design Tapote n'a plus que deux déclinaisons. Les identifiants d'avant la
+// refonte restent acceptés — un panier déjà enregistré dans le navigateur d'un
+// client ne doit pas être refusé au moment de payer — puis ramenés sur la
+// déclinaison correspondante.
+const THEMES = ["nuit", "creme"];
+const LEGACY_THEMES = { blue: "nuit", green: "nuit", mono: "creme", sand: "creme", rose: "creme" };
+const themeSchema = z.preprocess(
+  (value) => LEGACY_THEMES[value] || value,
+  z.enum(THEMES),
+).optional().default("nuit");
 const targetIds = Object.keys(TARGETS);
-const designStyleIds = Object.keys(DESIGN_STYLES);
 
 const requiredText = (maximum) => z.string().trim().min(1).max(maximum);
 const optionalText = (maximum) => z.string().trim().max(maximum).optional().default("");
@@ -25,12 +33,14 @@ const cartItemSchema = z.object({
   actionId: z.enum(actionIds),
   quantity: z.coerce.number().int().min(1).max(50),
   brandName: optionalText(60),
-  theme: z.enum(themes).optional().default("blue"),
+  theme: themeSchema,
   primaryColor: optionalHexColor,
   secondaryColor: optionalHexColor,
   textColor: optionalHexColor,
   targetId: z.enum(targetIds).optional().default("cafe"),
-  designStyle: z.enum(designStyleIds).optional().default("signature"),
+  // Champ retiré de l'offre : encore accepté pour ne pas rejeter un panier
+  // enregistré avant la refonte, mais ignoré partout ensuite.
+  designStyle: z.string().max(20).optional(),
   customHeadline: optionalText(64),
   customSubline: optionalText(90),
   customTapLabel: optionalText(32),

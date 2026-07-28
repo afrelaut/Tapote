@@ -8,8 +8,7 @@ import "@fontsource/archivo/latin-600.css";
 import "@fontsource/archivo/latin-700.css";
 import "@fontsource/archivo/latin-800.css";
 import "@fontsource/archivo-black/latin-400.css";
-import "./styles.css";
-import "./storefront-v2.css";
+import "./base.css";
 import "./storefront-v3.css";
 
 createRoot(document.getElementById("root")).render(

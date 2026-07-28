@@ -18,3 +18,17 @@ coverage/
 output/
 tmp/
 public/assets/tapote-hero-counter-v2.png
+
+# Sorties d'audit et de test (captures Playwright, artefacts jetables)
+artifacts/
+*-audit.png
+*-audit-*.png
+audit-*.png
+
+# Caches d'outillage
+__pycache__/
+*.pyc
+.claude/worktrees/
+
+# Skills tierces installées localement (Waza, tech-debt-audit, claude-skills)
+.claude/skills/
