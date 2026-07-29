@@ -433,6 +433,66 @@ const mobileHome = await auditPage(
   "Page unique mobile",
   async (page) => {
     await auditScene(page, "mobile");
+    const workspacePreview = await page.locator(".v3-sector-hero").evaluate((hero) => {
+      const visual = hero.querySelector(".v3-home-visual");
+      const composer = hero.querySelector(".v3-sector-buy");
+      const switcher = hero.querySelector(".v3-mobile-workspace-switch");
+      const visualStyle = getComputedStyle(visual);
+      return {
+        mode: hero.className,
+        visualDisplay: visualStyle.display,
+        visualPosition: visualStyle.position,
+        composerDisplay: getComputedStyle(composer).display,
+        switchDisplay: getComputedStyle(switcher).display,
+        visualWidth: visual.getBoundingClientRect().width,
+        viewportWidth: window.innerWidth,
+      };
+    });
+    assert(
+      "atelier-mobile-demarre-sur-apercu",
+      workspacePreview.mode.includes("is-mobile-preview")
+        && workspacePreview.visualDisplay !== "none"
+        && workspacePreview.visualPosition !== "sticky"
+        && workspacePreview.composerDisplay === "none"
+        && workspacePreview.switchDisplay === "grid"
+        && workspacePreview.visualWidth <= workspacePreview.viewportWidth - 24,
+      workspacePreview,
+    );
+    await page.locator(".v3-home-hero").screenshot({ path: path.join(outputDir, "02a-page-unique-mobile-apercu.png") });
+    await page.getByRole("tab", { name: /Configurer/i }).click();
+    await page.locator(".v3-mobile-config-preview").waitFor({ state: "visible" });
+    const workspaceConfig = await page.locator(".v3-sector-hero").evaluate((hero) => {
+      const visual = hero.querySelector(".v3-home-visual");
+      const composer = hero.querySelector(".v3-sector-buy");
+      const miniPreview = hero.querySelector(".v3-mobile-config-preview");
+      const switcher = hero.querySelector(".v3-mobile-workspace-switch");
+      const miniStyle = getComputedStyle(miniPreview);
+      return {
+        mode: hero.className,
+        visualDisplay: getComputedStyle(visual).display,
+        composerDisplay: getComputedStyle(composer).display,
+        miniDisplay: miniStyle.display,
+        miniPosition: miniStyle.position,
+        miniTop: miniStyle.top,
+        miniWidth: miniPreview.getBoundingClientRect().width,
+        switchHeight: switcher.getBoundingClientRect().height,
+        viewportWidth: window.innerWidth,
+        overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      };
+    });
+    assert(
+      "atelier-mobile-config-garde-un-apercu",
+      workspaceConfig.mode.includes("is-mobile-config")
+        && workspaceConfig.visualDisplay === "none"
+        && workspaceConfig.composerDisplay !== "none"
+        && workspaceConfig.miniDisplay === "grid"
+        && workspaceConfig.miniPosition === "sticky"
+        && workspaceConfig.miniWidth <= workspaceConfig.viewportWidth - 24
+        && workspaceConfig.switchHeight <= 64
+        && workspaceConfig.overflow <= 1,
+      workspaceConfig,
+    );
+    await page.screenshot({ path: path.join(outputDir, "02b-page-unique-mobile-configuration.png"), fullPage: false });
     assert("pack-mobile-restaure", await page.getByRole("button", { name: "2 plaques", exact: true }).getAttribute("aria-pressed") === "true");
     assert("selecteur-activites-mobile", await page.locator(".v3-sector-chips button").count() === SECTORS.length);
     const pilotMobile = page.locator("#pilot");
@@ -458,6 +518,10 @@ const mobileHome = await auditPage(
     await page.screenshot({ path: path.join(outputDir, "02-page-unique-mobile.png"), fullPage: true });
     await pilotMobile.screenshot({ path: path.join(outputDir, "04-pilot-mobile.png") });
     await page.getByRole("button", { name: "Carte", exact: true }).click();
+    assert(
+      "apercu-mobile-carte-synchronise",
+      await page.locator(".v3-mobile-config-preview .v3-product-carte").count() === 1,
+    );
     const cardQuantity = page.locator(".v3-card-quantity");
     const cardQuantityLayout = await cardQuantity.evaluate((element) => ({
       width: element.getBoundingClientRect().width,
@@ -471,6 +535,12 @@ const mobileHome = await auditPage(
       cardQuantityLayout,
     );
     await page.locator(".v3-core-choice-grid").screenshot({ path: path.join(outputDir, "05-card-quantity-mobile.png") });
+    await page.locator(".v3-mobile-config-preview").click();
+    assert(
+      "retour-apercu-mobile-depuis-la-configuration",
+      await page.getByRole("tab", { name: /Aperçu/i }).getAttribute("aria-selected") === "true"
+        && await page.locator(".v3-home-visual").isVisible(),
+    );
   },
 );
 await mobileHome.close();
@@ -484,6 +554,107 @@ const pilotMarketingMobile = await auditPage(mobile, "/tapote-pilot", "Page mark
   await page.screenshot({ path: path.join(outputDir, "08-pilot-marketing-mobile.png"), fullPage: true });
 });
 await pilotMarketingMobile.close();
+
+const pilotApplicationMobile = await auditPage(mobile, "/pilot", "Application Tapote Pilot mobile", async (page) => {
+  const demoButton = page.getByRole("button", { name: /Explorer la démonstration/i });
+  if (await demoButton.count()) {
+    await demoButton.click();
+    await page.locator(".pilot-client-app").waitFor({ state: "visible" });
+  }
+  await page.waitForTimeout(650);
+  const pilotMetrics = await page.evaluate(() => {
+    const header = document.querySelector(".pilot-mobile-header");
+    const nav = document.querySelector(".pilot-mobile-nav");
+    const heading = document.querySelector(".pilot-view-heading");
+    const quickLink = document.querySelector(".pilot-link-workspace");
+    const counter = document.querySelector(".pilot-basic-counter");
+    const headerStyle = getComputedStyle(header);
+    const navStyle = getComputedStyle(nav);
+    return {
+      headerDisplay: headerStyle.display,
+      headerHeight: header.getBoundingClientRect().height,
+      headerPosition: headerStyle.position,
+      navDisplay: navStyle.display,
+      navHeight: nav.getBoundingClientRect().height,
+      navPosition: navStyle.position,
+      headingHeight: heading?.getBoundingClientRect().height ?? 0,
+      quickLinkHeight: quickLink?.getBoundingClientRect().height ?? 0,
+      counterHeight: counter?.getBoundingClientRect().height ?? 0,
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    };
+  });
+  assert(
+    "pilot-app-mobile-compacte-et-navigable",
+    pilotMetrics.headerDisplay === "grid"
+      && pilotMetrics.headerPosition === "fixed"
+      && pilotMetrics.headerHeight <= 64
+      && pilotMetrics.navDisplay === "grid"
+      && pilotMetrics.navPosition === "fixed"
+      && pilotMetrics.navHeight <= 72
+      && pilotMetrics.headingHeight <= 230
+      && pilotMetrics.quickLinkHeight <= 620
+      && pilotMetrics.counterHeight <= 130
+      && pilotMetrics.overflow <= 1,
+    pilotMetrics,
+  );
+  await page.screenshot({ path: path.join(outputDir, "10-pilot-application-mobile.png"), fullPage: true });
+  await page.locator('[data-pilot-mobile-nav="products"]').click();
+  assert(
+    "pilot-navigation-mobile-change-de-vue",
+    await page.locator('[data-pilot-mobile-nav="products"]').getAttribute("aria-current") === "page"
+      && await page.getByRole("heading", { name: "Produits", exact: true }).isVisible(),
+  );
+  await page.locator(".pilot-mobile-quick-link").click();
+  await page.locator(".pilot-inspector").waitFor({ state: "visible" });
+  await page.waitForTimeout(400);
+  const inspectorMetrics = await page.locator(".pilot-inspector").evaluate((inspector) => {
+    const style = getComputedStyle(inspector);
+    const box = inspector.getBoundingClientRect();
+    return {
+      position: style.position,
+      bottom: style.bottom,
+      width: box.width,
+      height: box.height,
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+      overflow: inspector.scrollWidth - inspector.clientWidth,
+    };
+  });
+  assert(
+    "pilot-editeur-mobile-en-feuille-basse",
+    inspectorMetrics.position !== "fixed"
+      && inspectorMetrics.width <= inspectorMetrics.viewportWidth
+      && inspectorMetrics.height <= inspectorMetrics.viewportHeight * 0.9
+      && inspectorMetrics.overflow <= 1,
+    inspectorMetrics,
+  );
+  await page.screenshot({ path: path.join(outputDir, "11-pilot-editeur-mobile.png"), fullPage: false });
+});
+await pilotApplicationMobile.close();
+
+const quoteMobile = await auditPage(mobile, "/devis", "Devis mobile", async (page) => {
+  const quoteMetrics = await page.locator(".v3-quote-intro").evaluate((hero) => {
+    const heading = hero.querySelector("h1");
+    const style = getComputedStyle(heading);
+    return {
+      fontSize: Number.parseFloat(style.fontSize),
+      lineHeight: Number.parseFloat(style.lineHeight),
+      width: heading.getBoundingClientRect().width,
+      viewportWidth: window.innerWidth,
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    };
+  });
+  assert(
+    "devis-mobile-lisible",
+    quoteMetrics.fontSize <= 55
+      && quoteMetrics.lineHeight <= 58
+      && quoteMetrics.width <= quoteMetrics.viewportWidth - 32
+      && quoteMetrics.overflow <= 1,
+    quoteMetrics,
+  );
+  await page.screenshot({ path: path.join(outputDir, "12-devis-mobile.png"), fullPage: false });
+});
+await quoteMobile.close();
 
 await wide.close();
 await desktop.close();

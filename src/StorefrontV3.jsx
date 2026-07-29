@@ -12,6 +12,7 @@ import {
   ClipboardList,
   ContactRound,
   CreditCard,
+  Eye,
   FileCheck2,
   Globe2,
   Gift,
@@ -39,6 +40,7 @@ import {
   Share2,
   ShieldCheck,
   ShoppingBag,
+  SlidersHorizontal,
   SmartphoneNfc,
   Sparkles,
   Star,
@@ -1332,11 +1334,11 @@ function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "avis", in
     });
   };
   useEffect(() => {
-    if (!productOnly || !summaryRef.current || typeof IntersectionObserver === "undefined") return undefined;
+    if ((!productOnly && !compact) || !summaryRef.current || typeof IntersectionObserver === "undefined") return undefined;
     const observer = new IntersectionObserver(([entry]) => setSummaryVisible(entry.isIntersecting), { threshold: 0.15 });
     observer.observe(summaryRef.current);
     return () => observer.disconnect();
-  }, [productOnly]);
+  }, [compact, productOnly]);
   const [logoStatus, setLogoStatus] = useState(restoredDraft?.brandLogoId ? "success" : "idle");
   const [logoError, setLogoError] = useState("");
   const [added, setAdded] = useState(false);
@@ -1608,7 +1610,7 @@ function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "avis", in
         <button type="button" onClick={add} disabled={logoPending || destinationInvalid}>{logoPending ? logoPendingLabel : destinationInvalid ? "Vérifier le lien" : added ? <><Check size={18} /> Ajouté</> : <>Ajouter au panier <ArrowRight size={18} /></>}</button>
       </div>
       <div className="v3-buy-reassurance"><span><ShieldCheck size={16} /> Paiement sécurisé</span><span><PackageCheck size={16} /> Encodé et testé</span><span><Clock3 size={16} /> {STOREFRONT_PROMISES.fulfillment}</span><span><CheckCircle2 size={16} /> Remplacement si défaut NFC confirmé</span></div>
-      {productOnly && <aside className={`v3-mobile-product-cta ${summaryVisible ? "is-summary-visible" : ""}`} aria-label="Résumé de la configuration"><span><small>{product.kind === "pack" && composition ? compositionLabel(composition) : product.name.replace(/ · .+$/, "")}</small><strong>{formatMoney(product.price)} {taxLabel}</strong></span><button type="button" onClick={add} disabled={logoPending || destinationInvalid}>{destinationInvalid ? "Lien invalide" : added ? "Ajouté" : "Ajouter"} <ArrowRight /></button></aside>}
+      {(productOnly || compact) && <aside className={`v3-mobile-product-cta ${summaryVisible ? "is-summary-visible" : ""}`} aria-label="Résumé de la configuration"><span><small>{product.kind === "pack" && composition ? compositionLabel(composition) : product.name.replace(/ · .+$/, "")}</small><strong>{formatMoney(product.price)} {taxLabel}</strong></span><button type="button" onClick={add} disabled={logoPending || destinationInvalid}>{destinationInvalid ? "Lien invalide" : added ? "Ajouté" : "Ajouter"} <ArrowRight /></button></aside>}
     </section>
   );
 }
@@ -1809,6 +1811,8 @@ function SectorSelector({ sectorId, onSelect }) {
 
 function HomePage({ onAdd, initialSector }) {
   const [sector, setSector] = useState(initialSector || SECTORS[0]);
+  const [mobilePane, setMobilePane] = useState("preview");
+  const mobileSwitchRef = useRef(null);
 
   // Liens profonds : une campagne ou un ancien lien produit peut ouvrir la page
   // déjà réglée (?support=plaque&lien=menu&mode=custom&count=2).
@@ -1885,10 +1889,23 @@ function HomePage({ onAdd, initialSector }) {
   }, [editIndex, sector.slug, preview.actionId, preview.composition, preview.count, preview.personalization, preview.surface, preview.theme]);
 
   const handleAdd = (item) => onAdd(item, editIndex === null ? {} : { replaceIndex: editIndex, returnToCart: true });
+  const showMobilePane = (nextPane) => {
+    setMobilePane(nextPane);
+    window.requestAnimationFrame(() => {
+      mobileSwitchRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+    });
+  };
+  const previewSurfaceLabel = preview.baseSurface === "carte" || preview.surface === "carte"
+    ? "Carte NFC"
+    : preview.surface === "plaque"
+      ? "Plaque 12 × 12"
+      : preview.surface === "mix"
+        ? "Composition mixte"
+        : "Chevalet A6";
   return (
     <main id="main-content">
-      <section className="v3-sector-hero v3-home-hero">
-        <div className="v3-home-visual">
+      <section className={`v3-sector-hero v3-home-hero is-mobile-${mobilePane} is-surface-${preview.baseSurface || preview.surface}`}>
+        <div className="v3-home-visual" id="tapote-live-preview" aria-hidden={mobilePane === "config" ? "true" : undefined}>
           <SectorScene key={sector.id} sector={sector} preview={preview} className="v3-sector-image" />
         </div>
         <div className="v3-home-copy">
@@ -1901,6 +1918,19 @@ function HomePage({ onAdd, initialSector }) {
             <span><SmartphoneNfc /> NFC + QR</span>
           </div>
         </div>
+        <div className="v3-mobile-workspace-switch" id="mobile-composer-switch" ref={mobileSwitchRef} role="tablist" aria-label="Vue de création">
+          <button type="button" role="tab" aria-selected={mobilePane === "preview"} aria-controls="tapote-live-preview" className={mobilePane === "preview" ? "is-active" : ""} onClick={() => showMobilePane("preview")}><Eye aria-hidden="true" /><span><b>Aperçu</b><small>Votre Tapote en direct</small></span></button>
+          <button type="button" role="tab" aria-selected={mobilePane === "config"} aria-controls="composer" className={mobilePane === "config" ? "is-active" : ""} onClick={() => showMobilePane("config")}><SlidersHorizontal aria-hidden="true" /><span><b>Configurer</b><small>Choix, design et prix</small></span></button>
+        </div>
+        <div className="v3-mobile-preview-actions">
+          <span><i aria-hidden="true" /><small>Aperçu synchronisé</small><strong>{previewSurfaceLabel} · {ACTIONS[preview.actionId].name}</strong></span>
+          <button type="button" onClick={() => showMobilePane("config")}>Configurer ce Tapote <ArrowRight aria-hidden="true" /></button>
+        </div>
+        <button className="v3-mobile-config-preview" type="button" onClick={() => showMobilePane("preview")} aria-label={`Agrandir l’aperçu du ${previewSurfaceLabel}, destination ${ACTIONS[preview.actionId].name}`}>
+          <span className="v3-mobile-config-preview-scene" aria-hidden="true"><ProductArt {...preview} surface={preview.surface === "mix" ? "comptoir" : preview.surface} className="v3-mobile-config-art" /></span>
+          <span><small>APERÇU ACTUALISÉ</small><strong>{previewSurfaceLabel}</strong><em>{ACTIONS[preview.actionId].name} · {preview.personalization === "custom" ? "À votre image" : `Tapote ${preview.theme === "nuit" ? "Noir" : "Blanc"}`}</em></span>
+          <Eye aria-hidden="true" />
+        </button>
         <div className="v3-sector-buy" id="composer">
           <SectorSelector sectorId={sector.id} onSelect={selectSector} />
           <BuyBox
