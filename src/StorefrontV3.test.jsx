@@ -123,9 +123,14 @@ describe("Boutique Tapote V3", () => {
     const liveScreen = document.querySelector('[data-preview-mode="live"] [data-phone-action="avis"]');
     expect(liveScreen).toHaveAttribute("data-phone-sector", "cafe");
     expect(liveScreen).not.toHaveAttribute("data-native-source");
+    expect(liveScreen.querySelector("foreignObject")).not.toBeInTheDocument();
+    expect(liveScreen.querySelector(":scope > .v3-live-phone-canvas > .v3-live-phone-ui")).toBeInTheDocument();
+    expect(liveScreen.querySelector(".v3-live-phone-ui")).toHaveTextContent("Publier un avis");
     fireEvent.change(screen.getByLabelText("Le lien à ouvrir"), { target: { value: "menu" } });
 
-    expect(document.querySelector('[data-preview-mode="live"] [data-phone-action="menu"]')).toBeInTheDocument();
+    const menuScreen = document.querySelector('[data-preview-mode="live"] [data-phone-action="menu"]');
+    expect(menuScreen).toBeInTheDocument();
+    expect(menuScreen.querySelector(".v3-live-phone-ui")).toHaveTextContent("Voir le menu");
     expect(window.location.search).toContain("lien=menu");
   });
 
