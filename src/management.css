@@ -1951,6 +1951,22 @@
 .management-mobile-identity,
 .management-mobile-nav { display: none; }
 
+.management-view-error {
+  min-height: 280px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 18px;
+  padding: 36px;
+  text-align: center;
+}
+.management-view-error > i { width: 54px; height: 54px; display: grid; place-items: center; color: #bc541b; background: #fff0e3; border-radius: 18px; }
+.management-view-error > div > span { color: #bc541b; font-size: 10px; font-weight: 850; letter-spacing: .13em; }
+.management-view-error h2 { margin: 7px 0 8px; font-size: clamp(23px, 4vw, 34px); line-height: 1; }
+.management-view-error p { max-width: 480px; margin: 0; color: var(--pilot-muted); line-height: 1.55; }
+.management-view-error small { display: inline-block; margin-top: 12px; color: var(--pilot-muted); font-size: 10px; font-weight: 750; letter-spacing: .04em; }
+.management-view-error-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+
 @media (max-width: 940px) {
   .management-app .pilot-workspace {
     padding-bottom: calc(86px + env(safe-area-inset-bottom, 0px));

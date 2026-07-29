@@ -157,6 +157,29 @@ describe("API Tapote", () => {
     expect(response.headers["content-security-policy"]).toContain("style-src-attr 'unsafe-inline'");
   });
 
+  it("reçoit un diagnostic navigateur borné sans données de session", async () => {
+    const { app } = makeContext();
+    const response = await request(app)
+      .post("/api/client-errors")
+      .send({
+        id: "WEB-TEST-123",
+        surface: "management-view",
+        view: "dashboard",
+        name: "TypeError",
+        message: "Erreur Safari",
+        stack: "x".repeat(5_000),
+        componentStack: "at DashboardView",
+        path: "/gestion",
+        userAgent: "Mobile Safari",
+        viewport: { width: 390, height: 844 },
+        token: "ne-doit-pas-etre-journalise",
+      });
+
+    expect(response.status).toBe(202);
+    expect(response.body).toEqual({ received: true, id: "WEB-TEST-123" });
+    expect((await request(app).post("/api/client-errors").send({ surface: "management-view" })).status).toBe(400);
+  });
+
   it("ne crée jamais de commande démo en production", async () => {
     const { app, repository } = makeContext({ NODE_ENV: "production", PUBLIC_URL: "https://tapote.fr", ALLOW_DEMO_CHECKOUT: "true" });
     const response = await request(app).post("/api/checkout").send(checkoutBody());

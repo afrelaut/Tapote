@@ -45,6 +45,7 @@ import {
 } from "lucide-react";
 import { ACTIONS, PRODUCTS } from "../shared/catalog.js";
 import ManagementAuth, { ManagementPasswordSetup } from "./management/ManagementAuth.jsx";
+import ManagementViewBoundary from "./management/ManagementViewBoundary.jsx";
 import {
   activateManagementOrderPilot,
   advanceManagementEncodedProduct,
@@ -1521,14 +1522,16 @@ export default function TapoteManagementApp() {
       <div className="pilot-workspace" aria-busy={syncing}>
         <Topbar view={view} search={search} setSearch={setSearch} onMenu={() => setNavOpen(true)} onNewOrder={() => { if (data.clients.length) setNewOrderOpen(true); else showToast("Ajoute d’abord un client à l’espace Gestion."); }} searchResults={searchResults} onSearchResult={openSearchResult} alerts={operationalAlerts} onAlertAction={(alert) => { setView(alert.view); setSearch(""); }} referenceTime={referenceTime} />
         <main id="pilot-main">
-          {view === "dashboard" && <DashboardView {...viewProps} onNavigate={navigate} onNewClient={() => setNewClientOpen(true)} onNewInventory={() => setNewInventoryOpen(true)} />}
-          {view === "orders" && <OrdersView {...viewProps} exportOrders={exportOrders} />}
-          {view === "clients" && <ClientsView {...viewProps} selectedClient={selectedClient} setSelectedClient={setSelectedClient} clientOrders={(id) => data.orders.filter((item) => item.clientId === id)} onNewClient={() => setNewClientOpen(true)} />}
-          {view === "production" && <ProductionView {...viewProps} />}
-          {view === "encoding" && <EncodingView {...viewProps} onCreate={() => setNewEncodedProductOpen(true)} onAdvance={advanceEncodedProduct} onAssign={setAssignmentProduct} onEncode={setMobileEncodingProduct} onTest={setEncodingTestProduct} />}
-          {view === "supply" && <SupplyView {...viewProps} adjustStock={requestStockReceipt} onNewInventory={() => setNewInventoryOpen(true)} />}
-          {view === "shipping" && <ShippingView {...viewProps} markShipped={markShipped} />}
-          {view === "ecommerce" && <EcommerceView {...viewProps} toggleProduct={toggleProduct} refreshData={refreshData} syncing={syncing} lastSyncedAt={lastSyncedAt} />}
+          <ManagementViewBoundary view={view} onNavigate={navigate}>
+            {view === "dashboard" && <DashboardView {...viewProps} onNavigate={navigate} onNewClient={() => setNewClientOpen(true)} onNewInventory={() => setNewInventoryOpen(true)} />}
+            {view === "orders" && <OrdersView {...viewProps} exportOrders={exportOrders} />}
+            {view === "clients" && <ClientsView {...viewProps} selectedClient={selectedClient} setSelectedClient={setSelectedClient} clientOrders={(id) => data.orders.filter((item) => item.clientId === id)} onNewClient={() => setNewClientOpen(true)} />}
+            {view === "production" && <ProductionView {...viewProps} />}
+            {view === "encoding" && <EncodingView {...viewProps} onCreate={() => setNewEncodedProductOpen(true)} onAdvance={advanceEncodedProduct} onAssign={setAssignmentProduct} onEncode={setMobileEncodingProduct} onTest={setEncodingTestProduct} />}
+            {view === "supply" && <SupplyView {...viewProps} adjustStock={requestStockReceipt} onNewInventory={() => setNewInventoryOpen(true)} />}
+            {view === "shipping" && <ShippingView {...viewProps} markShipped={markShipped} />}
+            {view === "ecommerce" && <EcommerceView {...viewProps} toggleProduct={toggleProduct} refreshData={refreshData} syncing={syncing} lastSyncedAt={lastSyncedAt} />}
+          </ManagementViewBoundary>
         </main>
       </div>
       <ManagementMobileNav currentView={view} onNavigate={navigate} onMenu={() => setNavOpen(true)} counts={navCounts} />
