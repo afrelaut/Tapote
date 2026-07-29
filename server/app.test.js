@@ -148,12 +148,12 @@ describe("API Tapote", () => {
     }
   });
 
-  it("autorise uniquement les attributs de style inline nécessaires à React", async () => {
+  it("autorise les styles React inline avec le fallback Safari/WebKit", async () => {
     const { app } = makeContext();
     const response = await request(app).get("/api/health");
 
     expect(response.status).toBe(200);
-    expect(response.headers["content-security-policy"]).toContain("style-src 'self'");
+    expect(response.headers["content-security-policy"]).toContain("style-src 'self' 'unsafe-inline'");
     expect(response.headers["content-security-policy"]).toContain("style-src-attr 'unsafe-inline'");
   });
 
