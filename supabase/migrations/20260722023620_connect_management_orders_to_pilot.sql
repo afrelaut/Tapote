@@ -1,3 +1,4 @@
+-- Keep this version aligned with the migration already recorded in production.
 begin;
 
 -- A workshop unit is private to Gestion until it is explicitly assigned to a

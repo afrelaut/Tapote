@@ -170,7 +170,7 @@
 .pilot-nav-group > span {
   display: block;
   padding: 0 11px 8px;
-  color: #77756e;
+  color: #aaa79f;
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 1.45px;
@@ -272,7 +272,7 @@
 .pilot-sidebar-foot b,
 .pilot-user b { color: #e6e2d9; font-size: 11px; font-weight: 600; }
 .pilot-sidebar-foot small,
-.pilot-user small { color: #77756e; font-size: 9px; }
+.pilot-user small { color: #aaa79f; font-size: 9px; }
 
 .pilot-user {
   display: flex;
@@ -393,7 +393,7 @@
   background: #f0ede6;
   border: 1px solid #e0dbd1;
   border-radius: 5px;
-  color: #858179;
+  color: #66635d;
   font-family: inherit;
   font-size: 8px;
 }
@@ -607,7 +607,7 @@
 .pilot-metric > div { min-width: 0; display: flex; flex-direction: column; }
 .pilot-metric span { color: var(--pilot-muted); font-size: 9px; font-weight: 650; }
 .pilot-metric strong { margin: 8px 0 7px; font-size: clamp(23px, 2.2vw, 32px); line-height: 1; letter-spacing: -1.5px; }
-.pilot-metric small { display: flex; align-items: center; gap: 3px; color: #8b887f; font-size: 8px; }
+.pilot-metric small { display: flex; align-items: center; gap: 3px; color: #6e6b63; font-size: 8px; }
 .pilot-metric small.is-positive { color: #20805b; }
 .pilot-metric > i { width: 39px; height: 39px; display: grid; flex: 0 0 auto; place-items: center; background: #f1eee7; border-radius: 10px; color: #625f57; }
 
@@ -642,7 +642,7 @@
 .pilot-eyebrow {
   display: block;
   margin-bottom: 6px;
-  color: #9a968c;
+  color: #6e6b63;
   font-size: 8px;
   font-weight: 800;
   letter-spacing: 1.25px;
@@ -718,8 +718,8 @@
 .pilot-status-blue { background: #e9efff; color: #365eb9; }
 .pilot-status-amber { background: #fff0cd; color: #94630c; }
 .pilot-status-purple { background: #eee9fb; color: #7054a8; }
-.pilot-status-orange { background: #ffe8dd; color: #c34c1e; }
-.pilot-status-teal { background: #dcf2ef; color: #237d73; }
+.pilot-status-orange { background: #ffe8dd; color: #a83d14; }
+.pilot-status-teal { background: #dcf2ef; color: #176a62; }
 .pilot-status-green { background: #def1e4; color: #287447; }
 .pilot-status-dark { background: #e8e7e3; color: #5a5852; }
 
@@ -767,7 +767,7 @@
 
 @keyframes pilot-bars-in { from { height: 3%; } }
 
-.pilot-chart-legend { display: flex; justify-content: space-between; margin-top: 8px; color: #aaa69d; font-size: 7px; }
+.pilot-chart-legend { display: flex; justify-content: space-between; margin-top: 8px; color: #6e6b63; font-size: 7px; }
 
 .pilot-flow-steps {
   display: grid;
@@ -784,7 +784,7 @@
   padding: 17px 10px 7px 0;
 }
 
-.pilot-flow-steps > div > span { color: #aaa69d; font-size: 8px; font-weight: 800; }
+.pilot-flow-steps > div > span { color: #6e6b63; font-size: 8px; font-weight: 800; }
 .pilot-flow-steps > div > strong { margin: 12px 0 5px; font-size: 25px; }
 .pilot-flow-steps > div > small { overflow: hidden; color: #6e6b63; font-size: 7px; text-overflow: ellipsis; white-space: nowrap; }
 .pilot-flow-steps > div > svg { position: absolute; top: 48px; right: 13px; color: #c7c2b8; }
@@ -794,7 +794,7 @@
 .pilot-activity-list i { width: 28px; height: 28px; display: grid; flex: 0 0 auto; place-items: center; background: #f0ede6; border-radius: 8px; color: #77736a; }
 .pilot-activity-list i svg { width: 14px; }
 .pilot-activity-list p { margin: 0; color: #4f4c46; font-size: 8px; line-height: 1.45; }
-.pilot-activity-list p small { display: block; margin-top: 4px; color: #aaa69d; font-size: 7px; }
+.pilot-activity-list p small { display: block; margin-top: 4px; color: #6e6b63; font-size: 7px; }
 
 .pilot-list-surface { overflow: hidden; }
 
@@ -1945,4 +1945,482 @@
   .pilot-nfc-body { padding-right: 19px; padding-left: 19px; }
   .pilot-test-checklist { padding-right: 19px; padding-left: 19px; }
   .pilot-test-modal > .pilot-form-help { margin-right: 19px; margin-left: 19px; }
+}
+
+/* Gestion mobile — un poste de travail opérationnel, pas une réduction du bureau. */
+.management-mobile-identity,
+.management-mobile-nav { display: none; }
+
+@media (max-width: 940px) {
+  .management-app .pilot-workspace {
+    padding-bottom: calc(86px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .management-mobile-nav {
+    position: fixed;
+    z-index: 60;
+    right: max(10px, env(safe-area-inset-right, 0px));
+    bottom: max(10px, env(safe-area-inset-bottom, 0px));
+    left: max(10px, env(safe-area-inset-left, 0px));
+    min-height: 68px;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: stretch;
+    padding: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 22px;
+    background: rgba(20, 20, 18, 0.96);
+    box-shadow: 0 18px 44px rgba(17, 17, 14, 0.28);
+    backdrop-filter: blur(18px);
+  }
+
+  .management-mobile-nav > button {
+    min-width: 0;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 4px;
+    padding: 6px 2px;
+    border-radius: 16px;
+    background: transparent;
+    color: #aaa79f;
+    transition: color 150ms ease, background 150ms ease, transform 150ms ease;
+  }
+
+  .management-mobile-nav > button:active { transform: scale(0.96); }
+  .management-mobile-nav > button.is-active { background: #2c5cff; color: #fff; }
+  .management-mobile-nav > button > span { position: relative; display: grid; place-items: center; }
+  .management-mobile-nav > button b { overflow: hidden; max-width: 100%; font-size: 9px; font-weight: 760; text-overflow: ellipsis; white-space: nowrap; }
+  .management-mobile-nav > button em {
+    position: absolute;
+    top: -7px;
+    right: -11px;
+    min-width: 17px;
+    height: 17px;
+    display: grid;
+    place-items: center;
+    padding: 0 4px;
+    border: 2px solid #171715;
+    border-radius: 999px;
+    background: #ff754c;
+    color: #fff;
+    font-size: 8px;
+    font-style: normal;
+    font-weight: 850;
+  }
+
+  .management-app .pilot-sidebar { z-index: 80; }
+  .management-app .pilot-nav-scrim { z-index: 75; }
+}
+
+@media (max-width: 680px) {
+  .management-app {
+    --management-mobile-gutter: 14px;
+    background: #f4f0e8;
+  }
+
+  .management-app .pilot-topbar {
+    position: sticky;
+    z-index: 30;
+    top: 0;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 11px 10px;
+    padding: 12px var(--management-mobile-gutter);
+    border-bottom-color: #ded9cf;
+    background: rgba(255, 253, 248, 0.96);
+    box-shadow: 0 8px 24px rgba(41, 38, 31, 0.05);
+    backdrop-filter: blur(16px);
+  }
+
+  .management-mobile-identity {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+  }
+
+  .management-mobile-identity > a {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: #171715;
+    text-decoration: none;
+  }
+
+  .management-mobile-identity img { width: 84px; height: auto; }
+  .management-mobile-identity span {
+    padding-left: 8px;
+    border-left: 1px solid #d8d2c9;
+    color: #6e6a62;
+    font-size: 8px;
+    font-weight: 850;
+    letter-spacing: 1.25px;
+  }
+  .management-mobile-identity > strong {
+    overflow: hidden;
+    color: #77726a;
+    font-size: 11px;
+    font-weight: 690;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .management-app .pilot-title-wrap { display: none; }
+  .management-app .pilot-top-actions {
+    width: auto;
+    display: flex;
+    grid-column: 2;
+    grid-row: 1;
+    gap: 7px;
+  }
+  .management-app .pilot-alert-wrap { display: block; }
+  .management-app .pilot-icon-button,
+  .management-app .pilot-top-actions > .pilot-primary {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 auto;
+    padding: 0;
+    border: 1px solid #ded9d0;
+    border-radius: 13px;
+  }
+  .management-app .pilot-top-actions > .pilot-primary { font-size: 0; }
+  .management-app .pilot-top-actions > .pilot-primary svg { width: 19px; height: 19px; margin: 0; }
+  .management-app .pilot-search-wrap {
+    min-width: 0;
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .management-app .pilot-search {
+    width: 100%;
+    height: 43px;
+    border-color: #ddd7cd;
+    border-radius: 13px;
+    background: #f5f1e9;
+  }
+  .management-app .pilot-search input { font-size: 13px; }
+  .management-app .pilot-search-results,
+  .management-app .pilot-alert-panel {
+    position: fixed;
+    z-index: 90;
+    top: 112px;
+    right: var(--management-mobile-gutter);
+    left: var(--management-mobile-gutter);
+    width: auto;
+    max-height: min(62svh, 520px);
+    overflow-y: auto;
+    border-radius: 17px;
+    box-shadow: 0 22px 60px rgba(20, 20, 18, 0.24);
+  }
+
+  .management-app .pilot-workspace > main {
+    padding: 15px var(--management-mobile-gutter) 28px;
+  }
+  .management-app .pilot-view { gap: 14px; }
+  .management-app .pilot-surface,
+  .management-app .pilot-list-surface {
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(37, 34, 28, 0.05);
+  }
+
+  /* Dashboard : lecture en un coup d'œil et gestes horizontaux assumés. */
+  .management-app .pilot-metrics {
+    display: flex;
+    gap: 10px;
+    margin: 0 calc(var(--management-mobile-gutter) * -1);
+    padding: 0 var(--management-mobile-gutter) 5px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .management-app .pilot-metrics::-webkit-scrollbar { display: none; }
+  .management-app .pilot-metric {
+    min-width: min(72vw, 278px);
+    min-height: 112px;
+    flex: 0 0 auto;
+    padding: 18px;
+    border: 1px solid #ded8ce !important;
+    border-radius: 16px;
+    background: #fffdf8;
+    scroll-snap-align: start;
+  }
+  .management-app .pilot-metric > i { display: grid; }
+  .management-app .pilot-metric span { font-size: 10px; letter-spacing: 0.8px; }
+  .management-app .pilot-metric strong { font-size: 28px; }
+  .management-app .pilot-metric small { font-size: 10px; line-height: 1.35; }
+  .management-app .pilot-dashboard-grid,
+  .management-app .pilot-dashboard-grid-lower { gap: 14px; margin-top: 14px; }
+  .management-app .pilot-dashboard-grid > *,
+  .management-app .pilot-dashboard-grid-lower > * { min-width: 0; }
+  .management-app .pilot-priority-panel,
+  .management-app .pilot-sales-panel,
+  .management-app .pilot-flow-panel,
+  .management-app .pilot-activity-panel,
+  .management-app .pilot-shipping-queue,
+  .management-app .pilot-shipping-aside,
+  .management-app .pilot-funnel-panel { padding: 19px 17px; }
+  .management-app .pilot-section-head > div > span,
+  .management-app .pilot-eyebrow { font-size: 9px; }
+  .management-app .pilot-section-head h2,
+  .management-app .pilot-list-toolbar h2,
+  .management-app .pilot-shipping-aside h2,
+  .management-app .pilot-funnel-panel h2 { font-size: 19px; }
+  .management-app .pilot-priority-list > button {
+    min-height: 72px;
+    grid-template-columns: 40px minmax(0, 1fr) 18px;
+    gap: 11px;
+  }
+  .management-app .pilot-priority-list div b { font-size: 13px; }
+  .management-app .pilot-priority-list div small { font-size: 10px; }
+  .management-app .pilot-priority-list .pilot-status { display: none; }
+
+  /* Listes : les tableaux deviennent des fiches tactiles, sans défilement latéral. */
+  .management-app .pilot-list-toolbar { gap: 13px; padding: 16px; }
+  .management-app .pilot-tabs {
+    margin: 0 -4px;
+    padding: 4px;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+  .management-app .pilot-tabs::-webkit-scrollbar { display: none; }
+  .management-app .pilot-tabs button {
+    min-height: 38px;
+    flex: 0 0 auto;
+    padding: 0 13px;
+    font-size: 11px;
+    scroll-snap-align: start;
+  }
+  .management-app .pilot-list-toolbar > .pilot-secondary { width: 100%; justify-content: center; }
+  .management-app .pilot-table-wrap { overflow: visible; }
+  .management-app .pilot-table,
+  .management-app .pilot-table tbody { display: block; }
+  .management-app .pilot-table thead { display: none; }
+  .management-app .pilot-table tbody {
+    display: grid;
+    gap: 10px;
+    padding: 10px;
+    background: #f4f0e8;
+  }
+  .management-app .pilot-table tbody tr {
+    position: relative;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px 14px;
+    padding: 16px;
+    border: 1px solid #ded8ce;
+    border-radius: 15px;
+    background: #fffdf8;
+    box-shadow: 0 5px 15px rgba(39, 35, 29, 0.04);
+  }
+  .management-app .pilot-table td {
+    width: auto;
+    height: auto;
+    min-width: 0;
+    display: block;
+    padding: 0;
+    border: 0;
+    font-size: 12px;
+    white-space: normal;
+  }
+  .management-app .pilot-table td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 5px;
+    color: #8b857b;
+    font-size: 8px;
+    font-weight: 850;
+    letter-spacing: 0.75px;
+    text-transform: uppercase;
+  }
+  .management-app .pilot-table td > b { font-size: 13px; }
+  .management-app .pilot-table td > small { margin-top: 4px; font-size: 10px; line-height: 1.35; }
+  .management-app .pilot-order-cell-id { grid-column: 1; grid-row: 1; }
+  .management-app .pilot-order-cell-status {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: start;
+    text-align: right;
+  }
+  .management-app .pilot-order-cell-status::before,
+  .management-app .pilot-order-cell-action::before { display: none !important; }
+  .management-app .pilot-order-cell-client { grid-column: 1 / -1; padding-top: 11px !important; border-top: 1px solid #ebe6dd !important; }
+  .management-app .pilot-order-cell-product { grid-column: 1 / -1; }
+  .management-app .pilot-order-cell-due,
+  .management-app .pilot-order-cell-amount { padding-top: 8px !important; }
+  .management-app .pilot-order-cell-action {
+    position: absolute;
+    right: 11px;
+    bottom: 11px;
+  }
+  .management-app .pilot-order-cell-action button {
+    width: 38px;
+    height: 38px;
+    background: #efebe3;
+    border-radius: 11px;
+    color: #2c2b27;
+  }
+  .management-app .pilot-client-cell { gap: 10px; }
+  .management-app .pilot-client-cell > span { width: 34px; height: 34px; font-size: 9px; }
+  .management-app .pilot-client-cell > b { font-size: 13px; }
+  .management-app .pilot-status { font-size: 9px; }
+
+  /* Stocks : valeurs essentielles groupées, action pleine largeur. */
+  .management-app .pilot-stock-table tbody tr { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .management-app .pilot-stock-table td:first-child { grid-column: 1 / -1; padding-bottom: 11px !important; border-bottom: 1px solid #ebe6dd !important; }
+  .management-app .pilot-stock-table td:nth-last-child(2) { grid-column: 1 / -1; }
+  .management-app .pilot-stock-table td:last-child { grid-column: 1 / -1; }
+  .management-app .pilot-stock-table .pilot-table-action {
+    width: 100% !important;
+    min-height: 42px;
+    border-radius: 11px;
+    font-size: 11px;
+  }
+  .management-app .pilot-stock-name b { font-size: 13px; }
+  .management-app .pilot-stock-name small { font-size: 10px; }
+
+  /* Clients, atelier, expédition et boutique. */
+  .management-app .pilot-client-directory,
+  .management-app .pilot-client-profile { overflow: hidden; }
+  .management-app .pilot-client-list > button {
+    min-height: 72px;
+    grid-template-columns: 40px minmax(0, 1fr) auto 18px;
+    gap: 11px;
+    padding: 10px 14px;
+  }
+  .management-app .pilot-client-list b { font-size: 12px; }
+  .management-app .pilot-client-list small,
+  .management-app .pilot-client-list em { font-size: 10px; }
+  .management-app .pilot-client-profile { padding: 18px; }
+  .management-app .pilot-profile-hero h2 { font-size: 24px; }
+  .management-app .pilot-profile-hero p { font-size: 11px; }
+  .management-app .pilot-profile-metrics span { font-size: 9px; }
+  .management-app .pilot-profile-metrics strong { font-size: 19px; }
+  .management-app .pilot-profile-grid b { font-size: 12px; }
+  .management-app .pilot-profile-grid a,
+  .management-app .pilot-profile-grid p { font-size: 10px; }
+  .management-app .pilot-board {
+    margin: 0 calc(var(--management-mobile-gutter) * -1);
+    padding: 0 var(--management-mobile-gutter) 7px;
+    grid-template-columns: repeat(5, minmax(284px, 86vw));
+    gap: 11px;
+    overflow-x: auto;
+    scroll-padding-left: var(--management-mobile-gutter);
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .management-app .pilot-board::-webkit-scrollbar { display: none; }
+  .management-app .pilot-board-column {
+    min-height: 470px;
+    border-radius: 16px;
+    scroll-snap-align: start;
+  }
+  .management-app .pilot-board-column > header b { font-size: 12px; }
+  .management-app .pilot-shipment-row {
+    min-height: 0;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 15px 0;
+  }
+  .management-app .pilot-shipment-state { display: flex; }
+  .management-app .pilot-shipment-row > .pilot-primary,
+  .management-app .pilot-shipment-row > .pilot-secondary { width: 100%; justify-content: center; }
+  .management-app .pilot-product-list > div {
+    min-height: 76px;
+    grid-template-columns: 40px minmax(0, 1fr) 42px;
+    gap: 11px;
+    padding: 11px 14px;
+  }
+  .management-app .pilot-product-list b { font-size: 12px; }
+  .management-app .pilot-product-list small { font-size: 10px; }
+
+  /* Création/encodage : une seule colonne réellement opérable au pouce. */
+  .management-app .pilot-encoding-intro { border-radius: 17px; }
+  .management-app .pilot-encoding-intro h2 { font-size: 27px; }
+  .management-app .pilot-encoding-row { padding: 18px 16px; }
+  .management-app .pilot-encoding-row > div { grid-template-columns: 98px minmax(0, 1fr); }
+  .management-app .pilot-encoding-checks { grid-template-columns: 98px repeat(3, auto) !important; }
+  .management-app .pilot-encoding-row b { font-size: 12px; }
+  .management-app .pilot-encoding-row small,
+  .management-app .pilot-encoding-row a { font-size: 10px; }
+
+  /* Les détails deviennent des bottom sheets : contexte conservé, sortie immédiate. */
+  .management-app .pilot-order-drawer {
+    inset: auto 0 0;
+    width: 100%;
+    max-height: 92svh;
+    border-radius: 22px 22px 0 0;
+    box-shadow: 0 -24px 70px rgba(17, 17, 14, 0.28);
+    animation: management-sheet-in 240ms cubic-bezier(0.2, 0.78, 0.2, 1) both;
+  }
+  .management-app .pilot-order-drawer::before,
+  .management-app .pilot-modal::before {
+    content: "";
+    width: 42px;
+    height: 4px;
+    display: block;
+    flex: 0 0 auto;
+    margin: 8px auto 0;
+    border-radius: 999px;
+    background: #d3cec5;
+  }
+  .management-app .pilot-order-drawer > footer {
+    position: sticky;
+    bottom: 0;
+    padding-bottom: calc(15px + env(safe-area-inset-bottom, 0px));
+  }
+  .management-app .pilot-modal-layer {
+    place-items: end stretch;
+    padding: 0;
+  }
+  .management-app .pilot-modal {
+    width: 100%;
+    max-height: 94svh;
+    border-radius: 22px 22px 0 0;
+    animation: management-sheet-in 240ms cubic-bezier(0.2, 0.78, 0.2, 1) both;
+  }
+  .management-app .pilot-modal > header { padding: 14px 18px 18px; }
+  .management-app .pilot-modal header h2 { font-size: 22px; }
+  .management-app .pilot-modal header p { font-size: 10px; }
+  .management-app .pilot-modal > footer {
+    position: sticky;
+    bottom: 0;
+    padding: 13px 18px calc(13px + env(safe-area-inset-bottom, 0px));
+    flex-wrap: wrap;
+  }
+  .management-app .pilot-modal > footer .pilot-primary,
+  .management-app .pilot-modal > footer .pilot-secondary { min-height: 44px; flex: 1 1 140px; justify-content: center; }
+  .management-app .pilot-form-grid { padding: 18px; }
+  .management-app .pilot-form-grid label { font-size: 11px; }
+  .management-app .pilot-form-grid input,
+  .management-app .pilot-form-grid select,
+  .management-app .pilot-form-grid textarea { font-size: 16px; }
+  .management-app .pilot-toast {
+    right: 14px;
+    bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+    left: 14px;
+    justify-content: center;
+  }
+
+  @keyframes management-sheet-in {
+    from { transform: translateY(28px); opacity: 0; }
+  }
+}
+
+@media (max-width: 390px) {
+  .management-mobile-identity > strong { display: none; }
+  .management-mobile-nav > button b { font-size: 8px; }
+  .management-app .pilot-profile-metrics > div { padding: 0 7px; }
+  .management-app .pilot-profile-metrics strong { font-size: 17px; }
+  .management-app .pilot-stock-table tbody tr { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .management-mobile-nav > button,
+  .management-app .pilot-order-drawer,
+  .management-app .pilot-modal { animation: none; transition: none; }
 }

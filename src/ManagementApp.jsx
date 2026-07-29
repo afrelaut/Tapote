@@ -70,6 +70,21 @@ import "./management.css";
 const statusFlow = ["payment_pending", "paid", "bat", "supply", "assembly", "quality", "ready", "shipped"];
 const tapoteShortCodePattern = /^[a-f0-9]{10}$/i;
 const tapoteRedirectBaseUrl = String(import.meta.env.VITE_REDIRECT_BASE_URL || "https://t.tapote.fr").trim().replace(/\/$/, "");
+const isManagementDemo = import.meta.env.VITE_MANAGEMENT_DEMO === "true";
+const managementDemoSession = {
+  user: {
+    id: "management-demo-user",
+    email: "demo@tapote.fr",
+  },
+};
+const managementDemoAccess = {
+  organizationId: "management-demo-organization",
+  organizationName: "TAPOTE",
+  role: "owner",
+  displayName: "Équipe TAPOTE",
+  jobTitle: "Démonstration locale",
+  email: "demo@tapote.fr",
+};
 
 function tapoteShortUrl(shortCode) {
   if (!tapoteShortCodePattern.test(shortCode || "")) return "";
@@ -292,6 +307,40 @@ function Brand() {
   );
 }
 
+const managementMobileNavigation = [
+  { id: "dashboard", label: "Accueil", icon: LayoutDashboard },
+  { id: "orders", label: "Commandes", icon: ShoppingCart, count: "orders" },
+  { id: "production", label: "Atelier", icon: Factory },
+  { id: "encoding", label: "Encoder", icon: QrCode },
+];
+
+function ManagementMobileNav({ currentView, onNavigate, onMenu, counts }) {
+  return (
+    <nav className="management-mobile-nav" aria-label="Navigation mobile Gestion">
+      {managementMobileNavigation.map((item) => {
+        const Icon = item.icon;
+        return (
+          <button
+            type="button"
+            key={item.id}
+            className={cx(currentView === item.id && "is-active")}
+            onClick={() => onNavigate(item.id)}
+            aria-label={`Navigation mobile Gestion : ${item.label.toLocaleLowerCase("fr-FR")}`}
+            aria-current={currentView === item.id ? "page" : undefined}
+          >
+            <span><Icon size={20} strokeWidth={2} />{item.count && counts[item.count] > 0 && <em>{counts[item.count]}</em>}</span>
+            <b>{item.label}</b>
+          </button>
+        );
+      })}
+      <button type="button" onClick={onMenu} aria-label="Plus de rubriques — navigation mobile Gestion">
+        <span><Menu size={21} strokeWidth={2} /></span>
+        <b>Plus</b>
+      </button>
+    </nav>
+  );
+}
+
 function Sidebar({ currentView, onNavigate, open, onClose, openSettings, counts, access, onSignOut }) {
   const displayName = access?.displayName || "Gérant TAPOTE";
   const jobTitle = access?.jobTitle || "Accès privé";
@@ -354,13 +403,20 @@ function Topbar({ view, search, setSearch, onMenu, onNewOrder, searchResults, on
   }, []);
   return (
     <header className="pilot-topbar">
+      <div className="management-mobile-identity">
+        <a href="/gestion" aria-label="Tapote Gestion, accueil">
+          <img src="/brand/tapote-logo.svg" alt="tapote." />
+          <span>GESTION</span>
+        </a>
+        <strong>{title}</strong>
+      </div>
       <div className="pilot-title-wrap">
         <button className="pilot-mobile-menu" onClick={onMenu} aria-label="Ouvrir la navigation"><Menu size={21} /></button>
         <div><h1>{title}</h1><p>{subtitle}</p></div>
       </div>
       <div className="pilot-top-actions">
         <div className="pilot-search-wrap" onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setSearchOpen(false); }}>
-          <label className="pilot-search"><Search size={19} /><input ref={searchRef} value={search} onFocus={() => { setSearchOpen(true); setAlertsOpen(false); }} onChange={(event) => { setSearch(event.target.value); setSearchOpen(true); }} onKeyDown={(event) => { if (event.key === "Enter" && searchResults[0]) onSearchResult(searchResults[0]); if (event.key === "Escape") { setSearch(""); setSearchOpen(false); event.currentTarget.blur(); } }} placeholder="Commande, client, stock…" aria-label="Recherche globale" aria-expanded={searchOpen && Boolean(search.trim())} aria-controls="pilot-search-results" /><kbd>⌘ K</kbd></label>
+          <label className="pilot-search"><Search size={19} /><input ref={searchRef} value={search} onFocus={() => { setSearchOpen(true); setAlertsOpen(false); }} onChange={(event) => { setSearch(event.target.value); setSearchOpen(true); }} onKeyDown={(event) => { if (event.key === "Enter" && searchResults[0]) onSearchResult(searchResults[0]); if (event.key === "Escape") { setSearch(""); setSearchOpen(false); event.currentTarget.blur(); } }} placeholder="Commande, client, stock…" aria-label="Recherche globale" /><kbd>⌘ K</kbd></label>
           {searchOpen && search.trim() && <div className="pilot-search-results" id="pilot-search-results">
             <header><span>RÉSULTATS</span><small>{searchResults.length} trouvé{searchResults.length > 1 ? "s" : ""}</small></header>
             {searchResults.map((result) => <button key={`${result.kind}-${result.id}`} onMouseDown={(event) => event.preventDefault()} onClick={() => onSearchResult(result)}>
@@ -425,7 +481,7 @@ function DashboardView({ data, clientMap, onNavigate, openOrder, referenceTime, 
         <div className="pilot-onboarding-copy"><img src="/brand/tapote-mark.svg" alt="" /><div><span>ESPACE PRÊT</span><h2>Configurez votre atelier TAPOTE</h2><p>Votre organisation privée est sécurisée et vide. Ajoutez les premières données réelles pour démarrer sans contenu de démonstration.</p></div></div>
         <div className="pilot-onboarding-steps"><button onClick={onNewClient}><i>01</i><span><b>Ajouter un client</b><small>Contacts et historique</small></span><Plus size={17} /></button><button onClick={onNewInventory}><i>02</i><span><b>Créer le stock</b><small>Références et seuils</small></span><Plus size={17} /></button><button onClick={() => onNavigate("ecommerce")}><i>03</i><span><b>Vérifier le catalogue</b><small>Produits publiés</small></span><ArrowRight size={17} /></button></div>
       </section>}
-      <section className="pilot-metrics" aria-label="Indicateurs principaux">
+      <section className="pilot-metrics" aria-label="Indicateurs principaux" tabIndex="0">
         <Metric label="CA encaissé" value={formatEuro(revenue)} detail={`${paidOrders.length} commande${paidOrders.length > 1 ? "s" : ""} payée${paidOrders.length > 1 ? "s" : ""}`} icon={CircleDollarSign} />
         <Metric label="Commandes actives" value={activeOrders.length} detail={`${priorityCount} prioritaire${priorityCount > 1 ? "s" : ""}`} icon={ShoppingCart} />
         <Metric label="Prêtes à expédier" value={ready} detail={`cut-off ${data.settings?.shippingCutoff || "16:00"}`} icon={PackageCheck} />
@@ -460,7 +516,7 @@ function DashboardView({ data, clientMap, onNavigate, openOrder, referenceTime, 
       <section className="pilot-dashboard-grid pilot-dashboard-grid-lower">
         <div className="pilot-surface pilot-flow-panel">
           <div className="pilot-section-head"><div><span>ATELIER</span><h2>Flux de production</h2></div><button onClick={() => onNavigate("production")}>Ouvrir l’atelier <ArrowRight size={15} /></button></div>
-          <div className="pilot-flow-steps">
+          <div className="pilot-flow-steps" role="region" aria-label="Étapes du flux de production" tabIndex="0">
             {productionCounts.map(([status, count], index) => (
               <div key={status}><span>{String(index + 1).padStart(2, "0")}</span><strong>{count}</strong><small>{statusMeta[status].label}</small>{index < productionCounts.length - 1 && <ArrowRight size={15} />}</div>
             ))}
@@ -486,13 +542,13 @@ function OrderTable({ orders, clientMap, openOrder }) {
         <tbody>
           {orders.map((order) => (
             <tr key={order.id} onClick={() => openOrder(order.id)}>
-              <td><b>{order.id}</b><small>{order.channel} · {order.created}</small></td>
-              <td><div className="pilot-client-cell"><span>{initials(clientMap[order.clientId]?.name || "")}</span><b>{clientMap[order.clientId]?.name}</b></div></td>
-              <td><b>{order.product}</b><small>{order.quantity} unité{order.quantity > 1 ? "s" : ""} · {order.destination}</small></td>
-              <td><b className={cx(order.priority === "Haute" && "pilot-urgent-text")}>{order.due}</b><small>{order.priority === "Haute" ? "Prioritaire" : order.owner}</small></td>
-              <td><b>{formatEuro(order.total)}</b><small>{order.payment}</small></td>
-              <td><StatusBadge status={order.status} /></td>
-              <td><button onClick={(event) => { event.stopPropagation(); openOrder(order.id); }} aria-label={`Ouvrir ${order.id}`}><ChevronRight size={17} /></button></td>
+              <td className="pilot-order-cell-id" data-label="Commande"><b>{order.id}</b><small>{order.channel} · {order.created}</small></td>
+              <td className="pilot-order-cell-client" data-label="Client"><div className="pilot-client-cell"><span>{initials(clientMap[order.clientId]?.name || "")}</span><b>{clientMap[order.clientId]?.name}</b></div></td>
+              <td className="pilot-order-cell-product" data-label="Produit"><b>{order.product}</b><small>{order.quantity} unité{order.quantity > 1 ? "s" : ""} · {order.destination}</small></td>
+              <td className="pilot-order-cell-due" data-label="Échéance"><b className={cx(order.priority === "Haute" && "pilot-urgent-text")}>{order.due}</b><small>{order.priority === "Haute" ? "Prioritaire" : order.owner}</small></td>
+              <td className="pilot-order-cell-amount" data-label="Montant"><b>{formatEuro(order.total)}</b><small>{order.payment}</small></td>
+              <td className="pilot-order-cell-status" data-label="Statut"><StatusBadge status={order.status} /></td>
+              <td className="pilot-order-cell-action"><button onClick={(event) => { event.stopPropagation(); openOrder(order.id); }} aria-label={`Ouvrir ${order.id}`}><ChevronRight size={17} /></button></td>
             </tr>
           ))}
         </tbody>
@@ -714,7 +770,7 @@ function SupplyView({ data, search, adjustStock, onNewInventory }) {
           {filtered.map((item) => {
             const available = item.stock - item.reserved;
             const low = available <= item.threshold;
-            return <tr key={item.id}><td><div className="pilot-stock-name"><i><Boxes size={17} /></i><div><b>{item.name}</b><small>{item.sku} · {item.category}</small></div></div></td><td><b>{item.stock}</b></td><td><span>{item.reserved}</span></td><td><b className={cx(low && "pilot-urgent-text")}>{available}</b><small>{low ? "Sous le seuil" : "Disponible"}</small></td><td>{item.threshold}</td><td><b>{item.eta}</b><small>{item.incoming ? `+${item.incoming} unités` : "Non planifiée"}</small></td><td><button className="pilot-table-action" onClick={() => adjustStock(item.id, item.incoming || 10)}>Réception</button></td></tr>;
+            return <tr key={item.id}><td data-label="Référence"><div className="pilot-stock-name"><i><Boxes size={17} /></i><div><b>{item.name}</b><small>{item.sku} · {item.category}</small></div></div></td><td data-label="Stock"><b>{item.stock}</b></td><td data-label="Réservé"><span>{item.reserved}</span></td><td data-label="Disponible"><b className={cx(low && "pilot-urgent-text")}>{available}</b><small>{low ? "Sous le seuil" : "Disponible"}</small></td><td data-label="Seuil">{item.threshold}</td><td data-label="Réception"><b>{item.eta}</b><small>{item.incoming ? `+${item.incoming} unités` : "Non planifiée"}</small></td><td><button className="pilot-table-action" onClick={() => adjustStock(item.id, item.incoming || 10)}>Réceptionner</button></td></tr>;
           })}
         </tbody></table>{!filtered.length && <div className="pilot-empty"><Boxes size={24} /><b>{search ? "Aucune référence trouvée" : "Inventaire vide"}</b><span>{search ? "Modifiez la recherche." : "Créez la première référence pour piloter les seuils et les réceptions."}</span></div>}</div>
       </section>
@@ -1023,12 +1079,12 @@ function SettingsModal({ access, settings, onClose, onSync, onSignOut, syncing, 
 export default function TapoteManagementApp() {
   const [referenceTime] = useState(() => Date.now());
   const [view, setView] = useState("dashboard");
-  const [data, setData] = useState(() => import.meta.env.MODE === "test" ? initialData : { clients: [], orders: [], inventory: [], storefront: [], activity: [], encodedProducts: [], settings: null });
-  const [session, setSession] = useState(null);
-  const [sessionReady, setSessionReady] = useState(false);
-  const [authState, setAuthState] = useState(isManagementConfigured ? "loading" : "configuration");
+  const [data, setData] = useState(() => import.meta.env.MODE === "test" || isManagementDemo ? initialData : { clients: [], orders: [], inventory: [], storefront: [], activity: [], encodedProducts: [], settings: null });
+  const [session, setSession] = useState(isManagementDemo ? managementDemoSession : null);
+  const [sessionReady, setSessionReady] = useState(isManagementDemo);
+  const [authState, setAuthState] = useState(isManagementDemo ? "ready" : isManagementConfigured ? "loading" : "configuration");
   const [passwordRecovery, setPasswordRecovery] = useState(false);
-  const [access, setAccess] = useState(null);
+  const [access, setAccess] = useState(isManagementDemo ? managementDemoAccess : null);
   const [syncing, setSyncing] = useState(false);
   const [search, setSearch] = useState("");
   const [navOpen, setNavOpen] = useState(false);
@@ -1064,7 +1120,7 @@ export default function TapoteManagementApp() {
     };
   }, []);
   useEffect(() => {
-    if (!isManagementConfigured) return undefined;
+    if (isManagementDemo || !isManagementConfigured) return undefined;
     let active = true;
     getManagementSession()
       .then((currentSession) => {
@@ -1093,7 +1149,7 @@ export default function TapoteManagementApp() {
     };
   }, []);
   useEffect(() => {
-    if (!sessionReady) return undefined;
+    if (isManagementDemo || !sessionReady) return undefined;
     let active = true;
     const loadSequence = ++dataLoadSequence.current;
     Promise.resolve().then(async () => {
@@ -1160,6 +1216,10 @@ export default function TapoteManagementApp() {
 
   const refreshData = useCallback(async ({ quiet = false } = {}) => {
     if (!access) return;
+    if (isManagementDemo) {
+      setLastSyncedAt(new Date());
+      return;
+    }
     const loadSequence = ++dataLoadSequence.current;
     if (!quiet) setSyncing(true);
     try {
@@ -1178,7 +1238,7 @@ export default function TapoteManagementApp() {
   }, [access]);
 
   useEffect(() => {
-    if (!access || authState !== "ready") return undefined;
+    if (isManagementDemo || !access || authState !== "ready") return undefined;
     let timer;
     const unsubscribe = subscribeToManagement(access.organizationId, () => {
       window.clearTimeout(timer);
@@ -1455,7 +1515,7 @@ export default function TapoteManagementApp() {
 
   const viewProps = { data, clientMap, search, openOrder, advanceOrder, showToast, referenceTime };
   return (
-    <div className="pilot-app">
+    <div className="pilot-app management-app">
       <a className="pilot-skip" href="#pilot-main">Aller au contenu</a>
       <Sidebar currentView={view} onNavigate={navigate} open={navOpen} onClose={() => setNavOpen(false)} openSettings={() => setSettingsOpen(true)} counts={navCounts} access={access} onSignOut={async () => { await signOutManager(); setAuthState("signedOut"); }} />
       <div className="pilot-workspace" aria-busy={syncing}>
@@ -1471,6 +1531,7 @@ export default function TapoteManagementApp() {
           {view === "ecommerce" && <EcommerceView {...viewProps} toggleProduct={toggleProduct} refreshData={refreshData} syncing={syncing} lastSyncedAt={lastSyncedAt} />}
         </main>
       </div>
+      <ManagementMobileNav currentView={view} onNavigate={navigate} onMenu={() => setNavOpen(true)} counts={navCounts} />
       <OrderDrawer order={order} client={order ? clientMap[order.clientId] : null} assignedProducts={order ? data.encodedProducts.filter((product) => product.orderId === order.recordId && product.status === "assigned").length : 0} details={selectedOrderDetails} detailsState={selectedOrderDetailsState} onClose={() => setSelectedOrder(null)} advanceOrder={advanceOrder} onActivatePilot={setPilotActivationOrder} onOpenClient={(clientId) => { setSelectedOrder(null); setSelectedClient(clientId); setView("clients"); }} />
       {newOrderOpen && <NewOrderModal clients={data.clients} onClose={() => setNewOrderOpen(false)} onCreate={createOrder} />}
       {newClientOpen && <NewClientModal onClose={() => setNewClientOpen(false)} onCreate={createClient} />}

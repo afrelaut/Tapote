@@ -95,6 +95,21 @@ afterEach(() => {
 });
 
 describe("TAPOTE Gestion", () => {
+  it("propose une navigation mobile opérationnelle vers les tâches prioritaires", async () => {
+    render(<TapoteManagementApp />);
+
+    await screen.findByRole("heading", { name: "Vue d’ensemble" });
+    const mobileNav = screen.getByRole("navigation", { name: "Navigation mobile Gestion" });
+    expect(mobileNav).toBeInTheDocument();
+    expect(mobileNav.querySelectorAll("button")).toHaveLength(5);
+
+    fireEvent.click(screen.getByRole("button", { name: "Navigation mobile Gestion : commandes" }));
+    expect(screen.getByRole("heading", { name: "Commandes" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Plus de rubriques — navigation mobile Gestion" }));
+    expect(document.querySelector(".pilot-sidebar")).toHaveClass("is-open");
+  });
+
   it("propose l'accès unidirectionnel vers Pilot", async () => {
     render(<TapoteManagementApp />);
 

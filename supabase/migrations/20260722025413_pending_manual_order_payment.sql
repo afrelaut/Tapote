@@ -1,3 +1,4 @@
+-- Keep this version aligned with the migration already recorded in production.
 begin;
 
 -- A manually entered sale must never be treated as paid without an explicit
