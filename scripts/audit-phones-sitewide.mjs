@@ -255,6 +255,10 @@ async function renderContactSheet(context, viewport, name, frames) {
 
 async function runSelectMatrix(context, viewport, { name, pathname, selectSelector, sceneSelector, setup }) {
   const { page, errors, status } = await openPage(context, pathname);
+  if (viewport.name === "mobile") {
+    await page.getByRole("tab", { name: /Configurer/i }).click();
+    await page.locator(".v3-sector-buy").waitFor({ state: "visible" });
+  }
   if (setup) await setup(page);
   const select = page.locator(selectSelector);
   const options = await select.locator("option").evaluateAll((items) => items.map((option) => option.value));
@@ -267,6 +271,9 @@ async function runSelectMatrix(context, viewport, { name, pathname, selectSelect
   }
   for (const actionId of options) {
     await select.selectOption(actionId);
+    if (viewport.name === "mobile") {
+      await page.getByRole("tab", { name: /Aperçu/i }).click();
+    }
     const scene = page.locator(sceneSelector);
     await scene.locator(`.v3-live-phone-screen[data-phone-action="${actionId}"]`).waitFor();
     await page.waitForTimeout(35);
@@ -276,6 +283,9 @@ async function runSelectMatrix(context, viewport, { name, pathname, selectSelect
     states.push(state);
     if (!state.ok) fail(`${viewport.name}:${name}:${actionId}`, state);
     frames.push({ label: `${actionId} · ${ACTIONS[actionId]?.name || actionId}`, image: await scene.screenshot({ animations: "disabled" }) });
+    if (viewport.name === "mobile" && actionId !== options.at(-1)) {
+      await page.getByRole("tab", { name: /Configurer/i }).click();
+    }
   }
   const distinctPaths = [...new Set(states.map((state) => state.metrics.path))].length;
   if (distinctPaths > 2) fail(`${viewport.name}:${name}:masques`, `${distinctPaths} tracés distincts`);

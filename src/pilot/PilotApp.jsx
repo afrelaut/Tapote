@@ -647,7 +647,7 @@ function ProductInspector({ product, canEdit, interactions, onClose, onSave, toa
           </dl>
           <section className="pilot-short-link">
             <span>URL PERMANENTE DU PRODUIT</span>
-            <div><code>{shortUrl.replace(/^https?:\/\//, "")}</code><button type="button" onClick={copy}>{copied ? <Check size={17} /> : <Copy size={17} />}<span>{copied ? "Copié" : "Copier"}</span></button></div>
+            <div><code>{shortUrl.replace(/^https?:\/\//, "")}</code><button type="button" onClick={copy} aria-label={copied ? "Lien copié" : "Copier le lien permanent"}>{copied ? <Check size={17} /> : <Copy size={17} />}<span>{copied ? "Copié" : "Copier"}</span></button></div>
             <p>Cette adresse reste identique, même lorsque vous changez la destination.</p>
             <div className="pilot-source-links"><a href={`${shortUrl}?s=nfc`} target="_blank" rel="noreferrer">Tester comme un tap NFC <ExternalLink size={14} /></a><a href={`${shortUrl}?s=qr`} target="_blank" rel="noreferrer">Tester comme un scan QR <ExternalLink size={14} /></a></div>
           </section>
@@ -842,7 +842,12 @@ export default function PilotApp() {
         </div>
       </aside>
 
-      <header className="pilot-mobile-header"><PilotLogo /><span>{views[view].label}</span><button type="button" onClick={() => setMenuOpen(true)} aria-label="Ouvrir le menu"><Menu size={22} /></button></header>
+      <header className="pilot-mobile-header">
+        <PilotLogo />
+        <span>{views[view].label}</span>
+        <button className="pilot-mobile-quick-link" type="button" onClick={() => setSelectedProductId(workspace.products[0]?.id || null)} disabled={!workspace.products.length} aria-label={workspace.membership.accessScope === "management" ? "Consulter rapidement un support" : "Changer rapidement un lien"}><Link2 size={20} /></button>
+        <button className="pilot-mobile-menu" type="button" onClick={() => setMenuOpen(true)} aria-label="Ouvrir le menu"><Menu size={22} /></button>
+      </header>
       {menuOpen && <button className="pilot-menu-backdrop" type="button" aria-label="Fermer le menu" onClick={() => setMenuOpen(false)} />}
 
       <main id="pilot-main" className="pilot-client-workspace">
@@ -852,6 +857,13 @@ export default function PilotApp() {
         {view === "history" && <HistoryView workspace={workspace} onChangeLink={() => setSelectedProductId(workspace.products[0]?.id || null)} />}
         {view === "support" && <SupportView />}
       </main>
+
+      <nav className="pilot-mobile-nav" aria-label="Navigation mobile Pilot">
+        {Object.entries(views).map(([key, item]) => {
+          const Icon = item.icon;
+          return <button data-pilot-mobile-nav={key} type="button" key={key} aria-label={`${item.accessibleLabel || item.label} — navigation mobile`} aria-current={view === key ? "page" : undefined} className={view === key ? "is-active" : ""} onClick={() => changeView(key)}><Icon size={20} /><span>{item.label}</span></button>;
+        })}
+      </nav>
 
       {selectedProduct && <ProductInspector product={selectedProduct} canEdit={canEdit} interactions={analyticsFor(workspace, period, "all").byProduct.get(selectedProduct.id) || 0} onClose={() => setSelectedProductId(null)} onSave={saveDestination} toast={showToast} />}
       {toast && <div className="pilot-client-toast" role="status"><Check size={17} />{toast}</div>}
