@@ -248,6 +248,15 @@ const home = await auditPage(desktop, "/", "Page unique desktop", async (page) =
   assert("achat-direct-page-unique", await page.getByRole("button", { name: /Ajouter au panier/i }).isVisible());
   assert("trois-supports-page-unique", await page.getByRole("button", { name: /^(Chevalet|Plaque|Carte)$/ }).count() === 3);
   assert("quinze-activites-page-unique", await page.locator(".v3-sector-chips button").count() === SECTORS.length);
+  assert("pilot-visible-page-unique", await page.getByRole("heading", { name: /Le support reste/i }).isVisible());
+  assert("acces-pilot-vers-connexion", await page.locator('.v3-pilot-actions a[href="/connexion"]').count() === 1);
+  assert("promesses-abonnement-corrigees", !/sans abonnement obligatoire|lien modifiable à vie/i.test(await page.locator("body").innerText()));
+  assert("offres-redirigent-vers-configurations", await page.locator([
+    'a[href="/boutique?activite=cafes-bars&support=comptoir&lien=avis&design=noir&count=1"]',
+    'a[href="/personnaliser?activite=cafes-bars&support=comptoir&lien=avis&mode=custom&count=1"]',
+    'a[href="/boutique?activite=cafes-bars&support=comptoir&lien=avis&design=blanc&count=2&composition=mix"]',
+  ].join(",")).count() === 6);
+  assert("faq-et-cta-final-retires", await page.locator(".v3-faq, .v3-final-buy").count() === 0);
   await auditScene(page, "desktop");
   await auditQuantityAlignment(page, "desktop");
 
@@ -255,8 +264,134 @@ const home = await auditPage(desktop, "/", "Page unique desktop", async (page) =
   await page.waitForURL(/lien=wifi/);
   assert("telephone-synchronise-au-lien", await page.locator('[data-preview-mode="live"] [data-phone-action="wifi"]').count() === 1);
   await page.screenshot({ path: path.join(outputDir, "01-page-unique-desktop.png"), fullPage: true });
+  await page.locator("#pilot").screenshot({ path: path.join(outputDir, "03-pilot-desktop.png") });
+  await page.getByRole("button", { name: "Carte", exact: true }).click();
+  const cardQuantity = page.locator(".v3-card-quantity");
+  const cardQuantityLayout = await cardQuantity.evaluate((element) => {
+    const box = element.getBoundingClientRect();
+    const parent = element.parentElement.getBoundingClientRect();
+    return {
+      visible: box.width > 0 && box.height > 0,
+      width: box.width,
+      parentWidth: parent.width,
+      overflow: element.scrollWidth - element.clientWidth,
+    };
+  });
+  assert(
+    "quantite-carte-coherente-desktop",
+    cardQuantityLayout.visible
+      && cardQuantityLayout.width <= cardQuantityLayout.parentWidth + 1
+      && cardQuantityLayout.overflow <= 1,
+    cardQuantityLayout,
+  );
+  await page.locator(".v3-core-choice-grid").screenshot({ path: path.join(outputDir, "05-card-quantity-desktop.png") });
 });
 await home.close();
+
+const pilotMarketing = await auditPage(desktop, "/tapote-pilot", "Page marketing Tapote Pilot desktop", async (page) => {
+  assert("pilot-marketing-hero-visible", await page.getByRole("heading", { level: 1, name: /Un seul poste.*Tous vos Tapote/i }).isVisible());
+  assert("pilot-marketing-flux-visible", await page.getByRole("heading", { name: /Un changement de campagne/i }).isVisible());
+  assert("pilot-marketing-valeur-visible", await page.getByRole("heading", { name: /Le contrôle utile/i }).isVisible());
+  assert(
+    "pilot-marketing-connexion-reelle",
+    await page.locator('a[href="/connexion"]').count() >= 3
+      && await page.locator('a[href="/pilot"]').count() === 0,
+  );
+  await page.screenshot({ path: path.join(outputDir, "06-pilot-marketing-desktop.png"), fullPage: true });
+});
+await pilotMarketing.close();
+
+const accessPage = await desktop.newPage();
+await accessPage.goto(`${baseUrl}/connexion`, { waitUntil: "domcontentloaded" });
+await settlePage(accessPage);
+assert("acces-pilot-route-reelle", await accessPage.locator('a.access-destination-pilot[href="/pilot"]').count() === 1);
+await accessPage.goto(`${baseUrl}/pilot`, { waitUntil: "domcontentloaded" });
+await settlePage(accessPage);
+assert(
+  "route-pilot-ne-revient-pas-au-configurateur",
+  new URL(accessPage.url()).pathname.startsWith("/pilot")
+    && await accessPage.locator(".v3-home-hero").count() === 0,
+  accessPage.url(),
+);
+await accessPage.close();
+
+const wide = await browser.newContext({ viewport: { width: 2048, height: 1112 }, deviceScaleFactor: 1 });
+await mockStorefrontApis(wide);
+const wideHome = await auditPage(
+  wide,
+  "/boutique?activite=boulangeries-patisseries&support=comptoir&lien=whatsapp&design=blanc&count=2&composition=chevalets",
+  "Page unique grand écran",
+  async (page) => {
+    const layout = await page.evaluate(() => {
+      const visual = document.querySelector(".v3-home-visual")?.getBoundingClientRect();
+      const buybox = document.querySelector(".v3-home-hero .v3-buybox")?.getBoundingClientRect();
+      const selector = document.querySelector(".v3-sector-selector")?.getBoundingClientRect();
+      return {
+        viewportWidth: window.innerWidth,
+        visualWidth: visual?.width ?? 0,
+        buyboxWidth: buybox?.width ?? 0,
+        selectorWidth: selector?.width ?? 0,
+        rightGutter: buybox ? window.innerWidth - buybox.right : Infinity,
+        overflow: Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - window.innerWidth,
+      };
+    });
+    assert(
+      "configurateur-plein-ecran-large",
+      layout.buyboxWidth >= 940
+        && Math.abs(layout.buyboxWidth - layout.selectorWidth) <= 1
+        && layout.rightGutter >= 40
+        && layout.rightGutter <= 80
+        && layout.overflow <= 1,
+      layout,
+    );
+    const pilotLayout = await page.locator("#pilot").evaluate((section) => {
+      const box = section.getBoundingClientRect();
+      const product = section.querySelector(".v3-pilot-product")?.getBoundingClientRect();
+      const screen = section.querySelector(".v3-pilot-window")?.getBoundingClientRect();
+      return {
+        left: box.left,
+        right: box.right,
+        width: box.width,
+        viewportWidth: window.innerWidth,
+        productWidth: product?.width ?? 0,
+        screenWidth: screen?.width ?? 0,
+        screenHeight: screen?.height ?? 0,
+        screenRatio: screen?.height ? screen.width / screen.height : 0,
+      };
+    });
+    assert(
+      "pilot-plein-ecran-large",
+      Math.abs(pilotLayout.left) <= 1
+        && Math.abs(pilotLayout.right - pilotLayout.viewportWidth) <= 1
+        && Math.abs(pilotLayout.width - pilotLayout.viewportWidth) <= 1
+        && pilotLayout.productWidth >= 720
+        && pilotLayout.productWidth <= 900
+        && pilotLayout.screenRatio >= 1.72
+        && pilotLayout.screenRatio <= 1.82,
+      pilotLayout,
+    );
+    const offerLayout = await page.locator(".v3-offer-cards").evaluate((grid) => {
+      const cards = [...grid.children].map((card) => {
+        const box = card.getBoundingClientRect();
+        const visual = card.querySelector(".v3-offer-visual")?.getBoundingClientRect();
+        return { width: box.width, height: box.height, visualHeight: visual?.height ?? 0 };
+      });
+      const box = grid.getBoundingClientRect();
+      return { width: box.width, left: box.left, right: box.right, cards };
+    });
+    assert(
+      "offres-proportionnees-grand-ecran",
+      offerLayout.cards.length === 3
+        && offerLayout.cards.every((card) => card.width >= 400 && card.width <= 460 && card.visualHeight >= 230 && card.visualHeight <= 260)
+        && Math.max(...offerLayout.cards.map((card) => card.width)) - Math.min(...offerLayout.cards.map((card) => card.width)) <= 1,
+      offerLayout,
+    );
+    await page.locator(".v3-offer-architecture").screenshot({ path: path.join(outputDir, "07-offres-grand-ecran.png") });
+    await page.locator("#pilot").screenshot({ path: path.join(outputDir, "09-pilot-grand-ecran.png") });
+    await page.screenshot({ path: path.join(outputDir, "00-page-unique-wide.png"), fullPage: false });
+  },
+);
+await wideHome.close();
 
 await auditPublicRouteSweep(desktop, [
   "/",
@@ -273,6 +408,7 @@ await auditPublicRouteSweep(desktop, [
   "/produits/carte?mode=custom",
   ...SECTORS.map((sector) => `/secteurs/${sector.slug}`),
   "/comment-ca-marche",
+  "/tapote-pilot",
   "/devis",
   "/mentions-legales",
   "/cgv",
@@ -299,11 +435,57 @@ const mobileHome = await auditPage(
     await auditScene(page, "mobile");
     assert("pack-mobile-restaure", await page.getByRole("button", { name: "2 plaques", exact: true }).getAttribute("aria-pressed") === "true");
     assert("selecteur-activites-mobile", await page.locator(".v3-sector-chips button").count() === SECTORS.length);
+    const pilotMobile = page.locator("#pilot");
+    const pilotMobileLayout = await pilotMobile.evaluate((section) => {
+      const box = section.getBoundingClientRect();
+      return {
+        left: box.left,
+        right: box.right,
+        width: box.width,
+        viewportWidth: window.innerWidth,
+        scrollWidth: section.scrollWidth,
+        clientWidth: section.clientWidth,
+      };
+    });
+    assert(
+      "pilot-mobile-sans-debordement",
+      Math.abs(pilotMobileLayout.left) <= 1
+        && Math.abs(pilotMobileLayout.right - pilotMobileLayout.viewportWidth) <= 1
+        && pilotMobileLayout.scrollWidth <= pilotMobileLayout.clientWidth + 1,
+      pilotMobileLayout,
+    );
+    assert("pilot-mobile-acces-visible", await pilotMobile.locator('a[href="/connexion"]').isVisible());
     await page.screenshot({ path: path.join(outputDir, "02-page-unique-mobile.png"), fullPage: true });
+    await pilotMobile.screenshot({ path: path.join(outputDir, "04-pilot-mobile.png") });
+    await page.getByRole("button", { name: "Carte", exact: true }).click();
+    const cardQuantity = page.locator(".v3-card-quantity");
+    const cardQuantityLayout = await cardQuantity.evaluate((element) => ({
+      width: element.getBoundingClientRect().width,
+      viewportWidth: window.innerWidth,
+      overflow: element.scrollWidth - element.clientWidth,
+    }));
+    assert(
+      "quantite-carte-coherente-mobile",
+      cardQuantityLayout.width <= cardQuantityLayout.viewportWidth - 28
+        && cardQuantityLayout.overflow <= 1,
+      cardQuantityLayout,
+    );
+    await page.locator(".v3-core-choice-grid").screenshot({ path: path.join(outputDir, "05-card-quantity-mobile.png") });
   },
 );
 await mobileHome.close();
 
+const pilotMarketingMobile = await auditPage(mobile, "/tapote-pilot", "Page marketing Tapote Pilot mobile", async (page) => {
+  assert("pilot-marketing-mobile-cta-visible", await page.locator('.v3-pilot-story a[href="/connexion"]').first().isVisible());
+  assert(
+    "pilot-marketing-mobile-sans-debordement",
+    await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1),
+  );
+  await page.screenshot({ path: path.join(outputDir, "08-pilot-marketing-mobile.png"), fullPage: true });
+});
+await pilotMarketingMobile.close();
+
+await wide.close();
 await desktop.close();
 await mobile.close();
 await browser.close();

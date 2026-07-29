@@ -13,8 +13,8 @@ export const DEVICE_THEMES = Object.freeze({
 export const DEFAULT_THEME = "nuit";
 
 export const THEME_LABELS = Object.freeze({
-  nuit: "Nuit",
-  creme: "Crème",
+  nuit: "Tapote Noir",
+  creme: "Tapote Blanc",
 });
 
 // Les paniers, brouillons et liens partagés d'avant la refonte portent encore

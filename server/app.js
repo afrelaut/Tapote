@@ -73,7 +73,7 @@ const storefrontPaths = new Set([
 ]);
 
 const routeMeta = new Map([
-  ["/", ["Supports NFC + QR prêts ou personnalisés | Tapote", "Chevalets, plaques et cartes NFC + QR prêts à l’emploi ou personnalisés. Le bon lien s’ouvre en un geste et reste modifiable à vie."]],
+  ["/", ["Supports NFC + QR prêts ou personnalisés | Tapote", "Chevalets, plaques et cartes NFC + QR prêts à l’emploi ou personnalisés. Destination initiale configurée et pilotage à distance avec Tapote Pilot."]],
   ["/boutique", ["Boutique NFC + QR | Tapote", "Choisissez un chevalet, une plaque verticale, une Carte NFC ou un pack Tapote, prêt à l’emploi ou adapté à votre identité."]],
   ["/designs", ["Designs Tapote pour chaque usage", "Comparez les designs Tapote pour avis, menu, réservation, réseaux sociaux, Wi-Fi, paiement et autres liens professionnels."]],
   ["/secteurs", ["Tapote pour votre secteur | 15 usages concrets", "Trouvez le support NFC + QR, le placement et l’usage Tapote adaptés à votre métier."]],

@@ -372,7 +372,7 @@ function Overview({ workspace, analytics, period, setPeriod, locationId, setLoca
     <>
       <header className="pilot-view-heading">
         <div className="pilot-heading-copy"><span className="pilot-kicker">PILOT · {pilotWorkspaceLabel(workspace)}</span><h1>Vue d’ensemble</h1><p>Les performances de vos produits Tapote, sans jargon.</p></div>
-        <span className="pilot-free-promise"><Check size={16} /><span><b>Inclus à vie</b>Liens modifiables sans limite</span></span>
+        <span className="pilot-free-promise"><Check size={16} /><span><b>FORMULE PILOT ACTIVE</b>Destinations pilotables à distance</span></span>
       </header>
 
       <section className="pilot-link-workspace" aria-labelledby="pilot-link-title">
@@ -396,8 +396,8 @@ function Overview({ workspace, analytics, period, setPeriod, locationId, setLoca
         ) : (
           <p className="pilot-link-empty">Aucun support dans ce lieu. Affichez tous les lieux pour choisir un produit.</p>
         )}
-        <aside className="pilot-basic-counter" aria-label="Compteur simple inclus">
-          <span>COMPTEUR SIMPLE · INCLUS</span>
+        <aside className="pilot-basic-counter" aria-label="Compteur des interactions">
+          <span>INTERACTIONS · PILOT</span>
           <strong>{formatNumber(analytics.total)}</strong>
           <p>interactions NFC et QR<br />sur {period} jours</p>
           <small><i />{analytics.activeProducts} support{analytics.activeProducts > 1 ? "s" : ""} actif{analytics.activeProducts > 1 ? "s" : ""}</small>
@@ -425,7 +425,7 @@ function Overview({ workspace, analytics, period, setPeriod, locationId, setLoca
 
       <section className="pilot-advanced" aria-labelledby="pilot-advanced-title">
         <header className="pilot-advanced-heading">
-          <div><span>PILOT · FONCTIONS AVANCÉES</span><h2 id="pilot-advanced-title">Comprendre ce qui fonctionne</h2><p>Les outils de pilotage quand un compteur ne suffit plus.</p></div>
+          <div><span>PILOT · MESURE & ANALYSE</span><h2 id="pilot-advanced-title">Comprendre ce qui fonctionne</h2><p>Les outils de pilotage pour comparer vos supports, vos lieux et vos périodes.</p></div>
           <div className="pilot-plan-price"><strong>9 €</strong><span>/ mois</span><small>ou 89 € / an</small></div>
         </header>
         <div className="pilot-advanced-features" aria-label="Fonctions Pilot avancées">
@@ -626,7 +626,7 @@ function ProductInspector({ product, canEdit, interactions, onClose, onSave, toa
           <h2 id="pilot-inspector-title">{product.label}</h2>
           <p>{productName(product.productType)} · {actionLabels[product.actionId] || product.actionId}</p>
           <section className="pilot-destination-edit pilot-destination-edit-primary">
-            <div className="pilot-destination-heading"><label htmlFor="pilot-target">CHANGER LE LIEN</label><span>Inclus · sans limite</span></div>
+            <div className="pilot-destination-heading"><label htmlFor="pilot-target">CHANGER LE LIEN</label><span>Formule Pilot active</span></div>
             <p>Collez l’adresse HTTPS de la page à ouvrir au prochain tap.</p>
             <textarea id="pilot-target" aria-label="DESTINATION ACTUELLE" rows="3" value={targetUrl} onChange={(event) => { setTargetUrl(event.target.value); setConfirming(false); setError(""); }} readOnly={!canEdit} />
             {error && <p className="pilot-field-error" role="alert">{error}</p>}

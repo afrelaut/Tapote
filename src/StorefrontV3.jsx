@@ -34,6 +34,7 @@ import {
   Pipette,
   Plus,
   PhoneCall,
+  QrCode,
   Search,
   Share2,
   ShieldCheck,
@@ -57,6 +58,7 @@ import {
   calculateShipping,
   formatMoney,
   matchingIdentityKey,
+  PILOT_PLANS,
   PRODUCTS,
   SHIPPING,
 } from "../shared/catalog.js";
@@ -67,7 +69,7 @@ import { prepareLogoFile, readFileAsDataUrl } from "./storefront/logoFile.js";
 import { extractLogoPalette, pickScreenColor } from "./brandColors.js";
 import { DEFAULT_THEME, DEVICE_THEMES, THEME_LABELS, normalizeHexColor, contrastRatio, resolveDeviceColors, resolveThemeId } from "./deviceThemes.js";
 import { captureStorefrontAttribution, trackStorefrontEvent } from "./storefront/analytics.js";
-import { findSectorBySlug, SECTORS } from "./storefront/sectorData.js";
+import { findSectorBySlug, SECTOR_CATEGORIES, SECTORS } from "./storefront/sectorData.js";
 
 const MAX_ITEM_QUANTITY = 50;
 const CART_KEY = "tapote-cart-v3";
@@ -103,6 +105,11 @@ const PHONE_SCREENS = {
   autre: { overline: "LIEN PERSONNALISÉ", title: "Votre destination", detail: "Une page faite pour ce moment", helper: "Ouverture sécurisée", cta: "Continuer" },
 };
 const campaignHeadlineForAction = (actionId) => ACTIONS[actionId]?.campaignHeadline || ACTIONS[actionId]?.headline || "";
+const readyHeadlineForAction = (actionId) => (
+  actionId === "avis" ? "Votre avis compte, tapotez." : campaignHeadlineForAction(actionId)
+);
+const readyDesignParam = (theme) => resolveThemeId(theme) === "creme" ? "blanc" : "noir";
+const themeFromReadyDesignParam = (value) => value === "blanc" ? "creme" : DEFAULT_THEME;
 // Chaque design est présenté dans la même scène réelle que la boutique et les
 // secteurs : décor du métier, support imprimé et téléphone qui ouvre le lien.
 const PRODUCT_PAGES = {
@@ -172,11 +179,11 @@ const isVatExempt = /non applicable|franchise en base/i.test(LEGAL_DETAILS.vat);
 const taxLabel = isVatExempt ? "net de TVA" : "TTC";
 
 function pageMetadata(path) {
-  if (path === "/") return ["Supports NFC + QR prêts ou personnalisés | Tapote", "Chevalets, plaques et cartes NFC + QR. Design prêt à l’emploi ou personnalisé, lien modifiable à vie."];
+  if (path === "/") return ["Supports NFC + QR prêts ou personnalisés | Tapote", "Chevalets, plaques et cartes NFC + QR. Design prêt à l’emploi ou personnalisé, destination initiale configurée et pilotage à distance avec Tapote Pilot."];
   if (path === "/boutique" || path.startsWith("/categorie/")) return ["Boutique NFC + QR | Tapote", "Tous les chevalets, plaques, cartes et packs Tapote, prêts à l’emploi ou personnalisés."];
   if (path.startsWith("/produits/")) {
     const product = PRODUCT_PAGES[path.split("/")[2]];
-    if (product) return [`${product.name}${/nfc/i.test(product.name) ? "" : " NFC"} + QR | Tapote`, `${product.description} Prêt à l’emploi ou personnalisé, avec lien modifiable à distance.`];
+    if (product) return [`${product.name}${/nfc/i.test(product.name) ? "" : " NFC"} + QR | Tapote`, `${product.description} Prêt à l’emploi ou personnalisé, avec destination initiale configurée et Tapote Pilot en option.`];
   }
   if (path === "/designs") return ["Designs NFC + QR | Tapote", "Découvrez les designs Tapote pour les avis, Instagram, Facebook, le Wi-Fi, les menus, les réservations et tous vos liens."];
   if (path === "/secteurs") return [`Tapote pour votre secteur | ${SECTORS.length} usages concrets`, "Découvrez les supports NFC + QR et les usages Tapote adaptés à votre métier."];
@@ -186,6 +193,7 @@ function pageMetadata(path) {
   }
   if (path === "/personnaliser") return ["Créer mon Tapote personnalisé", "Personnalisez votre plaque, chevalet ou carte NFC en direct : logo, textes, couleurs et action."];
   if (path === "/comment-ca-marche") return ["Comment fonctionne Tapote ?", "NFC, QR code, encodage et changement de destination à distance expliqués simplement."];
+  if (path === "/tapote-pilot") return ["Tapote Pilot | Changez vos liens et suivez vos supports", "Tapote Pilot permet de changer la destination de vos supports à distance, organiser vos lieux et suivre les interactions NFC + QR."];
   if (path === "/panier") return ["Votre panier | Tapote", "Vérifiez vos supports Tapote, leur composition, la livraison et les options."];
   if (path === "/devis") return ["Devis volume et multi-sites | Tapote", "Décrivez votre besoin de 10 supports ou plus et recevez une proposition Tapote claire et adaptée."];
   if (path.startsWith("/commande")) return ["Finaliser la commande | Tapote", "Finalisez votre commande professionnelle Tapote via Stripe."];
@@ -206,7 +214,7 @@ function isHomeSurface(path) {
 }
 
 function isKnownStorefrontPath(path) {
-  if (["/", "/boutique", "/designs", "/secteurs", "/personnaliser", "/comment-ca-marche", "/panier", "/devis", "/commande", "/commande/confirmee", "/mentions-legales", "/cgv", "/confidentialite"].includes(path)) return true;
+  if (["/", "/boutique", "/designs", "/secteurs", "/personnaliser", "/comment-ca-marche", "/tapote-pilot", "/panier", "/devis", "/commande", "/commande/confirmee", "/mentions-legales", "/cgv", "/confidentialite"].includes(path)) return true;
   if (["/categorie/chevalets-nfc", "/categorie/plaques-nfc", "/categorie/cartes-nfc", "/categorie/packs-nfc", "/categorie/packs"].includes(path)) return true;
   if (path.startsWith("/produits/")) return Boolean(PRODUCT_PAGES[path.split("/")[2]]);
   if (path.startsWith("/secteurs/")) return Boolean(findSectorBySlug(path.split("/")[2]));
@@ -257,7 +265,7 @@ function makeCartItem(productId, actionId, options = {}) {
     actionId,
     quantity: 1,
     brandName: options.brandName || "",
-    theme: options.theme || "blue",
+    theme: options.theme || DEFAULT_THEME,
     primaryColor: normalizeHexColor(options.primaryColor, ""),
     secondaryColor: normalizeHexColor(options.secondaryColor, ""),
     textColor: normalizeHexColor(options.textColor, ""),
@@ -345,7 +353,7 @@ function UtilityBar() {
     <div className="v3-utility">
       <span><SmartphoneNfc size={14} /> NFC + QR inclus</span>
       <span><Truck size={14} /> Livraison offerte dès {formatMoney(SHIPPING.freeThreshold)}</span>
-      <span><Link2 size={14} /> Lien modifiable à vie</span>
+      <span><Link2 size={14} /> Pilotage à distance avec Tapote Pilot</span>
     </div>
   );
 }
@@ -426,13 +434,15 @@ function Header({ cartCount, compact = false }) {
       <header className="v3-header" ref={headerRef}>
         <Brand />
         <nav id={menuId} ref={navigationRef} className={open ? "is-open" : ""} aria-label="Navigation principale">
-          <a href="/#main-content" onClick={() => setOpen(false)}>Composer mon Tapote</a>
+          <a href="/#main-content" onClick={() => setOpen(false)}>Créer mon Tapote</a>
           <a href="/comment-ca-marche" onClick={() => setOpen(false)}>Fonctionnement</a>
+          <a href="/tapote-pilot" onClick={() => setOpen(false)}>Tapote Pilot</a>
           <a href="/devis" onClick={() => setOpen(false)}>Devis dès 10 supports</a>
-          <a className="v3-mobile-login" href="/panier" onClick={() => setOpen(false)}>Panier</a>
+          <a className="v3-mobile-login" href="/connexion" onClick={() => setOpen(false)}>Accéder à Tapote Pilot</a>
         </nav>
         <div className="v3-header-actions">
-          <a className="v3-header-primary" href="/#main-content">Composer mon Tapote</a>
+          <a className="v3-login" href="/connexion"><UserRound size={16} /> Tapote Pilot</a>
+          <a className="v3-header-primary" href="/#main-content"><span>Créer mon Tapote</span><i aria-hidden="true"><ArrowRight /></i></a>
           <a className="v3-cart-button" href="/panier" aria-label={`Voir le panier, ${cartCount} article(s)`}>
             <ShoppingBag size={18} /><span>Panier</span>{cartCount > 0 && <b>{cartCount}</b>}
           </a>
@@ -448,10 +458,10 @@ function Footer() {
   return (
     <footer className="v3-footer">
       <div className="v3-footer-main">
-        <div><Brand /><p>Transformez chaque visite<br />en la bonne action.</p><small>NFC + QR · prêt ou personnalisé · sans abonnement obligatoire.</small></div>
-        <div><strong>Composer</strong>{SECTORS.slice(0, 5).map((sector) => <a href={`/?activite=${sector.slug}`} key={sector.id}>{sector.title}</a>)}</div>
-        <div><strong>Découvrir</strong><a href="/comment-ca-marche">Comment ça marche</a><a href="/devis">Devis dès 10 supports</a><a href="/cgv">Livraison et garanties</a></div>
-        <div><strong>Aide</strong><a href="mailto:aymeric@tapote.fr">Nous contacter</a><a href="/cgv">Livraison et garanties</a><a href="/confidentialite">Données et confidentialité</a><a href="/connexion">Accès client</a></div>
+        <div><Brand /><p>Transformez chaque visite<br />en la bonne action.</p><small>NFC + QR · prêt ou personnalisé · pilotable avec Tapote Pilot.</small></div>
+        <div><strong>Créer</strong>{SECTORS.slice(0, 5).map((sector) => <a href={`/?activite=${sector.slug}`} key={sector.id}>{sector.title}</a>)}</div>
+        <div><strong>Découvrir</strong><a href="/comment-ca-marche">Comment ça marche</a><a href="/tapote-pilot">Tapote Pilot</a><a href="/devis">Devis dès 10 supports</a><a href="/cgv">Livraison et garanties</a></div>
+        <div><strong>Aide</strong><a href="mailto:aymeric@tapote.fr">Nous contacter</a><a href="/cgv">Livraison et garanties</a><a href="/confidentialite">Données et confidentialité</a><a href="/connexion">Accéder à Pilot</a></div>
       </div>
       <div className="v3-footer-bottom"><span>© 2026 Tapote</span><a href="/mentions-legales">Mentions légales</a><a href="/cgv">CGV</a><a href="/confidentialite">Confidentialité</a></div>
     </footer>
@@ -492,6 +502,7 @@ function ProductArt({ surface = "comptoir", actionId = "avis", brandName = "VOTR
           headline={customHeadline}
           subline={customSubline}
           tapLabel={customTapLabel}
+          personalization={personalization}
         />
       </div>
       {shape === "chevalet" && <span className="v3-product-stand" aria-hidden="true" />}
@@ -518,9 +529,12 @@ const RESTAURANT_PHONE_MEDIA = {
 
 const PHONE_SCENE_SECTORS = {
   "/assets/products/tapote-bg-cafe-v1.webp": "cafe",
+  "/assets/products/tapote-bg-cafe-restaurant-phone-v2.webp": "cafe",
+  "/assets/products/tapote-bg-cafe-empty-v3.png": "cafe",
   "/assets/products/tapote-bg-restaurant-live-screen-v1.webp": "restaurant",
   "/assets/products/tapote-bg-restaurant-v1.webp": "restaurant",
   "/assets/products/tapote-bg-boulangerie-v1.webp": "boulangerie",
+  "/assets/products/tapote-bg-boulangerie-empty-v2.png": "boulangerie",
   "/assets/products/tapote-bg-beaute-v1.webp": "salon",
   "/assets/products/tapote-bg-medical-v1.webp": "cabinet_medical",
   "/assets/products/tapote-bg-retail-v1.webp": "boutique",
@@ -529,9 +543,13 @@ const PHONE_SCENE_SECTORS = {
   "/assets/products/tapote-bg-automobile-v1.webp": "garage",
   "/assets/products/tapote-bg-artisan-v1.webp": "artisan",
   "/assets/products/tapote-bg-agence-v1.webp": "immobilier",
+  "/assets/products/tapote-bg-agence-empty-v2.png": "immobilier",
   "/assets/products/tapote-bg-sport-v1.webp": "salle_sport",
+  "/assets/products/tapote-bg-sport-empty-v2.png": "salle_sport",
   "/assets/products/tapote-bg-formation-v1.webp": "coworking",
+  "/assets/products/tapote-bg-formation-empty-v2.png": "coworking",
   "/assets/products/tapote-bg-evenement-v1.webp": "evenement",
+  "/assets/products/tapote-bg-evenement-empty-v2.png": "evenement",
   "/assets/products/tapote-bg-animaux-v1.webp": "veterinaire",
 };
 
@@ -991,7 +1009,20 @@ const PHONE_SCREEN_QUADS = {
   // full quadrilateral (instead of approximating its centre) makes both the
   // browser chrome and the home indicator parallel to the physical phone.
   "/assets/products/tapote-bg-restaurant-live-screen-v1.webp": [[0.46709, 0.25773], [0.69149, 0.21130], [0.95828, 0.69250], [0.71273, 0.77095]],
-  "/assets/products/tapote-bg-cafe-v1.webp": [[0.484577, 0.272529], [0.707072, 0.216924], [0.997888, 0.718486], [0.736645, 0.770518]],
+  "/assets/products/tapote-bg-cafe-empty-v3.png": [[0.46709, 0.25773], [0.69149, 0.21130], [0.95828, 0.69250], [0.71273, 0.77095]],
+  "/assets/products/tapote-bg-boulangerie-empty-v2.png": [[0.46709, 0.25773], [0.69149, 0.21130], [0.95828, 0.69250], [0.71273, 0.77095]],
+  "/assets/products/tapote-bg-agence-empty-v2.png": [[0.46709, 0.25773], [0.69149, 0.21130], [0.95828, 0.69250], [0.71273, 0.77095]],
+  "/assets/products/tapote-bg-sport-empty-v2.png": [[0.46709, 0.25773], [0.69149, 0.21130], [0.95828, 0.69250], [0.71273, 0.77095]],
+  "/assets/products/tapote-bg-evenement-empty-v2.png": [[0.46709, 0.25773], [0.69149, 0.21130], [0.95828, 0.69250], [0.71273, 0.77095]],
+  // La scène Coworking réutilise volontairement les pixels et la géométrie
+  // du téléphone Restaurant, superposés sur son propre fond vide.
+  "/assets/products/tapote-bg-formation-empty-v2.png": [[0.46709, 0.25773], [0.69149, 0.21130], [0.95828, 0.69250], [0.71273, 0.77095]],
+  // Contrairement aux autres scènes, le téléphone Café est davantage tourné
+  // et ses quatre bords ne convergent pas autour d'un simple rectangle incliné.
+  // Ces intersections suivent précisément la limite verre / écran de la photo :
+  // toute l'interface partage ainsi le même cadrage, quelle que soit la destination.
+  "/assets/products/tapote-bg-cafe-v1.webp": [[0.481659, 0.261563], [0.708932, 0.215311], [0.996810, 0.719298], [0.716906, 0.779904]],
+  "/assets/products/tapote-bg-cafe-restaurant-phone-v2.webp": [[0.4872, 0.2720], [0.7105, 0.2290], [0.9848, 0.7177], [0.7273, 0.7735]],
   "/assets/products/tapote-bg-restaurant-v1.webp": [[0.474478, 0.257134], [0.687755, 0.205264], [0.959916, 0.682301], [0.697377, 0.780543]],
   "/assets/products/tapote-bg-boulangerie-v1.webp": [[0.498975, 0.248284], [0.733490, 0.211885], [0.968620, 0.691920], [0.716358, 0.771898]],
   "/assets/products/tapote-bg-beaute-v1.webp": [[0.501229, 0.249648], [0.740691, 0.213979], [0.969611, 0.703874], [0.716696, 0.785585]],
@@ -1015,7 +1046,14 @@ const PHONE_SCREEN_CLIP_RADII = {
   // Le téléphone de la scène Café remonte plus vite sur son coin inférieur
   // gauche que celui du restaurant. Une valeur dédiée évite que l'écran
   // dynamique dépasse du verre sans modifier son haut, déjà correctement calé.
-  "/assets/products/tapote-bg-cafe-v1.webp": [60, 60, 80, 94],
+  "/assets/products/tapote-bg-cafe-v1.webp": [60, 60, 106, 76],
+  "/assets/products/tapote-bg-cafe-restaurant-phone-v2.webp": [60, 60, 90, 90],
+  "/assets/products/tapote-bg-cafe-empty-v3.png": [60, 60, 82, 76],
+  "/assets/products/tapote-bg-boulangerie-empty-v2.png": [60, 60, 82, 76],
+  "/assets/products/tapote-bg-agence-empty-v2.png": [60, 60, 82, 76],
+  "/assets/products/tapote-bg-sport-empty-v2.png": [60, 60, 82, 76],
+  "/assets/products/tapote-bg-evenement-empty-v2.png": [60, 60, 82, 76],
+  "/assets/products/tapote-bg-formation-empty-v2.png": [60, 60, 82, 76],
   "/assets/products/tapote-bg-restaurant-v1.webp": [60, 60, 80, 118],
   "/assets/products/tapote-bg-boulangerie-v1.webp": [60, 60, 95, 79],
   "/assets/products/tapote-bg-beaute-v1.webp": [60, 60, 90, 83.5],
@@ -1036,10 +1074,11 @@ const PHONE_SCREEN_CLIP_RADII = {
 // rounded corner does not converge on the mathematical edge intersection.
 // Values are photo pixels and affect only the curve, not the app perspective.
 const PHONE_SCREEN_CLIP_CONTROL_OFFSETS = {
+  "/assets/products/tapote-bg-cafe-v1.webp": { br: [-8, -4] },
   "/assets/products/tapote-bg-beaute-v1.webp": { br: [-1.5, 7.25] },
   "/assets/products/tapote-bg-agence-v1.webp": { br: [-0.25, 7.25] },
   "/assets/products/tapote-bg-sport-v1.webp": { br: [-18.25, 3.25] },
-  "/assets/products/tapote-bg-formation-v1.webp": { br: [-38, 0] },
+  "/assets/products/tapote-bg-formation-v1.webp": { br: [-8, 0] },
 };
 
 // Project a rounded 390 × 844 screen silhouette into the photographed glass.
@@ -1115,7 +1154,7 @@ function quadMatrix3d(srcFrac, dstFrac, w, h) {
   return `matrix3d(${m.join(",")})`;
 }
 
-function ProductScene({ image, alt, preview, compact = false, className = "", sectorId = "" }) {
+function ProductScene({ image, alt, preview, compact = false, className = "", sectorId = "", subjectLayers = [] }) {
   const isRestaurantPhoto = image === "/assets/products/tapote-bg-restaurant-live-screen-v1.webp";
   const isPhotoPhone = Boolean(PHONE_SCENE_SECTORS[image]);
   const resolvedSectorId = resolvePhoneSectorId(sectorId, image);
@@ -1138,6 +1177,17 @@ function ProductScene({ image, alt, preview, compact = false, className = "", se
     <div ref={sceneRef} className={`v3-sector-scene ${compact ? "is-compact is-fixed-preview" : "is-live-preview"} is-surface-${preview.surface} ${className}`} data-preview-mode={compact ? "fixed" : "live"} aria-hidden={compact || undefined}>
       <div className="v3-sector-scene-stage">
         <img className="v3-sector-scene-background" src={image} alt={compact ? "" : alt} loading={compact ? "lazy" : "eager"} />
+        {subjectLayers.map((layer) => (
+          <img
+            className={`v3-sector-scene-subject${layer.mask ? "" : " is-cutout"}`}
+            src={layer.image}
+            alt=""
+            aria-hidden="true"
+            loading={compact ? "lazy" : "eager"}
+            style={layer.mask ? { "--v3-subject-mask": `url("${layer.mask}")` } : undefined}
+            key={layer.mask || layer.image}
+          />
+        ))}
         {isMixedPack ? <div className="v3-sector-scene-support v3-sector-scene-support-mix">
           <ProductArt {...scenePreview} surface="comptoir" className="is-mix-comptoir" />
           <ProductArt {...scenePreview} surface="plaque" className="is-mix-plaque" />
@@ -1149,10 +1199,10 @@ function ProductScene({ image, alt, preview, compact = false, className = "", se
 }
 
 function SectorScene({ sector, preview, compact = false, className = "" }) {
-  return <ProductScene image={sector.image} alt={`Tapote utilisé dans un univers ${sector.title}`} nativeAction={sector.actionIds[0]} preview={preview} compact={compact} className={className} sectorId={sector.id} />;
+  return <ProductScene image={sector.image} alt={`Tapote utilisé dans un univers ${sector.title}`} nativeAction={sector.actionIds[0]} preview={preview} compact={compact} className={className} sectorId={sector.id} subjectLayers={sector.subjectLayers} />;
 }
 
-function CompositionPicker({ count, composition, onChange }) {
+function CompositionPicker({ count, composition, onChange, labelId }) {
   if (count === 1) return null;
   const choices = count === 2
     ? [
@@ -1166,12 +1216,57 @@ function CompositionPicker({ count, composition, onChange }) {
       { label: "5 plaques", value: { comptoir: 0, plaque: 5 } },
     ];
   return (
-    <div className="v3-field-block">
-      <span className="v3-field-label">Votre composition</span>
+    <div className="v3-field-block" role="group" aria-labelledby={labelId}>
+      <span className="v3-field-label" id={labelId}><b aria-hidden="true">↳</b><span>La composition</span><small>Répartissez les formats dans votre lot.</small></span>
       <div className="v3-choice-row v3-choice-row-three">
         {choices.map((choice) => {
           const selected = choice.value.comptoir === composition.comptoir && choice.value.plaque === composition.plaque;
           return <button type="button" className={selected ? "is-selected" : ""} aria-pressed={selected} onClick={() => onChange(choice.value)} key={choice.label}>{choice.label}</button>;
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ReadyDesignPicker({ onChange, theme }) {
+  return (
+    <div className="v3-ready-design-panel">
+      <div className="v3-ready-design-heading">
+        <span>Couleur du modèle</span>
+        <small>Le rendu complet est visible à gauche.</small>
+      </div>
+      <div className="v3-ready-design-choice" role="group" aria-label="Choisir le modèle Tapote prêt à l’emploi">
+        {Object.keys(DEVICE_THEMES).map((themeId) => {
+          const selected = theme === themeId;
+          const light = themeId === "creme";
+          return (
+            <button
+              type="button"
+              key={themeId}
+              className={selected ? "is-selected" : ""}
+              aria-label={`Design ${THEME_LABELS[themeId]}`}
+              aria-pressed={selected}
+              onClick={() => onChange(themeId)}
+            >
+              <span
+                className="v3-ready-design-swatch"
+                style={{
+                  "--ready-paper": DEVICE_THEMES[themeId].paper,
+                  "--ready-ink": DEVICE_THEMES[themeId].ink,
+                  "--ready-accent": DEVICE_THEMES[themeId].accent,
+                }}
+                aria-hidden="true"
+              >
+                <i />
+                <b>t.</b>
+              </span>
+              <span className="v3-ready-design-copy">
+                <strong>{THEME_LABELS[themeId]}</strong>
+                <small>{light ? "Fond clair" : "Fond noir"}</small>
+              </span>
+              <Check aria-hidden="true" />
+            </button>
+          );
         })}
       </div>
     </div>
@@ -1183,9 +1278,14 @@ function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "avis", in
   const restoredDraft = useMemo(() => initialPersonalization === "custom" || draftKey.startsWith("cart:") ? loadConfigDraft(draftKey) : null, [draftKey, initialPersonalization]);
   const [personalization, setPersonalization] = useState(initialPersonalization);
   const [surface, setSurface] = useState(initialSurface);
-  const [count, setCount] = useState(initialCount);
-  const [actionId, setActionId] = useState(initialAction);
-  const [composition, setComposition] = useState(initialComposition || (initialCount === 5 ? { comptoir: 2, plaque: 3 } : { comptoir: 1, plaque: 1 }));
+  const restoredCount = [1, 2, 5].includes(Number(restoredDraft?.count)) ? Number(restoredDraft.count) : initialCount;
+  const [count, setCount] = useState(restoredCount);
+  const [actionId, setActionId] = useState(ACTIONS[restoredDraft?.actionId] ? restoredDraft.actionId : initialAction);
+  const [composition, setComposition] = useState(
+    restoredDraft?.composition
+    || initialComposition
+    || (restoredCount === 5 ? { comptoir: 2, plaque: 3 } : restoredCount === 2 ? { comptoir: 1, plaque: 1 } : { comptoir: 1, plaque: 0 }),
+  );
   const [brandName, setBrandName] = useState(restoredDraft?.brandName || "");
   const [brandLogoId, setBrandLogoId] = useState(restoredDraft?.brandLogoId || "");
   const [brandLogo, setBrandLogo] = useState(() => getCachedLogoPreview(restoredDraft?.brandLogoId));
@@ -1212,6 +1312,11 @@ function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "avis", in
     markConfigurationStarted();
   };
   const summaryRef = useRef(null);
+  const supportLabelId = useId();
+  const quantityLabelId = useId();
+  const compositionLabelId = useId();
+  const linkLabelId = useId();
+  const designLabelId = useId();
   const [summaryVisible, setSummaryVisible] = useState(false);
   const [paletteDetected, setPaletteDetected] = useState(false);
   const [colorsManuallyEdited, setColorsManuallyEdited] = useState(false);
@@ -1242,18 +1347,19 @@ function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "avis", in
   const readyChoicePrice = PRODUCTS[getProductId(surface, "ready", safeCount)].price;
   const customChoicePrice = PRODUCTS[getProductId(surface, "custom", safeCount)].price;
   const shipping = calculateShipping(product.price);
+  const readyColors = DEVICE_THEMES[resolveThemeId(theme)];
   const availableActions = ACTION_ORDER
     .filter((id) => personalization !== "ready" || READY_ACTION_IDS.includes(id))
     .map((id) => ACTIONS[id]);
   const previewBrandName = personalization === "ready" ? initialBrandName : brandName || "VOTRE MARQUE";
   const previewBrandLogo = personalization === "ready" ? "" : brandLogo;
-  const previewPrimaryColor = personalization === "ready" ? initialColors.paper : primaryColor;
-  const previewSecondaryColor = personalization === "ready" ? initialColors.accent : secondaryColor;
-  const previewTextColor = personalization === "ready" ? initialColors.ink : textColor;
+  const previewPrimaryColor = personalization === "ready" ? readyColors.paper : primaryColor;
+  const previewSecondaryColor = personalization === "ready" ? readyColors.accent : secondaryColor;
+  const previewTextColor = personalization === "ready" ? readyColors.ink : textColor;
   const readyHeadline = personalization === "ready"
     ? actionId === initialAction && initialReadyHeadline
       ? initialReadyHeadline
-      : campaignHeadlineForAction(actionId)
+      : readyHeadlineForAction(actionId)
     : "";
   const previewHeadline = personalization === "custom" ? customHeadline : readyHeadline;
   const logoPending = personalization === "custom" && (logoStatus === "loading" || Boolean(brandLogo && !brandLogoId));
@@ -1277,9 +1383,9 @@ function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "avis", in
   useEffect(() => {
     if (!draftKey || personalization !== "custom") return;
     try {
-      window.sessionStorage.setItem(`${CONFIG_DRAFT_PREFIX}${draftKey}`, JSON.stringify({ actionId, count: safeCount, composition, brandName, brandLogoId, logoFileName, customHeadline, customSubline, customTapLabel, destinationUrl, primaryColor, secondaryColor, textColor }));
+      window.sessionStorage.setItem(`${CONFIG_DRAFT_PREFIX}${draftKey}`, JSON.stringify({ actionId, count: safeCount, composition, brandName, brandLogoId, logoFileName, theme, customHeadline, customSubline, customTapLabel, destinationUrl, primaryColor, secondaryColor, textColor }));
     } catch { /* A full browser storage area must never block configuration or checkout. */ }
-  }, [actionId, brandLogoId, brandName, composition, customHeadline, customSubline, customTapLabel, destinationUrl, draftKey, logoFileName, personalization, primaryColor, safeCount, secondaryColor, textColor]);
+  }, [actionId, brandLogoId, brandName, composition, customHeadline, customSubline, customTapLabel, destinationUrl, draftKey, logoFileName, personalization, primaryColor, safeCount, secondaryColor, textColor, theme]);
   const selectCount = (value) => {
     markConfigurationStarted();
     setCount(value);
@@ -1287,6 +1393,8 @@ function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "avis", in
       setComposition({ comptoir: value, plaque: 0 });
     } else if (productOnly && initialSurface === "plaque") {
       setComposition({ comptoir: 0, plaque: value });
+    } else if (value === 1) {
+      setComposition(surface === "plaque" ? { comptoir: 0, plaque: 1 } : { comptoir: 1, plaque: 0 });
     } else {
       setComposition(value === 2 ? { comptoir: 1, plaque: 1 } : { comptoir: 2, plaque: 3 });
     }
@@ -1366,58 +1474,78 @@ function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "avis", in
     setAdded(true);
     window.setTimeout(() => setAdded(false), 1500);
   };
-  // Les étapes sont numérotées dans l'ordre où elles apparaissent, certaines
-  // étant masquées selon le support et la page.
+  // La page unifiée garde volontairement la même ossature quand on passe à la
+  // carte. La carte est vendue à l'unité, mais l'étape quantité reste visible
+  // pour éviter un changement brutal du configurateur.
   const showSupports = !productOnly && (!isCard || allowAllSurfaces);
-  const showQuantity = !isCard;
+  const showQuantity = !isCard || allowAllSurfaces;
   const supportStep = 1;
   const quantityStep = showSupports ? 2 : 1;
   const linkStep = (showSupports ? 1 : 0) + (showQuantity ? 1 : 0) + 1;
   const designStep = linkStep + 1;
   return (
     <section id={productOnly ? "configurer" : undefined} className={`v3-buybox ${compact ? "is-compact" : ""}`} aria-label="Configurer l’achat">
-      <div className="v3-buybox-top"><span className="v3-rating"><Star size={14} fill="currentColor" /> Conçu pour les pros</span><span>NFC + QR · Sans application</span></div>
-      <div className="v3-buybox-intro"><div><h2>{title}</h2><p>{personalization === "custom" ? "Personnalisez chaque détail ici : l’aperçu correspond au visuel qui sera imprimé." : "Un design Tapote prêt à servir, vers le lien de votre choix."} Le lien reste modifiable à vie.</p></div></div>
-      {showSupports && (
-        <div className="v3-field-block">
-          <span className="v3-field-label">{supportStep}. Vos supports</span>
-          <div className={`v3-choice-row ${allowAllSurfaces ? "v3-choice-row-three" : ""}`}>
-            <button type="button" aria-pressed={surface === "comptoir"} className={surface === "comptoir" ? "is-selected" : ""} onClick={() => selectSurface("comptoir")}>Chevalet</button>
-            <button type="button" aria-pressed={surface === "plaque"} className={surface === "plaque" ? "is-selected" : ""} onClick={() => selectSurface("plaque")}>Plaque</button>
-            {allowAllSurfaces && <button type="button" aria-pressed={surface === "carte"} className={surface === "carte" ? "is-selected" : ""} onClick={() => selectSurface("carte")}>Carte</button>}
+      <div className="v3-buybox-top"><span className="v3-rating"><Star size={14} fill="currentColor" /> Configuration en direct</span><span>4 choix · prix instantané</span></div>
+      <div className="v3-buybox-intro"><div><h2>{title}</h2><p>{personalization === "custom" ? "Personnalisez chaque détail ici : l’aperçu correspond au visuel qui sera imprimé." : "Un design Tapote prêt à servir, vers le lien de votre choix."} La destination initiale est configurée avant l’envoi.</p></div></div>
+      <div className={`v3-core-choice-grid ${showSupports && showQuantity ? "" : "is-single"}`}>
+        {showSupports && (
+          <div className="v3-field-block" role="group" aria-labelledby={supportLabelId}>
+            <span className="v3-field-label" id={supportLabelId}><b>{supportStep}</b><span>Le support</span><small>Où sera-t-il utilisé ?</small></span>
+            <div className={`v3-choice-row ${allowAllSurfaces ? "v3-choice-row-three" : ""}`}>
+              <button type="button" aria-label="Chevalet" aria-pressed={surface === "comptoir"} className={surface === "comptoir" ? "is-selected" : ""} onClick={() => selectSurface("comptoir")}><strong>Chevalet A6</strong><small>Comptoir & table</small></button>
+              <button type="button" aria-label="Plaque" aria-pressed={surface === "plaque"} className={surface === "plaque" ? "is-selected" : ""} onClick={() => selectSurface("plaque")}><strong>Plaque 12 × 12</strong><small>Compacte & stable</small></button>
+              {allowAllSurfaces && <button type="button" aria-label="Carte" aria-pressed={surface === "carte"} className={surface === "carte" ? "is-selected" : ""} onClick={() => selectSurface("carte")}><strong>Carte NFC</strong><small>Mobile & terrain</small></button>}
+            </div>
           </div>
-        </div>
-      )}
-      {showQuantity && (
-        <div className="v3-field-block">
-          <span className="v3-field-label">{quantityStep}. Combien ?</span>
-          <div className="v3-quantity-choice">
-            {[1, 2, 5].map((value) => {
-              const optionId = getProductId(surface, personalization, value);
-              return <button type="button" aria-label={`${value} ${value === 1 ? "support" : "supports"} · ${formatMoney(PRODUCTS[optionId].price)}`} aria-pressed={count === value} className={count === value ? "is-selected" : ""} onClick={() => selectCount(value)} key={value}><strong>{value}</strong><span>{value === 1 ? "support" : "supports"}</span><b>{formatMoney(PRODUCTS[optionId].price)}</b>{value === 2 && personalization === "custom" && <em>Populaire</em>}</button>;
-            })}
+        )}
+        {showQuantity && (
+          <div className="v3-field-block" role="group" aria-labelledby={quantityLabelId}>
+            <span className="v3-field-label" id={quantityLabelId}><b>{quantityStep}</b><span>La quantité</span><small>Le tarif du lot est déjà calculé.</small></span>
+            {isCard ? (
+              <div className="v3-card-quantity" aria-label={`1 carte NFC · ${formatMoney(product.price)}`}>
+                <span>
+                  <strong>1</strong>
+                  <span><small>carte NFC</small><b>{formatMoney(product.price)}</b></span>
+                  <CheckCircle2 aria-hidden="true" />
+                </span>
+                <p><b>Vendue à l’unité</b><span>Pour plusieurs cartes, ajoutez celle-ci puis ajustez la quantité dans le panier.</span></p>
+              </div>
+            ) : (
+              <div className="v3-quantity-choice">
+                {[1, 2, 5].map((value) => {
+                  const optionId = getProductId(surface, personalization, value);
+                  return <button type="button" aria-label={`${value} ${value === 1 ? "support" : "supports"} · ${formatMoney(PRODUCTS[optionId].price)}`} aria-pressed={count === value} className={count === value ? "is-selected" : ""} onClick={() => selectCount(value)} key={value}><strong>{value}</strong><span>{value === 1 ? "support" : "supports"}</span><b>{formatMoney(PRODUCTS[optionId].price)}</b>{value === 2 && personalization === "custom" && <em>Populaire</em>}</button>;
+                })}
+              </div>
+            )}
           </div>
-        </div>
-      )}
-      <CompositionPicker count={safeCount} composition={composition} onChange={setComposition} />
-      {product.kind === "pack" && <p className="v3-pack-link-note"><Link2 /> Même lien par défaut. Après la commande, chaque support pourra recevoir gratuitement son propre lien.</p>}
-      <div className="v3-field-block">
-        <span className="v3-field-label">{linkStep}. Le lien à ouvrir</span>
-        <select aria-label="Le lien à ouvrir" value={actionId} onChange={(event) => selectAction(event.target.value)}>
+        )}
+      </div>
+      <CompositionPicker count={safeCount} composition={composition} onChange={setComposition} labelId={compositionLabelId} />
+      {product.kind === "pack" && <p className="v3-pack-link-note"><Link2 /> Même lien par défaut. Avant la production, chaque support peut recevoir sa propre destination initiale.</p>}
+      <div className="v3-field-block v3-field-destination">
+        <span className="v3-field-label" id={linkLabelId}><b>{linkStep}</b><span>La destination</span><small>Ce que votre client ouvrira.</small></span>
+        <select aria-label="Le lien à ouvrir" aria-describedby={linkLabelId} value={actionId} onChange={(event) => selectAction(event.target.value)}>
           {availableActions.map((action) => <option value={action.id} key={action.id}>{action.name}</option>)}
         </select>
-        <label className={`v3-destination-field ${destinationInvalid ? "is-invalid" : ""}`}><Globe2 size={16} /><span><input type="url" value={destinationUrl} onFocus={markConfigurationStarted} onChange={(event) => setDestinationUrl(event.target.value.slice(0, 500))} placeholder="https://votre-lien.fr" aria-label="Adresse exacte à ouvrir" /><small>{destinationInvalid ? "Le lien doit commencer par https://" : "Adresse exacte encodée dans le NFC et le QR. Vous pourrez aussi la fournir après la commande."}</small></span></label>
+        <label className={`v3-destination-field ${destinationInvalid ? "is-invalid" : ""}`}><Globe2 size={16} /><span><input type="url" value={destinationUrl} onFocus={markConfigurationStarted} onChange={(event) => setDestinationUrl(event.target.value.slice(0, 500))} placeholder="https://votre-lien.fr" aria-label="Adresse exacte à ouvrir" /><small>{destinationInvalid ? "Le lien doit commencer par https://" : "Adresse initiale encodée dans le NFC et le QR. Vous pouvez aussi la transmettre après la commande, avant production."}</small></span></label>
       </div>
-      <div className="v3-field-block">
-        <span className="v3-field-label">{designStep}. Votre design</span>
+      <div className="v3-field-block" role="group" aria-labelledby={designLabelId}>
+        <span className="v3-field-label" id={designLabelId}><b>{designStep}</b><span>Le design</span><small>Prêt maintenant ou à votre image.</small></span>
         <div className="v3-design-choice">
           <button type="button" aria-pressed={personalization === "ready"} className={personalization === "ready" ? "is-selected" : ""} onClick={() => selectPersonalization("ready")}>
-            <span><strong>Prêt à l’emploi</strong><small>{safeCount > 1 ? `Design optimisé · ${formatMoney(Math.round(readyChoicePrice / safeCount))} / support` : "Design optimisé pour le lien"}</small></span><b>{formatMoney(readyChoicePrice)}</b>
+            <span><em>LE PLUS SIMPLE</em><strong>Prêt à l’emploi</strong><small>{safeCount > 1 ? `Tapote Noir ou Blanc · ${formatMoney(Math.round(readyChoicePrice / safeCount))} / support` : "Tapote Noir ou Blanc · aucune maquette à fournir"}</small></span><b>{formatMoney(readyChoicePrice)}</b>
           </button>
           <button type="button" aria-pressed={personalization === "custom"} className={personalization === "custom" ? "is-selected" : ""} onClick={() => selectPersonalization("custom")}>
-            <span><strong>Studio en direct</strong><small>{safeCount > 1 ? `Tout personnalisable · ${formatMoney(Math.round(customChoicePrice / safeCount))} / support` : "Logo, mise en page, textes et couleurs"}</small></span><b>{formatMoney(customChoicePrice)}</b>
+            <span><em>À VOTRE IMAGE</em><strong>Studio en direct</strong><small>{safeCount > 1 ? `Logo et couleurs · ${formatMoney(Math.round(customChoicePrice / safeCount))} / support` : "Logo, textes et couleurs visibles immédiatement"}</small></span><b>{formatMoney(customChoicePrice)}</b>
           </button>
         </div>
+        {personalization === "ready" && (
+          <ReadyDesignPicker
+            onChange={applyTheme}
+            theme={theme}
+          />
+        )}
       </div>
       {personalization === "ready" && !compact && <div className="v3-field-block v3-personalization-panel v3-campaign-design-panel"><span className="v3-field-label">Design Tapote recommandé</span><div className="v3-campaign-design-note"><Sparkles /><span><strong>{campaignHeadlineForAction(actionId)}</strong><small>Composition optimisée automatiquement pour {ACTIONS[actionId].name}.</small></span><a href="/">Voir la collection <ArrowRight /></a></div></div>}
       {personalization === "custom" && (
@@ -1476,7 +1604,7 @@ function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "avis", in
         </div>
       )}
       <div className="v3-buybox-summary" ref={summaryRef}>
-        <div><small>{product.name}</small><strong>{formatMoney(product.price)} <span>{taxLabel}</span></strong><em>{shipping === 0 ? "Livraison offerte" : `+ ${formatMoney(shipping)} de livraison`}</em></div>
+        <div><small>{product.name} · {ACTIONS[actionId].name}{personalization === "ready" ? ` · ${THEME_LABELS[resolveThemeId(theme)]}` : ""}</small><strong>{formatMoney(product.price)} <span>{taxLabel}</span></strong><em>{shipping === 0 ? "Livraison offerte" : `+ ${formatMoney(shipping)} de livraison`}</em></div>
         <button type="button" onClick={add} disabled={logoPending || destinationInvalid}>{logoPending ? logoPendingLabel : destinationInvalid ? "Vérifier le lien" : added ? <><Check size={18} /> Ajouté</> : <>Ajouter au panier <ArrowRight size={18} /></>}</button>
       </div>
       <div className="v3-buy-reassurance"><span><ShieldCheck size={16} /> Paiement sécurisé</span><span><PackageCheck size={16} /> Encodé et testé</span><span><Clock3 size={16} /> {STOREFRONT_PROMISES.fulfillment}</span><span><CheckCircle2 size={16} /> Remplacement si défaut NFC confirmé</span></div>
@@ -1486,7 +1614,17 @@ function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "avis", in
 }
 
 const HOME_SCENES = {
-  comptoir: { slug: "chevalet", label: "Chevalet A6", image: "/assets/products/tapote-bg-cafe-v1.webp", brandName: "CAFÉ NOMA", theme: "nuit", nativeAction: "avis" },
+  comptoir: {
+    slug: "chevalet",
+    label: "Chevalet A6",
+    image: "/assets/products/tapote-bg-cafe-empty-v3.png",
+    subjectLayers: [
+      { image: "/assets/products/tapote-restaurant-phone-hand-cutout-v1.png" },
+    ],
+    brandName: "CAFÉ NOMA",
+    theme: "nuit",
+    nativeAction: "avis",
+  },
   plaque: { slug: "plaque", label: "Plaque 12 × 12", image: "/assets/products/tapote-bg-boulangerie-v1.webp", brandName: "MAISON LEVAIN", theme: "creme", nativeAction: "fidelite" },
   carte: { slug: "carte", label: "Carte NFC", image: "/assets/products/tapote-bg-artisan-v1.webp", brandName: "ATELIER MARTIN", theme: "creme", nativeAction: "contact" },
 };
@@ -1496,44 +1634,76 @@ function OfferArchitectureSection() {
     {
       id: "ready",
       eyebrow: "PRÊT À L’EMPLOI",
-      title: "L’essentiel, sans attendre.",
-      copy: "Un design Tapote déjà composé. Choisissez le support et la destination, nous configurons le reste.",
+      title: "Tapote Noir ou Blanc.",
+      copy: "Les deux signatures officielles, déjà composées. Choisissez la destination et le format : nous encodons, imprimons et contrôlons.",
       price: `Carte ${formatMoney(PRODUCTS.carte_standard.price)} · plaque ou chevalet ${formatMoney(PRODUCTS.plaque_standard.price)}`,
-      href: "/boutique",
-      cta: "Choisir un modèle prêt",
+      href: "/boutique?activite=cafes-bars&support=comptoir&lien=avis&design=noir&count=1",
+      cta: "Configurer un modèle prêt",
+      art: [
+        { surface: "carte", theme: "nuit", brandName: "tapote.", className: "is-card-black" },
+        { surface: "carte", theme: "creme", brandName: "tapote.", className: "is-card-white" },
+      ],
     },
     {
       id: "signature",
       eyebrow: "À VOTRE IMAGE · RECOMMANDÉ",
-      title: "Votre marque passe devant.",
-      copy: "Logo, palette, message et appel à l’action se règlent dans le studio avec un aperçu fidèle avant commande.",
+      title: "Votre identité, en situation.",
+      copy: "Logo, palette, message et appel à l’action se règlent dans le studio. Le rendu visible est celui qui part avec la commande.",
       price: `Carte ${formatMoney(PRODUCTS.carte.price)} · plaque ou chevalet ${formatMoney(PRODUCTS.plaque.price)}`,
-      href: "/personnaliser",
-      cta: "Créer mon Tapote",
+      href: "/personnaliser?activite=cafes-bars&support=comptoir&lien=avis&mode=custom&count=1",
+      cta: "Ouvrir le studio",
+      art: [
+        { surface: "comptoir", theme: "nuit", brandName: "CAFÉ NOMA", personalization: "custom", className: "is-custom-easel" },
+      ],
     },
     {
       id: "packs",
       eyebrow: "PACKS ÉQUIPEMENT",
-      title: "Couvrez les bons moments.",
-      copy: "Deux supports pour accueil + sortie, ou cinq supports pour équiper un lieu complet avec des liens distincts.",
+      title: "Un support là où ça compte.",
+      copy: "Duo pour deux moments clés, pack de cinq pour couvrir un lieu complet. La composition plaques / chevalets reste au choix.",
       price: `Duo dès ${formatMoney(PRODUCTS.pack_duo_standard.price)} · cinq dès ${formatMoney(PRODUCTS.pack_cinq_standard.price)}`,
-      href: "/boutique#packs",
-      cta: "Voir les packs",
+      href: "/boutique?activite=cafes-bars&support=comptoir&lien=avis&design=blanc&count=2&composition=mix",
+      cta: "Créer un pack",
+      art: [
+        { surface: "comptoir", theme: "creme", brandName: "tapote.", className: "is-pack-easel" },
+        { surface: "plaque", theme: "nuit", brandName: "tapote.", className: "is-pack-plaque" },
+      ],
     },
   ];
   return (
     <section className="v3-section v3-offer-architecture" aria-labelledby="v3-offer-title">
       <div className="v3-section-heading">
         <span className="v3-eyebrow">UNE OFFRE LISIBLE</span>
-        <h2 id="v3-offer-title">Commencez simple.<br />Équipez-vous au bon rythme.</h2>
-        <p>Le NFC, le QR et la modification du lien sont toujours inclus. Vous payez davantage uniquement lorsque Tapote prépare votre identité ou plusieurs supports.</p>
+        <h2 id="v3-offer-title">Trois façons de commencer.<br />Une même qualité Tapote.</h2>
+        <p>Prêt à l’emploi, à votre image ou en pack : chaque choix ouvre directement le configurateur avec le bon mode, le bon support et la bonne quantité.</p>
       </div>
-      <div className="v3-offer-lines">
-        {offers.map((offer, index) => (
+      <div className="v3-offer-cards">
+        {offers.map((offer) => (
           <article className={offer.id === "signature" ? "is-featured" : ""} key={offer.id}>
-            <span>{String(index + 1).padStart(2, "0")}</span>
-            <div><small>{offer.eyebrow}</small><h3>{offer.title}</h3><p>{offer.copy}</p></div>
-            <div><strong>{offer.price}</strong><a href={offer.href}>{offer.cta} <ArrowRight /></a></div>
+            <a className="v3-offer-visual" href={offer.href} aria-label={`${offer.cta} : ${offer.title}`}>
+              <span>{offer.id === "ready" ? "2 DESIGNS" : offer.id === "signature" ? "APERÇU FIDÈLE" : "2 OU 5 SUPPORTS"}</span>
+              <div>
+                {offer.art.map((item) => (
+                  <ProductArt
+                    key={item.className}
+                    surface={item.surface}
+                    actionId="avis"
+                    brandName={item.brandName}
+                    theme={item.theme}
+                    personalization={item.personalization || "ready"}
+                    customHeadline={item.personalization ? "Votre avis compte." : ""}
+                    className={item.className}
+                  />
+                ))}
+              </div>
+            </a>
+            <div className="v3-offer-card-copy">
+              <small>{offer.eyebrow}</small>
+              <h3>{offer.title}</h3>
+              <p>{offer.copy}</p>
+              <strong>{offer.price}</strong>
+              <a href={offer.href}>{offer.cta} <ArrowRight /></a>
+            </div>
           </article>
         ))}
       </div>
@@ -1559,22 +1729,80 @@ function OfferArchitectureSection() {
 // ---------------------------------------------------------------------------
 
 function SectorSelector({ sectorId, onSelect }) {
+  const activeSector = SECTORS.find((sector) => sector.id === sectorId) || SECTORS[0];
+  const [open, setOpen] = useState(false);
+  const panelId = useId();
+  const toggleRef = useRef(null);
+  const closePanel = () => {
+    setOpen(false);
+    window.requestAnimationFrame?.(() => toggleRef.current?.focus());
+  };
+  useEffect(() => {
+    if (!open) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+        window.requestAnimationFrame?.(() => toggleRef.current?.focus());
+      }
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [open]);
+  const chooseSector = (sector) => {
+    onSelect(sector);
+    setOpen(false);
+  };
   return (
     <div className="v3-sector-selector">
-      <span className="v3-field-label">Votre activité</span>
-      <div className="v3-sector-chips" role="group" aria-label="Choisir votre activité">
-        {SECTORS.map((sector) => (
-          <button
-            type="button"
-            key={sector.id}
-            aria-pressed={sector.id === sectorId}
-            className={sector.id === sectorId ? "is-selected" : ""}
-            onClick={() => onSelect(sector)}
-          >
-            {sector.title}
-          </button>
-        ))}
+      <label className="v3-sector-select">
+        <span className="v3-visually-hidden">Choisir votre activité</span>
+        <select
+          aria-label="Choisir votre activité"
+          value={sectorId}
+          onChange={(event) => onSelect(SECTORS.find((sector) => sector.id === event.target.value) || SECTORS[0])}
+        >
+          {SECTORS.map((sector) => <option value={sector.id} key={sector.id}>{sector.title}</option>)}
+        </select>
+      </label>
+      <button
+        type="button"
+        className="v3-sector-current"
+        aria-controls={panelId}
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+        ref={toggleRef}
+      >
+        <Grid3X3 aria-hidden="true" />
+        <span><small>Votre activité</small><strong>{activeSector.title}</strong></span>
+        <span><small>{activeSector.category}</small><b>{open ? "Fermer" : `Changer · ${SECTORS.length} secteurs`}</b></span>
+        <i aria-hidden="true">⌄</i>
+      </button>
+      <div className="v3-sector-panel" id={panelId} hidden={!open} aria-label="Tous les secteurs Tapote">
+        <div className="v3-sector-panel-head">
+          <span><strong>Tous les secteurs</strong><small>Choisissez le métier le plus proche du vôtre.</small></span>
+          <button type="button" onClick={closePanel} aria-label="Fermer la liste des secteurs"><X /></button>
+        </div>
+        <div className="v3-sector-chips v3-sector-panel-grid" role="group" aria-label="Choisir votre activité">
+          {SECTOR_CATEGORIES.map((category) => (
+            <section key={category} aria-label={category}>
+              <span>{category}</span>
+              {SECTORS.filter((sector) => sector.category === category).map((sector) => (
+                <button
+                  type="button"
+                  key={sector.id}
+                  aria-pressed={sector.id === sectorId}
+                  className={sector.id === sectorId ? "is-selected" : ""}
+                  onClick={() => chooseSector(sector)}
+                >
+                  <span>{sector.title}</span>
+                  {sector.id === sectorId && <Check aria-hidden="true" />}
+                </button>
+              ))}
+            </section>
+          ))}
+        </div>
       </div>
+      <p className="v3-sector-context"><MapPin aria-hidden="true" /><span><strong>Conseil de pose</strong><small>{activeSector.placement}</small></span></p>
     </div>
   );
 }
@@ -1585,26 +1813,39 @@ function HomePage({ onAdd, initialSector }) {
   // Liens profonds : une campagne ou un ancien lien produit peut ouvrir la page
   // déjà réglée (?support=plaque&lien=menu&mode=custom&count=2).
   const params = new URLSearchParams(typeof window === "undefined" ? "" : window.location.search);
+  const [editIndex] = useState(() => {
+    const rawValue = new URLSearchParams(typeof window === "undefined" ? "" : window.location.search).get("edit");
+    if (rawValue === null || rawValue === "") return null;
+    const value = Number(rawValue);
+    return Number.isInteger(value) && value >= 0 ? value : null;
+  });
   const path = typeof window === "undefined" ? "/" : window.location.pathname;
   const surfaceFromPath = path.startsWith("/produits/") ? PRODUCT_PAGES[path.split("/")[2]]?.key : path === "/categorie/chevalets-nfc" ? "comptoir" : path === "/categorie/plaques-nfc" ? "plaque" : path === "/categorie/cartes-nfc" ? "carte" : "";
   const requestedSurface = ["comptoir", "plaque", "carte"].includes(params.get("support")) ? params.get("support") : surfaceFromPath;
   const surface = requestedSurface || sectorDefaultSurface(sector);
   const requestedAction = ACTIONS[params.get("lien") || params.get("action")] ? (params.get("lien") || params.get("action")) : sector.actionIds[0];
   const requestedMode = params.get("mode") === "custom" ? "custom" : params.get("mode") === "ready" ? "ready" : "ready";
+  const requestedTheme = themeFromReadyDesignParam(params.get("design"));
   const requestedCount = [1, 2, 5].includes(Number(params.get("count"))) ? Number(params.get("count")) : null;
   const recommendedCount = requestedCount || (sector.recommendedProductId === "pack_cinq" ? 5 : sector.recommendedProductId === "pack_duo" ? 2 : 1);
   const requestedComposition = params.get("composition") === "plaques"
     ? { comptoir: 0, plaque: recommendedCount }
     : params.get("composition") === "chevalets"
       ? { comptoir: recommendedCount, plaque: 0 }
-      : sector.composition;
+      : params.get("composition") === "mix"
+        ? recommendedCount === 2 ? { comptoir: 1, plaque: 1 } : { comptoir: 2, plaque: 3 }
+        : requestedCount === 1
+          ? surface === "plaque" ? { comptoir: 0, plaque: 1 } : surface === "carte" ? { comptoir: 0, plaque: 0 } : { comptoir: 1, plaque: 0 }
+          : sector.composition;
   const [preview, setPreview] = useState({
     surface,
     actionId: requestedAction,
     brandName: sector.exampleBrand || "VOTRE MARQUE",
-    theme: sector.theme,
-    customHeadline: campaignHeadlineForAction(requestedAction),
+    theme: requestedTheme,
+    customHeadline: readyHeadlineForAction(requestedAction),
     personalization: requestedMode,
+    count: recommendedCount,
+    composition: requestedComposition,
   });
 
   // Changer d'activité rejoue la scène et repositionne le BuyBox sur l'usage et
@@ -1616,9 +1857,11 @@ function HomePage({ onAdd, initialSector }) {
       surface: sectorDefaultSurface(nextSector),
       actionId: nextSector.actionIds[0],
       brandName: nextSector.exampleBrand || "VOTRE MARQUE",
-      theme: nextSector.theme,
-      customHeadline: campaignHeadlineForAction(nextSector.actionIds[0]),
+      theme: DEFAULT_THEME,
+      customHeadline: readyHeadlineForAction(nextSector.actionIds[0]),
       personalization: "ready",
+      count: nextSector.recommendedProductId === "pack_cinq" ? 5 : nextSector.recommendedProductId === "pack_duo" ? 2 : 1,
+      composition: nextSector.composition,
     });
   };
 
@@ -1630,23 +1873,39 @@ function HomePage({ onAdd, initialSector }) {
     next.set("activite", sector.slug);
     next.set("support", preview.surface === "mix" ? "comptoir" : preview.surface);
     next.set("lien", preview.actionId);
+    next.set("design", readyDesignParam(preview.theme));
     if (preview.personalization === "custom") next.set("mode", "custom");
+    next.set("count", String(preview.count));
+    if (preview.count > 1) {
+      next.set("composition", compositionParam(preview.composition));
+    }
+    if (editIndex !== null) next.set("edit", String(editIndex));
     const search = `?${next.toString()}`;
     if (window.location.search !== search) window.history.replaceState({}, "", `${window.location.pathname}${search}`);
-  }, [sector.slug, preview.surface, preview.actionId, preview.personalization]);
+  }, [editIndex, sector.slug, preview.actionId, preview.composition, preview.count, preview.personalization, preview.surface, preview.theme]);
 
+  const handleAdd = (item) => onAdd(item, editIndex === null ? {} : { replaceIndex: editIndex, returnToCart: true });
   return (
     <main id="main-content">
       <section className="v3-sector-hero v3-home-hero">
-        <SectorScene sector={sector} preview={preview} className="v3-sector-image" />
-        <div className="v3-sector-buy">
+        <div className="v3-home-visual">
+          <SectorScene key={sector.id} sector={sector} preview={preview} className="v3-sector-image" />
+        </div>
+        <div className="v3-home-copy">
           <span className="v3-eyebrow"><Sparkles size={14} aria-hidden="true" /> SUPPORTS NFC + QR POUR PROFESSIONNELS</span>
-          <h1>Un geste.<br />Le bon lien.</h1>
-          <p className="v3-home-lead">Choisissez votre activité, ce que le client doit ouvrir et le support : vous voyez exactement l’objet que vous recevrez.</p>
+          <h1>Le bon lien.<br />Au bon moment.</h1>
+          <p className="v3-home-lead">Choisissez l’activité, la destination et le format. L’aperçu suit chaque choix, le prix aussi.</p>
+          <div className="v3-home-proof" aria-label="Les essentiels inclus">
+            <span><Check /> Prêt dès réception</span>
+            <span><Link2 /> Lien initial configuré</span>
+            <span><SmartphoneNfc /> NFC + QR</span>
+          </div>
+        </div>
+        <div className="v3-sector-buy" id="composer">
           <SectorSelector sectorId={sector.id} onSelect={selectSector} />
           <BuyBox
             key={sector.id}
-            onAdd={onAdd}
+            onAdd={handleAdd}
             compact
             allowAllSurfaces
             initialSurface={surface}
@@ -1654,30 +1913,26 @@ function HomePage({ onAdd, initialSector }) {
             initialCount={recommendedCount}
             initialComposition={requestedComposition}
             initialPersonalization={requestedMode}
-            initialTheme={sector.theme}
+            initialTheme={requestedTheme}
             initialBrandName={sector.exampleBrand || "VOTRE MARQUE"}
-            initialReadyHeadline={campaignHeadlineForAction(requestedAction)}
+            initialReadyHeadline={readyHeadlineForAction(requestedAction)}
             targetId={sector.id}
+            title={editIndex === null ? "Créez le vôtre." : "Mettez à jour votre Tapote."}
             onPreviewChange={setPreview}
-            draftKey={`product:${surface}`}
+            draftKey={editIndex === null ? `product:${surface}` : `cart:${editIndex}`}
           />
         </div>
       </section>
       <section className="v3-proof-band" aria-label="Garanties Tapote">
         <span><SmartphoneNfc /> NFC + QR sur chaque support</span>
-        <span><Link2 /> Destination modifiable à vie</span>
+        <span><Link2 /> Destination initiale configurée</span>
         <span><PackageCheck /> Encodé et testé avant envoi</span>
         <span><Truck /> Livraison offerte dès {formatMoney(SHIPPING.freeThreshold)}</span>
       </section>
       <HowStrip />
       <OfferArchitectureSection />
+      <PilotMarketingSection />
       <WhyTapote />
-      <FaqSection />
-      <section className="v3-final-buy">
-        <span>PRÊT À PASSER AU BON GESTE ?</span>
-        <h2>Votre marque.<br />Le bon lien. Un geste.</h2>
-        <a href="#main-content">Composer mon Tapote <ArrowRight /></a>
-      </section>
     </main>
   );
 }
@@ -1685,68 +1940,251 @@ function HomePage({ onAdd, initialSector }) {
 
 function HowStrip() {
   return (
-    <section className="v3-section v3-how-strip">
-      <div className="v3-section-heading"><span className="v3-eyebrow">PRÊT SANS PRISE DE TÊTE</span><h2>Vous choisissez. On prépare. Vous posez.</h2></div>
+    <section className="v3-section v3-how-strip" aria-labelledby="v3-how-title">
+      <div className="v3-section-heading"><span className="v3-eyebrow">DU CHOIX AU PREMIER TAP</span><h2 id="v3-how-title">Vous choisissez. On prépare. Vous posez.</h2><p>Pas de puce à encoder ni de QR à bricoler : la configuration suit votre commande jusqu’au contrôle final.</p></div>
       <div className="v3-step-grid">
-        <article><b>01</b><Palette /><h3>Choisissez le style</h3><p>Prêt à l’emploi ou entièrement à votre image.</p></article>
-        <article><b>02</b><Upload /><h3>Donnez le lien</h3><p>Maintenant, après la commande ou plus tard.</p></article>
-        <article><b>03</b><FileCheck2 /><h3>Vérifiez l’aperçu</h3><p>Votre configuration visible est enregistrée avec la commande.</p></article>
-        <article><b>04</b><PackageCheck /><h3>Posez et tapotez</h3><p>NFC et QR sont encodés, testés et prêts.</p></article>
+        <article><b>01</b><Palette /><h3>Choisissez le style</h3><p>Tapote Noir ou Blanc, ou une création entièrement à votre image.</p></article>
+        <article><b>02</b><Globe2 /><h3>Indiquez la destination</h3><p>Tout de suite ou après la commande, avant le lancement en production.</p></article>
+        <article><b>03</b><FileCheck2 /><h3>Contrôlez le rendu</h3><p>Le support, le message et la destination restent réunis dans le récapitulatif.</p></article>
+        <article><b>04</b><PackageCheck /><h3>Posez. C’est prêt.</h3><p>NFC et QR sont encodés puis testés sur téléphone avant l’envoi.</p></article>
       </div>
     </section>
   );
 }
 
+function PilotMarketingSection({ pageDetail = false }) {
+  const activityBars = [36, 58, 44, 72, 63, 88, 76, 94, 68, 82, 100, 86];
+  return (
+    <section className="v3-pilot-story" id="pilot" aria-labelledby="v3-pilot-title">
+      <div className="v3-pilot-orbit" aria-hidden="true">PILOT</div>
+      <div className="v3-pilot-copy">
+        <span className="v3-eyebrow"><Sparkles size={14} /> TAPOTE PILOT · POSTE DE CONTRÔLE</span>
+        {pageDetail
+          ? <h1 className="v3-pilot-page-title" id="v3-pilot-title">Un seul poste.<br />Tous vos Tapote.</h1>
+          : <h2 id="v3-pilot-title">Le support reste.<br />Le lien évolue.</h2>}
+        <p className="v3-pilot-lead">{pageDetail ? "Retrouvez les supports, les lieux, les destinations et les interactions dans une interface commune. Le tableau de bord reprend les mêmes repères que le vrai logiciel Tapote Pilot." : "Votre Tapote arrive configuré et fonctionne avec sa destination initiale. Quand votre menu, votre campagne ou votre priorité change, Pilot met à jour le prochain tap sans toucher au support."}</p>
+        <div className="v3-pilot-price" aria-label={`Tapote Pilot, ${formatMoney(PILOT_PLANS.pilot.price)} par mois ou ${formatMoney(PILOT_PLANS.annual.price)} par an`}>
+          <strong>{formatMoney(PILOT_PLANS.pilot.price)}</strong>
+          <span>/ mois</span>
+          <small>ou {formatMoney(PILOT_PLANS.annual.price)} / an</small>
+        </div>
+        <div className="v3-pilot-actions">
+          <a href="/connexion">Accéder à Tapote Pilot <ArrowRight /></a>
+          <a className="is-quiet" href={pageDetail ? "#pilot-flow" : "/tapote-pilot"}>{pageDetail ? "Voir le fonctionnement" : "Voir comment ça marche"} <ArrowRight /></a>
+        </div>
+        <p className="v3-pilot-clarity"><Info size={15} /><span><b>Clair dès le départ.</b> L’achat du support n’ajoute aucun abonnement automatiquement. Pilot est requis pour modifier la destination après livraison.</span></p>
+      </div>
+
+      <div className="v3-pilot-product">
+        <div className="v3-pilot-window" aria-hidden="true">
+          <div className="v3-pilot-shell">
+            <nav aria-label="Aperçu des sections Pilot">
+              <span className="v3-pilot-mini-brand"><img src="/brand/tapote-logo-light.svg" alt="" /> <b>pilot</b></span>
+              <small>ESPACE CLIENT</small>
+              <strong>Café Noma</strong>
+              <b className="is-action"><Link2 /> Changer un lien <ArrowRight /></b>
+              <b className="is-active"><Grid3X3 /> Accueil</b>
+              <span><SmartphoneNfc /> Mes supports</span>
+              <span><Clock3 /> Historique</span>
+              <span><Info /> Support</span>
+            </nav>
+            <div className="v3-pilot-panel">
+              <div className="v3-pilot-dashboard-head">
+                <span><small>PILOT · MESURE & ANALYSE</small><strong>Comprendre ce qui fonctionne</strong></span>
+                <span className="v3-pilot-panel-price"><b>{formatMoney(PILOT_PLANS.pilot.price)}</b><small>/ mois</small></span>
+              </div>
+              <div className="v3-pilot-screen-features">
+                <span>Stats par lieu</span><span>Périodes 7 / 30 / 90 jours</span><span>Part NFC / QR</span>
+              </div>
+              <div className="v3-pilot-screen-controls"><span>Établissement <b>Tous les établissements</b></span><span>Période <b>30 j</b></span></div>
+              <section className="v3-pilot-analytics-preview">
+                <div className="v3-pilot-analytics-total"><span>Interactions</span><strong>675</strong><small>↗ + 8 % <i>vs période précédente</i></small></div>
+                <div className="v3-pilot-chart-preview">
+                  <div><span>ÉVOLUTION</span><small>par jour</small></div>
+                  <div className="v3-pilot-bars" role="img" aria-label="Exemple de graphique des interactions sur trente jours">
+                    {activityBars.map((value, index) => <i className={[4, 8, 10].includes(index) ? "is-highlight" : ""} key={`${value}-${index}`} style={{ "--v3-pilot-bar": `${value}%` }} />)}
+                  </div>
+                  <footer><span>30 juin</span><span>29 juil.</span></footer>
+                </div>
+              </section>
+              <div className="v3-pilot-screen-kpis">
+                <span><small>PRODUITS ACTIFS</small><b>3 <i>/ 3</i></b></span>
+                <span><small>PART NFC</small><b>72 %</b></span>
+                <span><small>DERNIÈRE INTERACTION</small><b>Il y a 16 min</b></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="v3-pilot-feature-rail" aria-label="Fonctions clés de Tapote Pilot">
+          <span><Link2 /><b>Changer</b><small>la destination à distance</small></span>
+          <span><Layers3 /><b>Organiser</b><small>les supports et les lieux</small></span>
+          <span><CircleDollarSign /><b>Mesurer</b><small>les interactions NFC + QR</small></span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PilotMarketingPage() {
+  const pilotSteps = [
+    {
+      number: "01",
+      icon: SmartphoneNfc,
+      title: "Votre support arrive prêt",
+      copy: "Le NFC et le QR ouvrent la destination choisie à la commande. Aucun réglage technique à faire sur place.",
+    },
+    {
+      number: "02",
+      icon: Link2,
+      title: "Vous changez le lien",
+      copy: "Depuis Pilot, remplacez l’ancienne destination par la nouvelle. Le support physique ne bouge pas.",
+    },
+    {
+      number: "03",
+      icon: CircleDollarSign,
+      title: "Vous mesurez les usages",
+      copy: "Comparez les interactions, les supports et les lieux sur 7, 30 ou 90 jours.",
+    },
+  ];
+  const destinations = [
+    { label: "Avis Google", detail: "Campagne permanente", active: false },
+    { label: "Menu d’été", detail: "Actif maintenant", active: true },
+    { label: "Réservation", detail: "Prochaine campagne", active: false },
+  ];
+  return (
+    <main id="main-content" className="v3-pilot-page">
+      <PilotMarketingSection pageDetail />
+
+      <section className="v3-pilot-page-flow" id="pilot-flow" aria-labelledby="v3-pilot-flow-title">
+        <div className="v3-pilot-page-flow-head">
+          <span className="v3-eyebrow">SIMPLE PAR CONCEPTION</span>
+          <h2 id="v3-pilot-flow-title">Un changement de campagne.<br />Pas un changement de matériel.</h2>
+          <p>Le lien visible par vos clients évolue dans Pilot. La puce, le QR et le support restent exactement là où ils sont.</p>
+        </div>
+        <div className="v3-pilot-page-flow-grid">
+          <div className="v3-pilot-page-steps">
+            {pilotSteps.map(({ number, icon: Icon, title, copy }) => (
+              <article key={number}>
+                <span>{number}</span>
+                <i><Icon /></i>
+                <div><h3>{title}</h3><p>{copy}</p></div>
+              </article>
+            ))}
+          </div>
+          <div className="v3-pilot-destination-demo" aria-label="Exemple de changement de destination dans Tapote Pilot">
+            <header><span><img src="/brand/tapote-logo-light.svg" alt="" /><b>PILOT</b></span><small>CAFÉ NOMA · 3 SUPPORTS</small></header>
+            <div className="v3-pilot-destination-product">
+              <ProductArt surface="comptoir" actionId="avis" brandName="CAFÉ NOMA" theme="nuit" personalization="custom" customHeadline="Votre avis compte." />
+              <span><SmartphoneNfc /><b>Chevalet comptoir</b><small>Entrée principale</small></span>
+            </div>
+            <div className="v3-pilot-destination-list">
+              <small>DESTINATION DU SUPPORT</small>
+              {destinations.map((destination) => (
+                <span className={destination.active ? "is-active" : ""} key={destination.label}>
+                  <i>{destination.active ? <Check /> : <Link2 />}</i>
+                  <b>{destination.label}</b>
+                  <small>{destination.detail}</small>
+                  {destination.active && <em>EN COURS</em>}
+                </span>
+              ))}
+              <span className="v3-pilot-destination-apply">Appliquer ce lien <ArrowRight /></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="v3-pilot-page-value" aria-labelledby="v3-pilot-value-title">
+        <div>
+          <span className="v3-eyebrow">CE QUE PILOT AJOUTE</span>
+          <h2 id="v3-pilot-value-title">Le contrôle utile.<br />Sans tableau de bord pour faire joli.</h2>
+          <p>Chaque écran répond à une question concrète : quel support ouvre quoi, où est-il installé et quand est-il utilisé.</p>
+        </div>
+        <div className="v3-pilot-page-value-grid">
+          <article><Link2 /><span>01</span><h3>Changer</h3><p>Une destination se remplace à distance, sans réencoder ni réimprimer.</p></article>
+          <article><Layers3 /><span>02</span><h3>Organiser</h3><p>Les supports sont regroupés par lieu pour retrouver le bon objet immédiatement.</p></article>
+          <article><CircleDollarSign /><span>03</span><h3>Mesurer</h3><p>Les interactions NFC + QR sont lisibles par période, lieu et support.</p></article>
+          <article><Clock3 /><span>04</span><h3>Tracer</h3><p>L’historique garde la mémoire des changements de destination.</p></article>
+        </div>
+      </section>
+
+      <section className="v3-pilot-page-plan" aria-labelledby="v3-pilot-plan-title">
+        <div>
+          <span className="v3-eyebrow">UNE OPTION, JAMAIS UNE SURPRISE</span>
+          <h2 id="v3-pilot-plan-title">Votre Tapote fonctionne dès la livraison.</h2>
+          <p>Pilot devient utile quand vous voulez faire évoluer le lien après la livraison ou suivre l’activité de plusieurs supports. Aucun abonnement n’est ajouté automatiquement à l’achat.</p>
+        </div>
+        <aside>
+          <span>TAPOTE PILOT</span>
+          <strong>{formatMoney(PILOT_PLANS.pilot.price)}<small>/ mois</small></strong>
+          <p>ou {formatMoney(PILOT_PLANS.annual.price)} / an</p>
+          <ul>
+            <li><Check /> Changement de destination à distance</li>
+            <li><Check /> Supports et lieux centralisés</li>
+            <li><Check /> Statistiques NFC + QR</li>
+            <li><Check /> Historique des modifications</li>
+          </ul>
+          <a href="/connexion">Accéder à Tapote Pilot <ArrowRight /></a>
+          <small>Déjà équipé ? Connectez-vous avec l’adresse liée à votre compte.</small>
+        </aside>
+      </section>
+    </main>
+  );
+}
+
 const WHY_TAPOTE = [
-  { icon: CircleDollarSign, title: "Un prix complet", copy: "Support, impression, NFC, QR et service de changement de lien sont réunis dans le prix affiché." },
+  { icon: CircleDollarSign, title: "Un prix produit complet", copy: "Support, impression, NFC, QR, configuration du lien initial et contrôle sont réunis dans le prix affiché." },
   { icon: FileCheck2, title: "Votre visuel avant l’achat", copy: "Logo, textes, palette et composition se règlent dans le studio puis sont enregistrés avec la commande." },
-  { icon: Link2, title: "Le lien reste modifiable à vie", copy: "Changez la destination quand vous voulez, sans réimprimer et sans abonnement obligatoire." },
+  { icon: Link2, title: "Un lien qui peut évoluer", copy: "Avec Tapote Pilot, changez la destination à distance sans réencoder ni réimprimer le support." },
   { icon: SmartphoneNfc, title: "NFC + QR testés un par un", copy: "Les deux accès sont vérifiés sur téléphone, support par support, avant la livraison." },
 ];
 
 function WhyTapote() {
   return (
-    <section className="v3-section v3-why">
-      <div className="v3-why-head">
-        <span className="v3-eyebrow"><ShieldCheck size={14} /> CE QUE LE PRIX COMPREND</span>
-        <h2>Un objet prêt à servir.<br />Pas une puce à débrouiller.</h2>
-        <p>Tapote réunit le support, le visuel, la configuration et le contrôle dans une seule commande. Vous choisissez le moment et le lien ; nous préparons le geste complet.</p>
-      </div>
-      <div className="v3-why-grid">
-        {WHY_TAPOTE.map(({ icon: Icon, title, copy }) => (
-          <article key={title}>
-            <i aria-hidden="true"><Icon /></i>
-            <h3>{title}</h3>
-            <p>{copy}</p>
-          </article>
-        ))}
+    <section className="v3-section v3-why" aria-labelledby="v3-why-title">
+      <div className="v3-why-layout">
+        <div className="v3-why-stage" aria-label="Exemple d’un support Tapote prêt à être posé">
+          <div className="v3-why-stage-head">
+            <span>PRÊT À POSER</span>
+            <b>01 — Support complet</b>
+          </div>
+          <div className="v3-why-art" aria-hidden="true">
+            <ProductArt surface="comptoir" actionId="avis" brandName="tapote." theme="creme" personalization="ready" className="is-main" />
+            <ProductArt surface="carte" actionId="avis" brandName="tapote." theme="nuit" personalization="ready" className="is-card" />
+          </div>
+          <div className="v3-why-checks">
+            <span><SmartphoneNfc /> NFC encodé</span>
+            <span><QrCode /> QR contrôlé</span>
+            <span><Link2 /> Lien initial configuré</span>
+          </div>
+        </div>
+        <div className="v3-why-content">
+          <div className="v3-why-head">
+            <span className="v3-eyebrow"><ShieldCheck size={14} /> CE QUE LE PRIX COMPREND</span>
+            <h2 id="v3-why-title">Vous recevez bien plus qu’un support imprimé.</h2>
+            <p>Le visuel, l’encodage et le contrôle final sont déjà réunis. À la réception, vous posez votre Tapote et le bon lien s’ouvre.</p>
+          </div>
+          <div className="v3-why-grid">
+            {WHY_TAPOTE.map(({ icon: Icon, title, copy }, index) => (
+              <article key={title}>
+                <span>{String(index + 1).padStart(2, "0")}</span>
+                <i aria-hidden="true"><Icon /></i>
+                <div><h3>{title}</h3><p>{copy}</p></div>
+              </article>
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   );
-}
-
-function FaqSection() {
-  const questions = [
-    ["Puis-je changer le lien après réception ?", "Oui, autant de fois que vous voulez et à distance. Ce changement reste gratuit et ne demande aucun nouvel imprimé."],
-    ["Que se passe-t-il si le NFC ne fonctionne pas ?", "Chaque support est testé avant l’envoi et le QR code reste disponible. En cas de défaut confirmé, le support est pris en charge par Tapote."],
-    ["Puis-je ouvrir autre chose qu’un avis Google ?", "Oui : menu, réservation, site, Wi-Fi, paiement, Instagram, formulaire, page multi-liens ou toute URL sécurisée."],
-    ["Le logo est-il vraiment inclus ?", "Oui dans le Studio en direct : importez votre logo, ajustez les textes, la composition et les couleurs, puis commandez le visuel affiché."],
-    ["Un abonnement est-il nécessaire ?", "Non. Le support, son lien et les modifications de destination à distance restent utilisables sans abonnement obligatoire."],
-    ["Quand vais-je recevoir ma commande ?", "Le délai applicable est confirmé à la prise en charge de la commande. Il commence après le paiement et, lorsqu’une validation est nécessaire, après l’accord sur le visuel."],
-    ["Tapote filtre-t-il les clients avant un avis Google ?", "Non. Tapote ne cache jamais le lien d’avis selon la satisfaction, ne promet pas de note et n’encourage aucune récompense contre un avis. Un formulaire privé peut exister en parallèle, sans bloquer l’accès à l’avis public."],
-  ];
-  return <section className="v3-section v3-faq"><div className="v3-section-heading"><span className="v3-eyebrow">QUESTIONS FRÉQUENTES</span><h2>Tout ce qui doit être clair.</h2></div><div>{questions.map(([question, answer]) => <details key={question}><summary>{question}<Plus /></summary><p>{answer}</p></details>)}</div></section>;
 }
 
 function HowPage() {
   const preview = { surface: "comptoir", actionId: "avis", brandName: "CAFÉ NOMA", theme: "nuit", customHeadline: "Vous avez aimé ? Tapotez.", personalization: "ready" };
   return (
     <main id="main-content">
-      <header className="v3-how-hero"><div><span className="v3-eyebrow v3-eyebrow-dark">SANS APP · SANS FRICTION</span><h1>Tapote ouvre exactement la bonne page.</h1><p>Votre client approche son téléphone ou scanne le QR. L’avis, le menu, la réservation ou votre page s’ouvre immédiatement.</p><a href="/">Choisir mon Tapote <ArrowRight /></a></div><ProductScene image={HOME_SCENES.comptoir.image} alt="Un client utilise un chevalet Tapote avec son téléphone" nativeAction={HOME_SCENES.comptoir.nativeAction} preview={preview} className="v3-how-scene" /></header>
+      <header className="v3-how-hero"><div><span className="v3-eyebrow v3-eyebrow-dark">SANS APP · SANS FRICTION</span><h1>Tapote ouvre exactement la bonne page.</h1><p>Votre client approche son téléphone ou scanne le QR. L’avis, le menu, la réservation ou votre page s’ouvre immédiatement.</p><a href="/">Créer mon Tapote <ArrowRight /></a></div><ProductScene image={HOME_SCENES.comptoir.image} alt="Un client utilise un chevalet Tapote avec son téléphone" nativeAction={HOME_SCENES.comptoir.nativeAction} preview={preview} className="v3-how-scene" subjectLayers={HOME_SCENES.comptoir.subjectLayers} /></header>
       <section className="v3-link-flow"><article><SmartphoneNfc /><span>1</span><h2>Le client tapote</h2><p>Ou scanne le QR code. Aucune application n’est nécessaire.</p></article><ArrowRight /><article><Zap /><span>2</span><h2>Tapote redirige</h2><p>Le lien court du support appelle votre destination actuelle.</p></article><ArrowRight /><article><Globe2 /><span>3</span><h2>La bonne page s’ouvre</h2><p>Avis, menu, réservation, réseau social ou toute autre URL.</p></article></section>
-      <section className="v3-section v3-change-link"><div><span className="v3-eyebrow">ET SI LE LIEN CHANGE ?</span><h2>Vous ne touchez pas au support.</h2><p>Depuis votre espace, vous remplacez la destination. Le NFC et le QR continuent de fonctionner, car ils pointent toujours vers le même lien Tapote.</p><ul><li><Check /> Modifications illimitées</li><li><Check /> Sans abonnement obligatoire</li><li><Check /> Prises en compte à distance</li></ul></div><div className="v3-link-console"><span>Destination active</span><strong>tapote.fr/t/<b>cafe-noma</b></strong><em>ouvre</em><div>https://g.page/r/…/review</div><span className="v3-link-console-action">Modifier la destination</span></div></section>
-      <FaqSection />
-      <section className="v3-final-buy"><span>PRÊT À PASSER AU BON GESTE ?</span><h2>Choisissez le format.<br />On prépare le reste.</h2><a href="/">Composer mon Tapote <ArrowRight /></a></section>
+      <section className="v3-section v3-change-link" id="pilot"><div><span className="v3-eyebrow">AVEC TAPOTE PILOT</span><h2>Vous ne touchez pas au support.</h2><p>Depuis Pilot, vous remplacez la destination. Le NFC et le QR continuent de fonctionner, car ils pointent toujours vers le même lien Tapote.</p><ul><li><Check /> Modifications à distance</li><li><Check /> Supports et lieux regroupés</li><li><Check /> Interactions NFC + QR suivies</li></ul><p className="v3-change-link-plan"><b>{formatMoney(PILOT_PLANS.pilot.price)} / mois</b> ou {formatMoney(PILOT_PLANS.annual.price)} / an · l’achat du support reste séparé.</p><a className="v3-change-link-cta" href="/connexion">Accéder à Tapote Pilot <ArrowRight /></a></div><div className="v3-link-console"><span>Destination active</span><strong>tapote.fr/t/<b>cafe-noma</b></strong><em>ouvre</em><div>https://g.page/r/…/review</div><span className="v3-link-console-action">Modifier dans Pilot</span></div></section>
     </main>
   );
 }
@@ -1782,6 +2220,7 @@ function saveCartItemAsDraft(item, descriptor) {
       brandName: item.brandName || "",
       brandLogoId: item.brandLogoId || "",
       logoFileName: item.logoFileName || "",
+      theme: item.theme || DEFAULT_THEME,
       customHeadline: item.customHeadline || "",
       customSubline: item.customSubline || "",
       customTapLabel: item.customTapLabel || "",
@@ -1805,12 +2244,13 @@ function CartLine({ item, index, onQuantity, onRemove }) {
     : product.name.replace(/ · .+$/, "");
   return (
     <article className="v3-cart-line">
-      <div className="v3-cart-art"><ProductArt surface={previewId(item.productId)} actionId={item.actionId} brandName={item.brandName || "VOTRE MARQUE"} brandLogo={getCachedLogoPreview(item.brandLogoId)} theme={item.theme} primaryColor={item.primaryColor} secondaryColor={item.secondaryColor} textColor={item.textColor} customHeadline={item.customHeadline} customSubline={item.customSubline} customTapLabel={item.customTapLabel} /></div>
+      <div className="v3-cart-art"><ProductArt surface={previewId(item.productId)} actionId={item.actionId} brandName={item.brandName || "VOTRE MARQUE"} brandLogo={getCachedLogoPreview(item.brandLogoId)} theme={item.theme} primaryColor={item.primaryColor} secondaryColor={item.secondaryColor} textColor={item.textColor} customHeadline={item.customHeadline} customSubline={item.customSubline} customTapLabel={item.customTapLabel} personalization={product.personalization === "ready" ? "ready" : "custom"} /></div>
       <div className="v3-cart-copy">
         <span>{product.personalization === "ready" ? "PRÊT À L’EMPLOI" : product.personalization === "matched" ? "ASSORTIE" : "À VOTRE IMAGE"}</span>
         <h2>{cartTitle}</h2>
         <dl className="v3-cart-configuration">
           <div><dt>Action</dt><dd>{action.name}{product.kind === "pack" && item.supportComposition ? ` · ${compositionLabel(item.supportComposition)}` : ""}</dd></div>
+          {product.personalization === "ready" && <div><dt>Design</dt><dd>{THEME_LABELS[resolveThemeId(item.theme)]}</dd></div>}
           {item.brandName && <div><dt>Marque</dt><dd>{item.brandName}</dd></div>}
           
           <div><dt>Destination</dt><dd className={item.destinationUrl ? "is-ready" : "is-pending"}>{item.destinationUrl ? "Lien configuré" : "À fournir après commande"}</dd></div>
@@ -1827,7 +2267,7 @@ function OrderSummary({ cart, action }) {
   const shipping = calculateShipping(subtotal);
   const freeShippingRemaining = Math.max(0, SHIPPING.freeThreshold - subtotal);
   const hasCustom = cart.some((item) => ["custom", "matched"].includes(PRODUCTS[item.productId].personalization));
-  return <aside className="v3-order-summary"><span>RÉCAPITULATIF</span><dl><div><dt>Sous-total</dt><dd>{formatMoney(subtotal)}</dd></div><div><dt>Livraison</dt><dd>{shipping ? formatMoney(shipping) : "Offerte"}</dd></div><div><dt>Total {taxLabel}</dt><dd>{formatMoney(subtotal + shipping)}</dd></div></dl>{freeShippingRemaining > 0 ? <div className="v3-shipping-progress"><span>Encore <strong>{formatMoney(freeShippingRemaining)}</strong> pour la livraison offerte</span><i><b style={{ width: `${Math.min(100, subtotal / SHIPPING.freeThreshold * 100)}%` }} /></i></div> : <div className="v3-shipping-progress is-complete"><span><Check /> Livraison offerte débloquée</span></div>}<ul><li><ShieldCheck /> Paiement sécurisé par Stripe</li><li><PackageCheck /> NFC testé + QR de secours inclus</li>{hasCustom && <li><FileCheck2 /> Configuration personnalisée enregistrée</li>}<li><Clock3 /> {STOREFRONT_PROMISES.fulfillment}</li><li><Link2 /> Lien modifiable à vie</li></ul>{action}</aside>;
+  return <aside className="v3-order-summary"><span>RÉCAPITULATIF</span><dl><div><dt>Sous-total</dt><dd>{formatMoney(subtotal)}</dd></div><div><dt>Livraison</dt><dd>{shipping ? formatMoney(shipping) : "Offerte"}</dd></div><div><dt>Total {taxLabel}</dt><dd>{formatMoney(subtotal + shipping)}</dd></div></dl>{freeShippingRemaining > 0 ? <div className="v3-shipping-progress"><span>Encore <strong>{formatMoney(freeShippingRemaining)}</strong> pour la livraison offerte</span><i><b style={{ width: `${Math.min(100, subtotal / SHIPPING.freeThreshold * 100)}%` }} /></i></div> : <div className="v3-shipping-progress is-complete"><span><Check /> Livraison offerte débloquée</span></div>}<ul><li><ShieldCheck /> Paiement sécurisé par Stripe</li><li><PackageCheck /> NFC testé + QR de secours inclus</li>{hasCustom && <li><FileCheck2 /> Configuration personnalisée enregistrée</li>}<li><Clock3 /> {STOREFRONT_PROMISES.fulfillment}</li><li><Link2 /> Destination initiale configurée</li></ul>{action}</aside>;
 }
 
 function CartPage({ cart, setCart, onAdd }) {
@@ -1861,7 +2301,7 @@ function CartPage({ cart, setCart, onAdd }) {
   return (
     <main id="main-content" className="v3-purchase-page">
       <header><span className="v3-eyebrow">VOTRE COMMANDE</span><h1>Votre panier.</h1><p>Simple à vérifier. Facile à modifier.</p></header>
-      {!cart.length ? <section className="v3-empty-cart"><ShoppingBag /><h2>Votre panier est vide.</h2><p>Commencez par le support le plus utile à votre activité.</p><a href="/">Composer mon Tapote <ArrowRight /></a></section> : <div className="v3-purchase-layout"><section className="v3-cart-lines">{cart.map((item, index) => <CartLine item={item} index={index} onQuantity={(delta) => changeQuantity(index, delta)} onRemove={() => setCart((current) => current.filter((_, itemIndex) => itemIndex !== index))} key={`${itemFingerprint(item)}-${index}`} />)}{hasSupport && !hasMatchedCard && matchingSource && <button className="v3-cart-upsell" type="button" onClick={addMatchedCard}><Plus /><span><strong>Ajouter la carte assortie — 19 €</strong><small>Même identité graphique et même action que votre support personnalisé.</small></span></button>}{hasSupport && !hasMatchedCard && !matchingSource && <div className="v3-volume-notice"><Layers3 /><span><strong>Plusieurs identités sont dans ce panier.</strong><small>Configurez séparément la carte à assortir pour choisir sans ambiguïté sa marque et son usage.</small></span></div>}{requiresQuote && <div className="v3-volume-notice"><Layers3 /><span><strong>{supportTotal} supports : un devis sera plus juste.</strong><small>À partir de 10, nous vérifions la composition, les lieux et le coût de production avant de vous proposer le meilleur tarif.</small></span></div>}</section><OrderSummary cart={cart} action={requiresQuote ? <a className="v3-primary-cta" href="/devis">Demander un devis <ArrowRight /></a> : <a className="v3-primary-cta" href="/commande" onClick={() => trackStorefrontEvent("begin_checkout", { value: cart.reduce((sum, item) => sum + PRODUCTS[item.productId].price * item.quantity, 0) / 100, currency: "EUR", item_count: cart.length })}>Continuer vers la commande <ArrowRight /></a>} /></div>}
+      {!cart.length ? <section className="v3-empty-cart"><ShoppingBag /><h2>Votre panier est vide.</h2><p>Commencez par le support le plus utile à votre activité.</p><a href="/">Créer mon Tapote <ArrowRight /></a></section> : <div className="v3-purchase-layout"><section className="v3-cart-lines">{cart.map((item, index) => <CartLine item={item} index={index} onQuantity={(delta) => changeQuantity(index, delta)} onRemove={() => setCart((current) => current.filter((_, itemIndex) => itemIndex !== index))} key={`${itemFingerprint(item)}-${index}`} />)}{hasSupport && !hasMatchedCard && matchingSource && <button className="v3-cart-upsell" type="button" onClick={addMatchedCard}><Plus /><span><strong>Ajouter la carte assortie — 19 €</strong><small>Même identité graphique et même action que votre support personnalisé.</small></span></button>}{hasSupport && !hasMatchedCard && !matchingSource && <div className="v3-volume-notice"><Layers3 /><span><strong>Plusieurs identités sont dans ce panier.</strong><small>Configurez séparément la carte à assortir pour choisir sans ambiguïté sa marque et son usage.</small></span></div>}{requiresQuote && <div className="v3-volume-notice"><Layers3 /><span><strong>{supportTotal} supports : un devis sera plus juste.</strong><small>À partir de 10, nous vérifions la composition, les lieux et les coûts avant de vous proposer le tarif le plus juste.</small></span></div>}</section><OrderSummary cart={cart} action={requiresQuote ? <a className="v3-primary-cta" href="/devis">Demander un devis <ArrowRight /></a> : <a className="v3-primary-cta" href="/commande" onClick={() => trackStorefrontEvent("begin_checkout", { value: cart.reduce((sum, item) => sum + PRODUCTS[item.productId].price * item.quantity, 0) / 100, currency: "EUR", item_count: cart.length })}>Continuer vers la commande <ArrowRight /></a>} /></div>}
     </main>
   );
 }
@@ -1888,7 +2328,7 @@ function CheckoutPage({ cart }) {
   return (
     <main id="main-content" className="v3-purchase-page">
       <header><span className="v3-eyebrow">COORDONNÉES & PAIEMENT</span><h1>Finalisez votre commande.</h1><p>Stripe recueillera ensuite vos adresses de facturation et de livraison.</p>{checkoutCanceled && <p className="v3-checkout-canceled" role="status">Le paiement a été annulé. Votre panier est intact et rien n’a été débité.</p>}</header>
-      <div className="v3-purchase-layout"><form className="v3-checkout-form" onSubmit={submit}><label><span>Nom de l’entreprise *</span><input name="businessName" value={form.businessName} onChange={update} required autoComplete="organization" /></label><label><span>E-mail de commande *</span><input type="email" name="email" value={form.email} onChange={update} required autoComplete="email" /></label><label><span>Lien principal à ouvrir <small>(facultatif maintenant)</small></span><input type="url" name="destinationUrl" value={form.destinationUrl} onChange={update} placeholder="https://…" pattern="https://.*" /></label><div className="v3-checkout-help"><Clock3 /><span>Vous ne connaissez pas encore le lien ? Laissez ce champ vide : nous vous aidons à le retrouver après la commande, puis vous pourrez le modifier à vie.</span></div>{hasPack && <div className="v3-checkout-help"><Link2 /><span>Ce lien sera appliqué par défaut. Après la commande, vous pourrez attribuer gratuitement un lien différent à chaque support.</span></div>}<label className="v3-checkbox"><input type="checkbox" name="professionalCustomer" checked={form.professionalCustomer} onChange={update} required /><span>Je commande pour mon activité professionnelle.</span></label><label className="v3-checkbox"><input type="checkbox" name="termsAccepted" checked={form.termsAccepted} onChange={update} required /><span>J’accepte les <a href="/cgv" target="_blank">CGV</a> et la <a href="/confidentialite" target="_blank">politique de confidentialité</a>.</span></label><button className="v3-primary-cta" type="submit" disabled={status === "loading"}>{status === "loading" ? "Connexion à Stripe…" : <>Payer en toute sécurité <ArrowRight /></>}</button><div className="v3-checkout-payment-note"><ShieldCheck /><span><strong>Carte bancaire via Stripe</strong><small>Tapote ne stocke jamais vos données bancaires.</small></span></div>{error && <p className="v3-form-error" role="alert">{error}</p>}</form><div><section className="v3-checkout-lines">{cart.map((item, index) => <CartLine item={item} key={`${itemFingerprint(item)}-${index}`} />)}</section><OrderSummary cart={cart} /></div></div>
+      <div className="v3-purchase-layout"><form className="v3-checkout-form" onSubmit={submit}><label><span>Nom de l’entreprise *</span><input name="businessName" value={form.businessName} onChange={update} required autoComplete="organization" /></label><label><span>E-mail de commande *</span><input type="email" name="email" value={form.email} onChange={update} required autoComplete="email" /></label><label><span>Lien principal à ouvrir <small>(facultatif maintenant)</small></span><input type="url" name="destinationUrl" value={form.destinationUrl} onChange={update} placeholder="https://…" pattern="https://.*" /></label><div className="v3-checkout-help"><Clock3 /><span>Vous ne connaissez pas encore le lien ? Laissez ce champ vide : nous vous aidons à le retrouver après la commande et avant le lancement en production.</span></div>{hasPack && <div className="v3-checkout-help"><Link2 /><span>Ce lien sera appliqué par défaut. Pendant la préparation, vous pourrez indiquer une destination initiale différente pour chaque support.</span></div>}<div className="v3-checkout-help"><Info /><span>Après livraison, le changement de destination à distance nécessite Tapote Pilot. Aucun abonnement n’est ajouté à cette commande.</span></div><label className="v3-checkbox"><input type="checkbox" name="professionalCustomer" checked={form.professionalCustomer} onChange={update} required /><span>Je commande pour mon activité professionnelle.</span></label><label className="v3-checkbox"><input type="checkbox" name="termsAccepted" checked={form.termsAccepted} onChange={update} required /><span>J’accepte les <a href="/cgv" target="_blank">CGV</a> et la <a href="/confidentialite" target="_blank">politique de confidentialité</a>.</span></label><button className="v3-primary-cta" type="submit" disabled={status === "loading"}>{status === "loading" ? "Connexion à Stripe…" : <>Payer en toute sécurité <ArrowRight /></>}</button><div className="v3-checkout-payment-note"><ShieldCheck /><span><strong>Carte bancaire via Stripe</strong><small>Tapote ne stocke jamais vos données bancaires.</small></span></div>{error && <p className="v3-form-error" role="alert">{error}</p>}</form><div><section className="v3-checkout-lines">{cart.map((item, index) => <CartLine item={item} key={`${itemFingerprint(item)}-${index}`} />)}</section><OrderSummary cart={cart} /></div></div>
     </main>
   );
 }
@@ -2122,6 +2562,7 @@ export default function StorefrontV3() {
   let page;
   if (isHomeSurface(path)) page = <HomePage onAdd={addToCart} initialSector={homeSector} />;
   else if (path === "/comment-ca-marche") page = <HowPage />;
+  else if (path === "/tapote-pilot") page = <PilotMarketingPage />;
   else if (path === "/panier") page = <CartPage cart={cart} setCart={setCart} onAdd={addToCart} />;
   else if (path === "/devis") page = <QuotePage />;
   else if (path === "/commande") page = <CheckoutPage cart={cart} />;

@@ -122,7 +122,7 @@ export const PRODUCTS = {
     format: "2 plaques ou chevalets au choix",
     badge: "Prix accessible",
     defaultAction: "avis",
-    features: ["Supports au choix", "Design Tapote prêt", "Deux liens modifiables à vie"],
+    features: ["Supports au choix", "Design Tapote prêt", "Deux destinations initiales possibles"],
   },
   pack_duo: {
     id: "pack_duo",
@@ -139,7 +139,7 @@ export const PRODUCTS = {
     format: "2 plaques ou chevalets au choix · livraison offerte",
     badge: "Le plus choisi",
     defaultAction: "avis",
-    features: ["Supports au choix", "Logo, couleurs et textes personnalisables", "Deux liens modifiables à vie"],
+    features: ["Supports au choix", "Logo, couleurs et textes personnalisables", "Deux destinations initiales possibles"],
   },
   pack_cinq_standard: {
     id: "pack_cinq_standard",

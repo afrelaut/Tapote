@@ -1,5 +1,11 @@
 import { TARGETS } from "../../shared/catalog.js";
 
+const restaurantPhoneSubjectLayers = [
+  {
+    image: "/assets/products/tapote-restaurant-phone-hand-cutout-v1.png",
+  },
+];
+
 // Une fiche correspond à un vrai univers d’achat et de mise en scène.
 // Les sous-métiers proches partagent le même décor et le même parcours client.
 const sectorRows = [
@@ -10,7 +16,8 @@ const sectorRows = [
     description: "Avis, fidélité et Wi-Fi au moment du paiement ou de l’accueil.",
     placement: "Sur le comptoir, juste à côté du terminal de paiement.",
     script: "« Si vous avez aimé, vous pouvez tapoter ici. »",
-    image: "/assets/products/tapote-bg-cafe-v1.webp",
+    image: "/assets/products/tapote-bg-cafe-empty-v3.png",
+    subjectLayers: restaurantPhoneSubjectLayers,
     category: "Restauration & commerce",
     recommendedProductId: "pack_duo",
     composition: { comptoir: 2, plaque: 0 },
@@ -36,7 +43,8 @@ const sectorRows = [
     description: "Avis Google en priorité, puis fidélité et commandes spéciales.",
     placement: "À la caisse, dans le geste naturel qui suit le paiement.",
     script: "« Un tap ici et vous pouvez nous laisser votre avis. »",
-    image: "/assets/products/tapote-bg-boulangerie-v1.webp",
+    image: "/assets/products/tapote-bg-boulangerie-empty-v2.png",
+    subjectLayers: restaurantPhoneSubjectLayers,
     category: "Restauration & commerce",
     recommendedProductId: "pack_duo",
     composition: { comptoir: 1, plaque: 1 },
@@ -140,7 +148,8 @@ const sectorRows = [
     description: "Coordonnées, prise de rendez-vous, documents et page multi-liens.",
     placement: "Sur le bureau ou présenté pendant un rendez-vous et une visite.",
     script: "« Mes coordonnées et les documents utiles sont ici. »",
-    image: "/assets/products/tapote-bg-agence-v1.webp",
+    image: "/assets/products/tapote-bg-agence-empty-v2.png",
+    subjectLayers: restaurantPhoneSubjectLayers,
     category: "Services, agences & mobilité",
     recommendedProductId: "carte",
     composition: { comptoir: 0, plaque: 0 },
@@ -153,7 +162,8 @@ const sectorRows = [
     description: "Planning et réservation des séances, fidélité et communauté.",
     placement: "À l’accueil ou à l’entrée du studio.",
     script: "« Le planning et la réservation de votre prochaine séance sont ici. »",
-    image: "/assets/products/tapote-bg-sport-v1.webp",
+    image: "/assets/products/tapote-bg-sport-empty-v2.png",
+    subjectLayers: restaurantPhoneSubjectLayers,
     category: "Sport & collectif",
     recommendedProductId: "pack_cinq",
     composition: { comptoir: 2, plaque: 3 },
@@ -166,7 +176,8 @@ const sectorRows = [
     description: "Wi-Fi, programmes, inscription, salles et informations pratiques.",
     placement: "À l’accueil et dans les salles partagées.",
     script: "« Wi-Fi, inscription et ressources : tout est ici. »",
-    image: "/assets/products/tapote-bg-formation-v1.webp",
+    image: "/assets/products/tapote-bg-formation-empty-v2.png",
+    subjectLayers: restaurantPhoneSubjectLayers,
     category: "Bureaux & événements",
     recommendedProductId: "pack_cinq",
     composition: { comptoir: 2, plaque: 3 },
@@ -179,7 +190,8 @@ const sectorRows = [
     description: "Programme, billetterie, inscription, dons et liens utiles au même endroit.",
     placement: "À l’entrée, au point d’accueil ou près du programme.",
     script: "« Le programme, les billets et les informations sont ici. »",
-    image: "/assets/products/tapote-bg-evenement-v1.webp",
+    image: "/assets/products/tapote-bg-evenement-empty-v2.png",
+    subjectLayers: restaurantPhoneSubjectLayers,
     category: "Bureaux & événements",
     recommendedProductId: "pack_cinq",
     composition: { comptoir: 2, plaque: 3 },
