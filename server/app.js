@@ -318,6 +318,33 @@ function stripeStatus(session, storedOrder) {
   return "processing";
 }
 
+function limitedClientString(value, maximum) {
+  return typeof value === "string" ? value.slice(0, maximum) : "";
+}
+
+function normalizeClientError(body) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return null;
+  const message = limitedClientString(body.message, 500);
+  if (!message) return null;
+  const width = Number(body.viewport?.width);
+  const height = Number(body.viewport?.height);
+  return {
+    id: limitedClientString(body.id, 80),
+    surface: limitedClientString(body.surface, 40),
+    view: limitedClientString(body.view, 40),
+    name: limitedClientString(body.name, 80),
+    message,
+    stack: limitedClientString(body.stack, 4_000),
+    componentStack: limitedClientString(body.componentStack, 2_000),
+    path: limitedClientString(body.path, 160),
+    userAgent: limitedClientString(body.userAgent, 500),
+    viewport: {
+      width: Number.isFinite(width) ? Math.max(0, Math.min(10_000, Math.round(width))) : 0,
+      height: Number.isFinite(height) ? Math.max(0, Math.min(10_000, Math.round(height))) : 0,
+    },
+  };
+}
+
 export function createApp({ config, repository, storage, logger, outboxWorker, stripe: injectedStripe, storefrontHtml: injectedStorefrontHtml } = {}) {
   const stripe = injectedStripe ?? (config.stripeSecretKey ? new Stripe(config.stripeSecretKey) : null);
   const app = express();
@@ -325,6 +352,7 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
   const uploadLimiter = limiter(60 * 60 * 1_000, 30, "Trop d’envois de fichiers. Réessaie plus tard.");
   const leadLimiter = limiter(60 * 60 * 1_000, 10, "Trop de demandes envoyées. Réessaie plus tard.");
   const statusLimiter = limiter(15 * 60 * 1_000, 60, "Trop de vérifications. Réessaie dans quelques minutes.");
+  const clientErrorLimiter = limiter(5 * 60 * 1_000, 20, "Trop de diagnostics envoyés.");
 
   app.disable("x-powered-by");
   if (config.trustProxyHops > 0) app.set("trust proxy", config.trustProxyHops);
@@ -389,6 +417,12 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
   app.use(express.json({ limit: "200kb", strict: true }));
 
   app.get("/api/health", (_request, response) => response.json({ ok: true }));
+  app.post("/api/client-errors", clientErrorLimiter, (request, response) => {
+    const clientError = normalizeClientError(request.body);
+    if (!clientError) return response.status(400).json({ error: "Diagnostic invalide." });
+    request.log.error({ clientError }, "Erreur navigateur Tapote");
+    return response.status(202).json({ received: true, id: clientError.id });
+  });
   app.get("/api/ready", async (request, response) => {
     try {
       await Promise.all([repository.healthCheck(), storage.healthCheck()]);
