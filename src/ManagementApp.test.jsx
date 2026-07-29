@@ -266,6 +266,21 @@ describe("TAPOTE Gestion", () => {
     expect(screen.queryAllByText("Client obsolète")).toHaveLength(0);
   });
 
+  it("reste utilisable quand WebKit refuse le WebSocket Realtime", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    repository.subscribeToManagement.mockImplementationOnce(() => {
+      throw new Error("WebSocket not available: The operation is insecure.");
+    });
+
+    render(<TapoteManagementApp />);
+
+    expect(await screen.findByRole("heading", { name: "Vue d’ensemble" })).toBeInTheDocument();
+    expect(await screen.findByRole("status")).toHaveTextContent("Gestion reste utilisable");
+    expect(screen.queryByText("Tapote a besoin d’être rechargé.")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Commandes/ }));
+    expect(screen.getByRole("heading", { name: "Commandes" })).toBeInTheDocument();
+  });
+
   it("centralise la création et le contrôle des produits NFC", async () => {
     render(<TapoteManagementApp />);
     await screen.findByRole("heading", { name: "Vue d’ensemble" });

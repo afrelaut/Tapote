@@ -203,9 +203,14 @@ function cspDirectives(config) {
   const connectSrc = ["'self'"];
   if (config.supabaseUrl) {
     try {
-      const origin = new URL(config.supabaseUrl).origin;
-      imgSrc.push(origin);
-      connectSrc.push(origin);
+      const supabaseUrl = new URL(config.supabaseUrl);
+      imgSrc.push(supabaseUrl.origin);
+      connectSrc.push(supabaseUrl.origin);
+      // WebKit does not consistently treat an HTTPS host source as permission
+      // for the equivalent secure WebSocket. Supabase Realtime requires the
+      // explicit WSS origin on Safari and every iOS browser.
+      supabaseUrl.protocol = supabaseUrl.protocol === "https:" ? "wss:" : "ws:";
+      connectSrc.push(supabaseUrl.origin);
     } catch { /* readiness rejects an invalid URL */ }
   }
   return {

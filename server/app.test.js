@@ -149,12 +149,13 @@ describe("API Tapote", () => {
   });
 
   it("autorise les styles React inline avec le fallback Safari/WebKit", async () => {
-    const { app } = makeContext();
+    const { app } = makeContext({ SUPABASE_URL: "https://project-ref.supabase.co" });
     const response = await request(app).get("/api/health");
 
     expect(response.status).toBe(200);
     expect(response.headers["content-security-policy"]).toContain("style-src 'self' 'unsafe-inline'");
     expect(response.headers["content-security-policy"]).toContain("style-src-attr 'unsafe-inline'");
+    expect(response.headers["content-security-policy"]).toContain("connect-src 'self' https://project-ref.supabase.co wss://project-ref.supabase.co");
   });
 
   it("reçoit un diagnostic navigateur borné sans données de session", async () => {
