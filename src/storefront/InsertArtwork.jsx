@@ -69,6 +69,33 @@ function GoogleStars() {
   );
 }
 
+function GoogleWordmark() {
+  return (
+    <span className="tp-insert-google" aria-hidden="true">
+      <i>G</i><i>o</i><i>o</i><i>g</i><i>l</i><i>e</i>
+    </span>
+  );
+}
+
+const PLATFORM_WORDMARKS = {
+  instagram: "Instagram",
+  facebook: "facebook",
+  linkedin: "LinkedIn",
+  tiktok: "TikTok",
+  whatsapp: "WhatsApp",
+};
+
+function PlatformLockup({ platformId }) {
+  return (
+    <span className={`tp-insert-platform-lockup is-${platformId}`} data-platform={platformId}>
+      <span className="tp-insert-platform-icon"><PlatformGlyph id={platformId} /></span>
+      {platformId === "google"
+        ? <GoogleWordmark />
+        : <b>{PLATFORM_WORDMARKS[platformId]}</b>}
+    </span>
+  );
+}
+
 function NfcWaves() {
   return (
     <svg className="tp-insert-nfc-icon" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -84,9 +111,10 @@ function Wrapper({ isCard, children }) {
   return isCard ? <div className="tp-insert-main">{children}</div> : children;
 }
 
-function ActionMark({ actionId }) {
-  if (actionId === "avis") return <GoogleStars />;
+function ActionMark({ actionId, ready = false }) {
   const glyph = platformGlyphForAction(actionId);
+  if (ready && glyph) return <PlatformLockup platformId={glyph} />;
+  if (actionId === "avis") return <GoogleStars />;
   if (glyph) return <span className="tp-insert-platform"><PlatformGlyph id={glyph} /><b>{ACTIONS[actionId]?.name}</b></span>;
   return <span className="tp-insert-action-tag">{ACTIONS[actionId]?.badge || ACTIONS[actionId]?.name}</span>;
 }
@@ -101,17 +129,24 @@ export default function InsertArtwork({
   subline = "",
   tapLabel = "",
   showBrand = true,
+  personalization = "custom",
   className = "",
 }) {
   const resolvedSurface = insertSurface(surface);
   const { ratio, layout } = SURFACE_GEOMETRY[resolvedSurface];
   const action = ACTIONS[actionId] || ACTIONS.avis;
   const isCard = layout === "landscape";
+  const isReady = personalization === "ready";
 
-  const finalHeadline = headline.trim() || action.campaignHeadline || action.headline;
-  const finalSubline = subline.trim() || action.campaignSubline || action.subline;
+  const readyHeadline = action.id === "avis" ? "Votre avis compte, tapotez." : action.campaignHeadline || action.headline;
+  const readySubline = action.id === "avis" ? "Laissez un avis en 30 secondes" : action.campaignSubline || action.subline;
+  const finalHeadline = headline.trim() || (isReady ? readyHeadline : action.campaignHeadline || action.headline);
+  const finalSubline = subline.trim() || (isReady ? readySubline : action.campaignSubline || action.subline);
   const finalTapLabel = tapLabel.trim() || (isCard ? "POSEZ VOTRE TÉLÉPHONE" : "POSEZ VOTRE TÉLÉPHONE ICI");
   const headlineLines = splitHeadline(finalHeadline, layout);
+  const readyLogo = String(colors?.paper || "").toLowerCase() === "#141414"
+    ? "/brand/tapote-logo-light.svg"
+    : "/brand/tapote-logo.svg";
 
   const style = {
     "--insert-ratio": ratio,
@@ -123,9 +158,10 @@ export default function InsertArtwork({
 
   return (
     <div
-      className={`tp-insert tp-insert-${resolvedSurface} ${className}`.trim()}
+      className={`tp-insert tp-insert-${resolvedSurface} is-${personalization} ${className}`.trim()}
       data-action={action.id}
       data-layout={layout}
+      data-personalization={personalization}
       style={style}
       aria-hidden="true"
     >
@@ -135,17 +171,20 @@ export default function InsertArtwork({
         <Wrapper isCard={isCard}>
           <header className="tp-insert-head">
             <span className="tp-insert-logo">
-              {brandLogo
+              {isReady
+                ? <img className="tp-insert-tapote-logo" src={readyLogo} alt="" />
+                : brandLogo
                 ? <img src={brandLogo} alt="" />
                 : <GeneratedBrandMark name={brandName} />}
             </span>
-            {showBrand && <b className="tp-insert-brand">{brandName || "VOTRE MARQUE"}</b>}
+            {showBrand && !isReady && <b className="tp-insert-brand">{brandName || "VOTRE MARQUE"}</b>}
           </header>
 
           <div className="tp-insert-copy">
             {/* Surtitre repris des fichiers d'impression ; la carte s'en passe,
                 faute de hauteur utile. */}
-            {!isCard && <span className="tp-insert-overline">UN GESTE SUFFIT</span>}
+            {!isCard && !isReady && <span className="tp-insert-overline">UN GESTE SUFFIT</span>}
+            {isReady && <div className="tp-insert-mark is-service"><ActionMark actionId={action.id} ready /></div>}
             {/* Les lignes sont séparées par une vraie espace dans le DOM : sans
                 elle, le texte extrait recolle les mots (« Découvreznos »). Le
                 rendu reste sur deux lignes grâce au `display: block`. */}
@@ -157,11 +196,12 @@ export default function InsertArtwork({
                 </Fragment>
               ))}
             </p>
-            <div className="tp-insert-mark"><ActionMark actionId={action.id} /></div>
+            {!isReady && <div className="tp-insert-mark"><ActionMark actionId={action.id} /></div>}
+            {isReady && action.id === "avis" && <GoogleStars />}
             <p className="tp-insert-subline">{finalSubline}</p>
           </div>
 
-          {isCard && <footer className="tp-insert-foot">{`${action.badge || action.name} · TAPOTE.FR`}</footer>}
+          {isCard && <footer className="tp-insert-foot">{isReady ? "PROPULSÉ PAR TAPOTE.FR" : `${action.badge || action.name} · TAPOTE.FR`}</footer>}
         </Wrapper>
 
         <div className="tp-insert-action">
@@ -179,7 +219,7 @@ export default function InsertArtwork({
           )}
         </div>
 
-        {!isCard && <footer className="tp-insert-foot">TAPOTE.FR · UN GESTE SUFFIT</footer>}
+        {!isCard && <footer className="tp-insert-foot">{isReady ? "PROPULSÉ PAR TAPOTE.FR" : "TAPOTE.FR · UN GESTE SUFFIT"}</footer>}
       </div>
     </div>
   );

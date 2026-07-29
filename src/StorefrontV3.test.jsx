@@ -73,14 +73,48 @@ describe("Boutique Tapote V3", () => {
     expect(document.querySelector(".v3-product-art")).toHaveAttribute("aria-hidden", "true");
   });
 
-  it("présente une offre e-commerce simple sans détourner vers Pilot", () => {
+  it("présente l’offre produit puis Tapote Pilot avec un accès explicite", () => {
     renderRoute("/");
 
-    expect(screen.getByRole("heading", { name: /Commencez simple/i })).toBeVisible();
-    expect(screen.getByRole("heading", { name: /Votre marque passe devant/i })).toBeVisible();
-    expect(screen.getByText(/Duo dès 55/)).toBeVisible();
-    expect(screen.queryByText(/Tapote Pilot/i)).not.toBeInTheDocument();
-    expect(screen.getAllByRole("link", { name: /Créer mon Tapote/i }).some((link) => link.getAttribute("href") === "/personnaliser")).toBe(true);
+    expect(screen.getByRole("heading", { name: /Trois façons de commencer/i })).toBeVisible();
+    expect(screen.getByRole("heading", { name: /Tapote Noir ou Blanc/i })).toBeVisible();
+    expect(screen.getByRole("heading", { name: /Votre identité, en situation/i })).toBeVisible();
+    expect(screen.getByRole("heading", { name: /Un support là où ça compte/i })).toBeVisible();
+    expect(screen.getByRole("heading", { name: /Le support reste/i })).toBeVisible();
+    expect(screen.getAllByRole("link", { name: /Accéder à Tapote Pilot/i }).some((link) => link.getAttribute("href") === "/connexion")).toBe(true);
+    expect(screen.getAllByRole("link", { name: /^Configurer un modèle prêt$/i }).some((link) => link.getAttribute("href") === "/boutique?activite=cafes-bars&support=comptoir&lien=avis&design=noir&count=1")).toBe(true);
+    expect(screen.getAllByRole("link", { name: /^Ouvrir le studio$/i }).some((link) => link.getAttribute("href") === "/personnaliser?activite=cafes-bars&support=comptoir&lien=avis&mode=custom&count=1")).toBe(true);
+    expect(screen.getAllByRole("link", { name: /^Créer un pack$/i }).some((link) => link.getAttribute("href") === "/boutique?activite=cafes-bars&support=comptoir&lien=avis&design=blanc&count=2&composition=mix")).toBe(true);
+    expect(screen.queryByRole("heading", { name: /Tout ce qui doit être clair/i })).not.toBeInTheDocument();
+    expect(document.querySelector(".v3-final-buy")).not.toBeInTheDocument();
+  });
+
+  it("sépare la découverte de Tapote Pilot de la connexion", () => {
+    renderRoute("/tapote-pilot");
+
+    expect(screen.getByRole("heading", { level: 1, name: /Un seul poste.*Tous vos Tapote/i })).toBeVisible();
+    expect(screen.getByRole("heading", { name: /Un changement de campagne/i })).toBeVisible();
+    expect(screen.getByRole("heading", { name: /Le contrôle utile/i })).toBeVisible();
+    expect(screen.getAllByRole("link", { name: /Accéder à Tapote Pilot/i }).every((link) => link.getAttribute("href") === "/connexion")).toBe(true);
+    expect(screen.getAllByRole("link", { name: /Tapote Pilot/i }).some((link) => link.getAttribute("href") === "/tapote-pilot")).toBe(true);
+    expect(document.title).toContain("Tapote Pilot");
+  });
+
+  it("rend les quinze secteurs visibles dans un menu structuré", () => {
+    renderRoute("/");
+
+    const toggle = screen.getByRole("button", { name: /Changer · 15 secteurs/i });
+    fireEvent.click(toggle);
+
+    const panel = document.querySelector(".v3-sector-panel");
+    expect(panel).not.toHaveAttribute("hidden");
+    expect(panel.querySelectorAll(".v3-sector-panel-grid button")).toHaveLength(15);
+    expect(screen.getAllByText("Restauration & commerce").some((node) => node.closest(".v3-sector-panel"))).toBe(true);
+    expect(screen.getByText("Services, agences & mobilité")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Artisans & services terrain" }));
+    expect(toggle).toHaveTextContent("Artisans & services terrain");
+    expect(window.location.search).toContain("activite=artisans-services-terrain");
+    expect(panel).toHaveAttribute("hidden");
   });
 
   it("synchronise l’écran du téléphone de la fiche avec le lien choisi", () => {
@@ -105,9 +139,10 @@ describe("Boutique Tapote V3", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Prêt à l’emploi/i }));
 
-    const readySupportBrands = [...document.querySelectorAll(".v3-sector-scene-support .tp-insert-brand")];
-    expect(readySupportBrands).toHaveLength(2);
-    expect(readySupportBrands.every((brand) => brand.textContent === "MAISON LEVAIN")).toBe(true);
+    const readySupportLogos = [...document.querySelectorAll(".v3-sector-scene-support .tp-insert-tapote-logo")];
+    expect(readySupportLogos).toHaveLength(2);
+    expect(readySupportLogos.every((logo) => logo.getAttribute("src") === "/brand/tapote-logo-light.svg")).toBe(true);
+    expect(document.querySelectorAll(".v3-sector-scene-support .tp-insert-brand")).toHaveLength(0);
     expect(document.querySelector(".v3-sector-scene-screen .v3-live-phone-brand small")).toHaveTextContent("MAISON LEVAIN");
     expect(document.querySelector(".v3-sector-scene-screen").style.getPropertyValue("--v3-phone-primary")).toBe("#141414");
     expect(document.querySelector(".v3-sector-scene-screen").style.getPropertyValue("--v3-phone-accent")).toBe("#2458ff");
@@ -137,8 +172,8 @@ describe("Boutique Tapote V3", () => {
 
     expect(document.querySelectorAll('.v3-sector-scene-support .tp-insert-logo img').length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole("button", { name: /Prêt à l’emploi/i }));
-    expect(document.querySelectorAll('.v3-sector-scene-support .tp-insert-logo img')).toHaveLength(0);
-    expect(document.querySelector(".v3-sector-scene-support .tp-insert-brand")).toHaveTextContent("CAFÉ NOMA");
+    expect(document.querySelectorAll(".v3-sector-scene-support .tp-insert-tapote-logo").length).toBeGreaterThan(0);
+    expect(document.querySelector(".v3-sector-scene-support .tp-insert-brand")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /Studio en direct/i }));
     expect(document.querySelectorAll('.v3-sector-scene-support .tp-insert-logo img').length).toBeGreaterThan(0);
@@ -248,6 +283,61 @@ describe("Boutique Tapote V3", () => {
     expect(screen.getByRole("button", { name: /Ajouter au panier/i })).toBeVisible();
   });
 
+  it("garde la même ossature de configuration pour la Carte NFC", () => {
+    renderRoute("/?support=comptoir&mode=ready&lien=reservation");
+
+    fireEvent.click(screen.getByRole("button", { name: "Carte" }));
+
+    expect(document.querySelector(".v3-card-quantity")).toHaveTextContent(/1carte NFC19 €/i);
+    expect(document.querySelector(".v3-card-quantity")).toHaveTextContent(/ajustez la quantité dans le panier/i);
+    expect(screen.getByText("La destination").previousElementSibling).toHaveTextContent("3");
+    expect(screen.getByText("Le design").previousElementSibling).toHaveTextContent("4");
+    expect(window.location.search).toContain("support=carte");
+  });
+
+  it("propose les créations Tapote Noir et Blanc sans dupliquer le grand aperçu", () => {
+    renderRoute("/?support=comptoir&mode=ready&lien=avis&design=blanc&count=1");
+
+    const black = screen.getByRole("button", { name: "Design Tapote Noir" });
+    const white = screen.getByRole("button", { name: "Design Tapote Blanc" });
+    expect(white).toHaveAttribute("aria-pressed", "true");
+    expect(document.querySelector(".v3-ready-design-panel .tp-insert")).not.toBeInTheDocument();
+    expect(document.querySelector(".v3-sector-scene-support .tp-insert-tapote-logo")).toHaveAttribute("src", "/brand/tapote-logo.svg");
+
+    fireEvent.click(black);
+
+    expect(black).toHaveAttribute("aria-pressed", "true");
+    expect(window.location.search).toContain("design=noir");
+    expect(window.location.search).toContain("count=1");
+    expect(document.querySelector(".v3-sector-scene-support .tp-insert-tapote-logo")).toHaveAttribute("src", "/brand/tapote-logo-light.svg");
+    fireEvent.click(screen.getByRole("button", { name: /Ajouter au panier/i }));
+    expect(JSON.parse(window.localStorage.getItem("tapote-cart-v3"))).toEqual([
+      expect.objectContaining({ productId: "comptoir_standard", theme: "nuit" }),
+    ]);
+  });
+
+  it("associe pictogramme et signature typographique aux vraies applications", () => {
+    renderRoute("/?support=comptoir&mode=ready&lien=avis&design=noir&count=1");
+
+    const destination = screen.getByLabelText("Le lien à ouvrir");
+    const applications = [
+      ["avis", "google", "Google"],
+      ["instagram", "instagram", "Instagram"],
+      ["facebook", "facebook", "facebook"],
+      ["linkedin", "linkedin", "LinkedIn"],
+      ["tiktok", "tiktok", "TikTok"],
+      ["whatsapp", "whatsapp", "WhatsApp"],
+    ];
+
+    applications.forEach(([actionId, platformId, wordmark]) => {
+      fireEvent.change(destination, { target: { value: actionId } });
+      const lockup = document.querySelector(`.v3-sector-scene-support .tp-insert-platform-lockup.is-${platformId}`);
+      expect(lockup).toHaveAttribute("data-platform", platformId);
+      expect(lockup.querySelector(`.tp-glyph-${platformId}`)).toBeInTheDocument();
+      expect(lockup).toHaveTextContent(wordmark);
+    });
+  });
+
   it("enregistre exactement les textes et la destination configurés dans le studio", () => {
     renderRoute("/?support=comptoir&mode=custom&lien=avis");
 
@@ -308,6 +398,11 @@ describe("Boutique Tapote V3", () => {
     const inserts = [...document.querySelectorAll(".v3-sector-scene-support .tp-insert")];
     expect(inserts.length).toBeGreaterThan(0);
     expect(inserts.every((insert) => insert.classList.contains("tp-insert-plaque"))).toBe(true);
+
+    fireEvent.change(screen.getByLabelText("Le lien à ouvrir"), { target: { value: "reservation" } });
+    expect(window.location.search).toContain("count=2");
+    expect(window.location.search).toContain("composition=plaques");
+    expect(window.location.search).toContain("mode=custom");
   });
 
   it("rend une vraie page introuvable sans faire planter une fausse fiche produit", () => {
@@ -336,12 +431,13 @@ describe("Boutique Tapote V3", () => {
     ]);
   });
 
-  it("explique que le changement de lien reste gratuit sans Pilot", () => {
+  it("explique clairement que le changement de lien passe par Pilot", () => {
     renderRoute("/comment-ca-marche");
 
     expect(screen.getByRole("heading", { name: /Vous ne touchez pas au support/i })).toBeVisible();
-    expect(screen.getByText("Modifications illimitées")).toBeVisible();
-    expect(screen.getByText("Sans abonnement obligatoire")).toBeVisible();
+    expect(screen.getByText("Modifications à distance")).toBeVisible();
+    expect(screen.getAllByRole("link", { name: /Accéder à Tapote Pilot/i }).every((link) => link.getAttribute("href") === "/connexion")).toBe(true);
+    expect(screen.queryByText("Sans abonnement obligatoire")).not.toBeInTheDocument();
   });
 
   it("envoie la demande de devis volume vers l’API existante", async () => {
@@ -389,6 +485,55 @@ describe("Boutique Tapote V3", () => {
       destinationUrl: "https://example.com/reserver",
       customTapLabel: "Réserver",
     }));
+  });
+
+  it("restaure puis remplace un article du panier sans créer de doublon", () => {
+    const cartItem = {
+      productId: "comptoir",
+      actionId: "reservation",
+      quantity: 1,
+      brandName: "STUDIO TEST",
+      theme: "blue",
+      targetId: "salon",
+      customHeadline: "On se revoit ? Tapotez.",
+      customSubline: "Réservez votre prochain créneau",
+      customTapLabel: "Réserver",
+      destinationUrl: "https://example.com/reserver",
+      brandLogoId: "",
+      logoFileName: "",
+    };
+    window.localStorage.setItem("tapote-cart-v3", JSON.stringify([cartItem]));
+    window.sessionStorage.setItem("tapote-config-draft-v2:cart:0", JSON.stringify({
+      actionId: cartItem.actionId,
+      count: 1,
+      composition: { comptoir: 1, plaque: 0 },
+      brandName: cartItem.brandName,
+      customHeadline: cartItem.customHeadline,
+      customSubline: cartItem.customSubline,
+      customTapLabel: cartItem.customTapLabel,
+      destinationUrl: cartItem.destinationUrl,
+      theme: cartItem.theme,
+      primaryColor: "#fffdf8",
+      secondaryColor: "#2458ff",
+      textColor: "#161310",
+    }));
+
+    renderRoute("/produits/chevalet?mode=custom&action=reservation&edit=0");
+
+    expect(screen.getByLabelText("Nom de votre entreprise")).toHaveValue("STUDIO TEST");
+    expect(screen.getByLabelText("Le lien à ouvrir")).toHaveValue("reservation");
+    expect(screen.getByLabelText("Adresse exacte à ouvrir")).toHaveValue("https://example.com/reserver");
+    fireEvent.change(screen.getByLabelText("Nom de votre entreprise"), { target: { value: "STUDIO MODIFIÉ" } });
+    fireEvent.click(screen.getByRole("button", { name: /Ajouter au panier/i }));
+
+    expect(JSON.parse(window.localStorage.getItem("tapote-cart-v3"))).toEqual([
+      expect.objectContaining({
+        productId: "comptoir",
+        actionId: "reservation",
+        brandName: "STUDIO MODIFIÉ",
+        destinationUrl: "https://example.com/reserver",
+      }),
+    ]);
   });
 
   it("remplace le paiement par un devis à partir de 10 supports", () => {

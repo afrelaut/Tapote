@@ -4,7 +4,10 @@ import { chromium } from "playwright-core";
 import { ACTIONS, PRODUCTS } from "../shared/catalog.js";
 import { SECTORS } from "../src/storefront/sectorData.js";
 
-const baseUrl = process.env.TAPOTE_PHONE_AUDIT_URL || "http://127.0.0.1:5173";
+const baseUrl =
+  process.env.TAPOTE_PHONE_AUDIT_URL ||
+  process.env.TAPOTE_AUDIT_URL ||
+  "http://127.0.0.1:5173";
 const outputDir = path.resolve("output/playwright/phones-sitewide");
 const actionIds = Object.keys(ACTIONS);
 const viewports = [
@@ -13,17 +16,19 @@ const viewports = [
 ];
 
 const occurrenceRoutes = [
-  ["accueil", "/", 8],
-  ["boutique", "/boutique", 3],
-  ["secteurs", "/secteurs", 15],
-  ["designs", "/designs", 19],
-  ["categorie-chevalet", "/categorie/chevalets-nfc", 3],
-  ["categorie-plaque", "/categorie/plaques-nfc", 3],
-  ["categorie-carte", "/categorie/cartes-nfc", 3],
-  ["produit-chevalet", "/produits/chevalet?mode=custom&action=avis", 3],
-  ["produit-plaque", "/produits/plaque?mode=custom&action=avis", 3],
-  ["produit-carte", "/produits/carte?mode=custom&action=avis", 3],
-  ["personnaliser", "/personnaliser", 3],
+  // Toutes les anciennes surfaces rendent désormais une scène unifiée :
+  // une seule occurrence vivante, recomposée par les sélecteurs.
+  ["accueil", "/", 1],
+  ["boutique", "/boutique", 1],
+  ["secteurs", "/secteurs", 1],
+  ["designs", "/designs", 1],
+  ["categorie-chevalet", "/categorie/chevalets-nfc", 1],
+  ["categorie-plaque", "/categorie/plaques-nfc", 1],
+  ["categorie-carte", "/categorie/cartes-nfc", 1],
+  ["produit-chevalet", "/produits/chevalet?mode=custom&action=avis", 1],
+  ["produit-plaque", "/produits/plaque?mode=custom&action=avis", 1],
+  ["produit-carte", "/produits/carte?mode=custom&action=avis", 1],
+  ["personnaliser", "/personnaliser", 1],
   ["fonctionnement", "/comment-ca-marche", 1],
   ...SECTORS.map((sector) => [`secteur-${sector.id}`, `/secteurs/${sector.slug}`, 1]),
 ];
@@ -293,42 +298,30 @@ async function auditActionMatrices(context, viewport) {
     await runSelectMatrix(context, viewport, {
       name: `produit-${product}`,
       pathname: `/produits/${product}?mode=custom&action=avis`,
-      selectSelector: '.v3-product-buy-column select[aria-label="Le lien à ouvrir"]',
-      sceneSelector: ".v3-product-main-image",
+      // Les anciennes fiches produit rendent désormais la même page unifiée.
+      // L'audit doit donc suivre le configurateur et la scène réellement
+      // présents, au lieu de tolérer silencieusement une matrice vide.
+      selectSelector: '.v3-sector-buy select[aria-label="Le lien à ouvrir"]',
+      sceneSelector: ".v3-sector-hero .v3-sector-scene",
     });
   }
-  for (const [index, surface] of ["chevalet", "plaque", "carte"].entries()) {
+  for (const surface of [
+    { slug: "chevalet", label: "Chevalet" },
+    { slug: "plaque", label: "Plaque" },
+    { slug: "carte", label: "Carte" },
+  ]) {
     await runSelectMatrix(context, viewport, {
-      name: `accueil-${surface}`,
+      name: `accueil-${surface.slug}`,
       pathname: "/",
-      selectSelector: ".v3-home-quick-buy select",
-      sceneSelector: ".v3-home-product-scene",
+      selectSelector: '.v3-sector-buy select[aria-label="Le lien à ouvrir"]',
+      sceneSelector: ".v3-sector-hero .v3-sector-scene",
       setup: async (page) => {
-        await page.locator(".v3-home-quick-buy fieldset button").nth(index).click();
+        await page.getByRole("button", { name: surface.label, exact: true }).click();
         await page.waitForTimeout(40);
       },
     });
   }
 
-  const { page, errors } = await openPage(context, "/");
-  const demoFrames = [];
-  const buttons = page.locator(".v3-action-tabs button");
-  const count = await buttons.count();
-  for (let index = 0; index < count; index += 1) {
-    const button = buttons.nth(index);
-    const label = (await button.textContent())?.trim() || `action-${index + 1}`;
-    await button.click();
-    const scene = page.locator(".v3-demo-player");
-    await scene.locator(".v3-live-phone-screen").waitFor();
-    const metrics = await sceneMetrics(scene);
-    if (!metrics.ok) fail(`${viewport.name}:demo:${label}`, metrics);
-    demoFrames.push({ label, image: await scene.screenshot({ animations: "disabled" }) });
-  }
-  if (errors.length || count !== 6) fail(`${viewport.name}:demo`, { errors, count });
-  report.actionMatrices.push({ viewport: viewport.name, name: "accueil-demo", options: demoFrames.map((frame) => frame.label), states: count });
-  await renderContactSheet(context, viewport, "accueil-demo", demoFrames);
-  await page.close();
-  console.log(`[actions] ${viewport.name} · accueil-demo: ${count}/6`);
 }
 
 async function auditStaticAssets() {

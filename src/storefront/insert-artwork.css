@@ -53,6 +53,16 @@
   height: 100%;
 }
 
+.tp-insert.is-ready .tp-insert-logo {
+  width: 34cqw;
+  height: 9cqw;
+}
+
+.tp-insert-tapote-logo {
+  width: 100%;
+  height: 100%;
+}
+
 .tp-insert-brand {
   max-width: 88%;
   font-size: 2.9cqw;
@@ -108,6 +118,161 @@
 .tp-insert-mark {
   display: flex;
   justify-content: center;
+}
+
+.tp-insert-mark.is-service {
+  min-height: 6.2cqw;
+  align-items: center;
+}
+
+.tp-insert-google {
+  display: inline-flex;
+  align-items: baseline;
+  font-family: Arial, sans-serif;
+  font-size: 6.7cqw;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.08em;
+}
+
+.tp-insert-google i { font-style: normal; }
+.tp-insert-google i:nth-child(1),
+.tp-insert-google i:nth-child(4) { color: #4285f4; }
+.tp-insert-google i:nth-child(2),
+.tp-insert-google i:nth-child(6) { color: #ea4335; }
+.tp-insert-google i:nth-child(3) { color: #fbbc05; }
+.tp-insert-google i:nth-child(5) { color: #34a853; }
+
+.tp-insert-platform-lockup {
+  max-width: 82cqw;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2.2cqw;
+  line-height: 1;
+}
+
+.tp-insert-platform-icon {
+  width: 6.6cqw;
+  height: 6.6cqw;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+}
+
+.tp-insert-platform-icon .tp-glyph,
+.tp-insert-platform-icon .tp-glyph svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.tp-insert-platform-lockup > b {
+  color: var(--insert-ink);
+  font-family: Arial, sans-serif;
+  font-size: 5.2cqw;
+  font-weight: 750;
+  letter-spacing: -0.065em;
+}
+
+.tp-insert-platform-lockup.is-google {
+  gap: 1.8cqw;
+}
+
+.tp-insert-platform-lockup.is-google .tp-insert-platform-icon {
+  width: 6.2cqw;
+  height: 6.2cqw;
+}
+
+.tp-insert-platform-lockup.is-google .tp-insert-google {
+  font-size: 6.2cqw;
+}
+
+.tp-insert-platform-lockup.is-instagram .tp-insert-platform-icon {
+  padding: 1.05cqw;
+  box-sizing: border-box;
+  color: #fff;
+  background:
+    radial-gradient(circle at 31% 104%, #ffd600 0 22%, #ff7a00 36%, #ff0169 61%, transparent 82%),
+    linear-gradient(135deg, #7638fa, #d300c5);
+  border-radius: 29%;
+}
+
+.tp-insert-platform-lockup.is-instagram .tp-glyph svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+}
+
+.tp-insert-platform-lockup.is-instagram .tp-glyph .is-filled { fill: currentColor; }
+
+.tp-insert-platform-lockup.is-instagram > b {
+  color: #d62976;
+  font-family: "Segoe Script", "Brush Script MT", cursive;
+  font-size: 5.5cqw;
+  font-weight: 700;
+  letter-spacing: -0.09em;
+}
+
+.tp-insert-platform-lockup.is-facebook .tp-insert-platform-icon,
+.tp-insert-platform-lockup.is-linkedin .tp-insert-platform-icon,
+.tp-insert-platform-lockup.is-whatsapp .tp-insert-platform-icon {
+  padding: 1cqw;
+  box-sizing: border-box;
+  color: #fff;
+}
+
+.tp-insert-platform-lockup.is-facebook .tp-insert-platform-icon {
+  background: #1877f2;
+  border-radius: 50%;
+}
+
+.tp-insert-platform-lockup.is-facebook > b { color: #1877f2; }
+
+.tp-insert-platform-lockup.is-linkedin .tp-insert-platform-icon {
+  background: #0a66c2;
+  border-radius: 1.1cqw;
+}
+
+.tp-insert-platform-lockup.is-linkedin > b { color: #0a66c2; }
+
+.tp-insert-platform-lockup.is-whatsapp .tp-insert-platform-icon {
+  background: #25d366;
+  border-radius: 50%;
+}
+
+.tp-insert-platform-lockup.is-whatsapp .tp-glyph svg {
+  fill: none;
+  stroke: currentColor;
+}
+
+.tp-insert-platform-lockup.is-whatsapp > b { color: #128c7e; }
+
+.tp-insert-platform-lockup.is-tiktok .tp-insert-platform-icon {
+  color: var(--insert-ink);
+}
+
+.tp-insert-platform-lockup.is-tiktok .tp-glyph .is-shadow {
+  fill: #25f4ee;
+  opacity: 1;
+}
+
+.tp-insert-platform-lockup.is-tiktok .tp-glyph .is-filled {
+  fill: #fe2c55;
+}
+
+.tp-insert.is-ready .tp-insert-copy {
+  gap: 2.15cqw;
+}
+
+.tp-insert.is-ready .tp-insert-headline {
+  max-width: 86%;
+  font-size: 10.1cqw;
+}
+
+.tp-insert.is-ready .tp-insert-subline {
+  font-size: 2.75cqw;
 }
 
 .tp-insert-stars {
@@ -210,6 +375,36 @@
   border-radius: 1.6cqw;
 }
 
+/* Les deux créations Tapote officielles reprennent le bloc de production :
+   NFC bleu à gauche, QR blanc à droite. Les créations personnalisées gardent
+   la zone d'action monochrome pilotée par la palette du client. */
+.tp-insert.is-ready .tp-insert-action {
+  color: #141414;
+  background: #fff;
+  overflow: hidden;
+}
+
+.tp-insert.is-ready .tp-insert-nfc {
+  color: #fff;
+  background: linear-gradient(145deg, #3b6bff, var(--insert-accent) 72%);
+  border-radius: 4.2cqw 0 0 4.2cqw;
+}
+
+.tp-insert.is-ready .tp-insert-nfc-icon { color: #fff; }
+
+.tp-insert.is-ready .tp-insert-qr {
+  color: #141414;
+  background: #fff;
+  border-left: 0;
+}
+
+.tp-insert.is-ready .tp-insert-qr small {
+  color: #5d5d5d;
+  opacity: 1;
+}
+
+.tp-insert.is-ready .tp-insert-qr img { padding: 0.9cqw; }
+
 /* ---------- Pied : signature Tapote ---------- */
 
 .tp-insert-foot {
@@ -249,6 +444,18 @@
 .tp-insert-plaque .tp-insert-action small { font-size: 1.75cqw; }
 .tp-insert-plaque .tp-insert-qr img { width: 17cqw; height: 17cqw; }
 .tp-insert-plaque .tp-insert-foot { font-size: 1.5cqw; }
+
+.tp-insert-plaque.is-ready .tp-insert-logo {
+  width: 27cqw;
+  height: 7cqw;
+}
+
+.tp-insert-plaque.is-ready .tp-insert-copy { gap: 1.45cqw; }
+.tp-insert-plaque.is-ready .tp-insert-headline { font-size: 7.9cqw; }
+.tp-insert-plaque.is-ready .tp-insert-google { font-size: 5.4cqw; }
+.tp-insert-plaque.is-ready .tp-insert-mark.is-service { min-height: 5cqw; }
+.tp-insert-plaque.is-ready .tp-insert-platform-lockup > b { font-size: 4.6cqw; }
+.tp-insert-plaque.is-ready .tp-insert-platform-icon { width: 5.5cqw; height: 5.5cqw; }
 
 /* ---------- Carte NFC (85 × 54 mm) ----------
    Format paysage : la colonne de gauche porte l'identité, la colonne de droite
@@ -296,6 +503,24 @@
 .tp-insert-carte .tp-insert-action strong { font-size: 2.5cqw; }
 .tp-insert-carte .tp-insert-action small { font-size: 1.6cqw; }
 .tp-insert-carte .tp-insert-foot { font-size: 1.5cqw; letter-spacing: 0.24em; }
+
+.tp-insert-carte.is-ready .tp-insert-head { display: block; }
+.tp-insert-carte.is-ready .tp-insert-logo { width: 22cqw; height: 5.6cqw; }
+.tp-insert-carte.is-ready .tp-insert-copy { gap: 1.35cqw; }
+.tp-insert-carte.is-ready .tp-insert-headline { font-size: 6.6cqw; }
+.tp-insert-carte.is-ready .tp-insert-google { font-size: 4.1cqw; }
+.tp-insert-carte.is-ready .tp-insert-mark.is-service { min-height: 4cqw; }
+.tp-insert-carte.is-ready .tp-insert-stars svg { width: 3cqw; height: 3cqw; }
+.tp-insert-carte.is-ready .tp-insert-platform-lockup { gap: 1.25cqw; }
+.tp-insert-carte.is-ready .tp-insert-platform-lockup > b { font-size: 3.55cqw; }
+.tp-insert-carte.is-ready .tp-insert-platform-icon { width: 4.4cqw; height: 4.4cqw; }
+.tp-insert-carte.is-ready .tp-insert-platform-lockup.is-google .tp-insert-platform-icon { width: 4.2cqw; height: 4.2cqw; }
+.tp-insert-carte.is-ready .tp-insert-platform-lockup.is-google .tp-insert-google { font-size: 4.1cqw; }
+.tp-insert-carte.is-ready .tp-insert-action {
+  color: #fff;
+  background: linear-gradient(145deg, #3b6bff, var(--insert-accent) 72%);
+}
+.tp-insert-carte.is-ready .tp-insert-nfc { border-radius: inherit; }
 
 /* ---------- Monogramme de remplacement ---------- */
 

@@ -40,6 +40,7 @@ const storefrontPaths = new Set([
   "/secteurs",
   "/personnaliser",
   "/comment-ca-marche",
+  "/tapote-pilot",
   "/panier",
   "/devis",
   "/commande",
@@ -73,12 +74,13 @@ const storefrontPaths = new Set([
 ]);
 
 const routeMeta = new Map([
-  ["/", ["Supports NFC + QR prêts ou personnalisés | Tapote", "Chevalets, plaques et cartes NFC + QR prêts à l’emploi ou personnalisés. Le bon lien s’ouvre en un geste et reste modifiable à vie."]],
+  ["/", ["Supports NFC + QR prêts ou personnalisés | Tapote", "Chevalets, plaques et cartes NFC + QR prêts à l’emploi ou personnalisés. Destination initiale configurée et pilotage à distance avec Tapote Pilot."]],
   ["/boutique", ["Boutique NFC + QR | Tapote", "Choisissez un chevalet, une plaque verticale, une Carte NFC ou un pack Tapote, prêt à l’emploi ou adapté à votre identité."]],
   ["/designs", ["Designs Tapote pour chaque usage", "Comparez les designs Tapote pour avis, menu, réservation, réseaux sociaux, Wi-Fi, paiement et autres liens professionnels."]],
   ["/secteurs", ["Tapote pour votre secteur | 15 usages concrets", "Trouvez le support NFC + QR, le placement et l’usage Tapote adaptés à votre métier."]],
   ["/personnaliser", ["Personnaliser votre Tapote", "Créez votre Tapote en direct avec votre logo, vos couleurs, vos textes et votre destination, puis commandez le visuel affiché."]],
   ["/comment-ca-marche", ["Comment fonctionne Tapote ?", "NFC ou QR : le client approche son téléphone et ouvre instantanément l’avis, le menu, la réservation ou le lien choisi."]],
+  ["/tapote-pilot", ["Tapote Pilot | Changez vos liens et suivez vos supports", "Pilotez vos supports Tapote à distance, changez leur destination et suivez les interactions NFC + QR depuis une interface unique."]],
   ["/produits/chevalet", ["Chevalet A6 NFC + QR | Tapote", "Un chevalet vertical et visible pour déclencher avis, réservation, menu, Wi-Fi ou tout autre lien au comptoir."]],
   ["/produits/plaque", ["Plaque verticale NFC + QR | Tapote", "Une plaque PMMA présentée debout, personnalisable et synchronisée avec le lien affiché sur le téléphone."]],
   ["/produits/carte", ["Carte NFC + QR professionnelle | Tapote", "Une Carte NFC compacte pour partager contact, réseaux, réservation, avis ou tout autre lien en rendez-vous et sur le terrain."]],

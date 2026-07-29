@@ -72,6 +72,7 @@ describe("API Tapote", () => {
   it("distingue les vraies routes front des soft-404", () => {
     expect(isKnownFrontendPath("/")).toBe(true);
     expect(isKnownFrontendPath("/boutique/")).toBe(true);
+    expect(isKnownFrontendPath("/tapote-pilot")).toBe(true);
     expect(isKnownFrontendPath("/secteurs/auto-ecoles")).toBe(true);
     expect(isKnownFrontendPath("/gestion/commandes")).toBe(true);
     expect(isKnownFrontendPath("/produits/invente")).toBe(false);
@@ -82,6 +83,7 @@ describe("API Tapote", () => {
     const product = storefrontMetaForPath("/produits/plaque?ignored=true", "https://tapote.fr");
     const sector = storefrontMetaForPath("/secteurs/auto-ecoles", "https://tapote.fr/");
     const quote = storefrontMetaForPath("/devis", "https://tapote.fr");
+    const pilotMarketing = storefrontMetaForPath("/tapote-pilot", "https://tapote.fr");
     const legal = storefrontMetaForPath("/cgv", "https://tapote.fr");
     const privatePage = storefrontMetaForPath("/panier", "https://tapote.fr");
     const missing = storefrontMetaForPath("/produits/invente", "https://tapote.fr");
@@ -95,6 +97,11 @@ describe("API Tapote", () => {
     expect(quote).toMatchObject({
       title: "Devis volume et multi-sites | Tapote",
       canonical: "https://tapote.fr/devis",
+      robots: "index,follow,max-image-preview:large",
+    });
+    expect(pilotMarketing).toMatchObject({
+      title: "Tapote Pilot | Changez vos liens et suivez vos supports",
+      canonical: "https://tapote.fr/tapote-pilot",
       robots: "index,follow,max-image-preview:large",
     });
     expect(legal.title).toBe("Conditions générales de vente B2B | Tapote");
@@ -118,6 +125,11 @@ describe("API Tapote", () => {
     expect(quote.text).toContain('name="robots" content="index,follow,max-image-preview:large"');
     expect(quote.text).toContain('rel="canonical" href="https://tapote.fr/devis"');
     expect(quote.headers["x-robots-tag"]).toBe("index,follow,max-image-preview:large");
+
+    const pilotMarketing = await request(app).get("/tapote-pilot").set("Accept", "text/html");
+    expect(pilotMarketing.status).toBe(200);
+    expect(pilotMarketing.text).toContain("<title>Tapote Pilot | Changez vos liens et suivez vos supports</title>");
+    expect(pilotMarketing.headers["x-robots-tag"]).toBe("index,follow,max-image-preview:large");
 
     const missing = await request(app).get("/secteurs/invente").set("Accept", "text/html");
     expect(missing.status).toBe(404);
