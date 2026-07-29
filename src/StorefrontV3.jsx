@@ -954,9 +954,34 @@ function LivePhoneScreen({ actionId = "avis", brandName = "VOTRE MARQUE", brandL
     "--v3-phone-copy": brandDark,
     "--v3-phone-scene-image": sceneImage ? `url(${sceneImage})` : "none",
   };
+  const [topLeftRadius, topRightRadius, bottomRightRadius, bottomLeftRadius] = PHONE_SCREEN_CLIP_RADII[sceneImage] || [60, 60, 82, 76];
+  phoneStyle["--v3-phone-radius-tl"] = `${topLeftRadius}px`;
+  phoneStyle["--v3-phone-radius-tr"] = `${topRightRadius}px`;
+  phoneStyle["--v3-phone-radius-br"] = `${bottomRightRadius}px`;
+  phoneStyle["--v3-phone-radius-bl"] = `${bottomLeftRadius}px`;
   const bareBrandAvatar = <div className="v3-live-brand-avatar">{brandLogo ? <img src={brandLogo} alt="" /> : <GeneratedBrandMark name={safeBrandName} />}</div>;
   const brandAvatar = <div className="v3-live-brand-avatar">{brandLogo ? <img src={brandLogo} alt="" /> : <GeneratedBrandMark name={safeBrandName} />}{socialNetwork && <b className={`is-${socialNetwork}`}><PlatformGlyph id={socialNetwork} /></b>}</div>;
   const socialPosts = instagramPostImages(sceneImage, resolvedSectorId);
+  const phoneInterface = <>
+    {/* The photographed iOS status area can remain visible on lifestyle
+        scenes. TikTok repaints the complete glass and draws its own status. */}
+    {(!preserveNativeStatus || actionId === "tiktok") && <div className="v3-live-phone-status"><span>11:25</span><div><i className="is-signal" /><Wifi /><i className="is-battery" /></div></div>}
+    {!['instagram', 'tiktok', 'facebook', 'linkedin', 'whatsapp', 'wifi', 'paiement', 'site', 'autre'].includes(actionId) && <div className="v3-live-phone-browser"><span>‹</span><strong><PhoneServiceMark actionId={actionId} label={screen.overline} /></strong><i>•••</i></div>}
+    {actionId === "instagram" ? <InstagramPhoneApp brandAvatar={bareBrandAvatar} brandName={safeBrandName} handle={handle} sceneImage={sceneImage} profile={profile} sectorId={resolvedSectorId} /> : actionId === "tiktok" ? <TikTokPhoneApp brandAvatar={bareBrandAvatar} brandName={safeBrandName} handle={handle} sceneImage={sceneImage} profile={profile} sectorId={resolvedSectorId} /> : actionId === "facebook" ? <FacebookPhoneApp brandAvatar={bareBrandAvatar} brandName={safeBrandName} sceneImage={sceneImage} profile={profile} sectorId={resolvedSectorId} /> : actionId === "linkedin" ? <LinkedInPhoneApp brandAvatar={bareBrandAvatar} brandName={safeBrandName} sceneImage={sceneImage} profile={profile} sectorId={resolvedSectorId} /> : actionId === "whatsapp" ? <WhatsAppPhoneApp brandAvatar={bareBrandAvatar} brandName={safeBrandName} profile={profile} sectorId={resolvedSectorId} /> : actionId === "wifi" ? <WifiSettingsApp brandName={safeBrandName} profile={profile} /> : actionId === "paiement" ? <ApplePayPhoneApp brandAvatar={bareBrandAvatar} brandName={safeBrandName} profile={profile} /> : ["site", "autre"].includes(actionId) ? <SafariPhoneApp brandAvatar={bareBrandAvatar} brandName={safeBrandName} actionId={actionId} sceneImage={sceneImage} profile={profile} sectorId={resolvedSectorId} /> : socialNetwork ? <div className="v3-live-phone-social">
+      {brandAvatar}
+      <div><h3>{safeBrandName}</h3><span>{handle}</span></div>
+      <dl><div><dt>128</dt><dd>publications</dd></div><div><dt>4,8 k</dt><dd>abonnés</dd></div><div><dt>246</dt><dd>abonnements</dd></div></dl>
+      <span className="v3-live-phone-cta">{socialNetwork === "linkedin" ? "Suivre la page" : "Suivre"}</span>
+      <div className="v3-live-social-grid">{socialPosts.map((post, index) => <i key={`${post}-${index}`} style={{ "--v3-phone-post-image": `url(${post})` }} />)}</div>
+    </div> : <div className={`v3-live-phone-content is-${actionId}`}>
+      <div className="v3-live-phone-brand">{brandAvatar}<small>{safeBrandName}</small></div>
+      <h3>{screen.title}</h3>
+      <PhoneActionPreview actionId={actionId} screen={screen} sceneImage={sceneImage} brandName={safeBrandName} sectorId={resolvedSectorId} />
+      <p>{screen.helper}</p>
+      <span className="v3-live-phone-cta">{screen.cta}</span>
+    </div>}
+    <i className="v3-live-phone-home" />
+  </>;
   return (
     <div className={`v3-live-phone-screen is-action-${actionId} ${className}`} style={phoneStyle} data-phone-action={actionId} data-phone-sector={resolvedSectorId || undefined} data-native-source={native || undefined} role="img" aria-label={`Écran du téléphone après ouverture : ${ACTIONS[actionId]?.name || "lien"}`}>
       <svg className="v3-live-phone-svg" viewBox="0 0 1254 1254" preserveAspectRatio="none" aria-hidden="true">
@@ -966,33 +991,14 @@ function LivePhoneScreen({ actionId = "avis", brandName = "VOTRE MARQUE", brandL
           <linearGradient id={glareId} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#fff7e8" stopOpacity=".2" /><stop offset=".4" stopColor="#fff" stopOpacity="0" /><stop offset=".82" stopColor="#cbd5e1" stopOpacity=".12" /></linearGradient>
         </defs>
         <path className="v3-live-phone-mask" d={contentPath} fill={`url(#${glassId})`} />
-        <foreignObject x="0" y="0" width="1254" height="1254" clipPath={`url(#${clipId})`}>
-          <div className="v3-live-phone-canvas" xmlns="http://www.w3.org/1999/xhtml" aria-hidden="true">
-            <div className="v3-live-phone-ui">
-              {/* Every lifestyle photograph already contains the physical iOS
-                  status area. Light destinations preserve it; TikTok repaints
-                  the full glass and therefore draws a white live status bar. */}
-              {(!preserveNativeStatus || actionId === "tiktok") && <div className="v3-live-phone-status"><span>11:25</span><div><i className="is-signal" /><Wifi /><i className="is-battery" /></div></div>}
-              {!['instagram', 'tiktok', 'facebook', 'linkedin', 'whatsapp', 'wifi', 'paiement', 'site', 'autre'].includes(actionId) && <div className="v3-live-phone-browser"><span>‹</span><strong><PhoneServiceMark actionId={actionId} label={screen.overline} /></strong><i>•••</i></div>}
-              {actionId === "instagram" ? <InstagramPhoneApp brandAvatar={bareBrandAvatar} brandName={safeBrandName} handle={handle} sceneImage={sceneImage} profile={profile} sectorId={resolvedSectorId} /> : actionId === "tiktok" ? <TikTokPhoneApp brandAvatar={bareBrandAvatar} brandName={safeBrandName} handle={handle} sceneImage={sceneImage} profile={profile} sectorId={resolvedSectorId} /> : actionId === "facebook" ? <FacebookPhoneApp brandAvatar={bareBrandAvatar} brandName={safeBrandName} sceneImage={sceneImage} profile={profile} sectorId={resolvedSectorId} /> : actionId === "linkedin" ? <LinkedInPhoneApp brandAvatar={bareBrandAvatar} brandName={safeBrandName} sceneImage={sceneImage} profile={profile} sectorId={resolvedSectorId} /> : actionId === "whatsapp" ? <WhatsAppPhoneApp brandAvatar={bareBrandAvatar} brandName={safeBrandName} profile={profile} sectorId={resolvedSectorId} /> : actionId === "wifi" ? <WifiSettingsApp brandName={safeBrandName} profile={profile} /> : actionId === "paiement" ? <ApplePayPhoneApp brandAvatar={bareBrandAvatar} brandName={safeBrandName} profile={profile} /> : ["site", "autre"].includes(actionId) ? <SafariPhoneApp brandAvatar={bareBrandAvatar} brandName={safeBrandName} actionId={actionId} sceneImage={sceneImage} profile={profile} sectorId={resolvedSectorId} /> : socialNetwork ? <div className="v3-live-phone-social">
-                {brandAvatar}
-                <div><h3>{safeBrandName}</h3><span>{handle}</span></div>
-                <dl><div><dt>128</dt><dd>publications</dd></div><div><dt>4,8 k</dt><dd>abonnés</dd></div><div><dt>246</dt><dd>abonnements</dd></div></dl>
-                <span className="v3-live-phone-cta">{socialNetwork === "linkedin" ? "Suivre la page" : "Suivre"}</span>
-                <div className="v3-live-social-grid">{socialPosts.map((post, index) => <i key={`${post}-${index}`} style={{ "--v3-phone-post-image": `url(${post})` }} />)}</div>
-              </div> : <div className={`v3-live-phone-content is-${actionId}`}>
-                <div className="v3-live-phone-brand">{brandAvatar}<small>{safeBrandName}</small></div>
-                <h3>{screen.title}</h3>
-                <PhoneActionPreview actionId={actionId} screen={screen} sceneImage={sceneImage} brandName={safeBrandName} sectorId={resolvedSectorId} />
-                <p>{screen.helper}</p>
-                <span className="v3-live-phone-cta">{screen.cta}</span>
-              </div>}
-              <i className="v3-live-phone-home" />
-            </div>
-          </div>
-        </foreignObject>
         <path className="v3-live-phone-glare" d="M635 315 C621 330 625 360 643 402 L866 902 C879 932 897 947 919 943 L955 935 L747 307 Z" fill={`url(#${glareId})`} clipPath={`url(#${clipId})`} />
       </svg>
+      {/* Regular HTML deliberately replaces SVG foreignObject here. Safari on
+          iPhone intermittently dropped the foreignObject while keeping the
+          photographed white glass, producing an apparently blank phone. */}
+      <div className="v3-live-phone-canvas" aria-hidden="true">
+        <div className="v3-live-phone-ui">{phoneInterface}</div>
+      </div>
     </div>
   );
 }
@@ -1005,7 +1011,6 @@ function sectorDefaultSurface(sector) {
 // Per-photo perspective mapping. The live UI is projected directly from its
 // native 390 × 844 rectangle onto the measured glass quadrilateral. Keeping the
 // SVG mask fixed in photo coordinates avoids double-warping the rounded corners.
-const PHONE_UI_SOURCE_QUAD = [[0, 0], [390 / 1254, 0], [390 / 1254, 844 / 1254], [0, 844 / 1254]];
 const PHONE_SCREEN_QUADS = {
   // Four measured intersections of the photographed glass edges. Keeping the
   // full quadrilateral (instead of approximating its centre) makes both the
@@ -1145,15 +1150,14 @@ function basisFor(pts) {
   const v = mulV(adj3(m), [pts[3][0], pts[3][1], 1]);
   return mul3(m, [v[0], 0, 0, 0, v[1], 0, 0, 0, v[2]]);
 }
-// CSS matrix3d string mapping the source quad onto the destination quad, both given
-// in scene fractions and scaled to the scene's pixel size (w × h).
-function quadMatrix3d(srcFrac, dstFrac, w, h) {
-  const scale = (q) => q.map(([x, y]) => [x * w, y * h]);
-  const projection = mul3(basisFor(scale(dstFrac)), adj3(basisFor(scale(srcFrac))));
+function phoneMatrix3dForScene(dstFrac, width, height) {
+  const source = [[0, 0], [390, 0], [390, 844], [0, 844]];
+  const destination = dstFrac.map(([x, y]) => [x * width, y * height]);
+  const projection = mul3(basisFor(destination), adj3(basisFor(source)));
   for (let i = 0; i < 9; i += 1) projection[i] /= projection[8];
   const t = projection;
-  const m = [t[0], t[3], 0, t[6], t[1], t[4], 0, t[7], 0, 0, 1, 0, t[2], t[5], 0, t[8]];
-  return `matrix3d(${m.join(",")})`;
+  const matrix = [t[0], t[3], 0, t[6], t[1], t[4], 0, t[7], 0, 0, 1, 0, t[2], t[5], 0, t[8]];
+  return `matrix3d(${matrix.join(",")})`;
 }
 
 function ProductScene({ image, alt, preview, compact = false, className = "", sectorId = "", subjectLayers = [] }) {
@@ -1167,13 +1171,21 @@ function ProductScene({ image, alt, preview, compact = false, className = "", se
   const destQuad = PHONE_SCREEN_QUADS[image];
   useLayoutEffect(() => {
     const scene = sceneRef.current;
+    const stage = scene?.querySelector(".v3-sector-scene-stage");
     const screenEl = scene?.querySelector(".v3-live-phone-screen");
     const uiEl = scene?.querySelector(".v3-live-phone-ui");
-    if (!screenEl || !uiEl) return undefined;
+    if (!stage || !screenEl || !uiEl) return undefined;
     screenEl.style.transform = "";
     if (!destQuad) { uiEl.style.transform = ""; return undefined; }
-    uiEl.style.transform = quadMatrix3d(PHONE_UI_SOURCE_QUAD, destQuad, 1254, 1254);
-    return undefined;
+    const positionPhoneInterface = () => {
+      const { width, height } = stage.getBoundingClientRect();
+      if (!width || !height) return;
+      uiEl.style.transform = phoneMatrix3dForScene(destQuad, width, height);
+    };
+    positionPhoneInterface();
+    const resizeObserver = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(positionPhoneInterface);
+    resizeObserver?.observe(stage);
+    return () => resizeObserver?.disconnect();
   }, [destQuad, scenePreview.actionId, scenePreview.brandName, scenePreview.brandLogo, scenePreview.primaryColor, scenePreview.secondaryColor, scenePreview.textColor, scenePreview.personalization]);
   return (
     <div ref={sceneRef} className={`v3-sector-scene ${compact ? "is-compact is-fixed-preview" : "is-live-preview"} is-surface-${preview.surface} ${className}`} data-preview-mode={compact ? "fixed" : "live"} aria-hidden={compact || undefined}>

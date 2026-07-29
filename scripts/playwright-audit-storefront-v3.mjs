@@ -518,6 +518,7 @@ const mobileHome = await auditPage(
     await page.screenshot({ path: path.join(outputDir, "02-page-unique-mobile.png"), fullPage: true });
     await pilotMobile.screenshot({ path: path.join(outputDir, "04-pilot-mobile.png") });
     await page.getByRole("button", { name: "Carte", exact: true }).click();
+    await page.locator(".v3-mobile-config-preview .v3-product-carte").waitFor({ state: "visible" });
     assert(
       "apercu-mobile-carte-synchronise",
       await page.locator(".v3-mobile-config-preview .v3-product-carte").count() === 1,

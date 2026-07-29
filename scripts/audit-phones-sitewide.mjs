@@ -134,6 +134,7 @@ function measureScene(element) {
   const backgroundElement = element.querySelector(".v3-sector-scene-background");
   const screens = [...element.querySelectorAll(".v3-live-phone-screen")];
   const svgs = [...element.querySelectorAll(".v3-live-phone-svg")];
+  const htmlCanvases = [...element.querySelectorAll(".v3-live-phone-canvas")];
   const foreignObjects = [...element.querySelectorAll("foreignObject")];
   const paths = [...element.querySelectorAll("clipPath path")];
   const uiElement = element.querySelector(".v3-live-phone-ui");
@@ -141,6 +142,8 @@ function measureScene(element) {
   const background = backgroundElement?.getBoundingClientRect();
   const screen = screens[0]?.getBoundingClientRect();
   const svg = svgs[0]?.getBoundingClientRect();
+  const ui = uiElement?.getBoundingClientRect();
+  const screenStyle = screens[0] ? getComputedStyle(screens[0]) : null;
   const uiStyle = uiElement ? getComputedStyle(uiElement) : null;
   const transformValues = uiStyle?.transform?.startsWith("matrix3d(")
     ? uiStyle.transform.slice(9, -1).split(",").map(Number)
@@ -178,11 +181,20 @@ function measureScene(element) {
     && backgroundElement?.naturalWidth > 0
     && screens.length === 1
     && svgs.length === 1
-    && foreignObjects.length === 1
+    && htmlCanvases.length === 1
+    && foreignObjects.length === 0
     && paths.length === 1
     && svgs[0]?.getAttribute("viewBox") === "0 0 1254 1254"
+    && screenStyle?.display !== "none"
+    && screenStyle?.visibility !== "hidden"
     && uiStyle?.width === "390px"
     && uiStyle?.height === "844px"
+    && uiStyle?.display !== "none"
+    && uiStyle?.visibility !== "hidden"
+    && Number.parseFloat(uiStyle?.opacity || "0") > 0
+    && ui?.width > 20
+    && ui?.height > 20
+    && (uiElement?.innerText || "").trim().length > 10
     && transformValues.length === 16
     && transformValues.every(Number.isFinite)
     && clipInsideCanvas;
@@ -191,13 +203,22 @@ function measureScene(element) {
     action: screens[0]?.dataset.phoneAction || "",
     sector: screens[0]?.dataset.phoneSector || "",
     scene: { width: scene.width, height: scene.height, inner: sceneInner },
-    counts: { screens: screens.length, svgs: svgs.length, foreignObjects: foreignObjects.length, clipPaths: paths.length },
+    counts: { screens: screens.length, svgs: svgs.length, htmlCanvases: htmlCanvases.length, foreignObjects: foreignObjects.length, clipPaths: paths.length },
     stageAlignedWithScene,
     backgroundFillsStage,
     screenFillsStage,
     svgFillsStage,
     backgroundLoaded: Boolean(backgroundElement?.complete && backgroundElement?.naturalWidth > 0),
-    ui: { width: uiStyle?.width, height: uiStyle?.height, transform: uiStyle?.transform },
+    ui: {
+      width: uiStyle?.width,
+      height: uiStyle?.height,
+      transform: uiStyle?.transform,
+      display: uiStyle?.display,
+      visibility: uiStyle?.visibility,
+      opacity: uiStyle?.opacity,
+      bounds: ui ? { x: ui.x, y: ui.y, width: ui.width, height: ui.height } : null,
+      contentLength: (uiElement?.innerText || "").trim().length,
+    },
     clipBounds,
     clipInsideCanvas,
     path: paths[0]?.getAttribute("d") || "",
