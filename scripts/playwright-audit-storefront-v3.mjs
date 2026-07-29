@@ -562,10 +562,13 @@ const pilotApplicationMobile = await auditPage(mobile, "/pilot", "Application Ta
     await demoButton.click();
     await page.locator(".pilot-client-app").waitFor({ state: "visible" });
   }
+  await page.locator(".pilot-mobile-header").waitFor({ state: "visible" });
+  await page.locator(".pilot-mobile-nav").waitFor({ state: "visible" });
   await page.waitForTimeout(650);
   const pilotMetrics = await page.evaluate(() => {
     const header = document.querySelector(".pilot-mobile-header");
     const nav = document.querySelector(".pilot-mobile-nav");
+    if (!(header instanceof HTMLElement) || !(nav instanceof HTMLElement)) return null;
     const heading = document.querySelector(".pilot-view-heading");
     const quickLink = document.querySelector(".pilot-link-workspace");
     const counter = document.querySelector(".pilot-basic-counter");
@@ -586,7 +589,8 @@ const pilotApplicationMobile = await auditPage(mobile, "/pilot", "Application Ta
   });
   assert(
     "pilot-app-mobile-compacte-et-navigable",
-    pilotMetrics.headerDisplay === "grid"
+    pilotMetrics
+      && pilotMetrics.headerDisplay === "grid"
       && pilotMetrics.headerPosition === "fixed"
       && pilotMetrics.headerHeight <= 64
       && pilotMetrics.navDisplay === "grid"

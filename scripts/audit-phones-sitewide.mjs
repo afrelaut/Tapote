@@ -144,6 +144,7 @@ function measureScene(element) {
   const svg = svgs[0]?.getBoundingClientRect();
   const ui = uiElement?.getBoundingClientRect();
   const screenStyle = screens[0] ? getComputedStyle(screens[0]) : null;
+  const canvasStyle = htmlCanvases[0] ? getComputedStyle(htmlCanvases[0]) : null;
   const uiStyle = uiElement ? getComputedStyle(uiElement) : null;
   const transformValues = uiStyle?.transform?.startsWith("matrix3d(")
     ? uiStyle.transform.slice(9, -1).split(",").map(Number)
@@ -171,6 +172,7 @@ function measureScene(element) {
     && clipBounds.y + clipBounds.height <= 1256
     && clipBounds.width > 150
     && clipBounds.height > 300);
+  const htmlCanvasClipsPhone = Boolean(canvasStyle?.clipPath?.startsWith("polygon("));
   const ok = scene.width > 80
     && scene.height > 80
     && stageAlignedWithScene
@@ -197,7 +199,8 @@ function measureScene(element) {
     && (uiElement?.innerText || "").trim().length > 10
     && transformValues.length === 16
     && transformValues.every(Number.isFinite)
-    && clipInsideCanvas;
+    && clipInsideCanvas
+    && htmlCanvasClipsPhone;
   return {
     ok,
     action: screens[0]?.dataset.phoneAction || "",
@@ -208,6 +211,7 @@ function measureScene(element) {
     backgroundFillsStage,
     screenFillsStage,
     svgFillsStage,
+    htmlCanvasClipsPhone,
     backgroundLoaded: Boolean(backgroundElement?.complete && backgroundElement?.naturalWidth > 0),
     ui: {
       width: uiStyle?.width,

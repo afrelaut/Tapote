@@ -926,6 +926,7 @@ function LivePhoneScreen({ actionId = "avis", brandName = "VOTRE MARQUE", brandL
   const contentPath = isRestaurantLiveScreen
     ? actionId === "tiktok" ? PHONE_DARK_CONTENT_PATH : PHONE_DYNAMIC_CONTENT_PATH
     : isLifestylePhone ? roundedPhoneClipPath(sceneImage) : PHONE_CONTENT_PATH;
+  const canvasClipPath = isLifestylePhone ? phoneClipPolygon(contentPath) : "none";
   // The phone screen mimics a real light-mode app: brand text and the avatar
   // (a white glyph on a coloured disc) sit on a white UI, so they need a dark
   // brand colour. Depending on the theme the dark tone is the paper (blue,
@@ -996,7 +997,11 @@ function LivePhoneScreen({ actionId = "avis", brandName = "VOTRE MARQUE", brandL
       {/* Regular HTML deliberately replaces SVG foreignObject here. Safari on
           iPhone intermittently dropped the foreignObject while keeping the
           photographed white glass, producing an apparently blank phone. */}
-      <div className="v3-live-phone-canvas" aria-hidden="true">
+      <div
+        className="v3-live-phone-canvas"
+        style={isLifestylePhone ? { clipPath: canvasClipPath, WebkitClipPath: canvasClipPath } : undefined}
+        aria-hidden="true"
+      >
         <div className="v3-live-phone-ui">{phoneInterface}</div>
       </div>
     </div>
@@ -1126,6 +1131,75 @@ function roundedPhoneClipPath(sceneImage) {
     `Q ${point(tlControl)} ${point(topStart)}`,
     "Z",
   ].join(" ");
+}
+
+// CSS can clip regular HTML reliably on iOS, unlike SVG foreignObject. Convert
+// the exact SVG glass path into a sampled percentage polygon so the dynamic app
+// remains real DOM while being cut to the photographed screen at every size.
+// The parser intentionally supports the small uppercase command set used by the
+// Tapote phone paths (M/L/Q/C/Z); unsupported input safely disables the clip.
+function phoneClipPolygon(pathData) {
+  const tokens = String(pathData || "").match(/[MLQCZ]|-?(?:\d+\.?\d*|\.\d+)/g) || [];
+  if (!tokens.length) return "none";
+  const points = [];
+  let index = 0;
+  let current = [0, 0];
+  let start = [0, 0];
+  const number = () => Number(tokens[index++]);
+  const addPoint = (point) => {
+    if (point.every(Number.isFinite)) points.push(point);
+  };
+  const sampleQuadratic = (from, control, to, steps = 10) => {
+    for (let step = 1; step <= steps; step += 1) {
+      const t = step / steps;
+      const inverse = 1 - t;
+      addPoint([
+        (inverse * inverse * from[0]) + (2 * inverse * t * control[0]) + (t * t * to[0]),
+        (inverse * inverse * from[1]) + (2 * inverse * t * control[1]) + (t * t * to[1]),
+      ]);
+    }
+  };
+  const sampleCubic = (from, firstControl, secondControl, to, steps = 14) => {
+    for (let step = 1; step <= steps; step += 1) {
+      const t = step / steps;
+      const inverse = 1 - t;
+      addPoint([
+        (inverse ** 3 * from[0]) + (3 * inverse * inverse * t * firstControl[0]) + (3 * inverse * t * t * secondControl[0]) + (t ** 3 * to[0]),
+        (inverse ** 3 * from[1]) + (3 * inverse * inverse * t * firstControl[1]) + (3 * inverse * t * t * secondControl[1]) + (t ** 3 * to[1]),
+      ]);
+    }
+  };
+
+  while (index < tokens.length) {
+    const command = tokens[index++];
+    if (command === "M") {
+      current = [number(), number()];
+      start = current;
+      addPoint(current);
+    } else if (command === "L") {
+      current = [number(), number()];
+      addPoint(current);
+    } else if (command === "Q") {
+      const control = [number(), number()];
+      const destination = [number(), number()];
+      sampleQuadratic(current, control, destination);
+      current = destination;
+    } else if (command === "C") {
+      const firstControl = [number(), number()];
+      const secondControl = [number(), number()];
+      const destination = [number(), number()];
+      sampleCubic(current, firstControl, secondControl, destination);
+      current = destination;
+    } else if (command === "Z") {
+      current = start;
+    } else {
+      return "none";
+    }
+  }
+
+  if (points.length < 4) return "none";
+  const asPercentage = ([x, y]) => `${((x / 1254) * 100).toFixed(4)}% ${((y / 1254) * 100).toFixed(4)}%`;
+  return `polygon(${points.map(asPercentage).join(", ")})`;
 }
 
 // Adjugate of a 3×3 matrix (row-major, length 9).
