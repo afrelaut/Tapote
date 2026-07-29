@@ -1,5 +1,5 @@
 import { Component } from "react";
-import { reloadWithFreshAssets } from "./runtimeRecovery.js";
+import { recoverFromAssetError, reloadWithFreshAssets } from "./runtimeRecovery.js";
 
 export default class ErrorBoundary extends Component {
   state = { failed: false };
@@ -10,6 +10,7 @@ export default class ErrorBoundary extends Component {
 
   componentDidCatch(error, info) {
     console.error("Erreur d’affichage Tapote", error, info);
+    recoverFromAssetError(error);
   }
 
   render() {

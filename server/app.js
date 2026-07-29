@@ -219,7 +219,11 @@ function cspDirectives(config) {
     imgSrc,
     objectSrc: ["'none'"],
     scriptSrc: ["'self'"],
-    styleSrc: ["'self'"],
+    // Safari/WebKit versions that do not fully honor CSP3 style-src-attr fall
+    // back to style-src for React's inline style attributes. Keep the explicit
+    // style-src-attr rule for modern browsers and this styles-only fallback for
+    // iPhone/iPad browsers (including Edge and Chrome, which use WebKit).
+    styleSrc: ["'self'", "'unsafe-inline'"],
     styleSrcAttr: ["'unsafe-inline'"],
     upgradeInsecureRequests: config.isProduction ? [] : null,
   };
