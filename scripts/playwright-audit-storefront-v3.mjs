@@ -70,7 +70,7 @@ async function settlePage(page) {
   await page.waitForTimeout(200);
 }
 
-async function auditDocumentSemantics(page, name) {
+async function auditDocumentSemantics(page, name, { requireH1InsideMain = true } = {}) {
   const semantics = await page.evaluate(() => {
     const mains = [...document.querySelectorAll("main")];
     const headings = [...document.querySelectorAll("h1")];
@@ -97,7 +97,13 @@ async function auditDocumentSemantics(page, name) {
       unlabeledControls,
     };
   });
-  assert(`un-main-et-un-h1-${name}`, semantics.mains === 1 && semantics.h1s === 1 && semantics.h1InsideMain, semantics);
+  assert(
+    `un-main-et-un-h1-${name}`,
+    semantics.mains === 1
+      && semantics.h1s === 1
+      && (!requireH1InsideMain || semantics.h1InsideMain),
+    semantics,
+  );
   assert(`champs-tous-etiquetes-${name}`, semantics.unlabeledControls.length === 0, semantics.unlabeledControls);
 }
 
@@ -127,7 +133,7 @@ async function auditQuantityAlignment(page, name) {
   assert(`quantites-alignees-${name}`, aligned, metrics);
 }
 
-async function auditPage(context, pathname, name, action) {
+async function auditPage(context, pathname, name, action, semanticsOptions) {
   const page = await context.newPage();
   const pageErrors = [];
   page.on("console", (message) => { if (message.type() === "error") pageErrors.push(`console: ${message.text()}`); });
@@ -137,7 +143,7 @@ async function auditPage(context, pathname, name, action) {
   await settlePage(page);
   const initialTitle = await page.title();
   await hydrateLazyAssets(page);
-  await auditDocumentSemantics(page, name);
+  await auditDocumentSemantics(page, name, semanticsOptions);
   if (action) await action(page, response);
   await hydrateLazyAssets(page);
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -300,6 +306,29 @@ const pilotMarketing = await auditPage(desktop, "/tapote-pilot", "Page marketing
   await page.screenshot({ path: path.join(outputDir, "06-pilot-marketing-desktop.png"), fullPage: true });
 });
 await pilotMarketing.close();
+
+const managementDesktop = await auditPage(desktop, "/gestion", "Application Tapote Gestion desktop", async (page) => {
+  await page.locator(".management-app").waitFor({ state: "visible" });
+  await page.getByRole("heading", { level: 1, name: "Vue d’ensemble", exact: true }).waitFor({ state: "visible" });
+  const managementMetrics = await page.evaluate(() => {
+    const sidebar = document.querySelector(".pilot-sidebar");
+    const mobileNav = document.querySelector(".management-mobile-nav");
+    return {
+      sidebarDisplay: sidebar ? getComputedStyle(sidebar).display : null,
+      mobileNavDisplay: mobileNav ? getComputedStyle(mobileNav).display : null,
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    };
+  });
+  assert(
+    "gestion-desktop-complete-et-sans-debordement",
+    managementMetrics.sidebarDisplay === "flex"
+      && managementMetrics.mobileNavDisplay === "none"
+      && managementMetrics.overflow <= 1,
+    managementMetrics,
+  );
+  await page.screenshot({ path: path.join(outputDir, "13-gestion-desktop.png"), fullPage: true });
+}, { requireH1InsideMain: false });
+await managementDesktop.close();
 
 const accessPage = await desktop.newPage();
 await accessPage.goto(`${baseUrl}/connexion`, { waitUntil: "domcontentloaded" });
@@ -636,6 +665,36 @@ const pilotApplicationMobile = await auditPage(mobile, "/pilot", "Application Ta
   await page.screenshot({ path: path.join(outputDir, "11-pilot-editeur-mobile.png"), fullPage: false });
 });
 await pilotApplicationMobile.close();
+
+const managementMobile = await auditPage(mobile, "/gestion", "Application Tapote Gestion mobile", async (page) => {
+  await page.locator(".management-app").waitFor({ state: "visible" });
+  await page.locator(".management-mobile-nav").waitFor({ state: "visible" });
+  await page.locator("h1").waitFor({ state: "attached" });
+  const managementMetrics = await page.evaluate(() => {
+    const mobileNav = document.querySelector(".management-mobile-nav");
+    if (!(mobileNav instanceof HTMLElement)) return null;
+    const navStyle = getComputedStyle(mobileNav);
+    return {
+      display: navStyle.display,
+      position: navStyle.position,
+      height: mobileNav.getBoundingClientRect().height,
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      heading: document.querySelector("h1")?.textContent?.trim(),
+    };
+  });
+  assert(
+    "gestion-mobile-compacte-et-sans-debordement",
+    managementMetrics
+      && managementMetrics.display === "grid"
+      && managementMetrics.position === "fixed"
+      && managementMetrics.height <= 72
+      && managementMetrics.overflow <= 1
+      && managementMetrics.heading === "Vue d’ensemble",
+    managementMetrics,
+  );
+  await page.screenshot({ path: path.join(outputDir, "14-gestion-mobile.png"), fullPage: true });
+}, { requireH1InsideMain: false });
+await managementMobile.close();
 
 const quoteMobile = await auditPage(mobile, "/devis", "Devis mobile", async (page) => {
   const quoteMetrics = await page.locator(".v3-quote-intro").evaluate((hero) => {

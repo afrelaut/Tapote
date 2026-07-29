@@ -28,6 +28,11 @@ jobs:
       - run: npm run build
       - run: npm audit --omit=dev --audit-level=high
       - run: npx playwright-core install --with-deps chromium
+      - name: Build browser audit bundle
+        env:
+          VITE_PILOT_DEMO: "true"
+          VITE_MANAGEMENT_DEMO: "true"
+        run: npm run build
       - name: Start storefront for browser audit
         env:
           NODE_ENV: production

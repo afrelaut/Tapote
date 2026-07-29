@@ -1,3 +1,4 @@
+-- Keep this version aligned with the migration already recorded in production.
 begin;
 
 -- Seed the canonical storefront into the production Gestion organization.
