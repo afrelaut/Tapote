@@ -1241,10 +1241,21 @@ export default function TapoteManagementApp() {
   useEffect(() => {
     if (isManagementDemo || !access || authState !== "ready") return undefined;
     let timer;
-    const unsubscribe = subscribeToManagement(access.organizationId, () => {
-      window.clearTimeout(timer);
-      timer = window.setTimeout(() => refreshData({ quiet: true }), 220);
-    });
+    let unsubscribe = () => {};
+    try {
+      unsubscribe = subscribeToManagement(access.organizationId, () => {
+        window.clearTimeout(timer);
+        timer = window.setTimeout(() => refreshData({ quiet: true }), 220);
+      });
+    } catch (error) {
+      // Some WebKit privacy configurations can refuse WebSocket construction.
+      // Realtime is an enhancement: Gestion must remain fully usable with the
+      // initial Supabase snapshot and the manual synchronization action.
+      console.warn("Supabase Realtime indisponible, Gestion reste en mode synchronisation manuelle.", error);
+      timer = window.setTimeout(() => {
+        setToast("Temps réel indisponible : Gestion reste utilisable et peut être synchronisée manuellement.");
+      }, 0);
+    }
     return () => {
       window.clearTimeout(timer);
       unsubscribe();
