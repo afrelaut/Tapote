@@ -7,6 +7,9 @@ import { DEFAULT_THEME, DEVICE_THEMES, THEME_LABELS, resolveThemeId } from "../.
 import { trackStorefrontEvent } from "../../storefront/analytics.js";
 import { CONFIG_DRAFT_PREFIX, cacheLogoPreview, compositionLabel, compositionSurface, getCachedLogoPreview, getProductId, loadConfigDraft, makeCartItem } from "./cart.js";
 import { ACTION_ORDER, READY_ACTION_IDS, campaignHeadlineForAction, readyHeadlineForAction } from "../data/content.js";
+import { BLOCK_COLOR_MODES, DEFAULT_BLOCK_COLOR_MODE, actionPaletteLabel, resolveBlockPalette } from "../../storefront/actionPalettes.js";
+import { DEFAULT_MONOGRAM_SHAPE, MONOGRAM_SHAPES, NEUTRAL_MOTIFS, brandInitialsFor } from "../../storefront/brandMotifs.js";
+import { BrandMotif } from "../../storefront/BrandMotif.jsx";
 
 function CompositionPicker({ count, composition, onChange, labelId }) {
   if (count !== 2) return null;
@@ -90,6 +93,11 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
   const [customHeadline, setCustomHeadline] = useState(restoredDraft?.customHeadline || "");
   const [customSubline, setCustomSubline] = useState(restoredDraft?.customSubline || "");
   const [customTapLabel, setCustomTapLabel] = useState(restoredDraft?.customTapLabel || "");
+  const [tagline, setTagline] = useState(restoredDraft?.tagline || "");
+  const [contactLine, setContactLine] = useState(restoredDraft?.contactLine || "");
+  const [brandMotif, setBrandMotif] = useState(restoredDraft?.brandMotif || DEFAULT_MONOGRAM_SHAPE);
+  const [logoWanted, setLogoWanted] = useState(Boolean(restoredDraft?.logoWanted));
+  const [blockColorMode, setBlockColorMode] = useState(restoredDraft?.blockColorMode || DEFAULT_BLOCK_COLOR_MODE);
   const [destinationUrl, setDestinationUrl] = useState(restoredDraft?.destinationUrl || "");
   const [theme, setTheme] = useState(resolveThemeId(restoredDraft?.theme || initialTheme));
   const [primaryColor, setPrimaryColor] = useState(restoredDraft?.primaryColor || initialColors.paper);
@@ -183,14 +191,15 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
   };
   const previewSurface = compositionSurface(safeCount, composition, surface);
   useEffect(() => {
-    onPreviewChange?.({ surface: previewSurface, baseSurface: surface, actionId, brandName: previewBrandName, brandLogo: previewBrandLogo, theme, primaryColor: previewPrimaryColor, secondaryColor: previewSecondaryColor, textColor: previewTextColor, customHeadline: previewHeadline, customSubline: personalization === "custom" ? customSubline : "", customTapLabel: personalization === "custom" ? customTapLabel : "", personalization, count: safeCount, composition, productId, productName: product.name, price: product.price });
-  }, [actionId, composition, customSubline, customTapLabel, onPreviewChange, personalization, previewBrandLogo, previewBrandName, previewHeadline, previewPrimaryColor, previewSecondaryColor, previewSurface, previewTextColor, product.name, product.price, productId, safeCount, surface, theme]);
+    onPreviewChange?.({ surface: previewSurface, baseSurface: surface, actionId, brandName: previewBrandName, brandLogo: previewBrandLogo, brandMotif,
+      logoWanted, tagline: personalization === "custom" ? tagline : "", contactLine: personalization === "custom" ? contactLine : "", blockColorMode, theme, primaryColor: previewPrimaryColor, secondaryColor: previewSecondaryColor, textColor: previewTextColor, customHeadline: previewHeadline, customSubline: personalization === "custom" ? customSubline : "", customTapLabel: personalization === "custom" ? customTapLabel : "", personalization, count: safeCount, composition, productId, productName: product.name, price: product.price });
+  }, [actionId, blockColorMode, brandMotif, logoWanted, composition, contactLine, customSubline, customTapLabel, onPreviewChange, personalization, previewBrandLogo, previewBrandName, previewHeadline, previewPrimaryColor, previewSecondaryColor, previewSurface, previewTextColor, product.name, product.price, productId, safeCount, surface, tagline, theme]);
   useEffect(() => {
     if (!draftKey || personalization !== "custom") return;
     try {
-      window.sessionStorage.setItem(`${CONFIG_DRAFT_PREFIX}${draftKey}`, JSON.stringify({ actionId, count: safeCount, composition, brandName, brandLogoId, logoFileName, theme, customHeadline, customSubline, customTapLabel, destinationUrl, primaryColor, secondaryColor, textColor }));
+      window.sessionStorage.setItem(`${CONFIG_DRAFT_PREFIX}${draftKey}`, JSON.stringify({ actionId, count: safeCount, composition, brandName, brandLogoId, logoFileName, brandMotif, logoWanted, tagline, contactLine, blockColorMode, theme, customHeadline, customSubline, customTapLabel, destinationUrl, primaryColor, secondaryColor, textColor }));
     } catch { /* A full browser storage area must never block configuration or checkout. */ }
-  }, [actionId, brandLogoId, brandName, composition, customHeadline, customSubline, customTapLabel, destinationUrl, draftKey, logoFileName, personalization, primaryColor, safeCount, secondaryColor, textColor, theme]);
+  }, [actionId, blockColorMode, brandMotif, logoWanted, brandLogoId, brandName, composition, contactLine, customHeadline, customSubline, customTapLabel, destinationUrl, draftKey, logoFileName, personalization, primaryColor, safeCount, secondaryColor, tagline, textColor, theme]);
   const selectCount = (value) => {
     markConfigurationStarted();
     setCount(value);
@@ -267,6 +276,11 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
       brandName: personalization === "custom" ? brandName : "",
       brandLogoId: personalization === "custom" ? brandLogoId : "",
       logoFileName: personalization === "custom" ? logoFileName : "",
+      brandMotif,
+      logoWanted,
+      tagline: personalization === "custom" ? tagline : "",
+      contactLine: personalization === "custom" ? contactLine : "",
+      blockColorMode,
       theme,
       primaryColor: personalization === "custom" ? primaryColor : "",
       secondaryColor: personalization === "custom" ? secondaryColor : "",
@@ -395,6 +409,57 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
             </div>
             {brandLogo && <div className="v3-uploaded-logo"><img src={brandLogo} alt="Aperçu du logo importé" /><span><strong>{logoFileName}</strong><small>{logoStatus === "success" ? "Affiché dans l’aperçu" : "À retransmettre"}</small></span><button type="button" onClick={removeLogo} aria-label="Retirer le logo"><X size={15} /></button></div>}
             {logoError && <p className="v3-upload-error" role="alert">{logoError} Retirez le fichier pour continuer sans logo.</p>}
+            {/* Sans logo : un monogramme, un symbole neutre, ou la demande d'un
+                tracé dessiné par Tapote Studio. Aucune promesse d'une
+                bibliothèque exhaustive de métiers, qui serait intenable. */}
+            {!brandLogo && (
+              <div className="v3-motif-picker">
+                <span className="v3-motif-heading">
+                  <strong>Pas encore de logo&nbsp;?</strong>
+                  <small>Votre monogramme est déjà prêt. Il tient lieu de marque en haut du support et de filigrane en fond.</small>
+                </span>
+                <div className="v3-motif-group" role="group" aria-label="Choisir un monogramme">
+                  <span className="v3-motif-group-label">Monogramme {brandInitialsFor(brandName) || "AB"}</span>
+                  <div>
+                    {Object.entries(MONOGRAM_SHAPES).map(([shapeId, shape]) => (
+                      <button
+                        type="button"
+                        key={shapeId}
+                        className={brandMotif === shapeId ? "is-selected" : ""}
+                        aria-pressed={brandMotif === shapeId}
+                        aria-label={`Monogramme ${shape.label}`}
+                        onClick={() => { markConfigurationStarted(); setBrandMotif(shapeId); }}
+                      >
+                        <BrandMotif shape={shapeId} brandName={brandName} />
+                        <small>{shape.label}</small>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="v3-motif-group" role="group" aria-label="Choisir un symbole neutre">
+                  <span className="v3-motif-group-label">Symbole neutre</span>
+                  <div>
+                    {Object.entries(NEUTRAL_MOTIFS).map(([motifId, motif]) => (
+                      <button
+                        type="button"
+                        key={motifId}
+                        className={brandMotif === motifId ? "is-selected" : ""}
+                        aria-pressed={brandMotif === motifId}
+                        aria-label={`Symbole ${motif.label}`}
+                        onClick={() => { markConfigurationStarted(); setBrandMotif(motifId); }}
+                      >
+                        <BrandMotif shape={motifId} />
+                        <small>{motif.label}</small>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <label className="v3-motif-service">
+                  <input type="checkbox" checked={logoWanted} onChange={(event) => { markConfigurationStarted(); setLogoWanted(event.target.checked); }} />
+                  <span><strong>Je veux un vrai logo dessiné</strong><small>Tapote Studio vous propose un tracé avec le BAT, avant toute impression.</small></span>
+                </label>
+              </div>
+            )}
           </div>
           <div className="v3-studio-section">
             <span className="v3-field-label">Textes imprimés</span>
@@ -402,6 +467,31 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
               <label className="is-wide"><span>Message principal <em>{customHeadline.length}/64</em></span><input value={customHeadline} onChange={(event) => setCustomHeadline(event.target.value.slice(0, 64))} placeholder={campaignHeadlineForAction(actionId)} aria-label="Message principal imprimé" /></label>
               <label className="is-wide"><span>Phrase secondaire <em>{customSubline.length}/90</em></span><input value={customSubline} onChange={(event) => setCustomSubline(event.target.value.slice(0, 90))} placeholder={ACTIONS[actionId].campaignSubline || ACTIONS[actionId].subline} aria-label="Phrase secondaire imprimée" /></label>
               <label><span>Appel à l’action <em>{customTapLabel.length}/32</em></span><input value={customTapLabel} onChange={(event) => setCustomTapLabel(event.target.value.slice(0, 32))} placeholder="Tapotez ici" aria-label="Appel à l’action imprimé" /></label>
+              <label className="is-wide"><span>Phrase métier <em>{tagline.length}/48</em></span><input value={tagline} onChange={(event) => setTagline(event.target.value.slice(0, 48))} placeholder="Librairie BD · Jeux de société · Figurines" aria-label="Phrase métier imprimée" /></label>
+              <label className="is-wide"><span>Réseau, site ou téléphone <em>{contactLine.length}/48</em></span><input value={contactLine} onChange={(event) => setContactLine(event.target.value.slice(0, 48))} placeholder="@votrecompte · 01 23 45 67 89" aria-label="Réseau, site ou téléphone imprimé" /></label>
+            </div>
+          </div>
+
+          {/* Couleur du bloc d'action : Tapote, la marque du client, ou la
+              couleur du service ouvert par le lien. */}
+          <div className="v3-studio-section">
+            <span className="v3-field-label">Couleur du bloc d’action</span>
+            <div className="v3-block-color-choice" role="group" aria-label="Source de couleur du bloc d’action">
+              {Object.entries(BLOCK_COLOR_MODES).map(([mode, label]) => {
+                const preview = resolveBlockPalette({ mode, actionId, brandAccent: secondaryColor });
+                return (
+                  <button
+                    type="button"
+                    key={mode}
+                    className={blockColorMode === mode ? "is-selected" : ""}
+                    aria-pressed={blockColorMode === mode}
+                    onClick={() => { markConfigurationStarted(); setBlockColorMode(mode); }}
+                  >
+                    <i style={{ background: preview.gradient || preview.block, boxShadow: `0 0 0 3px ${preview.liseret}` }} aria-hidden="true" />
+                    <span><strong>{label}</strong><small>{mode === "action" ? actionPaletteLabel(actionId) : mode === "marque" ? secondaryColor.toUpperCase() : "#2458FF"}</small></span>
+                  </button>
+                );
+              })}
             </div>
           </div>
           <div className="v3-studio-section">

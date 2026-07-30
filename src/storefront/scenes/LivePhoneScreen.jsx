@@ -280,6 +280,10 @@ function PhoneServiceMark({ actionId, label }) {
 
 const NATIVE_APP_ACTIONS = ["instagram", "tiktok", "facebook", "linkedin", "whatsapp", "wifi", "paiement", "site", "autre"];
 
+// Ces actions affichent une interface complète : y ajouter la phrase d'aide
+// répétait l'information de la carte et laissait un vide au milieu de l'écran.
+const RICH_PREVIEW_ACTIONS = ["avis", "menu", "reservation", "commande", "pourboire", "fidelite", "contact", "multiliens", "formulaire"];
+
 // Le contenu de l'écran vit dans un viewport logique de 390 x 844 : c'est
 // DeviceFrame qui l'incruste, à l'échelle ou dans la photo, sans que le rendu
 // ait besoin de connaître sa taille finale.
@@ -376,11 +380,11 @@ export default function LivePhoneScreen({
                       </div>
                     )
                     : (
-                      <div className={`v3-live-phone-content is-${actionId}`}>
+                      <div className={`v3-live-phone-content is-${actionId}${RICH_PREVIEW_ACTIONS.includes(actionId) ? " has-rich-preview" : ""}`}>
                         <div className="v3-live-phone-brand">{brandAvatar}<small>{safeBrandName}</small></div>
                         <h3>{screen.title}</h3>
                         <PhoneActionPreview actionId={actionId} screen={screen} sceneImage={sceneImage} brandName={safeBrandName} sectorId={resolvedSectorId} />
-                        <p>{screen.helper}</p>
+                        {!RICH_PREVIEW_ACTIONS.includes(actionId) && <p>{screen.helper}</p>}
                         {destinationUrl
                           ? <a className="v3-live-phone-cta" href={destinationUrl} target="_blank" rel="noreferrer">{screen.cta}</a>
                           : <span className="v3-live-phone-cta">{screen.cta}</span>}

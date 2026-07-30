@@ -25,7 +25,7 @@
 }
 
 .v3-home-products {
-  padding: clamp(96px, 10vw, 160px) clamp(22px, 6vw, 104px);
+  padding: clamp(64px, 6.6vw, 108px) clamp(22px, 6vw, 104px);
   background: #f4f1ea;
 }
 
@@ -35,8 +35,8 @@
 
 .v3-home-products .v3-home-section-head h2,
 .v3-home-uses .v3-home-section-head h2 {
-  font-size: clamp(58px, 7.2vw, 112px);
-  line-height: .84;
+  font-size: clamp(46px, 5.4vw, 82px);
+  line-height: .88;
 }
 
 .v3-home-product-grid {
@@ -219,7 +219,7 @@
 }
 
 .v3-how-strip {
-  padding: clamp(96px, 10vw, 160px) clamp(22px, 7vw, 118px);
+  padding: clamp(64px, 6.6vw, 108px) clamp(22px, 7vw, 118px);
   color: #fff;
   background:
     radial-gradient(circle at 88% 8%, rgb(48 88 230 / 23%), transparent 34rem),
@@ -305,7 +305,7 @@
 }
 
 .v3-home-uses {
-  padding: clamp(96px, 10vw, 160px) clamp(22px, 7vw, 118px);
+  padding: clamp(64px, 6.6vw, 108px) clamp(22px, 7vw, 118px);
   background: #fff;
 }
 
@@ -440,7 +440,7 @@
 
 .v3-home-pilot {
   min-height: 840px;
-  padding: clamp(96px, 10vw, 155px) clamp(22px, 7vw, 118px);
+  padding: clamp(64px, 6.6vw, 106px) clamp(22px, 7vw, 118px);
   grid-template-columns: minmax(360px, .8fr) minmax(560px, 1.2fr);
 }
 
@@ -453,7 +453,7 @@
 }
 
 .v3-faq {
-  padding: clamp(96px, 10vw, 155px) clamp(22px, 7vw, 118px);
+  padding: clamp(64px, 6.6vw, 106px) clamp(22px, 7vw, 118px);
   background: #f4f1ea;
 }
 

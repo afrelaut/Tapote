@@ -206,6 +206,10 @@ export default function ProductStudio3D({
   sectorTitle = "",
   brandName = "",
   brandLogo = "",
+  brandMotif,
+  tagline = "",
+  contactLine = "",
+  blockColorMode,
   customHeadline = "",
   customSubline = "",
   customTapLabel = "",
@@ -221,7 +225,7 @@ export default function ProductStudio3D({
   // La texture est régénérée dès qu'un élément imprimé change : sans le nom, le
   // logo et les textes, l'objet 3D restait au design Tapote générique alors que
   // le client venait de personnaliser son support.
-  const artworkKey = [surface, actionId, primaryColor, accentColor, textColor, personalization, brandName, brandLogo, customHeadline, customSubline, customTapLabel].join(":");
+  const artworkKey = [surface, actionId, primaryColor, accentColor, textColor, personalization, brandName, brandLogo, brandMotif, tagline, contactLine, blockColorMode, customHeadline, customSubline, customTapLabel].join(":");
   const [eligible, setEligible] = useState(() => (
     typeof window !== "undefined"
     && (typeof window.matchMedia !== "function" || !window.matchMedia("(prefers-reduced-motion: reduce)").matches)
@@ -465,6 +469,10 @@ export default function ProductStudio3D({
           actionId={actionId}
           brandName={brandName}
           brandLogo={brandLogo}
+          brandMotif={brandMotif}
+          tagline={tagline}
+          contactLine={contactLine}
+          blockColorMode={blockColorMode}
           headline={customHeadline}
           subline={customSubline}
           tapLabel={customTapLabel}

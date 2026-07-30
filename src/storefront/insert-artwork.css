@@ -406,14 +406,86 @@
 
 /* ---------- Bloc action : la zone NFC et le QR ---------- */
 
+/* Bloc d'action : sa couleur vient de la source choisie (Tapote, marque ou
+   service) et son liseré imprimé le décolle du fond, comme sur les supports
+   livrés. */
 .tp-insert-action {
+  position: relative;
   display: flex;
   align-items: stretch;
   width: 81.5cqw;
-  color: var(--insert-accent-ink);
-  background: var(--insert-accent);
+  overflow: hidden;
+  color: var(--insert-block-ink, #fff);
+  background: transparent;
   border-radius: 4.2cqw;
+  box-shadow: 0 0 0 0.9cqw var(--insert-block-liseret, transparent);
 }
+
+/* La moitié NFC porte la couleur ; la moitié QR reste blanche pour que le code
+   soit toujours noir sur blanc, quelle que soit la couleur choisie. */
+.tp-insert-nfc {
+  color: var(--insert-block-ink, #fff);
+  background-color: var(--insert-block, var(--insert-accent));
+  background-image: var(--insert-block-image, none);
+}
+
+.tp-insert-qr {
+  color: #141414;
+  background: #fff;
+}
+
+.tp-insert-qr strong,
+.tp-insert-qr small,
+.tp-insert-nfc strong,
+.tp-insert-nfc small {
+  color: inherit;
+}
+
+/* Filigrane : le logo du client, posé en haut et centré, contenu dans la zone
+   imprimable. Il habille le fond sans jamais rogner ni sortir du support. */
+.tp-insert-watermark {
+  position: absolute;
+  z-index: 0;
+  top: 7cqw;
+  left: 50%;
+  width: 62cqw;
+  height: 62cqw;
+  transform: translateX(-50%);
+  background-image: var(--insert-watermark);
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-size: contain;
+  opacity: 0.09;
+  pointer-events: none;
+}
+
+.tp-insert-body { position: relative; z-index: 1; }
+
+/* Phrase métier et ligne de contact, sous le nom du commerce. */
+.tp-insert-tagline {
+  max-width: 92%;
+  font-size: 2.2cqw;
+  font-weight: 650;
+  letter-spacing: 0.16em;
+  line-height: 1.35;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+
+.tp-insert-contact {
+  max-width: 92%;
+  font-size: 2.1cqw;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.3;
+  opacity: 0.6;
+}
+
+.tp-insert-plaque .tp-insert-tagline { font-size: 2cqw; }
+.tp-insert-plaque .tp-insert-contact { font-size: 1.9cqw; }
+.tp-insert-carte .tp-insert-tagline,
+.tp-insert-carte .tp-insert-contact { display: none; }
+.tp-insert-carte .tp-insert-watermark { top: 4cqw; width: 34cqw; height: 34cqw; }
 
 .tp-insert-nfc,
 .tp-insert-qr {
@@ -429,7 +501,7 @@
 
 .tp-insert-qr {
   flex: 0 0 40%;
-  border-left: 0.2cqw solid color-mix(in srgb, var(--insert-accent-ink) 28%, transparent);
+  border-left: 0.2cqw solid rgb(255 255 255 / 28%);
 }
 
 .tp-insert-nfc-icon {
@@ -475,8 +547,6 @@
 }
 
 .tp-insert.is-ready .tp-insert-nfc {
-  color: #fff;
-  background: linear-gradient(145deg, #3b6bff, var(--insert-accent) 72%);
   border-radius: 4.2cqw 0 0 4.2cqw;
 }
 
@@ -679,3 +749,11 @@
 .tp-glyph-google svg { stroke: none; }
 .tp-glyph svg .is-filled { fill: currentColor; stroke: none; }
 .tp-glyph-tiktok svg .is-shadow { fill: currentColor; stroke: none; opacity: 0.32; }
+
+/* Emblème métier : même tracé que le filigrane, à la couleur de l'encre du
+   support, dimensionné comme un logo importé. */
+.tp-insert-logo .tp-emblem {
+  width: 100%;
+  height: 100%;
+  color: var(--insert-ink);
+}

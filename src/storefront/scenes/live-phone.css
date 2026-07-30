@@ -230,7 +230,24 @@
 .v3-live-phone-browser > span { font-size: 28px; font-weight: 400; line-height: .7; }
 .v3-live-phone-browser i { font-size: 12px; }
 .v3-live-phone-content { padding-top: 22px; justify-content: flex-start; }
-.v3-live-phone-content > p { margin-top: auto; }
+
+/* Le bouton principal se comporte comme une barre d'action iOS : pleine largeur
+   du contenu, séparée par un filet, posée en bas de l'écran. L'espace au-dessus
+   devient une respiration voulue et non un trou. */
+.v3-live-phone-content .v3-live-phone-cta {
+  position: relative;
+  margin-top: auto;
+}
+
+.v3-live-phone-content .v3-live-phone-cta::before {
+  content: "";
+  position: absolute;
+  top: -22px;
+  right: -27px;
+  left: -27px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgb(17 24 39 / 10%) 18% 82%, transparent);
+}
 .v3-live-phone-content h3 { max-width: 315px; margin: 22px 0 18px; font-size: 27px; line-height: 1.02; overflow-wrap: anywhere; }
 .v3-live-phone-content p { margin: 17px 0 13px; color: #767d89; font-size: 13px; }
 .v3-live-phone-content .v3-live-phone-cta { min-height: 54px; margin-top: auto; padding: 0 18px; border-radius: 13px; font-size: 14px; }

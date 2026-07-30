@@ -15,6 +15,9 @@ import { ACTIONS } from "../../shared/catalog.js";
 import { GeneratedBrandMark, PlatformGlyph } from "./BrandMark.jsx";
 import { platformGlyphForAction } from "./brandIdentity.js";
 import { SURFACE_GEOMETRY, insertSurface } from "./insertGeometry.js";
+import { DEFAULT_BLOCK_COLOR_MODE, resolveBlockPalette } from "./actionPalettes.js";
+import { DEFAULT_MONOGRAM_SHAPE, brandInitialsFor, isMonogramShape, motifDataUri, motifPath } from "./brandMotifs.js";
+import { BrandMotif } from "./BrandMotif.jsx";
 import "./insert-artwork.css";
 
 // Typographie française : l'espace qui précède ? ! : ; » est insécable, sinon
@@ -128,6 +131,10 @@ export default function InsertArtwork({
   headline = "",
   subline = "",
   tapLabel = "",
+  tagline = "",
+  contactLine = "",
+  brandMotif = DEFAULT_MONOGRAM_SHAPE,
+  blockColorMode = DEFAULT_BLOCK_COLOR_MODE,
   showBrand = true,
   personalization = "custom",
   designPlaceholder = false,
@@ -149,12 +156,38 @@ export default function InsertArtwork({
     ? "/brand/tapote-logo-light.svg"
     : "/brand/tapote-logo.svg";
 
+  // Le bloc d'action porte sa propre couleur : celle de Tapote, celle de la
+  // marque du client, ou celle du service ouvert par le lien.
+  const block = resolveBlockPalette({
+    mode: blockColorMode,
+    actionId: action.id,
+    brandAccent: colors?.accent,
+    brandAccentInk: colors?.accentInk,
+  });
+  const finalTagline = tagline.trim();
+  const finalContactLine = contactLine.trim();
+  // Le logo du client sert aussi de filigrane : posé en haut, centré, contenu
+  // dans la zone imprimable, jamais rogné par le bord du support. Sans logo,
+  // c'est l'emblème métier choisi qui tient ce rôle.
+  const motif = !isReady && !brandLogo && motifPath(brandMotif) ? brandMotif : "";
+  const watermark = isReady
+    ? ""
+    : brandLogo
+      ? brandLogo
+      : motif && !isMonogramShape(motif)
+        ? motifDataUri(motif, colors?.ink || "#161310")
+        : "";
+
   const style = {
     "--insert-ratio": ratio,
     "--insert-paper": colors?.paper || "#161310",
     "--insert-ink": colors?.ink || "#f4efe6",
     "--insert-accent": colors?.accent || "#2458ff",
     "--insert-accent-ink": colors?.accentInk || "#ffffff",
+    "--insert-block": block.block,
+    "--insert-block-image": block.gradient || "none",
+    "--insert-block-ink": block.ink,
+    "--insert-block-liseret": block.liseret,
   };
 
   return (
@@ -166,6 +199,7 @@ export default function InsertArtwork({
       style={style}
       aria-hidden="true"
     >
+      {watermark && <span className="tp-insert-watermark" style={{ "--insert-watermark": `url(${watermark})` }} aria-hidden="true" />}
       <div className="tp-insert-body">
         {designPlaceholder ? (
           <div className="tp-insert-placeholder">
@@ -192,15 +226,19 @@ export default function InsertArtwork({
                 ? <img className="tp-insert-tapote-logo" src={readyLogo} alt="" />
                 : brandLogo
                 ? <img src={brandLogo} alt="" />
+                : motif
+                ? <BrandMotif shape={motif} initials={brandInitialsFor(brandName)} brandName={brandName} />
                 : <GeneratedBrandMark name={brandName} />}
             </span>
             {showBrand && !isReady && <b className="tp-insert-brand">{brandName || "VOTRE MARQUE"}</b>}
+            {!isReady && finalTagline && <span className="tp-insert-tagline">{finalTagline}</span>}
+            {!isReady && finalContactLine && <span className="tp-insert-contact">{finalContactLine}</span>}
           </header>
 
           <div className="tp-insert-copy">
             {/* Surtitre repris des fichiers d'impression ; la carte s'en passe,
                 faute de hauteur utile. */}
-            {!isCard && !isReady && <span className="tp-insert-overline">UN GESTE SUFFIT</span>}
+            {!isCard && !isReady && !finalTagline && <span className="tp-insert-overline">UN GESTE SUFFIT</span>}
             {isReady && <div className="tp-insert-mark is-service"><ActionMark actionId={action.id} ready /></div>}
             {/* Les lignes sont séparées par une vraie espace dans le DOM : sans
                 elle, le texte extrait recolle les mots (« Découvreznos »). Le
@@ -230,8 +268,8 @@ export default function InsertArtwork({
           {!isCard && (
             <div className="tp-insert-qr">
               <img src="/brand/tapote-qr-demo.svg" alt="" />
-              <strong>OU SCANNEZ</strong>
-              <small>avec l’appareil photo</small>
+              <strong>TAPOTE.FR</strong>
+              <small>ou scannez avec l’appareil photo</small>
             </div>
           )}
         </div>

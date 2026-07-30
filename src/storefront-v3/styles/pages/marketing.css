@@ -1947,7 +1947,7 @@
 
 .v3-pilot-story.is-page {
   min-height: 780px;
-  padding: clamp(84px, 8vw, 126px) max(clamp(24px, 6vw, 96px), calc((100vw - 1680px) / 2));
+  padding: clamp(64px, 6.2vw, 100px) max(clamp(24px, 6vw, 96px), calc((100vw - 1680px) / 2));
   grid-template-columns: minmax(470px, .9fr) minmax(620px, 1.1fr);
   align-items: center;
   gap: clamp(54px, 7vw, 112px);
@@ -2426,7 +2426,7 @@
 }
 
 .v3-pilot-page-flow {
-  padding: clamp(90px, 9vw, 144px) max(clamp(24px, 6vw, 96px), calc((100vw - 1600px) / 2));
+  padding: clamp(62px, 6.4vw, 102px) max(clamp(24px, 6vw, 96px), calc((100vw - 1600px) / 2));
   background: #f3eee5;
 }
 
@@ -2520,7 +2520,7 @@
 }
 
 .v3-pilot-page-value {
-  padding: clamp(90px, 9vw, 144px) max(clamp(24px, 6vw, 96px), calc((100vw - 1600px) / 2));
+  padding: clamp(62px, 6.4vw, 102px) max(clamp(24px, 6vw, 96px), calc((100vw - 1600px) / 2));
 }
 
 .v3-pilot-page-value > div:first-child {
@@ -2547,7 +2547,7 @@
 }
 
 .v3-pilot-page-plan {
-  padding: clamp(90px, 9vw, 144px) max(clamp(24px, 6vw, 96px), calc((100vw - 1520px) / 2));
+  padding: clamp(62px, 6.4vw, 102px) max(clamp(24px, 6vw, 96px), calc((100vw - 1520px) / 2));
   display: grid;
   grid-template-columns: minmax(330px, .65fr) minmax(680px, 1.35fr);
   align-items: start;

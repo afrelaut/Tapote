@@ -444,3 +444,124 @@
 @media (prefers-reduced-motion: reduce) {
   .v3-sector-panel { animation: none; }
 }
+
+/* ---------- Emblème métier ----------
+   Proposé quand le client n'a pas de logo : un tracé vectoriel par activité,
+   qui devient sa marque en haut du support et son filigrane en fond. */
+
+.v3-motif-picker {
+  margin-top: 12px;
+  padding: 13px;
+  background: #fff;
+  border: 1px solid var(--v3-line);
+  border-radius: 13px;
+}
+
+.v3-motif-heading { display: grid; gap: 2px; margin-bottom: 11px; }
+.v3-motif-heading strong { font-size: 12px; }
+.v3-motif-heading small { color: var(--v3-muted); font-size: 10px; line-height: 1.4; }
+
+.v3-motif-group { margin-bottom: 12px; }
+
+.v3-motif-group-label {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--v3-muted);
+  font-size: 9px;
+  font-weight: 820;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+.v3-motif-group > div {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+/* Demande d'un logo dessiné : c'est un service Tapote Studio, pas une
+   fonction du site, et c'est ce qui répond au client sans identité. */
+.v3-motif-service {
+  margin-top: 4px;
+  padding: 11px 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  background: #f4f7ff;
+  border: 1px solid #cfdcff;
+  border-radius: 11px;
+  cursor: pointer;
+}
+
+.v3-motif-service input { margin-top: 2px; width: 17px; height: 17px; accent-color: var(--v3-blue); }
+.v3-motif-service span { display: grid; gap: 2px; }
+.v3-motif-service strong { font-size: 12px; }
+.v3-motif-service small { color: var(--v3-muted); font-size: 10px; line-height: 1.4; }
+
+.v3-motif-picker button {
+  min-height: 76px;
+  padding: 9px 5px;
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  color: var(--v3-ink);
+  background: #fbfaf7;
+  border: 1px solid var(--v3-line);
+  border-radius: 11px;
+  cursor: pointer;
+}
+
+.v3-motif-picker button svg { width: 32px; height: 32px; }
+.v3-motif-picker button small { color: var(--v3-muted); font-size: 9px; }
+.v3-motif-initials { font-family: "Archivo Black", sans-serif; font-size: 19px; }
+
+.v3-motif-picker button.is-selected {
+  color: var(--v3-blue);
+  background: #eef3ff;
+  border-color: var(--v3-blue);
+  box-shadow: inset 0 0 0 1px var(--v3-blue);
+}
+
+.v3-motif-picker button.is-selected small { color: var(--v3-blue); }
+
+/* ---------- Couleur du bloc d'action ---------- */
+
+.v3-block-color-choice {
+  margin-top: 9px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 9px;
+}
+
+.v3-block-color-choice button {
+  min-height: 60px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  background: #fff;
+  border: 1px solid var(--v3-line);
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.v3-block-color-choice i {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+}
+
+.v3-block-color-choice span { display: grid; gap: 2px; min-width: 0; }
+.v3-block-color-choice strong { font-size: 12px; }
+.v3-block-color-choice small { color: var(--v3-muted); font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.v3-block-color-choice button.is-selected {
+  border-color: var(--v3-blue);
+  box-shadow: inset 0 0 0 1px var(--v3-blue);
+}
+
+@media (max-width: 620px) {
+  .v3-motif-picker > div { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

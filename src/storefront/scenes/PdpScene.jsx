@@ -4,15 +4,18 @@ import DeviceFrame from "./DeviceFrame.jsx";
 import ProductStudio3D from "./ProductStudio3D.jsx";
 import { SCENE_BUDGETS } from "./sceneBudgets.js";
 
+// Coins de la vitre du téléphone, en fractions de la scène. Les sept décors
+// composités partagent la même découpe main + téléphone : ils partagent donc le
+// même quadrilatère, mesuré sur l'image de la découpe et non recopié à l'œil.
 const PHONE_SCREEN_QUADS = Object.freeze({
   "/assets/products/tapote-bg-restaurant-live-screen-v1.webp": [[0.46709, 0.25773], [0.69149, 0.21130], [0.95828, 0.69250], [0.71273, 0.77095]],
-  "/assets/products/tapote-bg-cafe-empty-v3.png": [[0.48100, 0.24900], [0.65900, 0.21400], [0.94400, 0.67300], [0.70200, 0.75800]],
-  "/assets/products/tapote-bg-boulangerie-empty-v2.png": [[0.48100, 0.24900], [0.65900, 0.21400], [0.94400, 0.67300], [0.70200, 0.75800]],
-  "/assets/products/tapote-bg-agence-empty-v2.png": [[0.48100, 0.24900], [0.65900, 0.21400], [0.94400, 0.67300], [0.70200, 0.75800]],
-  "/assets/products/tapote-bg-sport-empty-v2.png": [[0.48100, 0.24900], [0.65900, 0.21400], [0.94400, 0.67300], [0.70200, 0.75800]],
-  "/assets/products/tapote-bg-evenement-empty-v2.png": [[0.48100, 0.24900], [0.65900, 0.21400], [0.94400, 0.67300], [0.70200, 0.75800]],
-  "/assets/products/tapote-bg-formation-empty-v2.png": [[0.48100, 0.24900], [0.65900, 0.21400], [0.94400, 0.67300], [0.70200, 0.75800]],
-  "/assets/products/tapote-bg-beaute-empty-v2.png": [[0.48100, 0.24900], [0.65900, 0.21400], [0.94400, 0.67300], [0.70200, 0.75800]],
+  "/assets/products/tapote-bg-cafe-empty-v3.png": [[0.48850, 0.27000], [0.69050, 0.23350], [0.93450, 0.68000], [0.71150, 0.75150]],
+  "/assets/products/tapote-bg-boulangerie-empty-v2.png": [[0.48850, 0.27000], [0.69050, 0.23350], [0.93450, 0.68000], [0.71150, 0.75150]],
+  "/assets/products/tapote-bg-agence-empty-v2.png": [[0.48850, 0.27000], [0.69050, 0.23350], [0.93450, 0.68000], [0.71150, 0.75150]],
+  "/assets/products/tapote-bg-sport-empty-v2.png": [[0.48850, 0.27000], [0.69050, 0.23350], [0.93450, 0.68000], [0.71150, 0.75150]],
+  "/assets/products/tapote-bg-evenement-empty-v2.png": [[0.48850, 0.27000], [0.69050, 0.23350], [0.93450, 0.68000], [0.71150, 0.75150]],
+  "/assets/products/tapote-bg-formation-empty-v2.png": [[0.48850, 0.27000], [0.69050, 0.23350], [0.93450, 0.68000], [0.71150, 0.75150]],
+  "/assets/products/tapote-bg-beaute-empty-v2.png": [[0.48850, 0.27000], [0.69050, 0.23350], [0.93450, 0.68000], [0.71150, 0.75150]],
   "/assets/products/tapote-bg-cafe-v1.webp": [[0.481659, 0.261563], [0.708932, 0.215311], [0.996810, 0.719298], [0.716906, 0.779904]],
   "/assets/products/tapote-bg-cafe-restaurant-phone-v2.webp": [[0.4872, 0.2720], [0.7105, 0.2290], [0.9848, 0.7177], [0.7273, 0.7735]],
   "/assets/products/tapote-bg-restaurant-v1.webp": [[0.474478, 0.257134], [0.687755, 0.205264], [0.959916, 0.682301], [0.697377, 0.780543]],
@@ -156,6 +159,10 @@ export default function PdpScene({
             sectorTitle={sectorTitle}
             brandName={preview.brandName}
             brandLogo={preview.brandLogo}
+            brandMotif={preview.brandMotif}
+            tagline={preview.tagline}
+            contactLine={preview.contactLine}
+            blockColorMode={preview.blockColorMode}
             customHeadline={preview.customHeadline}
             customSubline={preview.customSubline}
             customTapLabel={preview.customTapLabel}

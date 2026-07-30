@@ -899,7 +899,7 @@
 
 .v3-home-product-visual {
   position: relative;
-  min-height: 350px;
+  min-height: 300px;
   overflow: hidden;
   display: grid;
   place-items: center;
@@ -974,7 +974,7 @@
 }
 
 .v3-home-product-copy {
-  min-height: 350px;
+  min-height: 300px;
   padding: clamp(26px, 3vw, 44px);
   display: flex;
   flex-direction: column;
@@ -995,21 +995,30 @@
   line-height: 1.6;
 }
 
+/* Le prix ne se coupe jamais : quand la colonne se resserre, c'est le bouton
+   qui passe à la ligne, pas « 69 € ». */
 .v3-home-product-copy > div {
   margin-top: auto;
-  display: grid;
-  gap: 15px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 20px;
 }
 
 .v3-home-product-copy strong {
-  font-size: 18px;
+  flex: 0 0 auto;
+  font-size: 20px;
   letter-spacing: -.025em;
+  white-space: nowrap;
 }
 
 .v3-home-product-copy strong small {
-  color: #5f636d;
+  display: block;
+  margin-top: 1px;
+  color: #6b7079;
   font-size: 10px;
-  font-weight: 750;
+  font-weight: 700;
+  letter-spacing: .04em;
 }
 
 .v3-home-product-copy a,
@@ -1344,7 +1353,7 @@
 
   .v3-home-product-visual,
   .v3-home-product-copy {
-    min-height: 310px;
+    min-height: 268px;
   }
 
   .v3-home-pilot {
@@ -1362,11 +1371,11 @@
   }
 
   .v3-home-product-visual {
-    min-height: 300px;
+    min-height: 262px;
   }
 
   .v3-home-product-copy {
-    min-height: 260px;
+    min-height: 224px;
   }
 
   .v3-home-use-list > a {

@@ -2,7 +2,7 @@ import InsertArtwork from "../../storefront/InsertArtwork.jsx";
 import { insertSurface } from "../../storefront/insertGeometry.js";
 import { resolveDeviceColors } from "../../deviceThemes.js";
 
-export function ProductArt({ surface = "comptoir", actionId = "avis", brandName = "VOTRE MARQUE", brandLogo = "", theme = "blue", primaryColor = "", secondaryColor = "", textColor = "", customHeadline = "", customSubline = "", customTapLabel = "", personalization = "ready", designPlaceholder = false, className = "" }) {
+export function ProductArt({ surface = "comptoir", actionId = "avis", brandName = "VOTRE MARQUE", brandLogo = "", brandMotif, tagline = "", contactLine = "", blockColorMode, theme = "blue", primaryColor = "", secondaryColor = "", textColor = "", customHeadline = "", customSubline = "", customTapLabel = "", personalization = "ready", designPlaceholder = false, className = "" }) {
   const shape = insertSurface(surface);
   const colors = resolveDeviceColors(theme, primaryColor, secondaryColor, textColor);
   return (
@@ -13,6 +13,10 @@ export function ProductArt({ surface = "comptoir", actionId = "avis", brandName 
           actionId={actionId}
           brandName={brandName}
           brandLogo={brandLogo}
+          brandMotif={brandMotif}
+          tagline={tagline}
+          contactLine={contactLine}
+          blockColorMode={blockColorMode}
           colors={colors}
           headline={customHeadline}
           subline={customSubline}
