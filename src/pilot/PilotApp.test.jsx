@@ -25,6 +25,7 @@ describe("Tapote Pilot", () => {
 
     expect(await screen.findByRole("heading", { name: "Vue d’ensemble" })).toBeInTheDocument();
     expect(screen.getByText(/Mode démonstration/)).toBeInTheDocument();
+    expect(screen.getByText("PILOT INCLUS")).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Gestion/i })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Produits" }));
@@ -39,6 +40,17 @@ describe("Tapote Pilot", () => {
 
     await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Destination mise à jour"));
     expect(destination).toHaveValue("https://example.com/nouvelle-destination");
+  });
+
+  it("transforme les métriques en signaux transparents et actionnables", async () => {
+    render(<PilotApp />);
+
+    expect(await screen.findByRole("heading", { name: "Ce qui mérite votre attention" })).toBeInTheDocument();
+    expect(screen.getByText(/Pilot ne transforme jamais une ouverture en conversion supposée/)).toBeInTheDocument();
+    expect(screen.getByText("Support en tête")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Ouvrir le support" }));
+    expect(screen.getByRole("dialog")).toHaveAccessibleName("Instagram · Plaque");
   });
 
   it("refuse une destination non HTTPS avant confirmation", async () => {

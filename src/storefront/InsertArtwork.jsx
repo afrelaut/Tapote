@@ -130,6 +130,7 @@ export default function InsertArtwork({
   tapLabel = "",
   showBrand = true,
   personalization = "custom",
+  designPlaceholder = false,
   className = "",
 }) {
   const resolvedSurface = insertSurface(surface);
@@ -166,6 +167,22 @@ export default function InsertArtwork({
       aria-hidden="true"
     >
       <div className="tp-insert-body">
+        {designPlaceholder ? (
+          <div className="tp-insert-placeholder">
+            <span className="tp-insert-placeholder-brand">tapote.</span>
+            <i className="is-top-left" />
+            <i className="is-top-right" />
+            <i className="is-bottom-left" />
+            <i className="is-bottom-right" />
+            <div>
+              <small>VOTRE</small>
+              <strong>DESIGN</strong>
+              <small>ICI</small>
+            </div>
+            <footer><NfcWaves /><b>NFC + QR INCLUS</b></footer>
+          </div>
+        ) : (
+          <>
         {/* En paysage, l'identité occupe une colonne et le bloc action l'autre :
             le pied de page reste donc solidaire de la colonne de gauche. */}
         <Wrapper isCard={isCard}>
@@ -220,6 +237,8 @@ export default function InsertArtwork({
         </div>
 
         {!isCard && <footer className="tp-insert-foot">{isReady ? "PROPULSÉ PAR TAPOTE.FR" : "TAPOTE.FR · UN GESTE SUFFIT"}</footer>}
+          </>
+        )}
       </div>
     </div>
   );

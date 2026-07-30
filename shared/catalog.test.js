@@ -6,6 +6,7 @@ import {
   MULTISITE_TIERS,
   PILOT_PLANS,
   PRODUCTS,
+  PUBLIC_PRODUCT_IDS,
   SHIPPING,
   TARGETS,
 } from "./catalog.js";
@@ -16,63 +17,70 @@ describe("catalogue Tapote", () => {
       baseProductId: "plaque",
       personalization: "ready",
       kind: "support",
-      price: 2900,
+      price: 5900,
     });
     expect(PRODUCTS.comptoir_standard).toMatchObject({
       baseProductId: "comptoir",
       personalization: "ready",
       kind: "support",
-      price: 2900,
+      price: 6900,
     });
     expect(PRODUCTS.carte_standard).toMatchObject({
       baseProductId: "carte",
       personalization: "ready",
       kind: "card",
-      price: 1900,
+      price: 3900,
     });
 
-    expect(PRODUCTS.plaque).toMatchObject({ personalization: "custom", price: 3900 });
-    expect(PRODUCTS.comptoir).toMatchObject({ personalization: "custom", price: 3900 });
-    expect(PRODUCTS.carte).toMatchObject({ personalization: "custom", price: 2900 });
-    expect(PRODUCTS.comptoir.name).toContain("A6");
+    expect(PRODUCTS.plaque).toMatchObject({ personalization: "custom", price: 7900 });
+    expect(PRODUCTS.comptoir).toMatchObject({ personalization: "custom", price: 8900 });
+    expect(PRODUCTS.carte).toMatchObject({ personalization: "custom", price: 5900 });
+    expect(PRODUCTS.comptoir.name).toContain("Comptoir");
     expect(PRODUCTS.comptoir.format).toContain("A6");
   });
 
-  it("applique les prix et compositions exactes des packs 2 et 5", () => {
+  it("publie Pack Local et conserve Pack Parcours uniquement pour la compatibilité historique", () => {
     expect(PRODUCTS.pack_duo_standard).toMatchObject({
       personalization: "ready",
-      price: 5500,
+      price: 11900,
       supportCount: 2,
       defaultComposition: { comptoir: 1, plaque: 1 },
     });
     expect(PRODUCTS.pack_cinq_standard).toMatchObject({
       personalization: "ready",
-      price: 8900,
+      price: 29900,
       supportCount: 5,
       defaultComposition: { comptoir: 2, plaque: 3 },
     });
     expect(PRODUCTS.pack_duo).toMatchObject({
       personalization: "custom",
-      price: 6900,
+      price: 15900,
       supportCount: 2,
       defaultComposition: { comptoir: 1, plaque: 1 },
     });
     expect(PRODUCTS.pack_cinq).toMatchObject({
       personalization: "custom",
-      price: 10900,
+      price: 39900,
       supportCount: 5,
       defaultComposition: { comptoir: 2, plaque: 3 },
+      public: false,
     });
+    expect(PRODUCTS.pack_duo.public).toBe(true);
+    expect(PRODUCTS.pack_duo_standard.public).toBe(true);
+    expect(PUBLIC_PRODUCT_IDS).not.toContain("pack_cinq");
+    expect(PUBLIC_PRODUCT_IDS).not.toContain("pack_cinq_standard");
   });
 
-  it("réserve la carte assortie à une commande de support", () => {
+  it("conserve la carte assortie pour les anciens paniers sans l’exposer publiquement", () => {
     expect(PRODUCTS.carte_assortie).toMatchObject({
       baseProductId: "carte",
       personalization: "matched",
       kind: "addon",
-      price: 1900,
+      price: 3900,
       requiresSupportOrder: true,
+      public: false,
     });
+    expect(PUBLIC_PRODUCT_IDS).not.toContain("carte_assortie");
   });
 
   it("offre la livraison exactement à partir de 69 €", () => {
@@ -99,8 +107,8 @@ describe("catalogue Tapote", () => {
     expect(ACTIONS.avis.name).toBe("Avis Google");
     expect(ACTIONS.instagram.category).toBe("relation");
     expect(Object.keys(TARGETS).length).toBeGreaterThanOrEqual(20);
-    expect(PILOT_PLANS.pilot.price).toBe(900);
-    expect(PILOT_PLANS.annual.price).toBe(8900);
+    expect(PILOT_PLANS.pilotPro).toMatchObject({ name: "Tapote Pilot Pro", price: 900 });
+    expect(PILOT_PLANS.pilotProAnnual).toMatchObject({ name: "Tapote Pilot Pro annuel", price: 8900 });
     expect(formatMoney(2900)).toContain("29");
   });
 

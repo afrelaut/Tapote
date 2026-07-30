@@ -24,6 +24,96 @@
   text-align: center;
 }
 
+/* ---------- Aperçu neutre « votre design ici » ----------
+   Utilisé uniquement dans la fiche d’un produit personnalisable. Il montre
+   clairement la surface imprimable sans faire croire qu’un BAT existe déjà. */
+
+.tp-insert-placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #f4f6ff;
+  background:
+    radial-gradient(circle at 78% 18%, rgb(49 96 255 / 23%), transparent 34%),
+    linear-gradient(145deg, #11141b, #080a0f 72%);
+}
+
+.tp-insert-placeholder::before {
+  content: "";
+  position: absolute;
+  inset: 4.4cqw;
+  border: .25cqw solid rgb(255 255 255 / 13%);
+  border-radius: 2.8cqw;
+}
+
+.tp-insert-placeholder-brand {
+  position: absolute;
+  left: 7cqw;
+  top: 6cqw;
+  color: #fff;
+  font-size: 3.1cqw;
+  font-weight: 850;
+  letter-spacing: -.04em;
+}
+
+.tp-insert-placeholder > div {
+  display: grid;
+  justify-items: center;
+  gap: .25cqw;
+  transform: rotate(-2deg);
+}
+
+.tp-insert-placeholder > div small {
+  color: #a9bbff;
+  font-size: 4.2cqw;
+  font-weight: 900;
+  letter-spacing: .17em;
+}
+
+.tp-insert-placeholder > div strong {
+  color: #fff;
+  font-family: "Archivo Black", "Archivo", sans-serif;
+  font-size: 13.8cqw;
+  line-height: .86;
+  letter-spacing: -.065em;
+}
+
+.tp-insert-placeholder > i {
+  position: absolute;
+  width: 7.2cqw;
+  height: 7.2cqw;
+  border-color: #6d8dff;
+  border-style: solid;
+}
+
+.tp-insert-placeholder > i.is-top-left { left: 7cqw; top: 16cqw; border-width: .7cqw 0 0 .7cqw; }
+.tp-insert-placeholder > i.is-top-right { right: 7cqw; top: 16cqw; border-width: .7cqw .7cqw 0 0; }
+.tp-insert-placeholder > i.is-bottom-left { left: 7cqw; bottom: 16cqw; border-width: 0 0 .7cqw .7cqw; }
+.tp-insert-placeholder > i.is-bottom-right { right: 7cqw; bottom: 16cqw; border-width: 0 .7cqw .7cqw 0; }
+
+.tp-insert-placeholder footer {
+  position: absolute;
+  right: 7cqw;
+  bottom: 6cqw;
+  display: flex;
+  align-items: center;
+  gap: 1.5cqw;
+  color: #a9bbff;
+}
+
+.tp-insert-placeholder footer .tp-insert-nfc-icon { width: 6cqw; height: 6cqw; }
+.tp-insert-placeholder footer b { font-size: 1.8cqw; letter-spacing: .12em; }
+
+.tp-insert-carte .tp-insert-placeholder-brand { top: 5cqw; }
+.tp-insert-carte .tp-insert-placeholder > div { grid-template-columns: auto auto auto; gap: 1.5cqw; }
+.tp-insert-carte .tp-insert-placeholder > div small { font-size: 3.8cqw; }
+.tp-insert-carte .tp-insert-placeholder > div strong { font-size: 10.2cqw; }
+.tp-insert-carte .tp-insert-placeholder > i.is-top-left,
+.tp-insert-carte .tp-insert-placeholder > i.is-top-right { top: 12cqw; }
+.tp-insert-carte .tp-insert-placeholder > i.is-bottom-left,
+.tp-insert-carte .tp-insert-placeholder > i.is-bottom-right { bottom: 12cqw; }
+
 /* ---------- En-tête : emplacement logo + nom du commerce ---------- */
 
 .tp-insert-head {
@@ -399,7 +489,7 @@
 }
 
 .tp-insert.is-ready .tp-insert-qr small {
-  color: #5d5d5d;
+  color: #3f3f3f;
   opacity: 1;
 }
 
@@ -549,6 +639,22 @@
   font-size: 15px;
   font-weight: 900;
   letter-spacing: -0.02em;
+}
+
+.tp-brand-mark.is-placeholder svg {
+  stroke-width: 1.4;
+  opacity: .72;
+}
+
+.tp-brand-mark.is-placeholder rect {
+  stroke-dasharray: 3 3;
+}
+
+.tp-brand-mark.is-placeholder text {
+  font-family: "Archivo", sans-serif;
+  font-size: 6px;
+  font-weight: 800;
+  letter-spacing: .1em;
 }
 
 /* Pictogrammes de plateforme */

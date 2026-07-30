@@ -56,7 +56,7 @@ describe("notifications transactionnelles", () => {
     expect(messages[0]).toMatchObject({ channel: "atelier", to: "atelier@tapote.fr" });
     expect(messages[0].subject).toContain("Café Test");
     expect(messages[0].html).toContain("7e58b0a4-0c28-4a1b-a2c4-40fc8dc87a58");
-    expect(messages[0].html).toContain("Le Chevalet A6");
+    expect(messages[0].html).toContain("Tapote Comptoir");
     expect(messages[0].html).toContain("#123456");
     expect(messages[0].html).toContain("Votre avis nous aide.");
     expect(messages[0].html).toContain("Merci pour votre confiance.");
@@ -66,8 +66,8 @@ describe("notifications transactionnelles", () => {
 
     expect(messages[1]).toMatchObject({ channel: "client", to: "client@example.com" });
     expect(messages[1].subject).toContain("Commande Tapote confirmée");
-    expect(messages[1].html).toContain("Création enregistrée");
-    expect(messages[1].html).toContain("la préparation commence après votre paiement");
+    expect(messages[1].html).toContain("Envoyez votre identité");
+    expect(messages[1].html).toContain("validation du BAT");
     expect(messages[1].html).toContain("bonjour@tapote.fr");
   });
 

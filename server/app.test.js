@@ -13,6 +13,7 @@ const legalEnv = {
   VITE_LEGAL_ADDRESS: "1 rue du Test",
   VITE_LEGAL_REGISTRATION: "RCS TEST",
   VITE_LEGAL_VAT: "FR000000000",
+  VITE_LEGAL_TAX_LABEL: "TTC",
   VITE_LEGAL_DIRECTOR: "Direction Test",
   VITE_LEGAL_CONTACT: "test@example.com",
   VITE_LEGAL_HOST: "Hébergeur Test",
@@ -21,6 +22,8 @@ const legalEnv = {
   VITE_LEGAL_RETURNS_ADDRESS: "1 rue du Test",
   VITE_LEGAL_DATA_RETENTION: "10 ans pour les données comptables ; 3 ans pour le suivi commercial.",
   VITE_LEGAL_VERSION: "2026-07-16",
+  STRIPE_TAX_BEHAVIOR: "inclusive",
+  SHIPPING_POLICY_READY: "true",
 };
 
 const cart = [{
@@ -73,6 +76,8 @@ describe("API Tapote", () => {
     expect(isKnownFrontendPath("/")).toBe(true);
     expect(isKnownFrontendPath("/boutique/")).toBe(true);
     expect(isKnownFrontendPath("/tapote-pilot")).toBe(true);
+    expect(isKnownFrontendPath("/preuves")).toBe(true);
+    expect(isKnownFrontendPath("/faq")).toBe(true);
     expect(isKnownFrontendPath("/secteurs/auto-ecoles")).toBe(true);
     expect(isKnownFrontendPath("/gestion/commandes")).toBe(true);
     expect(isKnownFrontendPath("/produits/invente")).toBe(false);
@@ -90,7 +95,7 @@ describe("API Tapote", () => {
     const template = '<html><head><title>Accueil</title><meta name="description" content="Accueil"><meta name="robots" content="index"><link rel="canonical" href="https://tapote.fr/"><meta property="og:title" content="Accueil"><meta property="og:description" content="Accueil"><meta property="og:url" content="https://tapote.fr/"><meta name="twitter:title" content="Accueil"><meta name="twitter:description" content="Accueil"></head></html>';
     const rendered = injectStorefrontMeta(template, "/produits/plaque", "https://tapote.fr");
 
-    expect(product.title).toContain("Plaque verticale");
+    expect(product.title).toContain("Tapote Plaque");
     expect(product.canonical).toBe("https://tapote.fr/produits/plaque");
     expect(sector.title).toContain("Auto-écoles");
     expect(sector.canonical).toBe("https://tapote.fr/secteurs/auto-ecoles");
@@ -100,14 +105,14 @@ describe("API Tapote", () => {
       robots: "index,follow,max-image-preview:large",
     });
     expect(pilotMarketing).toMatchObject({
-      title: "Tapote Pilot | Changez vos liens et suivez vos supports",
+      title: "Tapote Pilot inclus et Pilot Pro | Tapote",
       canonical: "https://tapote.fr/tapote-pilot",
       robots: "index,follow,max-image-preview:large",
     });
     expect(legal.title).toBe("Conditions générales de vente B2B | Tapote");
     expect(privatePage.robots).toBe("noindex,nofollow");
     expect(missing.robots).toBe("noindex,nofollow");
-    expect(rendered).toContain("<title>Plaque verticale NFC + QR | Tapote</title>");
+    expect(rendered).toContain("<title>Tapote Plaque NFC + QR | Tapote</title>");
     expect(rendered).toContain('property="og:url" content="https://tapote.fr/produits/plaque"');
   });
 
@@ -128,8 +133,18 @@ describe("API Tapote", () => {
 
     const pilotMarketing = await request(app).get("/tapote-pilot").set("Accept", "text/html");
     expect(pilotMarketing.status).toBe(200);
-    expect(pilotMarketing.text).toContain("<title>Tapote Pilot | Changez vos liens et suivez vos supports</title>");
+    expect(pilotMarketing.text).toContain("<title>Tapote Pilot inclus et Pilot Pro | Tapote</title>");
     expect(pilotMarketing.headers["x-robots-tag"]).toBe("index,follow,max-image-preview:large");
+
+    for (const [path, title] of [
+      ["/preuves", "Preuves et série pilote | Tapote"],
+      ["/faq", "FAQ Tapote | NFC, QR, produits et livraison"],
+    ]) {
+      const publicPage = await request(app).get(path).set("Accept", "text/html");
+      expect(publicPage.status).toBe(200);
+      expect(publicPage.text).toContain(`<title>${title}</title>`);
+      expect(publicPage.headers["x-robots-tag"]).toBe("index,follow,max-image-preview:large");
+    }
 
     const missing = await request(app).get("/secteurs/invente").set("Accept", "text/html");
     expect(missing.status).toBe(404);
@@ -225,6 +240,29 @@ describe("API Tapote", () => {
     expect(context.repository.orders.size).toBe(0);
   });
 
+  it("n’expose dans le catalogue public que les trois supports et Pack Local", async () => {
+    const context = makeContext();
+    context.repository.getStorefrontCatalog = vi.fn(async () => []);
+
+    const catalog = await request(context.app).get("/api/catalog");
+    const productIds = catalog.body.products.map((product) => product.productId);
+
+    expect(catalog.status).toBe(200);
+    expect(productIds).toEqual(expect.arrayContaining([
+      "comptoir_standard",
+      "comptoir",
+      "plaque_standard",
+      "plaque",
+      "carte_standard",
+      "carte",
+      "pack_duo_standard",
+      "pack_duo",
+    ]));
+    expect(productIds).not.toContain("pack_cinq");
+    expect(productIds).not.toContain("pack_cinq_standard");
+    expect(productIds).not.toContain("carte_assortie");
+  });
+
   it("renvoie Stripe vers l’origine active du storefront en développement", async () => {
     const stripe = {
       checkout: { sessions: {
@@ -275,7 +313,7 @@ describe("API Tapote", () => {
     expect(stripe.checkout.sessions.retrieve).toHaveBeenCalledTimes(1);
   });
 
-  it("facture la carte personnalisée 29 € et la livraison sous 69 €", async () => {
+  it("facture la carte personnalisée 59 € et la livraison sous 69 €", async () => {
     const stripe = {
       checkout: { sessions: {
         create: vi.fn(async () => ({ id: "cs_test_shipping", url: "https://checkout.stripe.test/shipping" })),
@@ -290,11 +328,11 @@ describe("API Tapote", () => {
 
     expect(response.status).toBe(200);
     const checkout = stripe.checkout.sessions.create.mock.calls[0][0];
-    expect(checkout.line_items[0].price_data.unit_amount).toBe(2900);
+    expect(checkout.line_items[0].price_data.unit_amount).toBe(5900);
     expect(checkout.shipping_options[0].shipping_rate_data.fixed_amount.amount).toBe(490);
   });
 
-  it("facture le Chevalet A6 personnalisé 39 € et conserve la livraison sous 69 €", async () => {
+  it("facture Tapote Comptoir personnalisé 89 € avec livraison offerte", async () => {
     const stripe = {
       checkout: { sessions: {
         create: vi.fn(async () => ({ id: "cs_test_comptoir_price", url: "https://checkout.stripe.test/comptoir" })),
@@ -306,10 +344,10 @@ describe("API Tapote", () => {
 
     expect(response.status).toBe(200);
     const checkout = stripe.checkout.sessions.create.mock.calls[0][0];
-    expect(checkout.line_items[0].price_data.unit_amount).toBe(3900);
-    expect(checkout.shipping_options[0].shipping_rate_data.fixed_amount.amount).toBe(490);
+    expect(checkout.line_items[0].price_data.unit_amount).toBe(8900);
+    expect(checkout.shipping_options[0].shipping_rate_data.fixed_amount.amount).toBe(0);
     expect(checkout.shipping_options[0].shipping_rate_data.delivery_estimate).toBeUndefined();
-    expect(checkout.custom_text.shipping_address.message).toMatch(/création enregistrée au panier/i);
+    expect(checkout.custom_text.shipping_address.message).toMatch(/prépare un BAT/i);
     expect(checkout.tax_id_collection).toEqual({ enabled: true });
     expect(checkout.invoice_creation).toMatchObject({
       enabled: true,
@@ -317,7 +355,7 @@ describe("API Tapote", () => {
     });
   });
 
-  it("facture les versions prêtes à l’emploi 29 €, 29 € et 19 €", async () => {
+  it("facture les versions prêtes à servir 59 €, 69 € et 39 €", async () => {
     const stripe = {
       checkout: { sessions: {
         create: vi.fn(async () => ({ id: "cs_test_ready_prices", url: "https://checkout.stripe.test/ready" })),
@@ -336,13 +374,13 @@ describe("API Tapote", () => {
 
     expect(response.status).toBe(200);
     const checkout = stripe.checkout.sessions.create.mock.calls[0][0];
-    expect(checkout.line_items.map((item) => item.price_data.unit_amount)).toEqual([2900, 2900, 1900]);
+    expect(checkout.line_items.map((item) => item.price_data.unit_amount)).toEqual([5900, 6900, 3900]);
     expect(checkout.shipping_options[0].shipping_rate_data.fixed_amount.amount).toBe(0);
     expect(checkout.shipping_options[0].shipping_rate_data.delivery_estimate).toBeUndefined();
     expect(checkout.custom_text.shipping_address.message).toMatch(/configur.+test.+avant expédition/i);
   });
 
-  it("applique les quatre prix de packs et offre leur livraison dès 69 €", async () => {
+  it("applique les deux prix publics du Pack Local", async () => {
     const stripe = {
       checkout: { sessions: {
         create: vi.fn(async ({ line_items: lineItems }) => ({
@@ -354,10 +392,8 @@ describe("API Tapote", () => {
     };
     const { app } = makeContext({}, stripe);
     const cases = [
-      ["pack_duo_standard", 5500, { comptoir: 1, plaque: 1 }, 490],
-      ["pack_cinq_standard", 8900, { comptoir: 2, plaque: 3 }, 0],
-      ["pack_duo", 6900, { comptoir: 1, plaque: 1 }, 0],
-      ["pack_cinq", 10900, { comptoir: 2, plaque: 3 }, 0],
+      ["pack_duo_standard", 11900, { comptoir: 1, plaque: 1 }, 0],
+      ["pack_duo", 15900, { comptoir: 1, plaque: 1 }, 0],
     ];
 
     for (const [index, [productId, amount, supportComposition, shipping]] of cases.entries()) {
@@ -377,14 +413,14 @@ describe("API Tapote", () => {
     const body = checkoutBody("ea58b0a4-0c28-4a1b-a2c4-40fc8dc87a64");
     body.items = [{
       ...cart[0],
-      productId: "pack_cinq",
-      supportComposition: { comptoir: 1, plaque: 3 },
+      productId: "pack_duo",
+      supportComposition: { comptoir: 1, plaque: 0 },
     }];
 
     const response = await request(app).post("/api/checkout").send(body);
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toMatch(/exactement 5 supports/i);
+    expect(response.body.error).toMatch(/exactement 2 supports/i);
   });
 
   it("redirige les commandes de 10 supports ou plus vers un devis", async () => {
@@ -392,9 +428,9 @@ describe("API Tapote", () => {
     const body = checkoutBody("fa58b0a4-0c28-4a1b-a2c4-40fc8dc87a71");
     body.items = [{
       ...cart[0],
-      productId: "pack_cinq",
-      quantity: 2,
-      supportComposition: { comptoir: 2, plaque: 3 },
+      productId: "pack_duo",
+      quantity: 5,
+      supportComposition: { comptoir: 1, plaque: 1 },
     }];
 
     const response = await request(app).post("/api/checkout").send(body);
@@ -403,59 +439,7 @@ describe("API Tapote", () => {
     expect(response.body.error).toMatch(/à partir de 10 supports.*devis/i);
   });
 
-  it("refuse la carte assortie seule et l’accepte à 19 € avec un support", async () => {
-    const stripe = {
-      checkout: { sessions: {
-        create: vi.fn(async () => ({ id: "cs_test_matched_card", url: "https://checkout.stripe.test/matched-card" })),
-        retrieve: vi.fn(),
-      } },
-    };
-    const { app } = makeContext({}, stripe);
-    const addon = { ...cart[0], productId: "carte_assortie" };
-
-    const alone = checkoutBody("fa58b0a4-0c28-4a1b-a2c4-40fc8dc87a65");
-    alone.items = [addon];
-    const refused = await request(app).post("/api/checkout").send(alone);
-    expect(refused.status).toBe(400);
-    expect(refused.body.error).toMatch(/plaque ou un chevalet/i);
-
-    const bundled = checkoutBody("0a58b0a4-0c28-4a1b-a2c4-40fc8dc87a66");
-    bundled.items = [cart[0], addon];
-    const accepted = await request(app).post("/api/checkout").send(bundled);
-    expect(accepted.status).toBe(200);
-    const checkout = stripe.checkout.sessions.create.mock.calls[0][0];
-    expect(checkout.line_items.map((item) => item.price_data.unit_amount)).toEqual([3900, 1900]);
-    expect(checkout.shipping_options[0].shipping_rate_data.fixed_amount.amount).toBe(490);
-  });
-
-  it("dérive toujours l’identité de la carte assortie depuis le support personnalisé", async () => {
-    const stripe = {
-      checkout: { sessions: {
-        create: vi.fn(async () => ({ id: "cs_test_matched_identity", url: "https://checkout.stripe.test/matched-identity" })),
-        retrieve: vi.fn(),
-      } },
-    };
-    const { app } = makeContext({}, stripe);
-    const body = checkoutBody("2a58b0a4-0c28-4a1b-a2c4-40fc8dc87a68");
-    body.items = [
-      { ...cart[0], brandName: "Maison Source", actionId: "avis", primaryColor: "#112233" },
-      { ...cart[0], productId: "carte_assortie", brandName: "Identité forgée", actionId: "instagram", primaryColor: "#ff0000" },
-    ];
-
-    const response = await request(app).post("/api/checkout").send(body);
-
-    expect(response.status).toBe(200);
-    const checkout = stripe.checkout.sessions.create.mock.calls[0][0];
-    expect(checkout.line_items[1].price_data.product_data).toMatchObject({
-      name: "La Carte NFC assortie · Avis Google",
-      metadata: {
-        brandName: "Maison Source",
-        primaryColor: "#112233",
-      },
-    });
-  });
-
-  it("refuse une carte assortie quand le panier contient plusieurs identités", async () => {
+  it("refuse toutes les anciennes références, même dans un panier conservé", async () => {
     const stripe = {
       checkout: { sessions: {
         create: vi.fn(),
@@ -463,32 +447,16 @@ describe("API Tapote", () => {
       } },
     };
     const { app } = makeContext({}, stripe);
-    const body = checkoutBody("3a58b0a4-0c28-4a1b-a2c4-40fc8dc87a69");
-    body.items = [
-      { ...cart[0], brandName: "Maison Source", actionId: "avis", destinationUrl: "https://example.com/avis" },
-      { ...cart[0], brandName: "Autre Maison", actionId: "instagram", destinationUrl: "https://example.com/instagram" },
-      { ...cart[0], productId: "carte_assortie" },
-    ];
+    const retiredProductIds = ["pack_cinq_standard", "pack_cinq", "carte_assortie"];
 
-    const response = await request(app).post("/api/checkout").send(body);
-
-    expect(response.status).toBe(400);
-    expect(response.body.error).toMatch(/une seule identité/i);
+    for (const [index, productId] of retiredProductIds.entries()) {
+      const body = checkoutBody(`fa58b0a4-0c28-4a1b-a2c4-40fc8dc87a${65 + index}`);
+      body.items = [{ ...cart[0], productId }];
+      const response = await request(app).post("/api/checkout").send(body);
+      expect(response.status).toBe(409);
+      expect(response.body.error).toMatch(/ancienne référence.*plus commandable/i);
+    }
     expect(stripe.checkout.sessions.create).not.toHaveBeenCalled();
-  });
-
-  it("réserve la carte assortie à un support personnalisé", async () => {
-    const { app } = makeContext({ ALLOW_DEMO_CHECKOUT: "true" });
-    const body = checkoutBody("1a58b0a4-0c28-4a1b-a2c4-40fc8dc87a67");
-    body.items = [
-      { ...cart[0], productId: "comptoir_standard" },
-      { ...cart[0], productId: "carte_assortie" },
-    ];
-
-    const response = await request(app).post("/api/checkout").send(body);
-
-    expect(response.status).toBe(400);
-    expect(response.body.error).toMatch(/plaque ou un chevalet/i);
   });
 
   it("déduplique les événements Stripe signés", async () => {

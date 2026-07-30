@@ -41,6 +41,7 @@ export function trackStorefrontEvent(event, details = {}) {
     ...details,
   };
 
-  if (Array.isArray(window.dataLayer)) window.dataLayer.push(payload);
+  if (!Array.isArray(window.dataLayer)) window.dataLayer = [];
+  window.dataLayer.push(payload);
   window.dispatchEvent(new CustomEvent("tapote:storefront-event", { detail: payload }));
 }

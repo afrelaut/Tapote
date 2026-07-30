@@ -1,0 +1,14 @@
+:root {
+  --v3-ink: #161310;
+  --v3-muted: #676158;
+  --v3-line: #d9d4ca;
+  --v3-paper: #f6f1e8;
+  --v3-cream: #ece6dc;
+  --v3-blue: #2458ff;
+  --v3-blue-dark: #1b2fb8;
+  --v3-mint: #bbf4dd;
+  --v3-orange: #ffba5c;
+  --v3-focus: #1748d4;
+  --v3-radius: 24px;
+  --v3-shadow: 0 24px 70px rgb(15 20 32 / 10%);
+}

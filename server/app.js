@@ -12,7 +12,7 @@ import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { ACTIONS, calculateShipping, matchingIdentityKey, PRODUCTS } from "../shared/catalog.js";
+import { ACTIONS, calculateShipping, isPublicProductId, matchingIdentityKey, PRODUCTS } from "../shared/catalog.js";
 import { getProductionChecks } from "./config.js";
 import { checkoutSchema, checkoutStatusSchema, leadSchema, parseRequest, pilotActivationSchema, tapoteRedirectSchema } from "./validation.js";
 
@@ -41,6 +41,8 @@ const storefrontPaths = new Set([
   "/personnaliser",
   "/comment-ca-marche",
   "/tapote-pilot",
+  "/preuves",
+  "/faq",
   "/panier",
   "/devis",
   "/commande",
@@ -53,6 +55,7 @@ const storefrontPaths = new Set([
   "/categorie/cartes-nfc",
   "/categorie/packs-nfc",
   "/categorie/packs",
+  "/produits/comptoir",
   "/produits/chevalet",
   "/produits/plaque",
   "/produits/carte",
@@ -74,21 +77,24 @@ const storefrontPaths = new Set([
 ]);
 
 const routeMeta = new Map([
-  ["/", ["Supports NFC + QR prêts ou personnalisés | Tapote", "Chevalets, plaques et cartes NFC + QR prêts à l’emploi ou personnalisés. Destination initiale configurée et pilotage à distance avec Tapote Pilot."]],
-  ["/boutique", ["Boutique NFC + QR | Tapote", "Choisissez un chevalet, une plaque verticale, une Carte NFC ou un pack Tapote, prêt à l’emploi ou adapté à votre identité."]],
+  ["/", ["Supports NFC + QR prêts ou personnalisés | Tapote", "Tapote Comptoir, Tapote Plaque, Tapote Card et Pack Local, prêts à poser ou à votre image. Destination initiale configurée et Tapote Pilot inclus."]],
+  ["/boutique", ["Boutique NFC + QR | Tapote", "Choisissez Tapote Comptoir, Tapote Plaque, Tapote Card ou Pack Local, en mode Prêt à poser ou À votre image."]],
   ["/designs", ["Designs Tapote pour chaque usage", "Comparez les designs Tapote pour avis, menu, réservation, réseaux sociaux, Wi-Fi, paiement et autres liens professionnels."]],
   ["/secteurs", ["Tapote pour votre secteur | 15 usages concrets", "Trouvez le support NFC + QR, le placement et l’usage Tapote adaptés à votre métier."]],
   ["/personnaliser", ["Personnaliser votre Tapote", "Créez votre Tapote en direct avec votre logo, vos couleurs, vos textes et votre destination, puis commandez le visuel affiché."]],
   ["/comment-ca-marche", ["Comment fonctionne Tapote ?", "NFC ou QR : le client approche son téléphone et ouvre instantanément l’avis, le menu, la réservation ou le lien choisi."]],
-  ["/tapote-pilot", ["Tapote Pilot | Changez vos liens et suivez vos supports", "Pilotez vos supports Tapote à distance, changez leur destination et suivez les interactions NFC + QR depuis une interface unique."]],
-  ["/produits/chevalet", ["Chevalet A6 NFC + QR | Tapote", "Un chevalet vertical et visible pour déclencher avis, réservation, menu, Wi-Fi ou tout autre lien au comptoir."]],
-  ["/produits/plaque", ["Plaque verticale NFC + QR | Tapote", "Une plaque PMMA présentée debout, personnalisable et synchronisée avec le lien affiché sur le téléphone."]],
-  ["/produits/carte", ["Carte NFC + QR professionnelle | Tapote", "Une Carte NFC compacte pour partager contact, réseaux, réservation, avis ou tout autre lien en rendez-vous et sur le terrain."]],
-  ["/categorie/chevalets-nfc", ["Chevalets NFC + QR | Tapote", "Découvrez les chevalets Tapote prêts à l’emploi, personnalisés et disponibles en packs."]],
-  ["/categorie/plaques-nfc", ["Plaques NFC + QR | Tapote", "Découvrez les plaques verticales Tapote prêtes à l’emploi, personnalisées et disponibles en packs."]],
-  ["/categorie/cartes-nfc", ["Cartes NFC + QR | Tapote", "Découvrez les Cartes NFC Tapote prêtes à l’emploi, personnalisées ou assorties à vos supports."]],
-  ["/categorie/packs-nfc", ["Packs NFC + QR professionnels | Tapote", "Multipliez les points de contact avec les packs de chevalets et plaques Tapote configurés et testés."]],
-  ["/categorie/packs", ["Packs NFC + QR professionnels | Tapote", "Multipliez les points de contact avec les packs de chevalets et plaques Tapote configurés et testés."]],
+  ["/tapote-pilot", ["Tapote Pilot inclus et Pilot Pro | Tapote", "Tapote Pilot est inclus pour gérer les supports et leurs destinations. Pilot Pro ajoute les analyses par période, support et lieu, l’historique et les exports CSV."]],
+  ["/preuves", ["Preuves et série pilote | Tapote", "Découvrez les protocoles Tapote pour tester les supports, le geste NFC + QR et les futurs résultats terrain sans chiffres inventés."]],
+  ["/faq", ["FAQ Tapote | NFC, QR, produits et livraison", "Réponses détaillées sur les supports Tapote, le NFC, le QR, le Studio, Pilot, Pilot Pro, la livraison et les projets multi-sites."]],
+  ["/produits/comptoir", ["Tapote Comptoir NFC + QR | Tapote", "Un support vertical pour déclencher avis, réservation, menu, Wi-Fi ou tout autre lien au comptoir."]],
+  ["/produits/chevalet", ["Tapote Comptoir NFC + QR | Tapote", "Le support visible au comptoir pour ouvrir l’avis, la réservation, le menu, le Wi-Fi ou le lien utile."]],
+  ["/produits/plaque", ["Tapote Plaque NFC + QR | Tapote", "Un point de contact fixe, personnalisable et relié à la destination affichée sur le téléphone."]],
+  ["/produits/carte", ["Tapote Card NFC + QR | Tapote", "Le support mobile Tapote pour partager contact, réseaux, réservation, avis ou tout autre lien en rendez-vous et sur le terrain."]],
+  ["/categorie/chevalets-nfc", ["Tapote Comptoir NFC + QR | Tapote", "Découvrez Tapote Comptoir en mode Prêt à poser ou À votre image."]],
+  ["/categorie/plaques-nfc", ["Tapote Plaque NFC + QR | Tapote", "Découvrez Tapote Plaque en mode Prêt à poser ou À votre image."]],
+  ["/categorie/cartes-nfc", ["Tapote Card NFC + QR | Tapote", "Découvrez Tapote Card en mode Prêt à poser ou À votre image."]],
+  ["/categorie/packs-nfc", ["Pack Local NFC + QR | Tapote", "Équipez deux points de contact avec un Tapote Comptoir et une Tapote Plaque coordonnés."]],
+  ["/categorie/packs", ["Pack Local NFC + QR | Tapote", "Équipez deux points de contact avec un Tapote Comptoir et une Tapote Plaque coordonnés."]],
   ["/devis", ["Devis volume et multi-sites | Tapote", "Décrivez votre besoin de 10 supports ou plus et recevez une proposition Tapote claire, sans engagement et adaptée à vos lieux."]],
   ["/mentions-legales", ["Mentions légales | Tapote", "Consultez les informations relatives à l’éditeur, à la publication et à l’hébergement du site Tapote."]],
   ["/cgv", ["Conditions générales de vente B2B | Tapote", "Consultez les conditions applicables aux commandes professionnelles de supports NFC + QR Tapote."]],
@@ -553,13 +559,13 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
     response.set("Cache-Control", "public, max-age=30, stale-while-revalidate=120");
     try {
       const persisted = await repository.getStorefrontCatalog?.();
-      const products = persisted?.length ? persisted : Object.values(PRODUCTS).map((product) => ({
+      const products = (persisted?.length ? persisted : Object.values(PRODUCTS).map((product) => ({
         productId: product.id,
         name: product.name,
         price: product.price,
         online: true,
         availableStock: null,
-      }));
+      }))).filter((product) => isPublicProductId(product.productId));
       return response.json({ products });
     } catch (error) {
       return next(error);
@@ -606,6 +612,12 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
     void professionalCustomer;
 
     try {
+      const retiredItem = items.find((item) => !isPublicProductId(item.productId));
+      if (retiredItem) {
+        return response.status(409).json({
+          error: "Une ancienne référence de ce panier n’est plus commandable. Retirez-la puis choisissez Tapote Comptoir, Tapote Plaque, Tapote Card ou Pack Local.",
+        });
+      }
       const eligibleSupports = items.filter((item) => {
         const candidate = PRODUCTS[item.productId];
         return candidate?.personalization === "custom"
@@ -751,7 +763,7 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
         price_data: {
           currency: "eur",
           unit_amount: product.price,
-          tax_behavior: "inclusive",
+          tax_behavior: config.stripeTaxBehavior,
           product_data: {
             name: `${product.name} · ${action.name}`,
             description: product.format,
@@ -793,7 +805,7 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
         invoice_creation: {
           enabled: true,
           invoice_data: {
-            description: `Commande professionnelle Tapote · ${attemptId}`,
+            description: `Commande professionnelle Tapote · ${attemptId} · ${config.legalTaxLabel}`,
             metadata: { orderToken: attemptId, customerType: "business" },
           },
         },
@@ -809,7 +821,7 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
         metadata: { orderToken: attemptId, businessName: customer.businessName, customerType: "business" },
         custom_text: {
           shipping_address: { message: personalizedOrder
-            ? "Commande personnalisée : la création enregistrée au panier part directement en préparation. Chaque support sera configuré et testé avant expédition."
+            ? "Commande personnalisée : après le paiement, Tapote recueille votre identité et prépare un BAT. Aucune impression ne démarre avant votre validation."
             : "Commande professionnelle : chaque support sera préparé, configuré et testé avant expédition." },
           submit: { message: `En payant, vous confirmez agir à titre professionnel et accepter les CGV B2B ${config.legalVersion}.` },
         },

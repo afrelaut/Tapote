@@ -32,8 +32,8 @@ function lineTotal(item) {
 function renderComposition(composition) {
   if (!composition || typeof composition !== "object") return "";
   const parts = [];
-  if (composition.comptoir) parts.push(`${composition.comptoir} chevalet${composition.comptoir > 1 ? "s" : ""}`);
-  if (composition.plaque) parts.push(`${composition.plaque} plaque${composition.plaque > 1 ? "s" : ""}`);
+  if (composition.comptoir) parts.push(`${composition.comptoir} Tapote Comptoir${composition.comptoir > 1 ? "s" : ""}`);
+  if (composition.plaque) parts.push(`${composition.plaque} Tapote Plaque${composition.plaque > 1 ? "s" : ""}`);
   return parts.join(" + ");
 }
 
@@ -122,7 +122,7 @@ function renderWorkshopNotification(payload) {
         <tr><td style="padding:5px 12px 5px 0;color:#6c6860">Destination générale</td><td style="padding:5px 0;word-break:break-all">${fallbackDestination ? escapeHtml(fallbackDestination) : "Non renseignée"}</td></tr>
       </table>
       ${detailedItems || '<p style="padding:16px;background:#fff4df;border-radius:12px">Le détail des lignes n’a pas été retrouvé. Vérifier la commande dans Supabase et Stripe.</p>'}
-      <p style="margin:24px 0 0;padding:16px;background:#eef2ff;border-radius:12px;line-height:1.55"><strong>Contrôle atelier :</strong> reprendre le fichier enregistré par le studio, vérifier chaque destination et le logo, puis tester NFC et QR avant expédition. Ne pas modifier la création du client.</p>
+      <p style="margin:24px 0 0;padding:16px;background:#eef2ff;border-radius:12px;line-height:1.55"><strong>Contrôle atelier :</strong> pour une commande personnalisée, attendre le brief client puis préparer le BAT. Ne lancer aucune impression avant sa validation. Vérifier ensuite chaque destination, le NFC et le QR avant expédition.</p>
     `, `${statusContent[1]} · ${reference(payload)}`),
   };
 }
@@ -134,9 +134,9 @@ function renderCustomerConfirmation(payload, config) {
   const readyLeadTime = config.readyOrderLeadTime || "le délai exact vous sera confirmé dès la prise en charge par notre atelier.";
   const steps = personalized
     ? [
-      ["Création enregistrée", "Le visuel configuré dans le studio est transmis tel quel à notre atelier."],
-      ["Contrôle technique", "Nous vérifions la lisibilité, la destination, le NFC et le QR sans modifier votre création."],
-      ["Production et expédition", "Votre support est imprimé, contrôlé puis préparé pour l’envoi."],
+      ["Envoyez votre identité", "Répondez à cet e-mail avec votre logo, vos couleurs, vos textes et la destination à ouvrir. Si vous avez déjà utilisé le Studio, joignez simplement votre création."],
+      ["Validez votre BAT", "Nous préparons le rendu sur le support choisi. Aucune impression ne démarre avant votre accord."],
+      ["Production et expédition", "Après validation, votre support est imprimé puis le NFC et le QR sont testés avant l’envoi."],
     ]
     : [
       ["Commande confirmée", "Votre design Tapote et votre destination sont transmis à l’atelier."],
@@ -160,7 +160,7 @@ function renderCustomerConfirmation(payload, config) {
       </table>
       <h2 style="margin:30px 0 16px;font-size:22px">Et maintenant ?</h2>
       ${steps.map(([title, description], index) => `<div style="display:flex;gap:14px;margin:0 0 16px"><div style="flex:0 0 30px;height:30px;border-radius:50%;background:#2458ff;color:#fff;text-align:center;line-height:30px;font-weight:800">${index + 1}</div><div><strong>${escapeHtml(title)}</strong><p style="margin:4px 0 0;color:#6c6860;line-height:1.5">${escapeHtml(description)}</p></div></div>`).join("")}
-      <p style="margin:26px 0 0;padding:17px;background:#f4f2ee;border-radius:12px;line-height:1.6"><strong>Délai :</strong> ${personalized ? "la préparation commence après votre paiement ; le délai exact vous sera confirmé par notre atelier." : escapeHtml(readyLeadTime)}<br><strong>Une question ?</strong> Répondez à cet e-mail${supportEmail ? ` ou écrivez à <a style="color:#2458ff" href="mailto:${escapeHtml(supportEmail)}">${escapeHtml(supportEmail)}</a>` : ""}.</p>
+      <p style="margin:26px 0 0;padding:17px;background:#f4f2ee;border-radius:12px;line-height:1.6"><strong>Délai :</strong> ${personalized ? "le délai de production commence après la validation du BAT ; notre atelier vous confirme ensuite la date d’expédition." : escapeHtml(readyLeadTime)}<br><strong>Une question ?</strong> Répondez à cet e-mail${supportEmail ? ` ou écrivez à <a style="color:#2458ff" href="mailto:${escapeHtml(supportEmail)}">${escapeHtml(supportEmail)}</a>` : ""}.</p>
     `, `Commande ${reference(payload)} confirmée`),
   };
 }

@@ -146,6 +146,92 @@ function analyticsFor(workspace, period, locationId = "all") {
   };
 }
 
+function operationalSignalsFor(analytics, period) {
+  const rankedProducts = [...analytics.products]
+    .map((product) => ({ product, interactions: analytics.byProduct.get(product.id) || 0 }))
+    .sort((a, b) => b.interactions - a.interactions);
+  const inactive = rankedProducts.find(({ product }) => product.status !== "active" || !product.linkActive);
+  const top = rankedProducts.find(({ interactions }) => interactions > 0);
+  const quiet = [...rankedProducts]
+    .reverse()
+    .find(({ product, interactions }) => product.status === "active" && product.linkActive && interactions === 0);
+  const signals = [];
+
+  if (inactive) {
+    signals.push({
+      id: `inactive-${inactive.product.id}`,
+      tone: "attention",
+      icon: Radio,
+      label: "À vérifier",
+      title: inactive.product.label,
+      copy: `${inactive.product.locationName} · le support ou son lien n’est pas actif.`,
+      productId: inactive.product.id,
+    });
+  } else if (analytics.products.length) {
+    signals.push({
+      id: "active-fleet",
+      tone: "success",
+      icon: Check,
+      label: "Parc opérationnel",
+      title: `${analytics.activeProducts} / ${analytics.products.length} supports actifs`,
+      copy: "Tous les supports de cette sélection peuvent recevoir des interactions.",
+    });
+  }
+
+  if (analytics.comparisonAvailable && analytics.trendPercent < 0) {
+    signals.push({
+      id: "negative-trend",
+      tone: "attention",
+      icon: TrendingDown,
+      label: "Baisse d’activité",
+      title: `${analytics.trendPercent} % sur ${period} jours`,
+      copy: "Le volume est inférieur à la période précédente. Comparez les lieux et les supports.",
+    });
+  } else if (analytics.comparisonAvailable) {
+    signals.push({
+      id: "period-trend",
+      tone: "success",
+      icon: TrendingUp,
+      label: "Dynamique",
+      title: `${analytics.trendPercent >= 0 ? "+" : ""}${analytics.trendPercent} % sur ${period} jours`,
+      copy: "Évolution des ouvertures NFC et QR par rapport à la période précédente.",
+    });
+  } else {
+    signals.push({
+      id: "daily-rhythm",
+      tone: "neutral",
+      icon: Activity,
+      label: "Rythme observé",
+      title: `${formatNumber(analytics.averagePerDay)} interaction${analytics.averagePerDay > 1 ? "s" : ""} / jour`,
+      copy: `Moyenne calculée sur les ${period} derniers jours.`,
+    });
+  }
+
+  if (top) {
+    signals.push({
+      id: `top-${top.product.id}`,
+      tone: "neutral",
+      icon: Activity,
+      label: "Support en tête",
+      title: top.product.label,
+      copy: `${formatNumber(top.interactions)} interactions · ${top.product.locationName}`,
+      productId: top.product.id,
+    });
+  } else if (quiet) {
+    signals.push({
+      id: `quiet-${quiet.product.id}`,
+      tone: "attention",
+      icon: Radio,
+      label: "Aucune interaction",
+      title: quiet.product.label,
+      copy: `${quiet.product.locationName} · testez le NFC et le QR sur place.`,
+      productId: quiet.product.id,
+    });
+  }
+
+  return signals.slice(0, 3);
+}
+
 function PilotLogo({ dark = false }) {
   return (
     <a className="pilot-logo" href="/pilot" aria-label="Tapote Pilot, accueil">
@@ -362,6 +448,33 @@ function PeriodSwitch({ period, onChange }) {
   );
 }
 
+function PilotSignals({ analytics, period, openProduct }) {
+  const signals = operationalSignalsFor(analytics, period);
+  return (
+    <section className="pilot-signals" aria-labelledby="pilot-signals-title">
+      <header>
+        <span>SIGNAUX OPÉRATIONNELS</span>
+        <h2 id="pilot-signals-title">Ce qui mérite votre attention</h2>
+        <p>Des constats calculés à partir des ouvertures NFC et QR. Pilot ne transforme jamais une ouverture en conversion supposée.</p>
+      </header>
+      <div className="pilot-signal-list">
+        {signals.map(({ id, tone, icon: Icon, label, title, copy, productId }, index) => (
+          <article className={`is-${tone}`} key={id}>
+            <span className="pilot-signal-index">{String(index + 1).padStart(2, "0")}</span>
+            <i className="pilot-signal-icon"><Icon size={18} /></i>
+            <div>
+              <small>{label}</small>
+              <h3>{title}</h3>
+              <p>{copy}</p>
+            </div>
+            {productId && <button type="button" onClick={() => openProduct(productId)}>Ouvrir le support <ArrowRight size={15} /></button>}
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function Overview({ workspace, analytics, period, setPeriod, locationId, setLocationId, openProduct, showProducts }) {
   const maximum = Math.max(...analytics.series.map((entry) => entry.value), 1);
   const topProducts = [...analytics.products].sort((a, b) => (analytics.byProduct.get(b.id) || 0) - (analytics.byProduct.get(a.id) || 0)).slice(0, 4);
@@ -372,7 +485,7 @@ function Overview({ workspace, analytics, period, setPeriod, locationId, setLoca
     <>
       <header className="pilot-view-heading">
         <div className="pilot-heading-copy"><span className="pilot-kicker">PILOT · {pilotWorkspaceLabel(workspace)}</span><h1>Vue d’ensemble</h1><p>Les performances de vos produits Tapote, sans jargon.</p></div>
-        <span className="pilot-free-promise"><Check size={16} /><span><b>FORMULE PILOT ACTIVE</b>Destinations pilotables à distance</span></span>
+        <span className="pilot-free-promise"><Check size={16} /><span><b>PILOT INCLUS</b>Supports et destinations</span></span>
       </header>
 
       <section className="pilot-link-workspace" aria-labelledby="pilot-link-title">
@@ -415,6 +528,8 @@ function Overview({ workspace, analytics, period, setPeriod, locationId, setLoca
         </div>
       </section>
 
+      <PilotSignals analytics={analytics} period={period} openProduct={openProduct} />
+
       <section className="pilot-section-block">
         <div className="pilot-section-title"><div><span>MES SUPPORTS</span><h2>Prêts à être utilisés</h2><p>Cliquez sur un support pour voir ou changer son lien.</p></div><button type="button" onClick={showProducts}>Gérer tous les supports <ArrowRight size={16} /></button></div>
         <div className="pilot-client-product-list">
@@ -425,7 +540,7 @@ function Overview({ workspace, analytics, period, setPeriod, locationId, setLoca
 
       <section className="pilot-advanced" aria-labelledby="pilot-advanced-title">
         <header className="pilot-advanced-heading">
-          <div><span>PILOT · MESURE & ANALYSE</span><h2 id="pilot-advanced-title">Comprendre ce qui fonctionne</h2><p>Les outils de pilotage pour comparer vos supports, vos lieux et vos périodes.</p></div>
+          <div><span>PILOT · MESURE & ANALYSE</span><h2 id="pilot-advanced-title">Comprendre ce qui fonctionne</h2><p>Comparez les ouvertures par support, lieu et période. Une interaction correspond à l’ouverture du lien, pas à une conversion.</p></div>
           <div className="pilot-plan-price"><strong>9 €</strong><span>/ mois</span><small>ou 89 € / an</small></div>
         </header>
         <div className="pilot-advanced-features" aria-label="Fonctions Pilot avancées">
