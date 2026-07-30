@@ -238,7 +238,22 @@
   width: 390px;
   max-width: 390px;
   height: 844px;
+  /* Zone de sécurité haute : l'heure et les icônes iOS ne doivent jamais se
+     poser sur l'en-tête de l'application, comme sur un vrai téléphone. */
+  padding-top: var(--phone-safe-top, 60px);
   margin: calc(var(--phone-pad-top) * -1) calc(var(--phone-pad-x) * -1) calc(var(--phone-pad-bottom) * -1);
+}
+
+/* TikTok joue sa vidéo derrière la zone de sécurité : seul son habillage
+   descend, pas l'image. */
+.tapote-device-frame .tapote-device__screen.v3-live-phone-ui > .v3-tiktok-app {
+  /* L'habillage TikTok démarre plus bas : ses onglets sont collés au bord haut
+     de l'écran dans l'application réelle. */
+  --phone-safe-top: 88px;
+}
+
+.tapote-device-frame .tapote-device__screen.v3-live-phone-ui > .v3-tiktok-app > .v3-tiktok-poster {
+  top: calc(var(--phone-safe-top, 60px) * -1);
 }
 
 /* Le bandeau iOS reste au-dessus de l'application et garde sa lisibilité sur
@@ -299,4 +314,21 @@
   padding: 0;
   background: transparent;
   pointer-events: none;
+}
+
+/* L'habillage TikTok est posé en absolu par-dessus la vidéo : il ne suit pas le
+   padding de sécurité, on le descend explicitement sous l'heure. */
+.tapote-device-frame .tapote-device__screen.v3-live-phone-ui > .v3-tiktok-app > header {
+  position: relative;
+  z-index: 3;
+  box-sizing: border-box;
+  max-width: 100%;
+  padding-top: 34px;
+  overflow: hidden;
+}
+
+/* La colonne d'actions TikTok est posée en absolu à droite : elle doit rester
+   dans la vitre quelle que soit la largeur du texte de partage. */
+.tapote-device-frame .tapote-device__screen.v3-live-phone-ui > .v3-tiktok-app {
+  overflow: hidden;
 }

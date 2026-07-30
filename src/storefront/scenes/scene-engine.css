@@ -1425,7 +1425,7 @@
 }
 
 .tapote-product-studio.is-pdp {
-  min-height: min(690px, 72vh);
+  min-height: min(780px, 78vh);
   color: #11151d;
   background:
     radial-gradient(110% 70% at 50% 116%, rgb(255 255 255 / 86%), transparent 60%),

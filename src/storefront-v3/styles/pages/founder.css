@@ -1682,7 +1682,7 @@
 .v3-sector-placement small { color: #777c87; font-size: 8px; font-weight: 850; letter-spacing: .09em; }
 .v3-sector-placement strong { max-width: 460px; font-size: 11px; line-height: 1.45; }
 .v3-sector-landing-scene { min-height: 610px; overflow: hidden; border-radius: 26px; }
-.v3-sector-landing-scene .v3-sector-scene-stage { min-height: 610px; }
+.v3-sector-landing-scene .v3-sector-scene-stage { min-height: 680px; }
 
 .v3-sector-action-strip { padding: 0 clamp(24px, 6vw, 100px); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); background: #0b0d12; }
 .v3-sector-action-strip article { min-height: 185px; padding: 32px; display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 16px; color: #fff; border-right: 1px solid #282c36; }

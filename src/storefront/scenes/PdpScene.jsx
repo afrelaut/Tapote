@@ -78,9 +78,23 @@ function basisFor(points) {
   return multiply3(matrix, [vector[0], 0, 0, 0, vector[1], 0, 0, 0, vector[2]]);
 }
 
+// Les quadrilatères sont mesurés sur l'image source, qui est carrée. La scène,
+// elle, ne l'est pas toujours : `object-fit: cover` recadre alors la photo, et
+// appliquer les fractions à la boîte de la scène décalait l'écran hors du
+// téléphone. On reproduit ici le recadrage de `cover` avant de projeter.
+function coverProjection(width, height) {
+  const displayed = Math.max(width, height);
+  return {
+    size: displayed,
+    offsetX: (width - displayed) / 2,
+    offsetY: (height - displayed) / 2,
+  };
+}
+
 function phoneMatrix3d(destinationFractions, width, height) {
   const source = [[0, 0], [390, 0], [390, 844], [0, 844]];
-  const destination = destinationFractions.map(([x, y]) => [x * width, y * height]);
+  const { size, offsetX, offsetY } = coverProjection(width, height);
+  const destination = destinationFractions.map(([x, y]) => [offsetX + (x * size), offsetY + (y * size)]);
   const projection = multiply3(basisFor(destination), adjugate3(basisFor(source)));
   for (let index = 0; index < 9; index += 1) projection[index] /= projection[8];
   return `matrix3d(${[

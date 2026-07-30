@@ -8,7 +8,7 @@ import { trackStorefrontEvent } from "../../storefront/analytics.js";
 import { CONFIG_DRAFT_PREFIX, cacheLogoPreview, compositionLabel, compositionSurface, getCachedLogoPreview, getProductId, loadConfigDraft, makeCartItem } from "./cart.js";
 import { ACTION_ORDER, READY_ACTION_IDS, campaignHeadlineForAction, readyHeadlineForAction } from "../data/content.js";
 import { BLOCK_COLOR_MODES, DEFAULT_BLOCK_COLOR_MODE, actionPaletteLabel, resolveBlockPalette } from "../../storefront/actionPalettes.js";
-import { DEFAULT_MONOGRAM_SHAPE, MONOGRAM_SHAPES, NEUTRAL_MOTIFS, brandInitialsFor } from "../../storefront/brandMotifs.js";
+import { DEFAULT_MONOGRAM_SHAPE, MONOGRAM_SHAPES } from "../../storefront/brandMotifs.js";
 import { BrandMotif } from "../../storefront/BrandMotif.jsx";
 
 function CompositionPicker({ count, composition, onChange, labelId }) {
@@ -409,57 +409,48 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
             </div>
             {brandLogo && <div className="v3-uploaded-logo"><img src={brandLogo} alt="Aperçu du logo importé" /><span><strong>{logoFileName}</strong><small>{logoStatus === "success" ? "Affiché dans l’aperçu" : "À retransmettre"}</small></span><button type="button" onClick={removeLogo} aria-label="Retirer le logo"><X size={15} /></button></div>}
             {logoError && <p className="v3-upload-error" role="alert">{logoError} Retirez le fichier pour continuer sans logo.</p>}
-            {/* Sans logo : un monogramme, un symbole neutre, ou la demande d'un
-                tracé dessiné par Tapote Studio. Aucune promesse d'une
-                bibliothèque exhaustive de métiers, qui serait intenable. */}
+            {/* Trois portes, pas une grille de pastilles : le client a un logo,
+                il n'en a pas, ou il veut qu'on le lui dessine. Le reste du
+                parcours ne bouge pas selon la porte choisie. */}
             {!brandLogo && (
-              <div className="v3-motif-picker">
-                <span className="v3-motif-heading">
-                  <strong>Pas encore de logo&nbsp;?</strong>
-                  <small>Votre monogramme est déjà prêt. Il tient lieu de marque en haut du support et de filigrane en fond.</small>
-                </span>
-                <div className="v3-motif-group" role="group" aria-label="Choisir un monogramme">
-                  <span className="v3-motif-group-label">Monogramme {brandInitialsFor(brandName) || "AB"}</span>
-                  <div>
-                    {Object.entries(MONOGRAM_SHAPES).map(([shapeId, shape]) => (
-                      <button
-                        type="button"
-                        key={shapeId}
-                        className={brandMotif === shapeId ? "is-selected" : ""}
-                        aria-pressed={brandMotif === shapeId}
-                        aria-label={`Monogramme ${shape.label}`}
-                        onClick={() => { markConfigurationStarted(); setBrandMotif(shapeId); }}
-                      >
-                        <BrandMotif shape={shapeId} brandName={brandName} />
-                        <small>{shape.label}</small>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="v3-motif-group" role="group" aria-label="Choisir un symbole neutre">
-                  <span className="v3-motif-group-label">Symbole neutre</span>
-                  <div>
-                    {Object.entries(NEUTRAL_MOTIFS).map(([motifId, motif]) => (
-                      <button
-                        type="button"
-                        key={motifId}
-                        className={brandMotif === motifId ? "is-selected" : ""}
-                        aria-pressed={brandMotif === motifId}
-                        aria-label={`Symbole ${motif.label}`}
-                        onClick={() => { markConfigurationStarted(); setBrandMotif(motifId); }}
-                      >
-                        <BrandMotif shape={motifId} />
-                        <small>{motif.label}</small>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <label className="v3-motif-service">
-                  <input type="checkbox" checked={logoWanted} onChange={(event) => { markConfigurationStarted(); setLogoWanted(event.target.checked); }} />
-                  <span><strong>Je veux un vrai logo dessiné</strong><small>Tapote Studio vous propose un tracé avec le BAT, avant toute impression.</small></span>
-                </label>
+              <div className="v3-identity-route" role="group" aria-label="Votre identité imprimée">
+                <button
+                  type="button"
+                  className={!logoWanted && brandMotif ? "is-selected" : ""}
+                  aria-pressed={!logoWanted && Boolean(brandMotif)}
+                  onClick={() => { markConfigurationStarted(); setLogoWanted(false); setBrandMotif(brandMotif || DEFAULT_MONOGRAM_SHAPE); }}
+                >
+                  <BrandMotif shape={brandMotif || DEFAULT_MONOGRAM_SHAPE} brandName={brandName} />
+                  <span><strong>Monogramme</strong><small>Vos initiales, prêtes tout de suite</small></span>
+                </button>
+                <button
+                  type="button"
+                  className={logoWanted ? "is-selected" : ""}
+                  aria-pressed={logoWanted}
+                  onClick={() => { markConfigurationStarted(); setLogoWanted(true); }}
+                >
+                  <Sparkles aria-hidden="true" />
+                  <span><strong>Dessinez-le pour moi</strong><small>Un tracé proposé avec votre BAT</small></span>
+                </button>
               </div>
             )}
+            {!brandLogo && !logoWanted && (
+              <div className="v3-monogram-shapes" role="group" aria-label="Forme du monogramme">
+                {Object.entries(MONOGRAM_SHAPES).map(([shapeId, shape]) => (
+                  <button
+                    type="button"
+                    key={shapeId}
+                    className={brandMotif === shapeId ? "is-selected" : ""}
+                    aria-pressed={brandMotif === shapeId}
+                    aria-label={`Monogramme ${shape.label}`}
+                    onClick={() => { markConfigurationStarted(); setBrandMotif(shapeId); }}
+                  >
+                    <BrandMotif shape={shapeId} brandName={brandName} />
+                  </button>
+                ))}
+              </div>
+            )}
+            <p className="v3-bat-promise"><CheckCircle2 size={15} aria-hidden="true" /><span>Un bon à tirer vous est envoyé avant impression. Rien ne part sans votre accord.</span></p>
           </div>
           <div className="v3-studio-section">
             <span className="v3-field-label">Textes imprimés</span>
