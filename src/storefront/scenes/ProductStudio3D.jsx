@@ -329,13 +329,16 @@ export default function ProductStudio3D({
     const heroScale = surface === "comptoir" ? 1.08 : surface === "plaque" ? 0.74 : 0.64;
     // Le support est le produit vendu : il doit dominer la scène. Le téléphone
     // n'est là que pour prouver le geste, pas pour voler la vedette.
-    const sceneScale = hero ? (mobile ? heroScale * 0.98 : heroScale * 1.12) : (mobile ? 1.02 : 1.2);
+    const sceneScale = hero ? (mobile ? heroScale * 0.94 : heroScale * 1.06) : (mobile ? 0.96 : 1.06);
     const finalScale = sceneScale * baseScale;
     product.scale.setScalar(finalScale);
     // Sur mobile le téléphone occupe la moitié droite du cadre : l'objet se
     // décale vers la gauche pour rester entier et lisible à côté de lui.
-    const objectX = hero ? (mobile ? 0.42 : 0.72) : (mobile ? -0.58 : -0.42);
-    product.position.set(objectX, surface === "comptoir" ? 0.18 : 0.05, 0);
+    const objectX = hero ? (mobile ? 0.42 : 0.72) : (mobile ? -0.52 : -0.30);
+    // Le socle du chevalet doit rester dans le cadre : l'objet est remonté sur
+    // la fiche produit, où la scène est plus haute que large.
+    const objectY = (surface === "comptoir" ? 0.18 : 0.05) + (hero ? 0 : 0.34);
+    product.position.set(objectX, objectY, 0);
     product.rotation.set(
       surface === "carte" ? -0.12 : -0.025,
       surface === "plaque" ? -0.24 : surface === "carte" ? -0.38 : -0.3,

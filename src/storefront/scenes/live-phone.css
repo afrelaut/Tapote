@@ -319,11 +319,15 @@
 /* L'habillage TikTok est posé en absolu par-dessus la vidéo : il ne suit pas le
    padding de sécurité, on le descend explicitement sous l'heure. */
 .tapote-device-frame .tapote-device__screen.v3-live-phone-ui > .v3-tiktok-app > header {
+  /* Le décalage se fait par le rembourrage, pas par un `left` : combiné à une
+     largeur de 390 px, il poussait l'habillage hors de la vitre. */
   position: relative;
   z-index: 3;
+  left: 0;
+  right: auto;
   box-sizing: border-box;
-  max-width: 100%;
-  padding-top: 34px;
+  width: 100%;
+  padding: 34px 16px 0;
   overflow: hidden;
 }
 
