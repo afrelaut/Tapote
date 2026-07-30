@@ -25,7 +25,7 @@ function CartLine({ item, index, onQuantity, onRemove }) {
           <div><dt>Ouverture</dt><dd>{action.name}{product.kind === "pack" && item.supportComposition ? ` · ${compositionLabel(item.supportComposition)}` : ""}</dd></div>
           {product.personalization === "ready" && <div><dt>Design</dt><dd>{THEME_LABELS[resolveThemeId(item.theme)]}</dd></div>}
           {item.brandName && <div><dt>Marque</dt><dd>{item.brandName}</dd></div>}
-          <div><dt>Destination</dt><dd className={item.destinationUrl ? "is-ready" : "is-pending"}>{item.destinationUrl ? "Lien configuré" : "À préciser dans Pilot"}</dd></div>
+          <div><dt>Destination</dt><dd className={item.destinationUrl ? "is-ready" : "is-pending"}>{item.destinationUrl ? "Lien configuré" : "À préciser avant production"}</dd></div>
         </dl>
         <strong>{formatMoney(product.price * item.quantity)}</strong>
       </div>
