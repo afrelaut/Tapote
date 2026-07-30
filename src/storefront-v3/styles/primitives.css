@@ -183,8 +183,8 @@
 .v3-choice-row button.is-selected { color: #fff; background: var(--v3-ink); border-color: var(--v3-ink); }
 /* margin-top : le badge « Populaire » chevauche le bord haut du bouton, il lui
    faut de la place au-dessus de la grille. */
-.v3-quantity-choice { margin-top: 9px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
-.v3-quantity-choice button { position: relative; min-height: 78px; padding: 12px; display: grid; grid-template-columns: 36px 42px; grid-template-rows: 18px 22px; align-content: center; align-items: center; justify-content: center; column-gap: 10px; text-align: left; border: 1px solid var(--v3-line); border-radius: 12px; background: #fff; cursor: pointer; }
+.v3-quantity-choice { margin-top: 9px; display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 9px; }
+.v3-quantity-choice button { position: relative; min-height: 78px; padding: 12px; display: grid; grid-template-columns: 36px minmax(60px, auto); grid-template-rows: 18px 22px; align-content: center; align-items: center; justify-content: center; column-gap: 10px; text-align: left; border: 1px solid var(--v3-line); border-radius: 12px; background: #fff; cursor: pointer; }
 .v3-quantity-choice button strong { grid-column: 1; grid-row: 1 / 3; width: 100%; align-self: center; justify-self: end; text-align: right; font-size: 28px; font-variant-numeric: tabular-nums; line-height: 1; }
 .v3-quantity-choice button span { grid-column: 2; grid-row: 1; align-self: end; color: var(--v3-muted); font-size: 10px; line-height: 1.15; }
 .v3-quantity-choice button b { grid-column: 2; grid-row: 2; align-self: start; font-size: 13px; font-variant-numeric: tabular-nums; line-height: 1.15; }

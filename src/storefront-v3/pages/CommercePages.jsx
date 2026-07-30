@@ -231,7 +231,7 @@ export function ProductPage({ page, onAdd }) {
         <div>
           <span className="v3-eyebrow">TAPOTE PILOT INCLUS</span>
           <h2 id={`v3-${data.key}-pilot-title`}>Le support reste.<br />Sa destination évolue.</h2>
-          <p>Retrouvez {data.name}, vérifiez sa destination et changez le lien ouvert sans réimprimer ni réencoder le support.</p>
+          <p>Retrouvez {data.name} et vérifiez la destination qu’il ouvre. Avec Tapote Pilot Pro, remplacez ce lien à distance, sans réimprimer ni réencoder le support.</p>
           <ul>
             <li><Check /> Gestion des supports</li>
             <li><Check /> Modification des destinations</li>

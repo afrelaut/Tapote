@@ -22,8 +22,26 @@ describe("DeviceFrame Tapote", () => {
 
     rerender(<DeviceFrame actionId="reservation" sectorId="salon" sectorTitle="Beauté, coiffure & bien-être" />);
     expect(screen.getByRole("img", { name: "Écran du téléphone après ouverture : Réservation" })).toHaveAttribute("data-screen-family", "booking");
-    expect(screen.getByRole("heading", { name: "Choisir un créneau" })).toBeVisible();
-    expect(screen.getByText(/Accueil, miroir ou sortie/)).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Réservez votre prestation" })).toBeVisible();
+  });
+
+  it("adapte le contenu de l’écran au secteur du client", () => {
+    const { rerender } = render(<DeviceFrame actionId="menu" sectorId="restaurant" personalization="custom" brandName="L’ATELIER" />);
+    expect(screen.getByText("Burrata crémeuse")).toBeVisible();
+
+    rerender(<DeviceFrame actionId="menu" sectorId="boulangerie" personalization="custom" brandName="MAISON LEVAIN" />);
+    expect(screen.getByText("Croissant pur beurre")).toBeVisible();
+  });
+
+  it("ouvre la vraie interface de l’application demandée", () => {
+    const { container, rerender } = render(<DeviceFrame actionId="instagram" sectorId="cafe" />);
+    expect(container.querySelector(".v3-instagram-app")).toBeInTheDocument();
+
+    rerender(<DeviceFrame actionId="whatsapp" sectorId="cafe" />);
+    expect(container.querySelector(".v3-whatsapp-app")).toBeInTheDocument();
+
+    rerender(<DeviceFrame actionId="paiement" sectorId="cafe" />);
+    expect(container.querySelector(".v3-apple-pay-app")).toBeInTheDocument();
   });
 
   it("n’affiche pas une marque de démonstration comme un vrai client", () => {
@@ -36,21 +54,20 @@ describe("DeviceFrame Tapote", () => {
   });
 
   it("rend la destination cliquable uniquement lorsqu’elle est sûre", () => {
-    const { rerender } = render(<DeviceFrame actionId="site" destinationUrl="javascript:alert(1)" />);
+    const { rerender } = render(<DeviceFrame actionId="avis" destinationUrl="javascript:alert(1)" />);
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
-    expect(screen.getByText("Destination à définir dans Tapote Pilot")).toBeVisible();
 
-    rerender(<DeviceFrame actionId="site" destinationUrl="https://tapote.fr" />);
-    expect(screen.getByRole("link", { name: /Ouvrir la destination/i })).toHaveAttribute("href", "https://tapote.fr");
+    rerender(<DeviceFrame actionId="avis" destinationUrl="https://tapote.fr" />);
+    expect(screen.getByRole("link", { name: /Publier mon avis/i })).toHaveAttribute("href", "https://tapote.fr");
   });
 
   it("ne duplique jamais le chrome iPhone dans une photo de téléphone", () => {
     const { container, rerender } = render(<DeviceFrame actionId="avis" />);
-    expect(container.querySelectorAll(".tapote-device__status")).toHaveLength(1);
+    expect(container.querySelectorAll(".v3-live-phone-status")).toHaveLength(1);
     expect(container.querySelector("[data-phone-render-mode='complete-device']")).toBeInTheDocument();
 
     rerender(<DeviceFrame actionId="avis" embedded />);
-    expect(container.querySelectorAll(".tapote-device__status")).toHaveLength(0);
+    expect(container.querySelectorAll(".v3-live-phone-status")).toHaveLength(0);
     expect(container.querySelector("[data-phone-render-mode='screen-inlay']")).toBeInTheDocument();
   });
 });

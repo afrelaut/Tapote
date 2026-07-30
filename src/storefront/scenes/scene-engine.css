@@ -272,10 +272,9 @@
 }
 
 .tapote-device__tap-notification strong {
-  overflow: hidden;
   font-size: 11px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 
 .tapote-device__tap-notification em {
@@ -823,11 +822,10 @@
 }
 
 .tapote-device__tap-notification em {
-  overflow: hidden;
   color: #5a6270;
   font-size: 10.5px;
   line-height: 1.25;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
   white-space: nowrap;
 }
 
@@ -1395,6 +1393,8 @@
 
 /* Product Studio 3D
    A single native render surface shared by the landing and the product pages. */
+/* Fond de studio : un mur, un sol et une lumière principale. Les trois couches
+   donnent la profondeur qui manquait au dégradé plat, sans coûter une image. */
 .tapote-product-studio {
   position: relative;
   isolation: isolate;
@@ -1404,16 +1404,32 @@
   overflow: hidden;
   color: #fff;
   background:
-    radial-gradient(circle at 34% 28%, rgb(53 95 255 / 16%), transparent 30rem),
-    #07090f;
+    radial-gradient(120% 78% at 50% 118%, rgb(255 255 255 / 7%), transparent 58%),
+    radial-gradient(60% 46% at 38% 24%, rgb(64 108 255 / 24%), transparent 72%),
+    linear-gradient(#04060b 0%, #080b13 53%, #121724 53.5%, #04060a 100%);
+}
+
+/* Vignette : l'objet reste le point le plus clair de la scène. */
+.tapote-product-studio::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  background: radial-gradient(78% 62% at 46% 46%, transparent 42%, rgb(2 4 8 / 52%) 100%);
+  pointer-events: none;
 }
 
 .tapote-product-studio.is-pdp {
   min-height: min(690px, 72vh);
   color: #11151d;
   background:
-    radial-gradient(circle at 26% 18%, rgb(255 255 255 / 96%), transparent 29rem),
-    linear-gradient(145deg, #f4f6fa, #dfe4ec);
+    radial-gradient(110% 70% at 50% 116%, rgb(255 255 255 / 86%), transparent 60%),
+    radial-gradient(58% 44% at 30% 16%, rgb(255 255 255 / 98%), transparent 74%),
+    linear-gradient(#fbfcfe 0%, #f1f4f9 55%, #dfe4ee 55.5%, #c9d0dd 100%);
+}
+
+.tapote-product-studio.is-pdp::after {
+  background: radial-gradient(76% 60% at 46% 46%, transparent 46%, rgb(120 132 156 / 20%) 100%);
 }
 
 .v3-sector-scene-studio {
@@ -2574,8 +2590,8 @@
 .tapote-product-studio__nfc {
   position: absolute;
   z-index: 5;
-  right: clamp(158px, 24%, 290px);
-  top: 42%;
+  right: clamp(228px, 35%, 330px);
+  top: 27%;
   width: 86px;
   height: 86px;
   display: grid;
@@ -2625,17 +2641,19 @@
     min-height: 520px;
   }
 
+  /* Le téléphone tenait à cheval sur le bord du cadre et recouvrait le bloc
+     NFC + QR du support : il rentre désormais entièrement, à droite. */
   .tapote-device-frame.v3-live-phone-screen.tapote-studio-device,
   .tapote-product-studio.is-pdp .tapote-device-frame.v3-live-phone-screen.tapote-studio-device {
-    right: -2px;
-    top: 47%;
-    width: 190px;
+    right: 10px;
+    top: 50%;
+    width: 158px;
   }
 
   .tapote-product-studio__nfc {
-    right: 116px;
-    top: 42%;
-    transform: scale(.72);
+    right: 168px;
+    top: 30%;
+    transform: scale(.62);
   }
 
   .v3-scene-view-switch {

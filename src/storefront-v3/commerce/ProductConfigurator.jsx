@@ -9,18 +9,12 @@ import { CONFIG_DRAFT_PREFIX, cacheLogoPreview, compositionLabel, compositionSur
 import { ACTION_ORDER, READY_ACTION_IDS, campaignHeadlineForAction, readyHeadlineForAction } from "../data/content.js";
 
 function CompositionPicker({ count, composition, onChange, labelId }) {
-  if (count === 1) return null;
-  const choices = count === 2
-    ? [
-      { label: "2 Comptoirs", value: { comptoir: 2, plaque: 0 } },
-      { label: "1 Comptoir + 1 Plaque", value: { comptoir: 1, plaque: 1 } },
-      { label: "2 Plaques", value: { comptoir: 0, plaque: 2 } },
-    ]
-    : [
-      { label: "5 Comptoirs", value: { comptoir: 5, plaque: 0 } },
-      { label: "Mix recommandé", value: { comptoir: 2, plaque: 3 } },
-      { label: "5 Plaques", value: { comptoir: 0, plaque: 5 } },
-    ];
+  if (count !== 2) return null;
+  const choices = [
+    { label: "1 Comptoir + 1 Plaque", value: { comptoir: 1, plaque: 1 } },
+    { label: "2 Comptoirs", value: { comptoir: 2, plaque: 0 } },
+    { label: "2 Plaques", value: { comptoir: 0, plaque: 2 } },
+  ];
   return (
     <div className="v3-field-block" role="group" aria-labelledby={labelId}>
       <span className="v3-field-label" id={labelId}><b aria-hidden="true">↳</b><span>Composition</span></span>
@@ -81,13 +75,13 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
   const restoredDraft = useMemo(() => initialPersonalization === "custom" || draftKey.startsWith("cart:") ? loadConfigDraft(draftKey) : null, [draftKey, initialPersonalization]);
   const [personalization, setPersonalization] = useState(initialPersonalization);
   const [surface, setSurface] = useState(initialSurface);
-  const restoredCount = [1, 2, 5].includes(Number(restoredDraft?.count)) ? Number(restoredDraft.count) : initialCount;
+  const restoredCount = [1, 2].includes(Number(restoredDraft?.count)) ? Number(restoredDraft.count) : initialCount;
   const [count, setCount] = useState(restoredCount);
   const [actionId, setActionId] = useState(ACTIONS[restoredDraft?.actionId] ? restoredDraft.actionId : initialAction);
   const [composition, setComposition] = useState(
     restoredDraft?.composition
     || initialComposition
-    || (restoredCount === 5 ? { comptoir: 2, plaque: 3 } : restoredCount === 2 ? { comptoir: 1, plaque: 1 } : { comptoir: 1, plaque: 0 }),
+    || (restoredCount === 2 ? { comptoir: 1, plaque: 1 } : { comptoir: 1, plaque: 0 }),
   );
   const [brandName, setBrandName] = useState(restoredDraft?.brandName || "");
   const [brandLogoId, setBrandLogoId] = useState(restoredDraft?.brandLogoId || "");
@@ -155,7 +149,7 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
   const [added, setAdded] = useState(false);
   const isCard = surface === "carte";
   const safeCount = isCard ? 1 : count;
-  const quantityChoices = count === 5 ? [1, 2, 5] : [1, 2];
+  const quantityChoices = [1, 2];
   const productId = getProductId(surface, personalization, safeCount);
   const product = PRODUCTS[productId];
   const readyColors = DEVICE_THEMES[resolveThemeId(theme)];
@@ -207,7 +201,7 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
     } else if (value === 1) {
       setComposition(surface === "plaque" ? { comptoir: 0, plaque: 1 } : { comptoir: 1, plaque: 0 });
     } else {
-      setComposition(value === 2 ? { comptoir: 1, plaque: 1 } : { comptoir: 2, plaque: 3 });
+      setComposition({ comptoir: 1, plaque: 1 });
     }
   };
   const selectSurface = (value) => {
@@ -322,9 +316,27 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
               </div>
             ) : (
               <div className="v3-quantity-choice">
+                {/* Le prix du lot est affiché sur l'option : le visiteur compare
+                    sans avoir à changer de choix pour découvrir le tarif. */}
                 {quantityChoices.map((value) => {
                   const optionId = getProductId(surface, personalization, value);
-                  return <button type="button" aria-label={`${value} ${value === 1 ? "support" : "supports"} · ${formatMoney(PRODUCTS[optionId].price)}`} aria-pressed={count === value} className={count === value ? "is-selected" : ""} onClick={() => selectCount(value)} key={value}><strong>{value}</strong><span>{value === 1 ? "support" : "supports"}</span>{value === 2 && personalization === "custom" && <em>Populaire</em>}</button>;
+                  const optionPrice = formatMoney(PRODUCTS[optionId].price);
+                  const optionName = value === 1 ? "support" : "Pack Local";
+                  return (
+                    <button
+                      type="button"
+                      aria-label={`${value === 1 ? "1 support" : "Pack Local, 2 supports"} · ${optionPrice}`}
+                      aria-pressed={count === value}
+                      className={count === value ? "is-selected" : ""}
+                      onClick={() => selectCount(value)}
+                      key={value}
+                    >
+                      <strong>{value}</strong>
+                      <span>{optionName}</span>
+                      <b>{optionPrice}</b>
+                      {value === 2 && <em>Le plus choisi</em>}
+                    </button>
+                  );
                 })}
               </div>
             )}

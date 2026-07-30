@@ -309,7 +309,7 @@ export function PilotLogin({ onDemo, authClient = pilotSupabase }) {
         <div className="pilot-login-heading">
           <span className="pilot-kicker">ESPACE CLIENT · BÊTA PRIVÉE</span>
           <h1>Vos produits.<br /><em>Le bon lien.</em></h1>
-          <p>Suivez les interactions et changez une destination sans réimprimer vos supports.</p>
+          <p>Retrouvez vos supports et la page que chacun ouvre. Avec Tapote Pilot Pro, changez cette destination sans réimprimer.</p>
         </div>
         <div className="pilot-auth-methods" role="group" aria-label="Mode de connexion">
           <button type="button" className={method === "password" ? "is-active" : ""} aria-pressed={method === "password"} onClick={() => { setMethod("password"); setMessage(""); setStatus("idle"); }}>Mot de passe</button>
@@ -493,6 +493,7 @@ function Overview({ workspace, analytics, period, setPeriod, locationId, setLoca
           <span>ACTION PRINCIPALE</span>
           <h2 id="pilot-link-title">Changer un lien</h2>
           <p>Choisissez le support. Collez la nouvelle adresse. Le prochain tap l’utilise.</p>
+          <span className="pilot-pro-tag">TAPOTE PILOT PRO</span>
         </div>
         {quickProduct ? (
           <div className="pilot-link-control">
@@ -657,7 +658,7 @@ function SupportView() {
   );
 }
 
-function ProductInspector({ product, canEdit, interactions, onClose, onSave, toast }) {
+function ProductInspector({ product, canEdit, proPlan = true, interactions, onClose, onSave, toast }) {
   const [targetUrl, setTargetUrl] = useState(product.targetUrl);
   const [confirming, setConfirming] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -741,12 +742,12 @@ function ProductInspector({ product, canEdit, interactions, onClose, onSave, toa
           <h2 id="pilot-inspector-title">{product.label}</h2>
           <p>{productName(product.productType)} · {actionLabels[product.actionId] || product.actionId}</p>
           <section className="pilot-destination-edit pilot-destination-edit-primary">
-            <div className="pilot-destination-heading"><label htmlFor="pilot-target">CHANGER LE LIEN</label><span>Formule Pilot active</span></div>
+            <div className="pilot-destination-heading"><label htmlFor="pilot-target">CHANGER LE LIEN</label><span>Tapote Pilot Pro</span></div>
             <p>Collez l’adresse HTTPS de la page à ouvrir au prochain tap.</p>
             <textarea id="pilot-target" aria-label="DESTINATION ACTUELLE" rows="3" value={targetUrl} onChange={(event) => { setTargetUrl(event.target.value); setConfirming(false); setError(""); }} readOnly={!canEdit} />
             {error && <p className="pilot-field-error" role="alert">{error}</p>}
             {canEdit && !confirming && <button className="pilot-primary-action" type="button" onClick={prepareSave}>Vérifier le changement <ArrowRight size={17} /></button>}
-            {!canEdit && <p className="pilot-readonly">Votre rôle permet uniquement la consultation.</p>}
+            {!canEdit && <p className="pilot-readonly">{proPlan ? "Votre rôle permet uniquement la consultation." : "Le changement de destination fait partie de Tapote Pilot Pro. Votre formule affiche vos supports et la page que chacun ouvre."}</p>}
           </section>
           {confirming && (
             <section className="pilot-confirm-change">
@@ -849,7 +850,11 @@ export default function PilotApp() {
 
   const analytics = useMemo(() => workspace ? analyticsFor(workspace, period, locationId) : null, [workspace, period, locationId]);
   const selectedProduct = workspace?.products.find((product) => product.id === selectedProductId) || null;
+  // Le remplacement d'une destination est une fonction Tapote Pilot Pro : le
+  // rôle donne le droit d'agir, le plan donne l'accès à la fonction.
+  const hasProPlan = (workspace?.plan || "pro") === "pro";
   const canEdit = workspace
+    && hasProPlan
     && workspace.membership.accessScope !== "management"
     && workspace.membership.role !== "viewer";
 
@@ -980,7 +985,7 @@ export default function PilotApp() {
         })}
       </nav>
 
-      {selectedProduct && <ProductInspector product={selectedProduct} canEdit={canEdit} interactions={analyticsFor(workspace, period, "all").byProduct.get(selectedProduct.id) || 0} onClose={() => setSelectedProductId(null)} onSave={saveDestination} toast={showToast} />}
+      {selectedProduct && <ProductInspector product={selectedProduct} canEdit={canEdit} proPlan={hasProPlan} interactions={analyticsFor(workspace, period, "all").byProduct.get(selectedProduct.id) || 0} onClose={() => setSelectedProductId(null)} onSave={saveDestination} toast={showToast} />}
       {toast && <div className="pilot-client-toast" role="status"><Check size={17} />{toast}</div>}
     </div>
   );

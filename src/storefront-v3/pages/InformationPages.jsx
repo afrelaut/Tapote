@@ -181,7 +181,7 @@ export function SectorLandingPage({ sector }) {
       <HowStrip />
       <section className="v3-section v3-sector-commercial-check">
         <div><span className="v3-eyebrow">POURQUOI CETTE STRATÉGIE</span><h2>Le support suit le parcours client.</h2></div>
-        <div><article><span>01</span><h3>Le moment</h3><p>{sector.placement}</p></article><article><span>02</span><h3>La phrase</h3><p>{sector.script}</p></article><article><span>03</span><h3>La suite</h3><p>Mesurez le geste et changez le lien sans remplacer le support.</p></article></div>
+        <div><article><span>01</span><h3>Le moment</h3><p>{sector.placement}</p></article><article><span>02</span><h3>La phrase</h3><p>{sector.script}</p></article><article><span>03</span><h3>La suite</h3><p>Suivez le geste, puis faites évoluer la destination avec Tapote Pilot Pro.</p></article></div>
       </section>
       <PilotMarketingSection />
       <FinalCommercialCta />
@@ -200,8 +200,8 @@ export function PilotMarketingPage() {
     {
       number: "02",
       icon: Link2,
-      title: "Vous changez le lien",
-      copy: "Depuis Pilot, remplacez l’ancienne destination par la nouvelle. Le support physique ne bouge pas.",
+      title: "Vous changez le lien avec Pro",
+      copy: "Tapote Pilot Pro remplace l’ancienne destination par la nouvelle. Le support physique, lui, ne bouge pas.",
     },
     {
       number: "03",
@@ -223,7 +223,7 @@ export function PilotMarketingPage() {
         <div className="v3-pilot-page-flow-head">
           <span className="v3-eyebrow">UN LIEN QUI RESTE PILOTABLE</span>
           <h2 id="v3-pilot-flow-title">Le lien change.<br />Le support reste.</h2>
-          <p>Le client voit toujours le même Tapote. Vous changez simplement la page qu’il ouvre.</p>
+          <p>Le client voit toujours le même Tapote. Avec Pilot Pro, vous changez simplement la page qu’il ouvre.</p>
         </div>
         <div className="v3-pilot-page-flow-grid">
           <div className="v3-pilot-page-steps">
@@ -236,7 +236,7 @@ export function PilotMarketingPage() {
             ))}
           </div>
           <div className="v3-pilot-destination-demo" aria-label="Démonstration de changement de destination dans Tapote Pilot">
-            <header><span><img src="/brand/tapote-logo-light.svg" alt="" /><b>PILOT</b></span><small>CHANGER UNE DESTINATION</small></header>
+            <header><span><img src="/brand/tapote-logo-light.svg" alt="" /><b>PILOT PRO</b></span><small>DÉMONSTRATION DE L’INTERFACE</small></header>
             <div className="v3-pilot-destination-product">
               <ProductArt surface="comptoir" actionId="avis" brandName="tapote." theme="nuit" personalization="ready" />
               <span><SmartphoneNfc /><b>Tapote Comptoir</b><small>Caisse · accueil · table</small></span>
@@ -252,6 +252,7 @@ export function PilotMarketingPage() {
                 </span>
               ))}
               <span className="v3-pilot-destination-apply">Mettre à jour la destination <ArrowRight /></span>
+              <p className="v3-pilot-destination-note">Démonstration de l’interface — données illustratives. Le changement de destination est une fonction Tapote Pilot Pro.</p>
             </div>
           </div>
         </div>
@@ -259,15 +260,15 @@ export function PilotMarketingPage() {
 
       <section className="v3-pilot-page-value" aria-labelledby="v3-pilot-value-title">
         <div>
-          <span className="v3-eyebrow">L’ESSENTIEL INCLUS · L’ANALYSE EN OPTION</span>
-          <h2 id="v3-pilot-value-title">Simple au quotidien.<br />Plus puissant avec Pro.</h2>
-          <p>Pilot couvre la gestion courante. Pilot Pro ajoute les outils avancés lorsque votre organisation en a besoin.</p>
+          <span className="v3-eyebrow">LE SUIVI INCLUS · LE PILOTAGE EN OPTION</span>
+          <h2 id="v3-pilot-value-title">Voir, c’est inclus.<br />Changer, c’est Pro.</h2>
+          <p>Pilot vous montre votre parc et ce que chaque support ouvre. Pilot Pro vous donne la main pour remplacer ces destinations et lire les interactions.</p>
         </div>
         <div className="v3-pilot-page-value-grid">
-          <article><Link2 /><span>INCLUS</span><h3>Changer</h3><p>Remplacez une destination à distance, sans réencoder ni réimprimer.</p></article>
-          <article><Layers3 /><span>INCLUS</span><h3>Organiser</h3><p>Retrouvez vos supports, leurs lieux et les pages qu’ils ouvrent.</p></article>
-          <article><Clock3 /><span>PILOT PRO</span><h3>Analyser</h3><p>Lisez les interactions par période, lieu et support.</p></article>
-          <article><Globe2 /><span>PILOT PRO</span><h3>Déployer</h3><p>Comparez plusieurs sites et exportez les données disponibles.</p></article>
+          <article><Layers3 /><span>INCLUS</span><h3>Retrouver</h3><p>Vos supports, leurs lieux et la page que chacun ouvre aujourd’hui.</p></article>
+          <article><Check /><span>INCLUS</span><h3>Vérifier</h3><p>L’état d’un support et le test de sa destination, depuis votre compte.</p></article>
+          <article><Link2 /><span>PILOT PRO</span><h3>Changer</h3><p>Remplacez une destination à distance, sans réencoder ni réimprimer.</p></article>
+          <article><Clock3 /><span>PILOT PRO</span><h3>Analyser</h3><p>Lisez les interactions par période, lieu et support, puis exportez.</p></article>
         </div>
       </section>
 
@@ -283,8 +284,8 @@ export function PilotMarketingPage() {
             <h3>Tapote Pilot</h3>
             <ul>
               <li><Check /> Retrouver les supports</li>
-              <li><Check /> Voir leurs destinations</li>
-              <li><Check /> Changer un lien</li>
+              <li><Check /> Voir la destination active</li>
+              <li><Check /> Tester le support et sa destination</li>
               <li><Check /> Conserver le même NFC + QR</li>
             </ul>
             <a href="/connexion">Accéder à Tapote Pilot <ArrowRight /></a>
@@ -293,10 +294,10 @@ export function PilotMarketingPage() {
             <span>OPTION AVANCÉE</span>
             <h3>Tapote Pilot Pro</h3>
             <ul>
+              <li><Check /> Changer la destination à distance</li>
               <li><Check /> Analyses par période, lieu et support</li>
               <li><Check /> Comparaisons multi-sites</li>
-              <li><Check /> Statistiques NFC et QR</li>
-              <li><Check /> Historique et exports</li>
+              <li><Check /> Historique, statistiques NFC / QR et exports</li>
             </ul>
             <p>Disponible séparément lorsque votre organisation a besoin d’analyses avancées.</p>
           </article>
@@ -437,7 +438,7 @@ export function HowPage() {
         <div className="v3-how-link-copy">
           <span className="v3-eyebrow">LE SUPPORT RESTE · LE LIEN ÉVOLUE</span>
           <h2 id="v3-how-link-title">Changez la destination.<br />Pas l’objet.</h2>
-          <p>Le NFC et le QR pointent vers une adresse Tapote stable. Avec Tapote Pilot, vous remplacez la page finale à distance : une nouvelle carte, une autre campagne ou un nouveau lien d’avis, sans réimprimer.</p>
+          <p>Le NFC et le QR pointent vers une adresse Tapote stable. Tapote Pilot vous montre cette adresse et ce qu’elle ouvre ; avec Tapote Pilot Pro, vous remplacez la page finale à distance : une nouvelle carte, une autre campagne ou un nouveau lien d’avis, sans réimprimer.</p>
           <div className="v3-how-link-route" aria-label="Exemple de redirection Tapote">
             <div><small>IMPRIMÉ SUR LE SUPPORT</small><strong>tapote.fr/t/votre-support</strong><span>reste identique</span></div>
             <ArrowRight aria-hidden="true" />
@@ -476,7 +477,7 @@ export function HowPage() {
           </details>
           <details>
             <summary>Puis-je changer le lien après réception ? <Plus /></summary>
-            <p>Oui. Tapote Pilot est inclus et permet de remplacer la destination sans modifier ni réimprimer le support.</p>
+            <p>Oui, avec Tapote Pilot Pro. Tapote Pilot, inclus, affiche le support et la page qu’il ouvre ; le remplacement à distance de cette page est une fonction Pro.</p>
           </details>
           <details>
             <summary>Quelle page puis-je ouvrir ? <Plus /></summary>

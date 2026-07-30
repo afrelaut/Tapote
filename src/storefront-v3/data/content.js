@@ -154,7 +154,7 @@ export const HOME_SCENES = {
 export const STOREFRONT_FAQ = [
   ["Tapote Studio est-il un produit séparé ?", "Non. Tapote Studio intervient uniquement pendant la personnalisation d’un Comptoir, d’une Plaque, d’une Card ou d’un Pack Local. Le support reste toujours le produit acheté."],
   ["Le NFC fonctionne-t-il sans application ?", "Oui. Sur un téléphone compatible, le client approche son appareil de la zone indiquée. Le QR code reste présent comme solution de secours."],
-  ["Puis-je changer la destination après la livraison ?", "Oui. Tapote Pilot est inclus pour gérer vos supports et modifier leurs destinations sans réimprimer ni réencoder."],
+  ["Puis-je changer la destination après la livraison ?", "Oui, avec Tapote Pilot Pro. Tapote Pilot est inclus pour retrouver vos supports et voir la destination active ; le remplacement du lien à distance, sans réimprimer ni réencoder, fait partie de l’option Pro."],
   ["Quelle différence entre Tapote Pilot et Pilot Pro ?", "Tapote Pilot couvre l’activation, les supports, les destinations et les changements de lien. Pilot Pro ajoute statistiques, périodes, lieux, équipes, exports et multi-sites."],
   ["Quels sont les délais ?", "Le délai est confirmé à la prise en charge. Une version personnalisée démarre seulement après validation du BAT ; une série de 10 supports ou plus passe par un devis documenté."],
 ];
@@ -176,7 +176,7 @@ export const FAQ_GROUPS = [
     items: [
       ["Faut-il installer une application ?", "Non. Le client approche son téléphone ou scanne le QR code, puis la destination s’ouvre dans son navigateur habituel."],
       ["Le NFC fonctionne-t-il sur tous les téléphones ?", "La grande majorité des smartphones récents lisent le NFC. Le QR code ouvre la même destination et reste toujours disponible comme second chemin."],
-      ["Puis-je changer le lien après la livraison ?", "Oui. Tapote Pilot est inclus : vous gérez vos supports et changez leur destination sans réimprimer ni réencoder."],
+      ["Puis-je changer le lien après la livraison ?", "Oui, avec Tapote Pilot Pro. Le suivi de vos supports et de leur destination reste inclus dans Tapote Pilot ; le changement de lien à distance est une fonction Pro."],
       ["Quelle différence entre Tapote Pilot et Pilot Pro ?", "Tapote Pilot couvre l’activation, les supports, les destinations et les changements de lien. Pilot Pro ajoute statistiques, périodes, lieux, équipes, exports et multi-sites."],
     ],
   },
@@ -267,7 +267,7 @@ export const SHOP_ITEMS = [
 export const PRODUCT_FAQ_COMMON = [
   ["Faut-il une application pour utiliser Tapote ?", "Non. Le client approche son téléphone ou scanne le QR, puis la destination s’ouvre dans son navigateur habituel."],
   ["Que se passe-t-il si le NFC est désactivé ?", "Le QR code visible sur le support ouvre la même destination. Il reste disponible comme second chemin, sans application Tapote."],
-  ["Puis-je changer le lien après la livraison ?", "Oui. Tapote Pilot est inclus et permet de gérer le support puis de remplacer sa destination sans réimprimer ni réencoder."],
+  ["Puis-je changer le lien après la livraison ?", "Oui, avec Tapote Pilot Pro. Tapote Pilot, inclus, vous montre le support et la page qu’il ouvre ; remplacer cette page à distance relève de l’option Pro."],
   ["Que contient le prix affiché ?", "Le support, le design choisi, le NFC, le QR, la configuration initiale, le contrôle avant expédition et Tapote Pilot sont réunis dans le prix. Pilot Pro reste optionnel."],
   ["Quand la production commence-t-elle ?", "Après paiement et, pour une version personnalisée, après validation du BAT. Le délai applicable est confirmé lors de la prise en charge."],
   ["Que se passe-t-il si le NFC ne fonctionne pas ?", "Chaque support est contrôlé avant l’envoi. Si un défaut est confirmé à réception, Tapote organise sa prise en charge selon les conditions de vente."],

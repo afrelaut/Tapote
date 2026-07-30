@@ -1267,23 +1267,21 @@
   }
 
   .v3-pilot-window {
-    aspect-ratio: 16 / 9;
+    min-height: clamp(430px, 33vw, 560px);
   }
 
   .v3-pilot-shell {
     height: 100%;
-    min-height: 0;
   }
 }
 
 @media (max-width: 1180px) and (min-width: 941px) {
   .v3-pilot-window {
-    aspect-ratio: 16 / 10;
+    min-height: clamp(420px, 38vw, 520px);
   }
 
   .v3-pilot-shell {
     height: 100%;
-    min-height: 0;
   }
 
   .v3-why-layout {

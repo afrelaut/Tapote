@@ -47,7 +47,7 @@ const demoProducts = [
     linkId: "demo-link-1",
     productType: "comptoir",
     actionId: "avis",
-    label: "Avis · Chevalet",
+    label: "Avis · Comptoir",
     serialNumber: "TAP-MISTRAL-001",
     status: "active",
     targetUrl: "https://example.com/avis-mistral",
@@ -93,6 +93,10 @@ export function createDemoWorkspace() {
   return {
     organization: { id: "demo-org", name: "Café Mistral" },
     membership: { role: "owner" },
+    // Le changement de destination relève de Tapote Pilot Pro. La bêta et la
+    // démonstration tournent sur ce niveau : aucun compte existant ne perd la
+    // main sur ses liens tant que la facturation Pro n'est pas branchée.
+    plan: "pro",
     locations: [
       { id: "demo-location-1", name: "Café Mistral · République" },
       { id: "demo-location-2", name: "Café Mistral · Bastille" },
@@ -259,6 +263,7 @@ export async function loadPilotWorkspace(client, options = {}) {
   return {
     organization: organizationResult.data,
     membership: { role: membership.role, accessScope: membership.access_scope || "pilot" },
+    plan: membership.plan || "pro",
     availableOrganizations: membership.available_organizations || [],
     locations,
     products,

@@ -1424,43 +1424,46 @@
     inset: 0;
   }
 
+  /* Sur mobile, le téléphone recouvrait le support : on ne voyait plus le
+     produit vendu. Le support occupe désormais la gauche, le téléphone la
+     droite, et l'objet reste entier dans la hauteur de scène. */
   .v3-hero-3d__stage {
     left: 0;
     right: 0;
-    top: 4px;
+    top: 2px;
     bottom: auto;
-    height: 340px;
-    transform: scale(.94);
-    transform-origin: 60% 44%;
+    height: 356px;
+    transform: none;
   }
 
   .v3-hero-product-object {
-    left: 27%;
+    left: 6%;
+    top: 50%;
   }
 
   .v3-hero-product-object.is-comptoir {
-    --product-width: clamp(205px, 54vw, 265px);
+    --product-width: clamp(148px, 41vw, 180px);
   }
 
   .v3-hero-product-object.is-plaque {
-    --product-width: clamp(220px, 57vw, 282px);
+    --product-width: clamp(156px, 43vw, 188px);
   }
 
   .v3-hero-product-object.is-carte {
-    --product-width: clamp(180px, 48vw, 230px);
-    left: 34%;
+    --product-width: clamp(142px, 38vw, 168px);
+    left: 9%;
   }
 
   .tapote-device-frame.v3-live-phone-screen.v3-hero-gesture-phone,
   .v3-hero-3d[data-active-product="plaque"] .v3-hero-gesture-phone,
   .v3-hero-3d[data-active-product="carte"] .v3-hero-gesture-phone {
-    inset: 50% 5% auto auto !important;
-    width: 160px !important;
+    inset: 50% 3% auto auto !important;
+    width: 134px !important;
   }
 
   .v3-hero-gesture-nfc {
-    left: 53%;
-    transform: scale(.8);
+    left: 47%;
+    transform: scale(.72);
   }
 
   .v3-hero-tech-card {
@@ -1488,8 +1491,8 @@
   .v3-hero-tech-card.is-pilot {
     left: 50%;
     right: auto;
-    top: 18px;
-    bottom: auto;
+    top: auto;
+    bottom: -10px;
     margin-left: -116px;
   }
 

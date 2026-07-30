@@ -126,7 +126,7 @@ Une matière ou une finition de Tapote Card peut être étudiée en laboratoire 
 
 Tapote Pilot est inclus avec les supports Tapote. Sa promesse centrale est :
 
-> Gérez vos supports Tapote et leurs destinations.
+> Retrouvez vos supports Tapote et la destination que chacun ouvre.
 
 Périmètre fonctionnel autorisé :
 
@@ -135,12 +135,16 @@ Périmètre fonctionnel autorisé :
 | Associer ou activer un support Tapote | Décidé, publication conditionnée à son fonctionnement réel |
 | Voir les supports rattachés au compte ou à l’organisation | Décidé |
 | Voir la destination active d’un support | Décidé |
-| Modifier la destination à distance | Décidé |
-| Modifier la destination sans réimprimer ni réencoder le support | Décidé |
 | Vérifier l’état du support et tester sa destination | Décidé, publication conditionnée à son fonctionnement réel |
-| Gérer des destinations différentes pour plusieurs supports | Décidé |
+| Destination initiale encodée à la commande | Décidé |
+| Modifier la destination à distance | Réservé à Tapote Pilot Pro — décision du fondateur du 30 juillet 2026 |
 
-La gestion de la destination ne doit jamais être présentée comme une fonction payante de Pilot Pro.
+Le changement de destination à distance est une fonction de Tapote Pilot Pro. Le
+niveau inclus donne la visibilité sur le parc et sa destination active, pas la
+main sur son remplacement.
+
+Cette règle remplace la formulation précédente, qui interdisait de présenter la
+gestion de la destination comme une fonction payante.
 
 Tapote Pilot n’autorise pas à promettre par défaut :
 
@@ -159,6 +163,8 @@ Périmètre avancé visé :
 
 | Fonction | Statut de publication |
 |---|---|
+| Modifier la destination à distance, sans réimprimer ni réencoder | Décidé |
+| Gérer des destinations différentes pour plusieurs supports | Décidé |
 | Analyse sur des périodes définies | Autorisé uniquement si calcul et interface sont fonctionnels |
 | Distinction NFC / QR | Autorisé uniquement si la collecte est fiable et expliquée |
 | Comparaison entre supports | Autorisé uniquement si fonctionnel |
@@ -318,8 +324,8 @@ Les formulations suivantes sont autorisées si le produit ou la fonction corresp
 - « NFC + QR » ;
 - « Le NFC et le QR ouvrent la même destination Tapote » ;
 - « Aucune application à installer pour le visiteur » ;
-- « Gérez vos supports et leurs destinations dans Tapote Pilot » ;
-- « Changez la destination sans réimprimer ni réencoder le support » ;
+- « Retrouvez vos supports et leur destination dans Tapote Pilot » ;
+- « Avec Tapote Pilot Pro, changez la destination sans réimprimer ni réencoder le support » ;
 - « Tapote Pilot est inclus » ;
 - « Tapote Pilot Pro est optionnel » ;
 - « BAT avant fabrication personnalisée » ;

@@ -507,9 +507,24 @@
 
 /* ---------- Chevalet A6 (105 × 148 mm) ---------- */
 
+/* Rythme vertical : l'emplacement logo tient le haut, le bloc d'accroche est
+   optiquement centré, le bloc d'action et la signature tiennent le bas. La
+   répartition uniforme laissait un vide entre l'accroche et l'action. */
 .tp-insert-chevalet .tp-insert-body {
   padding: 5.5cqw 5cqw 4.5cqw;
   justify-content: space-between;
+}
+
+/* Le bloc d'accroche absorbe l'espace libre et s'y centre : sans cela, un vide
+   asymétrique se creusait entre la phrase d'accroche et le bloc d'action. */
+.tp-insert-chevalet .tp-insert-copy {
+  flex: 1;
+  justify-content: center;
+}
+
+/* Respiration entre le bloc d'action et la signature de bas de page. */
+.tp-insert-chevalet .tp-insert-action {
+  margin-bottom: 3.4cqw;
 }
 
 /* ---------- Plaque 12 × 12 (format carré, tout est plus ramassé) ---------- */

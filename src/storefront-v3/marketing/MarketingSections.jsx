@@ -407,10 +407,10 @@ export function PilotMarketingSection({ pageDetail = false }) {
         {pageDetail
           ? <h1 className="v3-pilot-page-title" id="v3-pilot-title">Le bon lien.<br />Même après la pose.</h1>
           : <h2 id="v3-pilot-title">Le support reste.<br />Le lien évolue.</h2>}
-        <p className="v3-pilot-lead">Tapote Pilot réunit vos supports et leurs destinations. Vous retrouvez le bon objet, voyez ce qu’il ouvre et changez le lien à distance.</p>
+        <p className="v3-pilot-lead">Tapote Pilot réunit vos supports et leurs destinations : vous retrouvez le bon objet et vous voyez exactement ce qu’il ouvre. Avec Tapote Pilot Pro, vous remplacez ce lien à distance.</p>
         <ul className="v3-pilot-included-points" aria-label="Fonctions incluses dans Tapote Pilot">
           <li><Check /> Supports et destinations</li>
-          <li><Check /> Changement de lien</li>
+          <li><Check /> Destination active visible</li>
           <li><Check /> NFC et QR conservés</li>
         </ul>
         <div className="v3-pilot-actions">
@@ -433,7 +433,7 @@ export function PilotMarketingSection({ pageDetail = false }) {
             <div className="v3-pilot-panel">
               <div className="v3-pilot-dashboard-head">
                 <span><small>MES SUPPORTS</small><strong>Choisissez un support</strong></span>
-                <span className="v3-pilot-panel-status"><i /> Pilot inclus</span>
+                <span className="v3-pilot-panel-status"><i /> Démonstration</span>
               </div>
               <div className="v3-pilot-support-list">
                 <article className="is-selected">
@@ -458,7 +458,7 @@ export function PilotMarketingSection({ pageDetail = false }) {
               </div>
               <div className="v3-pilot-pro-note">
                 <span><Layers3 /><b>Pilot Pro</b></span>
-                <p>Analyses par période, lieu et support, exports et multi-sites.</p>
+                <p>Changement de destination à distance, analyses par période, lieu et support, exports et multi-sites.</p>
                 <em>Option avancée</em>
               </div>
             </div>
@@ -466,7 +466,7 @@ export function PilotMarketingSection({ pageDetail = false }) {
         </div>
         <div className="v3-pilot-feature-rail" aria-label="Fonctions incluses de Tapote Pilot">
           <span><SmartphoneNfc /><b>Retrouver</b><small>chaque support</small></span>
-          <span><Link2 /><b>Modifier</b><small>la destination</small></span>
+          <span><Link2 /><b>Modifier</b><small>avec Pilot Pro</small></span>
           <span><Clock3 /><b>Suivre</b><small>les changements</small></span>
         </div>
       </div>

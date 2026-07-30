@@ -204,6 +204,12 @@ export default function ProductStudio3D({
   destinationUrl = "",
   sectorId = "",
   sectorTitle = "",
+  brandName = "",
+  brandLogo = "",
+  customHeadline = "",
+  customSubline = "",
+  customTapLabel = "",
+  personalization = "ready",
   hero = false,
   className = "",
 }) {
@@ -212,7 +218,10 @@ export default function ProductStudio3D({
   const artworkRef = useRef(null);
   const [ready, setReady] = useState(false);
   const [capturedArtwork, setCapturedArtwork] = useState(null);
-  const artworkKey = [surface, actionId, primaryColor, accentColor, textColor].join(":");
+  // La texture est régénérée dès qu'un élément imprimé change : sans le nom, le
+  // logo et les textes, l'objet 3D restait au design Tapote générique alors que
+  // le client venait de personnaliser son support.
+  const artworkKey = [surface, actionId, primaryColor, accentColor, textColor, personalization, brandName, brandLogo, customHeadline, customSubline, customTapLabel].join(":");
   const [eligible, setEligible] = useState(() => (
     typeof window !== "undefined"
     && (typeof window.matchMedia !== "function" || !window.matchMedia("(prefers-reduced-motion: reduce)").matches)
@@ -317,7 +326,10 @@ export default function ProductStudio3D({
     const sceneScale = hero ? (mobile ? heroScale * 0.9 : heroScale) : (mobile ? 0.92 : 1);
     const finalScale = sceneScale * baseScale;
     product.scale.setScalar(finalScale);
-    product.position.set(hero ? 0.72 : -0.42, surface === "comptoir" ? 0.18 : 0.05, 0);
+    // Sur mobile le téléphone occupe la moitié droite du cadre : l'objet se
+    // décale vers la gauche pour rester entier et lisible à côté de lui.
+    const objectX = hero ? (mobile ? 0.42 : 0.72) : (mobile ? -0.58 : -0.42);
+    product.position.set(objectX, surface === "comptoir" ? 0.18 : 0.05, 0);
     product.rotation.set(
       surface === "carte" ? -0.12 : -0.025,
       surface === "plaque" ? -0.24 : surface === "carte" ? -0.38 : -0.3,
@@ -451,7 +463,12 @@ export default function ProductStudio3D({
         <InsertArtwork
           surface={surface}
           actionId={actionId}
-          personalization="ready"
+          brandName={brandName}
+          brandLogo={brandLogo}
+          headline={customHeadline}
+          subline={customSubline}
+          tapLabel={customTapLabel}
+          personalization={personalization}
           colors={{
             paper: primaryColor,
             ink: textColor,
@@ -466,7 +483,12 @@ export default function ProductStudio3D({
         actionId={actionId}
         sectorId={sectorId}
         sectorTitle={sectorTitle}
-        personalization="ready"
+        brandName={brandName}
+        brandLogo={brandLogo}
+        primaryColor={primaryColor}
+        secondaryColor={accentColor}
+        textColor={textColor}
+        personalization={personalization}
         destinationUrl={destinationUrl}
         accentColor={accentColor}
         embedded={false}

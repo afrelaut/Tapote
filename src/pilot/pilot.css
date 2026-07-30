@@ -73,9 +73,10 @@
 
 .pilot-login-copy {
   min-height: 100svh;
-  padding: clamp(40px, 5.5vw, 84px);
+  padding: clamp(36px, 4vw, 64px);
   display: flex;
   flex-direction: column;
+  justify-content: center;
 }
 
 .pilot-login-heading {
@@ -83,13 +84,15 @@
   animation: pilot-rise .55s ease both;
 }
 
+/* Le titre laissait le formulaire sous la ligne de flottaison sur un écran
+   d'ordinateur portable : la connexion doit être visible sans défiler. */
 .pilot-login-heading h1 {
   max-width: 680px;
-  margin: 22px 0 28px;
+  margin: 18px 0 22px;
   font-family: var(--font-display);
-  font-size: clamp(54px, 6.7vw, 102px);
-  line-height: .9;
-  letter-spacing: -.06em;
+  font-size: clamp(44px, 4.6vw, 76px);
+  line-height: .92;
+  letter-spacing: -.055em;
 }
 
 .pilot-login-heading h1 em {
@@ -144,34 +147,40 @@
   font-weight: 800;
 }
 
+/* Champs délimités puis action pleine largeur : le bouton ne vient plus se
+   coller au ras des saisies, et l'ordre de lecture suit l'ordre de l'action. */
 .pilot-login-form > div {
   display: grid;
-  grid-template-columns: 1fr auto;
-  border-bottom: 2px solid var(--ink);
+  gap: 12px;
 }
 
 .pilot-login-inputs {
   min-width: 0;
   display: grid;
-}
-
-.pilot-login-inputs input + input {
-  border-top: 1px solid var(--line);
+  gap: 10px;
 }
 
 .pilot-login-form input {
   min-width: 0;
-  height: 60px;
-  padding: 0 14px 0 0;
+  height: 56px;
+  padding: 0 16px;
   color: var(--ink);
-  background: transparent;
-  border: 0;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
   outline: 0;
   font-size: 16px;
+  transition: border-color 160ms, box-shadow 160ms;
+}
+
+.pilot-login-form input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgb(36 88 255 / 16%);
 }
 
 .pilot-login-form button {
-  min-width: 220px;
+  width: 100%;
+  min-height: 56px;
   padding: 0 22px;
   display: flex;
   align-items: center;
@@ -180,8 +189,9 @@
   color: #fff;
   background: var(--blue);
   border: 0;
+  border-radius: 12px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 800;
   transition: background 160ms, transform 160ms;
 }
@@ -2526,8 +2536,6 @@
 
   .pilot-login-form input {
     height: 54px;
-    padding: 0 14px;
-    border: 1px solid var(--line);
   }
 
   .pilot-login-form button {
@@ -3348,4 +3356,20 @@
     right: 7px;
     left: 7px;
   }
+}
+
+/* Le changement de destination est une fonction Pro : l'étiquette le dit dans
+   l'interface, au moment exact où la fonction est proposée. */
+.pilot-pro-tag {
+  margin-top: 12px;
+  padding: 5px 10px;
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  color: #1b3fd0;
+  background: #e8eeff;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .09em;
 }

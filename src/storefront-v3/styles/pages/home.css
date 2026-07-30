@@ -867,10 +867,10 @@
     #eef1f7;
 }
 
-.v3-pilot-dashboard-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.v3-pilot-dashboard-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
 .v3-pilot-dashboard-head > span:first-child { min-width: 0; display: grid; gap: 4px; }
 .v3-pilot-dashboard-head small { color: var(--v3-blue); font-size: 7px; font-weight: 850; letter-spacing: .1em; }
-.v3-pilot-dashboard-head strong { overflow: hidden; font-size: clamp(17px, 1.8vw, 26px); letter-spacing: -.04em; text-overflow: ellipsis; white-space: nowrap; }
+.v3-pilot-dashboard-head strong { font-size: clamp(16px, 1.5vw, 22px); line-height: 1.12; letter-spacing: -.035em; overflow-wrap: anywhere; }
 .v3-pilot-period { padding: 8px 10px; color: #5d6576; background: #fff; border: 1px solid #dfe3eb; border-radius: 9px; font-size: 7px; font-weight: 750; }
 
 .v3-pilot-metrics {

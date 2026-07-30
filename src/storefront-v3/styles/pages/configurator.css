@@ -77,12 +77,26 @@
   top: 79px;
   right: 0;
   left: 0;
+  max-height: min(58vh, 480px);
   padding: 13px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   background: #fff;
   border: 1px solid #d6d1c8;
   border-radius: 16px;
   box-shadow: 0 24px 65px rgb(30 25 18 / 18%);
   animation: v3-sector-panel-in .2s cubic-bezier(.2, .8, .2, 1) both;
+}
+
+/* L'en-tête reste visible pendant le défilement : le bouton de fermeture ne
+   doit jamais sortir du champ quand la liste est longue. */
+.v3-sector-panel > .v3-sector-panel-head {
+  position: sticky;
+  z-index: 1;
+  top: -13px;
+  margin-top: -13px;
+  padding-top: 13px;
+  background: #fff;
 }
 
 .v3-sector-panel[hidden] { display: none; }

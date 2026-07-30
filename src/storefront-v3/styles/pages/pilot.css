@@ -666,3 +666,14 @@
 html { scroll-behavior: smooth; }
 body { margin: 0; background: #fff; color: var(--v3-ink); }
 body.v3-menu-open { overflow: hidden; }
+
+/* Mention obligatoire sur toute interface de démonstration : le visiteur doit
+   savoir qu'il regarde une illustration, pas un outil ouvert. */
+.v3-pilot-destination-note {
+  margin: 12px 0 0;
+  padding-top: 11px;
+  color: rgb(255 255 255 / 62%);
+  border-top: 1px solid rgb(255 255 255 / 12%);
+  font-size: 10px;
+  line-height: 1.45;
+}

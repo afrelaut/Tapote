@@ -154,6 +154,12 @@ export default function PdpScene({
             destinationUrl={preview.destinationUrl}
             sectorId={sectorId}
             sectorTitle={sectorTitle}
+            brandName={preview.brandName}
+            brandLogo={preview.brandLogo}
+            customHeadline={preview.customHeadline}
+            customSubline={preview.customSubline}
+            customTapLabel={preview.customTapLabel}
+            personalization={preview.personalization}
           />
         </div>
       ) : (
@@ -188,6 +194,11 @@ export default function PdpScene({
             sectorId={sectorId}
             sectorTitle={sectorTitle}
             brandName={preview.brandName}
+            brandLogo={preview.brandLogo}
+            primaryColor={preview.primaryColor}
+            secondaryColor={preview.secondaryColor}
+            textColor={preview.textColor}
+            sceneImage={image}
             personalization={preview.personalization}
             destinationUrl={preview.destinationUrl}
             accentColor={preview.secondaryColor}
