@@ -327,7 +327,9 @@ export default function ProductStudio3D({
     // Comptoir is roughly phone-height, Plaque slightly shorter, Card compact.
     const baseScale = surface === "carte" ? 0.58 : surface === "plaque" ? 0.84 : 0.88;
     const heroScale = surface === "comptoir" ? 1.08 : surface === "plaque" ? 0.74 : 0.64;
-    const sceneScale = hero ? (mobile ? heroScale * 0.9 : heroScale) : (mobile ? 0.92 : 1);
+    // Le support est le produit vendu : il doit dominer la scène. Le téléphone
+    // n'est là que pour prouver le geste, pas pour voler la vedette.
+    const sceneScale = hero ? (mobile ? heroScale * 0.98 : heroScale * 1.12) : (mobile ? 1.02 : 1.2);
     const finalScale = sceneScale * baseScale;
     product.scale.setScalar(finalScale);
     // Sur mobile le téléphone occupe la moitié droite du cadre : l'objet se

@@ -1544,8 +1544,8 @@
 }
 
 .tapote-product-studio.is-pdp .tapote-device-frame.v3-live-phone-screen.tapote-studio-device {
-  right: 2.5%;
-  width: clamp(218px, 29%, 272px);
+  right: 2%;
+  width: clamp(192px, 25%, 238px);
   box-shadow:
     0 42px 80px rgb(22 31 50 / 28%),
     0 0 0 1px rgb(10 20 38 / 8%);
@@ -2645,9 +2645,9 @@
      NFC + QR du support : il rentre désormais entièrement, à droite. */
   .tapote-device-frame.v3-live-phone-screen.tapote-studio-device,
   .tapote-product-studio.is-pdp .tapote-device-frame.v3-live-phone-screen.tapote-studio-device {
-    right: 10px;
+    right: 8px;
     top: 50%;
-    width: 158px;
+    width: 142px;
   }
 
   .tapote-product-studio__nfc {
