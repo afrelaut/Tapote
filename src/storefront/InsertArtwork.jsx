@@ -12,12 +12,12 @@
 
 import { Fragment } from "react";
 import { ACTIONS } from "../../shared/catalog.js";
-import { GeneratedBrandMark, PlatformGlyph } from "./BrandMark.jsx";
+import { PlatformGlyph } from "./BrandMark.jsx";
 import { platformGlyphForAction } from "./brandIdentity.js";
 import { SURFACE_GEOMETRY, insertSurface } from "./insertGeometry.js";
 import { DEFAULT_BLOCK_COLOR_MODE, resolveBlockPalette } from "./actionPalettes.js";
 import { DEFAULT_MONOGRAM_SHAPE, brandInitialsFor, isMonogramShape, motifDataUri, motifPath } from "./brandMotifs.js";
-import { BrandMotif } from "./BrandMotif.jsx";
+import { BrandLogoPlaceholder, BrandMotif } from "./BrandMotif.jsx";
 import "./insert-artwork.css";
 
 // Typographie française : l'espace qui précède ? ! : ; » est insécable, sinon
@@ -169,7 +169,16 @@ export default function InsertArtwork({
   // Le logo du client sert aussi de filigrane : posé en haut, centré, contenu
   // dans la zone imprimable, jamais rogné par le bord du support. Sans logo,
   // c'est l'emblème métier choisi qui tient ce rôle.
-  const motif = !isReady && !brandLogo && motifPath(brandMotif) ? brandMotif : "";
+  // Tant que le client n'a rien saisi, l'emplacement du logo reste visible : il
+  // montre ce qu'il obtiendra. Dès qu'un nom est écrit, le monogramme prend le
+  // relais ; dès qu'un logo est importé, c'est le logo.
+  const namedBrand = brandName.trim() && brandName.trim().toUpperCase() !== "VOTRE MARQUE";
+  const motif = isReady || brandLogo
+    ? ""
+    : motifPath(brandMotif)
+      ? brandMotif
+      : DEFAULT_MONOGRAM_SHAPE;
+  const showLogoSlot = !isReady && !brandLogo && !namedBrand && isMonogramShape(motif);
   const watermark = isReady
     ? ""
     : brandLogo
@@ -226,9 +235,9 @@ export default function InsertArtwork({
                 ? <img className="tp-insert-tapote-logo" src={readyLogo} alt="" />
                 : brandLogo
                 ? <img src={brandLogo} alt="" />
-                : motif
-                ? <BrandMotif shape={motif} initials={brandInitialsFor(brandName)} brandName={brandName} />
-                : <GeneratedBrandMark name={brandName} />}
+                : showLogoSlot
+                ? <BrandLogoPlaceholder />
+                : <BrandMotif shape={motif} initials={brandInitialsFor(brandName)} brandName={brandName} />}
             </span>
             {showBrand && !isReady && <b className="tp-insert-brand">{brandName || "VOTRE MARQUE"}</b>}
             {!isReady && finalTagline && <span className="tp-insert-tagline">{finalTagline}</span>}
@@ -251,8 +260,12 @@ export default function InsertArtwork({
                 </Fragment>
               ))}
             </p>
-            {!isReady && <div className="tp-insert-mark"><ActionMark actionId={action.id} /></div>}
-            {isReady && action.id === "avis" && <GoogleStars />}
+            {!isReady && (
+              <div className={`tp-insert-mark${action.id === "avis" ? " is-service" : ""}`}>
+                <ActionMark actionId={action.id} ready={action.id === "avis"} />
+              </div>
+            )}
+            {action.id === "avis" && <GoogleStars />}
             <p className="tp-insert-subline">{finalSubline}</p>
           </div>
 

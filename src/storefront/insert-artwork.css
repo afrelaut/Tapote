@@ -590,6 +590,9 @@
 .tp-insert-chevalet .tp-insert-copy {
   flex: 1;
   justify-content: center;
+  /* Le liseré du bloc d'action déborde de sa boîte : sans cette garde, la
+     phrase secondaire venait s'y poser dessus. */
+  padding-bottom: 3.4cqw;
 }
 
 /* Respiration entre le bloc d'action et la signature de bas de page. */
@@ -757,3 +760,10 @@
   height: 100%;
   color: var(--insert-ink);
 }
+
+/* Emplacement du logo : le tracé est fin et la mention tient sous le cercle,
+   donc l'aperçu ne donne plus l'impression d'un gabarit inachevé. */
+.tp-insert-logo .tp-logo-slot { opacity: .62; }
+
+/* La mention sous le cercle ne doit jamais être rognée par la boîte du logo. */
+.tp-insert-logo .tp-motif { overflow: visible; }

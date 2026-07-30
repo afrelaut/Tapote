@@ -110,11 +110,16 @@
 }
 
 .tapote-device-frame .tapote-device__screen.v3-live-phone-ui {
+  /* Marges de l'écran : une seule déclaration fait autorité, et les
+     applications plein écran en dérivent leurs marges négatives. */
+  --phone-pad-top: 74px;
+  --phone-pad-x: 24px;
+  --phone-pad-bottom: 30px;
   position: absolute;
   inset: 0;
   width: 390px;
   height: 844px;
-  padding: 0;
+  padding: var(--phone-pad-top) var(--phone-pad-x) var(--phone-pad-bottom);
   overflow: hidden;
   display: flex;
   flex-direction: column;

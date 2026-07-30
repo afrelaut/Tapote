@@ -160,7 +160,7 @@
 .v3-linkedin-app > section > .v3-live-brand-avatar { position: absolute; top: -45px; left: 15px; width: 76px; border: 4px solid #fff; border-radius: 8px; box-shadow: 0 0 0 1px rgb(0 0 0 / 10%); }
 .v3-whatsapp-app > header .v3-live-brand-avatar { width: 41px; color: #fff; border-color: rgb(0 0 0 / 8%); border-radius: 50%; }
 .v3-apple-pay-checkout .v3-live-brand-avatar { width: 44px; border-radius: 12px; }
-.v3-safari-app { position: relative; flex: 1; min-height: 0; margin: -24px -27px -43px; display: flex; flex-direction: column; color: #17130f; background: #fff; overflow: hidden; }
+.v3-safari-app { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; color: #17130f; background: #fff; overflow: hidden; }
 .v3-safari-app > .v3-safari-page { flex: 1; min-height: 0; overflow: hidden; background: #fbfaf7; }
 .v3-safari-app > .v3-safari-page > header { min-height: 54px; padding: 0 17px; display: flex; align-items: center; gap: 10px; background: rgb(255 255 255 / 94%); border-bottom: 1px solid #e6e3dd; }
 .v3-safari-app > .v3-safari-page > header .v3-live-brand-avatar { width: 34px; border-radius: 10px; }
@@ -215,8 +215,36 @@
 .v3-live-brand-avatar > b.is-whatsapp { color: #072f1c; }
 
 /* Tailles réelles dans le viewport 390 x 844. */
-.tapote-device-frame .tapote-device__screen.v3-live-phone-ui { padding: 74px 24px 30px; display: flex; flex-direction: column; color: #111827; background: #f7f5f1; overflow: hidden; }
-.tapote-device-frame.is-embedded .tapote-device__screen.v3-live-phone-ui { padding-top: 54px; }
+.tapote-device-frame .tapote-device__screen.v3-live-phone-ui {
+  display: flex;
+  flex-direction: column;
+  color: #111827;
+  background: #f7f5f1;
+  overflow: hidden;
+}
+
+/* Applications plein écran : elles occupent toute la vitre, donc elles doivent
+   sortir des marges de l'écran. Les marges négatives sont dérivées du padding,
+   pour qu'un réglage de l'un ne puisse plus désaligner l'autre. */
+.tapote-device-frame .tapote-device__screen.v3-live-phone-ui > .v3-instagram-app,
+.tapote-device-frame .tapote-device__screen.v3-live-phone-ui > .v3-tiktok-app,
+.tapote-device-frame .tapote-device__screen.v3-live-phone-ui > .v3-facebook-app,
+.tapote-device-frame .tapote-device__screen.v3-live-phone-ui > .v3-linkedin-app,
+.tapote-device-frame .tapote-device__screen.v3-live-phone-ui > .v3-whatsapp-app,
+.tapote-device-frame .tapote-device__screen.v3-live-phone-ui > .v3-ios-wifi-app,
+.tapote-device-frame .tapote-device__screen.v3-live-phone-ui > .v3-apple-pay-app,
+.tapote-device-frame .tapote-device__screen.v3-live-phone-ui > .v3-safari-app {
+  flex: 0 0 auto;
+  width: 390px;
+  max-width: 390px;
+  height: 844px;
+  margin: calc(var(--phone-pad-top) * -1) calc(var(--phone-pad-x) * -1) calc(var(--phone-pad-bottom) * -1);
+}
+
+/* Le bandeau iOS reste au-dessus de l'application et garde sa lisibilité sur
+   les interfaces sombres. */
+.tapote-device-frame .tapote-device__screen.v3-live-phone-ui > .v3-live-phone-status { z-index: 12; }
+.tapote-device-frame.is-embedded .tapote-device__screen.v3-live-phone-ui { --phone-pad-top: 54px; }
 .v3-live-phone-ui::before { content: ""; position: absolute; z-index: 5; top: 15px; left: 129px; width: 132px; height: 31px; background: #08090b; border-radius: 999px; box-shadow: inset 0 -1px 0 rgb(255 255 255 / 10%); }
 .v3-live-phone-ui::after { content: ""; position: absolute; inset: 0; z-index: 8; pointer-events: none; background: linear-gradient(112deg, rgb(255 247 230 / 18%), transparent 30% 70%, rgb(185 195 208 / 11%)), radial-gradient(circle at 50% 50%, rgb(255 255 255 / 26%) 0 .55px, transparent .8px) 0 0 / 4px 4px; opacity: .62; mix-blend-mode: soft-light; }
 .v3-live-phone-status { z-index: 7; top: 20px; right: 26px; left: 26px; display: flex; align-items: center; justify-content: space-between; color: #111; font-size: 14px; letter-spacing: -.02em; }
