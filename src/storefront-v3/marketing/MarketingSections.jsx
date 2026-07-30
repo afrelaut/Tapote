@@ -3,6 +3,7 @@ import { ArrowRight, CalendarDays, Check, Clock3, ContactRound, FileCheck2, Glob
 import { formatMoney, PRODUCTS } from "../../../shared/catalog.js";
 import { SECTOR_CATEGORIES, SECTORS } from "../../storefront/sectorData.js";
 import { ProductArt } from "../scenes/ProductArt.jsx";
+import { PilotAppMock } from "./PilotAppMock.jsx";
 import { SectorScene } from "../scenes/ProductScene.jsx";
 import { PRODUCT_FAQ_COMMON, PRODUCT_FAQ_SPECIFIC, SHOP_ITEMS, STOREFRONT_FAQ, WHY_TAPOTE, readyHeadlineForAction, taxLabel } from "../data/content.js";
 
@@ -421,48 +422,8 @@ export function PilotMarketingSection({ pageDetail = false }) {
       </div>
 
       <div className="v3-pilot-product">
-        <div className="v3-pilot-window" aria-label="Aperçu de la gestion des supports dans Tapote Pilot">
-          <div className="v3-pilot-shell">
-            <nav aria-label="Sections de l’aperçu Tapote Pilot">
-              <span className="v3-pilot-mini-brand"><img src="/brand/tapote-logo-light.svg" alt="" /> <b>pilot</b></span>
-              <strong>Tapote Pilot</strong>
-              <b className="is-active"><Grid3X3 /> Mes supports</b>
-              <span><Link2 /> Destinations</span>
-              <span><Clock3 /> Historique</span>
-            </nav>
-            <div className="v3-pilot-panel">
-              <div className="v3-pilot-dashboard-head">
-                <span><small>MES SUPPORTS</small><strong>Choisissez un support</strong></span>
-                <span className="v3-pilot-panel-status"><i /> Démonstration</span>
-              </div>
-              <div className="v3-pilot-support-list">
-                <article className="is-selected">
-                  <i><ProductArt surface="comptoir" actionId="avis" brandName="tapote." theme="nuit" personalization="ready" /></i>
-                  <span><small>CAISSE · ACCUEIL</small><b>Tapote Comptoir</b><em>Avis Google</em></span>
-                  <ArrowRight />
-                </article>
-                <article>
-                  <i><ProductArt surface="plaque" actionId="reservation" brandName="tapote." theme="creme" personalization="ready" /></i>
-                  <span><small>ENTRÉE · MUR</small><b>Tapote Plaque</b><em>Réservation</em></span>
-                  <ArrowRight />
-                </article>
-                <article>
-                  <i><ProductArt surface="carte" actionId="contact" brandName="tapote." theme="nuit" personalization="ready" /></i>
-                  <span><small>RENDEZ-VOUS · TERRAIN</small><b>Tapote Card</b><em>Contact</em></span>
-                  <ArrowRight />
-                </article>
-              </div>
-              <div className="v3-pilot-current-destination">
-                <span><small>DESTINATION ACTUELLE</small><strong>Avis Google</strong></span>
-                <b><Link2 /> Changer le lien <ArrowRight /></b>
-              </div>
-              <div className="v3-pilot-pro-note">
-                <span><Layers3 /><b>Pilot Pro</b></span>
-                <p>Changement de destination à distance, analyses par période, lieu et support, exports et multi-sites.</p>
-                <em>Option avancée</em>
-              </div>
-            </div>
-          </div>
+        <div className="v3-pilot-window" aria-label="Aperçu de Tapote Pilot">
+          <PilotAppMock level="pilot" />
         </div>
         <div className="v3-pilot-feature-rail" aria-label="Fonctions incluses de Tapote Pilot">
           <span><SmartphoneNfc /><b>Retrouver</b><small>chaque support</small></span>

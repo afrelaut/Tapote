@@ -7,6 +7,7 @@ import { ProductArt } from "../scenes/ProductArt.jsx";
 import { FAQ_GROUPS, PILOT_PROOF_TRACKS } from "../data/content.js";
 import { productPathForSector, sectorPreviewFor } from "../data/sectorPresentation.js";
 import { FinalCommercialCta, HowStrip, PilotMarketingSection } from "../marketing/MarketingSections.jsx";
+import { PilotLevelDemo } from "../marketing/PilotAppMock.jsx";
 import { SectorScene } from "../scenes/ProductScene.jsx";
 
 export function FaqPage() {
@@ -210,11 +211,6 @@ export function PilotMarketingPage() {
       copy: "Retrouvez chaque support et sa destination sans revenir sur place ni remplacer l’objet.",
     },
   ];
-  const destinations = [
-    { label: "Avis Google", detail: "Destination actuelle", active: true },
-    { label: "Menu", detail: "Autre destination", active: false },
-    { label: "Réservation", detail: "Autre destination", active: false },
-  ];
   return (
     <main id="main-content" className="v3-pilot-page">
       <PilotMarketingSection pageDetail />
@@ -235,25 +231,8 @@ export function PilotMarketingPage() {
               </article>
             ))}
           </div>
-          <div className="v3-pilot-destination-demo" aria-label="Démonstration de changement de destination dans Tapote Pilot">
-            <header><span><img src="/brand/tapote-logo-light.svg" alt="" /><b>PILOT PRO</b></span><small>DÉMONSTRATION DE L’INTERFACE</small></header>
-            <div className="v3-pilot-destination-product">
-              <ProductArt surface="comptoir" actionId="avis" brandName="tapote." theme="nuit" personalization="ready" />
-              <span><SmartphoneNfc /><b>Tapote Comptoir</b><small>Caisse · accueil · table</small></span>
-            </div>
-            <div className="v3-pilot-destination-list">
-              <small>DESTINATION DU SUPPORT</small>
-              {destinations.map((destination) => (
-                <span className={destination.active ? "is-active" : ""} key={destination.label}>
-                  <i>{destination.active ? <Check /> : <Link2 />}</i>
-                  <b>{destination.label}</b>
-                  <small>{destination.detail}</small>
-                  {destination.active && <em>ACTUELLE</em>}
-                </span>
-              ))}
-              <span className="v3-pilot-destination-apply">Mettre à jour la destination <ArrowRight /></span>
-              <p className="v3-pilot-destination-note">Démonstration de l’interface — données illustratives. Le changement de destination est une fonction Tapote Pilot Pro.</p>
-            </div>
+          <div className="v3-pilot-page-demo">
+            <PilotLevelDemo initialLevel="pilot" />
           </div>
         </div>
       </section>

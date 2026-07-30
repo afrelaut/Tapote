@@ -677,3 +677,7 @@ body.v3-menu-open { overflow: hidden; }
   font-size: 10px;
   line-height: 1.45;
 }
+
+/* Le comparateur des deux niveaux remplace l'ancienne démonstration figée :
+   même écran, deux droits, la différence se voit au lieu de se lire. */
+.v3-pilot-page-demo { min-width: 0; }
