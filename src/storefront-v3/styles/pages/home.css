@@ -55,7 +55,7 @@
   max-width: 720px;
   margin: 10px 0 14px;
   font-family: "Archivo Black", sans-serif;
-  font-size: clamp(48px, 4.8vw, 72px);
+  font-size: clamp(25px, 2.53vw, 38px);
   line-height: .88;
   letter-spacing: -.064em;
 }
@@ -436,7 +436,7 @@
 
   .v3-home-copy h1 {
     max-width: 900px;
-    font-size: clamp(68px, 3.8vw, 78px);
+    font-size: clamp(59px, 3.31vw, 68px);
   }
 
   .v3-home-copy .v3-home-lead {
@@ -629,8 +629,8 @@
 .v3-pilot-story {
   position: relative;
   isolation: isolate;
-  min-height: 780px;
-  padding: clamp(76px, 8vw, 128px) clamp(24px, 7vw, 120px);
+  min-height: 484px;
+  padding: clamp(52px, 5.5vw, 88px) clamp(24px, 7vw, 120px);
   display: grid;
   grid-template-columns: minmax(320px, .72fr) minmax(540px, 1.28fr);
   align-items: center;
@@ -664,7 +664,7 @@
   z-index: -1;
   color: rgb(255 255 255 / 3.7%);
   font-family: "Archivo Black", sans-serif;
-  font-size: clamp(150px, 25vw, 430px);
+  font-size: clamp(24px, 2.21vw, 38px);
   line-height: .72;
   letter-spacing: -.09em;
   pointer-events: none;
@@ -683,7 +683,7 @@
   max-width: 690px;
   margin: 18px 0 24px;
   font-family: "Archivo Black", sans-serif;
-  font-size: clamp(54px, 5.7vw, 88px);
+  font-size: clamp(24px, 2.46vw, 38px);
   line-height: .88;
   letter-spacing: -.07em;
 }
@@ -830,7 +830,7 @@
 .v3-pilot-avatar { justify-self: end; width: 30px; height: 30px; display: grid; place-items: center; color: #fff; background: var(--v3-blue); border-radius: 10px; font-size: 9px; font-weight: 850; }
 
 .v3-pilot-shell {
-  min-height: 510px;
+  min-height: 316px;
   display: grid;
   grid-template-columns: 142px minmax(0, 1fr);
 }
@@ -893,7 +893,7 @@
 
 .v3-pilot-metrics article:first-child { color: #fff; background: var(--v3-blue); border-color: var(--v3-blue); box-shadow: 0 15px 35px rgb(36 88 255 / 20%); }
 .v3-pilot-metrics article > span { font-size: 6px; font-weight: 850; letter-spacing: .09em; opacity: .72; }
-.v3-pilot-metrics article > strong { font-family: "Archivo Black", sans-serif; font-size: clamp(27px, 3vw, 42px); line-height: .9; letter-spacing: -.055em; }
+.v3-pilot-metrics article > strong { font-family: "Archivo Black", sans-serif; font-size: clamp(24px, 2.71vw, 38px); line-height: .9; letter-spacing: -.055em; }
 .v3-pilot-metrics article > strong small { font-family: inherit; font-size: .48em; opacity: .45; }
 .v3-pilot-metrics article > small { color: #6d7585; font-size: 7px; font-weight: 650; }
 .v3-pilot-metrics article:first-child > small { color: #cdd9ff; }
@@ -1131,7 +1131,7 @@
   }
 
   .v3-pilot-copy { max-width: 720px; }
-  .v3-pilot-copy h2 { max-width: 780px; font-size: clamp(58px, 9vw, 82px); }
+  .v3-pilot-copy h2 { max-width: 780px; font-size: clamp(27px, 4.17vw, 38px); }
   .v3-pilot-product { width: 100%; max-width: 780px; }
 }
 
@@ -1316,7 +1316,7 @@
   }
 
   .v3-section-heading h2 {
-    font-size: clamp(42px, 12vw, 54px);
+    font-size: clamp(30px, 8.44vw, 38px);
   }
 
   .v3-section-heading p,
@@ -1366,7 +1366,7 @@
 
   .v3-pilot-copy h2 {
     margin-top: 14px;
-    font-size: clamp(48px, 14.5vw, 64px);
+    font-size: clamp(28px, 8.61vw, 38px);
   }
 
   .v3-pilot-lead { font-size: 14px; }

@@ -342,7 +342,7 @@
 }
 
 .v3-pdp-pilot {
-  padding: clamp(72px, 9vw, 132px) clamp(22px, 7vw, 112px);
+  padding: clamp(48px, 6.0vw, 88px) clamp(22px, 7vw, 112px);
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 34px;
@@ -361,7 +361,7 @@
 .v3-pdp-pilot h2 {
   margin: 15px 0 20px;
   font-family: "Archivo Black", sans-serif;
-  font-size: clamp(48px, 6vw, 86px);
+  font-size: clamp(24px, 2.65vw, 38px);
   line-height: .9;
   letter-spacing: -.06em;
 }
@@ -864,7 +864,7 @@
 .v3-home-section-head h2 {
   margin: 15px 0 18px;
   font-family: "Archivo Black", sans-serif;
-  font-size: clamp(46px, 6vw, 88px);
+  font-size: clamp(24px, 2.59vw, 38px);
   line-height: .9;
   letter-spacing: -.062em;
 }
@@ -878,7 +878,7 @@
 }
 
 .v3-home-products {
-  padding: clamp(72px, 9vw, 132px) clamp(22px, 6vw, 96px);
+  padding: clamp(48px, 6.0vw, 88px) clamp(22px, 6vw, 96px);
   color: #111318;
   background: #f3f2ed;
 }
@@ -902,7 +902,7 @@
 
 .v3-home-product-visual {
   position: relative;
-  min-height: 300px;
+  min-height: 186px;
   overflow: hidden;
   display: grid;
   place-items: center;
@@ -977,7 +977,7 @@
 }
 
 .v3-home-product-copy {
-  min-height: 300px;
+  min-height: 186px;
   padding: clamp(26px, 3vw, 44px);
   display: flex;
   flex-direction: column;
@@ -986,7 +986,7 @@
 .v3-home-product-copy h3 {
   margin: 0 0 14px;
   font-family: "Archivo Black", sans-serif;
-  font-size: clamp(28px, 2.5vw, 42px);
+  font-size: clamp(25px, 2.26vw, 38px);
   line-height: .95;
   letter-spacing: -.05em;
 }
@@ -1056,7 +1056,7 @@
 }
 
 .v3-home-uses {
-  padding: clamp(72px, 9vw, 132px) clamp(22px, 7vw, 112px);
+  padding: clamp(48px, 6.0vw, 88px) clamp(22px, 7vw, 112px);
   color: #111318;
   background: #fff;
 }
@@ -1107,7 +1107,7 @@
 .v3-home-use-list h3 {
   margin: 0 0 7px;
   font-family: "Archivo Black", sans-serif;
-  font-size: clamp(24px, 2.7vw, 40px);
+  font-size: clamp(24px, 2.56vw, 38px);
   line-height: .95;
   letter-spacing: -.05em;
 }
@@ -1130,8 +1130,8 @@
 }
 
 .v3-home-pilot {
-  min-height: 760px;
-  padding: clamp(72px, 9vw, 132px) clamp(22px, 7vw, 112px);
+  min-height: 471px;
+  padding: clamp(48px, 6.0vw, 88px) clamp(22px, 7vw, 112px);
   display: grid;
   grid-template-columns: minmax(320px, .85fr) minmax(500px, 1.15fr);
   align-items: center;
@@ -1149,7 +1149,7 @@
 .v3-home-pilot-copy h2 {
   margin: 16px 0 21px;
   font-family: "Archivo Black", sans-serif;
-  font-size: clamp(52px, 6vw, 90px);
+  font-size: clamp(24px, 2.53vw, 38px);
   line-height: .88;
   letter-spacing: -.065em;
 }
@@ -1237,7 +1237,7 @@
 }
 
 .v3-home-pilot-window-body {
-  min-height: 480px;
+  min-height: 298px;
   display: grid;
   grid-template-columns: 150px minmax(0, 1fr);
   color: #111318;
@@ -1356,7 +1356,7 @@
 
   .v3-home-product-visual,
   .v3-home-product-copy {
-    min-height: 268px;
+    min-height: 180px;
   }
 
   .v3-home-pilot {
@@ -1374,7 +1374,7 @@
   }
 
   .v3-home-product-visual {
-    min-height: 262px;
+    min-height: 180px;
   }
 
   .v3-home-product-copy {
@@ -1443,7 +1443,7 @@
   }
 
   .v3-home-product-visual {
-    min-height: 270px;
+    min-height: 180px;
   }
 
   .v3-home-product-copy {

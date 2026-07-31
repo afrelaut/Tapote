@@ -77,8 +77,8 @@
 }
 
 .v3-pilot-page-hero {
-  min-height: 720px;
-  padding: clamp(76px, 8vw, 126px) max(clamp(24px, 6vw, 96px), calc((100vw - 1740px) / 2));
+  min-height: 446px;
+  padding: clamp(53px, 5.59vw, 88px) max(clamp(24px, 6vw, 96px), calc((100vw - 1740px) / 2));
   display: grid;
   grid-template-columns: minmax(420px, .82fr) minmax(560px, 1.18fr);
   align-items: center;
@@ -98,7 +98,7 @@
   max-width: 760px;
   margin: 18px 0 24px;
   font-family: "Archivo Black", sans-serif;
-  font-size: clamp(66px, 7vw, 112px);
+  font-size: clamp(24px, 2.38vw, 38px);
   line-height: .84;
   letter-spacing: -.075em;
 }
@@ -202,7 +202,7 @@
 .v3-pilot-page-signal-top span { margin-left: auto; padding: 7px 9px; color: #cbd3e5; border: 1px solid rgb(255 255 255 / 14%); border-radius: 999px; font-size: 8px; }
 
 .v3-pilot-page-signal-main {
-  min-height: 376px;
+  min-height: 233px;
   padding: clamp(28px, 4vw, 54px);
   display: grid;
   grid-template-columns: .62fr 1.38fr;
@@ -225,7 +225,7 @@
 .v3-pilot-page-signal-main > strong {
   grid-column: 1;
   font-family: "Archivo Black", sans-serif;
-  font-size: clamp(58px, 6vw, 98px);
+  font-size: clamp(24px, 2.33vw, 38px);
   line-height: .9;
   letter-spacing: -.07em;
 }
@@ -277,10 +277,10 @@
 .v3-pilot-page-signal-foot span:last-child { border-right: 0; }
 .v3-pilot-page-signal-foot b { color: #fff; font-size: 17px; }
 
-.v3-pilot-page > .v3-pilot-story { min-height: 680px; }
+.v3-pilot-page > .v3-pilot-story { min-height: 422px; }
 
 .v3-pilot-page-flow {
-  padding: clamp(88px, 9vw, 142px) max(clamp(24px, 6vw, 96px), calc((100vw - 1640px) / 2));
+  padding: clamp(55px, 5.58vw, 88px) max(clamp(24px, 6vw, 96px), calc((100vw - 1640px) / 2));
   background: #f3eee5;
   scroll-margin-top: 90px;
 }
@@ -295,7 +295,7 @@
 .v3-pilot-page-plan > div h2 {
   margin: 16px 0 20px;
   font-family: "Archivo Black", sans-serif;
-  font-size: clamp(50px, 5.4vw, 82px);
+  font-size: clamp(24px, 2.5vw, 38px);
   line-height: .91;
   letter-spacing: -.064em;
 }
@@ -369,7 +369,7 @@
 
 .v3-pilot-destination-product {
   position: relative;
-  min-height: 470px;
+  min-height: 291px;
   overflow: hidden;
   background: radial-gradient(circle at 50% 48%, #314f9c, #0d1323 62%);
   border-radius: 15px 0 0 15px;
@@ -474,7 +474,7 @@
 .v3-pilot-destination-apply svg { width: 15px; }
 
 .v3-pilot-page-value {
-  padding: clamp(88px, 9vw, 142px) max(clamp(24px, 6vw, 96px), calc((100vw - 1640px) / 2));
+  padding: clamp(55px, 5.58vw, 88px) max(clamp(24px, 6vw, 96px), calc((100vw - 1640px) / 2));
   color: #fff;
   background: #101114;
 }
@@ -494,7 +494,7 @@
 }
 
 .v3-pilot-page-value-grid article {
-  min-height: 310px;
+  min-height: 192px;
   padding: clamp(24px, 3vw, 38px);
   display: flex;
   flex-direction: column;
@@ -510,7 +510,7 @@
 .v3-pilot-page-value-grid p { margin: 0; color: #aeb2bc; font-size: 12px; line-height: 1.6; }
 
 .v3-pilot-page-plan {
-  padding: clamp(88px, 9vw, 142px) max(clamp(24px, 6vw, 96px), calc((100vw - 1540px) / 2));
+  padding: clamp(55px, 5.58vw, 88px) max(clamp(24px, 6vw, 96px), calc((100vw - 1540px) / 2));
   display: grid;
   grid-template-columns: minmax(420px, 1fr) minmax(380px, 520px);
   align-items: center;
@@ -584,7 +584,7 @@
   }
 
   .v3-pilot-page-hero .v3-breadcrumb { margin-bottom: 42px; }
-  .v3-pilot-page-hero h1 { font-size: clamp(56px, 16vw, 76px); }
+  .v3-pilot-page-hero h1 { font-size: clamp(50px, 14.32vw, 68px); }
   .v3-pilot-page-hero-copy > p { font-size: 15px; }
   .v3-pilot-page-hero-actions { align-items: stretch; flex-direction: column; }
   .v3-pilot-page-hero-actions a { width: 100%; }
@@ -598,7 +598,7 @@
   }
 
   .v3-pilot-page-signal-main {
-    min-height: 340px;
+    min-height: 211px;
     padding: 20px;
     grid-template-columns: 1fr;
     grid-template-rows: auto auto auto 180px;
@@ -630,7 +630,7 @@
   .v3-pilot-page-flow-head h2,
   .v3-pilot-page-value > div:first-child h2,
   .v3-pilot-page-plan > div h2 {
-    font-size: clamp(43px, 12vw, 58px);
+    font-size: clamp(28px, 7.86vw, 38px);
   }
 
   .v3-pilot-page-steps article {
@@ -649,12 +649,12 @@
   }
 
   .v3-pilot-destination-product {
-    min-height: 390px;
+    min-height: 242px;
     border-radius: 12px 12px 0 0;
   }
 
   .v3-pilot-destination-list {
-    min-height: 420px;
+    min-height: 260px;
     border-radius: 0 0 12px 12px;
   }
 

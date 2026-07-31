@@ -19,7 +19,7 @@
 
 .v3-how-hero {
   min-height: min(880px, calc(100vh - 70px));
-  padding: clamp(54px, 6.5vw, 108px) clamp(24px, 6vw, 104px);
+  padding: clamp(44px, 5.3vw, 88px) clamp(24px, 6vw, 104px);
   display: grid;
   grid-template-columns: minmax(400px, .8fr) minmax(560px, 1.2fr);
   align-items: center;
@@ -36,7 +36,7 @@
   max-width: 780px;
   margin: 20px 0 28px;
   font-family: "Archivo Black", sans-serif;
-  font-size: clamp(68px, 7vw, 116px);
+  font-size: clamp(24px, 2.29vw, 38px);
   line-height: .84;
   letter-spacing: -.075em;
 }
@@ -247,7 +247,7 @@
 }
 
 .v3-how-flow-section {
-  padding: clamp(94px, 11vw, 170px) clamp(24px, 7vw, 120px);
+  padding: clamp(49px, 5.69vw, 88px) clamp(24px, 7vw, 120px);
   background: #fff;
 }
 
@@ -263,7 +263,7 @@
 .v3-how-faq > header h2 {
   margin: 17px 0 22px;
   font-family: "Archivo Black", sans-serif;
-  font-size: clamp(48px, 6vw, 88px);
+  font-size: clamp(24px, 2.59vw, 38px);
   line-height: .91;
   letter-spacing: -.065em;
 }
@@ -288,7 +288,7 @@
 }
 
 .v3-how-page .v3-link-flow article {
-  min-height: 360px;
+  min-height: 223px;
   padding: 28px;
   display: flex;
   flex-direction: column;
@@ -339,7 +339,7 @@
 }
 
 .v3-how-channels {
-  padding: clamp(90px, 10vw, 150px) clamp(24px, 7vw, 120px);
+  padding: clamp(53px, 5.87vw, 88px) clamp(24px, 7vw, 120px);
   color: #fff;
   background: var(--how-night);
 }
@@ -362,7 +362,7 @@
 
 .v3-how-channel-grid article {
   position: relative;
-  min-height: 520px;
+  min-height: 322px;
   padding: clamp(34px, 5vw, 72px);
   display: flex;
   flex-direction: column;
@@ -391,7 +391,7 @@
 .v3-how-channel-grid h3 {
   margin: auto 0 18px;
   font-family: "Archivo Black", sans-serif;
-  font-size: clamp(31px, 3vw, 45px);
+  font-size: clamp(26px, 2.53vw, 38px);
   line-height: .98;
   letter-spacing: -.05em;
 }
@@ -428,7 +428,7 @@
 }
 
 .v3-how-journey {
-  padding: clamp(94px, 11vw, 170px) clamp(24px, 7vw, 120px);
+  padding: clamp(49px, 5.69vw, 88px) clamp(24px, 7vw, 120px);
   background: var(--how-soft);
 }
 
@@ -446,7 +446,7 @@
 }
 
 .v3-how-journey li {
-  min-height: 360px;
+  min-height: 223px;
   padding: 25px clamp(18px, 2.2vw, 34px) 34px;
   display: flex;
   flex-direction: column;
@@ -512,7 +512,7 @@
 }
 
 .v3-how-link-system {
-  padding: clamp(92px, 11vw, 165px) clamp(24px, 7vw, 120px);
+  padding: clamp(49px, 5.87vw, 88px) clamp(24px, 7vw, 120px);
   display: grid;
   grid-template-columns: minmax(0, .85fr) minmax(560px, 1.15fr);
   align-items: center;
@@ -580,7 +580,7 @@
 }
 
 .v3-how-plan-card {
-  min-height: 420px;
+  min-height: 260px;
   padding: clamp(28px, 3.5vw, 48px);
   display: flex;
   flex-direction: column;
@@ -605,7 +605,7 @@
 .v3-how-plan-card h3 {
   margin: 16px 0 32px;
   font-family: "Archivo Black", sans-serif;
-  font-size: clamp(27px, 2.5vw, 39px);
+  font-size: clamp(26px, 2.44vw, 38px);
   letter-spacing: -.05em;
 }
 
@@ -691,7 +691,7 @@
 }
 
 .v3-how-faq {
-  padding: clamp(92px, 11vw, 165px) clamp(24px, 7vw, 120px);
+  padding: clamp(49px, 5.87vw, 88px) clamp(24px, 7vw, 120px);
   display: grid;
   grid-template-columns: minmax(320px, .78fr) minmax(520px, 1.22fr);
   align-items: start;
@@ -749,8 +749,8 @@
 }
 
 .v3-how-final {
-  min-height: 650px;
-  padding: clamp(92px, 11vw, 160px) clamp(24px, 7vw, 120px);
+  min-height: 403px;
+  padding: clamp(51px, 6.05vw, 88px) clamp(24px, 7vw, 120px);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -771,7 +771,7 @@
   max-width: 1120px;
   margin: 18px 0 24px;
   font-family: "Archivo Black", sans-serif;
-  font-size: clamp(54px, 7vw, 102px);
+  font-size: clamp(24px, 2.6vw, 38px);
   line-height: .88;
   letter-spacing: -.07em;
 }
@@ -824,7 +824,7 @@
   }
 
   .v3-how-hero-copy h1 {
-    font-size: clamp(61px, 7vw, 86px);
+    font-size: clamp(48px, 5.53vw, 68px);
   }
 
   .v3-how-link-system {
@@ -874,7 +874,7 @@
   }
 
   .v3-how-page .v3-link-flow article {
-    min-height: 270px;
+    min-height: 180px;
   }
 
   .v3-how-channel-grid {
@@ -947,7 +947,7 @@
 
   .v3-how-hero-copy h1 {
     margin-top: 15px;
-    font-size: clamp(55px, 17vw, 78px);
+    font-size: clamp(48px, 14.82vw, 68px);
   }
 
   .v3-how-hero-copy > p {
@@ -981,7 +981,7 @@
   .v3-how-journey > header h2,
   .v3-how-link-copy h2,
   .v3-how-faq > header h2 {
-    font-size: clamp(46px, 14vw, 64px);
+    font-size: clamp(27px, 8.31vw, 38px);
   }
 
   .v3-how-page .v3-link-flow article {
@@ -990,7 +990,7 @@
   }
 
   .v3-how-channel-grid article {
-    min-height: 450px;
+    min-height: 279px;
     padding: 30px 5px;
   }
 
@@ -1006,7 +1006,7 @@
   .v3-how-journey li:first-child,
   .v3-how-journey li:nth-child(3),
   .v3-how-journey li:last-child {
-    min-height: 270px;
+    min-height: 180px;
     padding: 24px 4px 28px;
     border-right: 0;
     border-bottom: 1px solid #bdb8ae;
@@ -1017,7 +1017,7 @@
   }
 
   .v3-how-plan-card {
-    min-height: 420px;
+    min-height: 260px;
   }
 
   .v3-how-plan-card + .v3-how-plan-card {
@@ -1040,11 +1040,11 @@
   }
 
   .v3-how-final {
-    min-height: 590px;
+    min-height: 366px;
   }
 
   .v3-how-final h2 {
-    font-size: clamp(50px, 14.5vw, 70px);
+    font-size: clamp(27px, 7.87vw, 38px);
   }
 }
 

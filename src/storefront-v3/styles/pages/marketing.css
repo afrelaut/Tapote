@@ -18,7 +18,7 @@
 
 .v3-offer-architecture .v3-section-heading h2 {
   max-width: 980px;
-  font-size: clamp(48px, 5.6vw, 82px);
+  font-size: clamp(24px, 2.59vw, 38px);
   line-height: .92;
 }
 
@@ -139,7 +139,7 @@
 }
 
 .v3-offer-card-copy {
-  min-height: 286px;
+  min-height: 180px;
   padding: 26px 26px 24px;
   display: flex;
   flex-direction: column;
@@ -198,8 +198,8 @@
 /* Pilot : même grammaire que le vrai logiciel (rail noir, action jaune,
    sélection bleue, canevas analytique bleu très clair). */
 .v3-pilot-story {
-  min-height: 690px;
-  padding: clamp(76px, 7vw, 104px) clamp(24px, 6vw, 96px);
+  min-height: 428px;
+  padding: clamp(64px, 5.92vw, 88px) clamp(24px, 6vw, 96px);
   grid-template-columns: minmax(300px, .72fr) minmax(560px, 1.28fr);
   gap: clamp(42px, 5vw, 78px);
 }
@@ -212,7 +212,7 @@
 
 .v3-pilot-copy h2 {
   margin: 16px 0 20px;
-  font-size: clamp(52px, 5vw, 76px);
+  font-size: clamp(26px, 2.5vw, 38px);
 }
 
 .v3-pilot-lead {
@@ -243,7 +243,7 @@
 }
 
 .v3-pilot-shell {
-  min-height: 414px;
+  min-height: 257px;
   grid-template-columns: 148px minmax(0, 1fr);
 }
 
@@ -558,7 +558,7 @@
 
 .v3-why-stage {
   min-width: 0;
-  min-height: 640px;
+  min-height: 397px;
   padding: 23px;
   overflow: hidden;
   display: grid;
@@ -592,7 +592,7 @@
 
 .v3-why-art {
   position: relative;
-  min-height: 500px;
+  min-height: 310px;
 }
 
 .v3-why-art .v3-product-art {
@@ -663,7 +663,7 @@
 
 .v3-why-head h2 {
   margin: 15px 0 18px;
-  font-size: clamp(45px, 4.5vw, 68px);
+  font-size: clamp(25px, 2.51vw, 38px);
   line-height: .94;
 }
 
@@ -803,7 +803,7 @@
   }
 
   .v3-offer-cards > article:last-child .v3-offer-visual {
-    min-height: 300px;
+    min-height: 186px;
     border-right: 1px solid rgb(255 255 255 / 12%);
     border-bottom: 0;
   }
@@ -841,7 +841,7 @@
   }
 
   .v3-why-stage {
-    min-height: 600px;
+    min-height: 372px;
   }
 }
 
@@ -892,7 +892,7 @@
   }
 
   .v3-pilot-copy h2 {
-    font-size: clamp(46px, 13.5vw, 60px);
+    font-size: clamp(29px, 8.55vw, 38px);
   }
 
   .v3-pilot-window {
@@ -994,13 +994,13 @@
   }
 
   .v3-why-stage {
-    min-height: 520px;
+    min-height: 322px;
     padding: 17px;
     border-radius: 20px;
   }
 
   .v3-why-art {
-    min-height: 395px;
+    min-height: 245px;
   }
 
   .v3-why-art .is-main {
@@ -1029,7 +1029,7 @@
   }
 
   .v3-why-head h2 {
-    font-size: clamp(42px, 12vw, 54px);
+    font-size: clamp(30px, 8.44vw, 38px);
   }
 
   .v3-why-grid article {
@@ -1160,14 +1160,14 @@
   max-width: 690px;
   margin: 16px 0 20px;
   font-family: "Archivo Black", sans-serif;
-  font-size: clamp(52px, 5vw, 76px);
+  font-size: clamp(26px, 2.5vw, 38px);
   line-height: .88;
   letter-spacing: -.07em;
 }
 
 @media (max-width: 760px) {
   .v3-pilot-copy .v3-pilot-page-title {
-    font-size: clamp(46px, 13.5vw, 60px);
+    font-size: clamp(29px, 8.55vw, 38px);
   }
 }
 
@@ -1234,7 +1234,7 @@
 
 .v3-why-stage {
   width: 100%;
-  min-height: 620px;
+  min-height: 384px;
   justify-self: center;
 }
 
@@ -1254,7 +1254,7 @@
   }
 
   .v3-pilot-story {
-    min-height: 720px;
+    min-height: 446px;
     padding-inline: max(clamp(24px, 5vw, 88px), calc((100vw - 1560px) / 2));
     grid-template-columns: minmax(350px, 480px) minmax(640px, 900px);
     gap: clamp(52px, 5vw, 82px);
@@ -1310,11 +1310,11 @@
   }
 
   .v3-why-stage {
-    min-height: 450px;
+    min-height: 279px;
   }
 
   .v3-why-art {
-    min-height: 318px;
+    min-height: 197px;
   }
 
   .v3-why-art .is-main {
@@ -1729,7 +1729,7 @@
   .v3-pilot-copy .v3-pilot-page-title {
     max-width: 370px;
     margin-top: 12px;
-    font-size: clamp(39px, 11.6vw, 48px);
+    font-size: clamp(31px, 9.18vw, 38px);
     line-height: .91;
   }
 
@@ -1753,7 +1753,7 @@
   }
 
   .v3-pilot-shell > .v3-pilot-panel {
-    min-height: 360px;
+    min-height: 223px;
     padding: 18px 15px 16px;
   }
 
@@ -1838,7 +1838,7 @@
   .v3-pilot-page-flow-head h2,
   .v3-pilot-page-value h2,
   .v3-pilot-page-plan h2 {
-    font-size: clamp(38px, 11.3vw, 48px);
+    font-size: clamp(30px, 8.95vw, 38px);
     line-height: .93;
   }
 
@@ -1857,7 +1857,7 @@
   }
 
   .v3-pilot-destination-product {
-    min-height: 290px;
+    min-height: 180px;
     padding: 16px;
   }
 
@@ -1946,8 +1946,8 @@
 /* ---------- Tapote Pilot : interface claire et réellement opérationnelle ---------- */
 
 .v3-pilot-story.is-page {
-  min-height: 780px;
-  padding: clamp(64px, 6.2vw, 100px) max(clamp(24px, 6vw, 96px), calc((100vw - 1680px) / 2));
+  min-height: 484px;
+  padding: clamp(56px, 5.46vw, 88px) max(clamp(24px, 6vw, 96px), calc((100vw - 1680px) / 2));
   grid-template-columns: minmax(470px, .9fr) minmax(620px, 1.1fr);
   align-items: center;
   gap: clamp(54px, 7vw, 112px);
@@ -1963,7 +1963,7 @@
   right: -1.5vw;
   bottom: -10vw;
   color: rgb(255 255 255 / 3.5%);
-  font-size: clamp(240px, 34vw, 600px);
+  font-size: clamp(24px, 2.15vw, 38px);
 }
 
 .v3-pilot-story.is-page .v3-pilot-copy {
@@ -1973,7 +1973,7 @@
 .v3-pilot-copy .v3-pilot-page-title {
   max-width: 720px;
   margin: 18px 0 26px;
-  font-size: clamp(64px, 5.9vw, 96px);
+  font-size: clamp(25px, 2.34vw, 38px);
   line-height: .88;
 }
 
@@ -2053,7 +2053,7 @@
 }
 
 .v3-pilot-story.is-page .v3-pilot-shell {
-  min-height: 520px;
+  min-height: 322px;
   grid-template-columns: 190px minmax(0, 1fr);
   background: #edf1ff;
   border-radius: 15px;
@@ -2334,7 +2334,7 @@
   }
 
   .v3-pilot-copy .v3-pilot-page-title {
-    font-size: clamp(52px, 15vw, 68px);
+    font-size: clamp(29px, 8.38vw, 38px);
   }
 
   .v3-pilot-included-points {
@@ -2426,7 +2426,7 @@
 }
 
 .v3-pilot-page-flow {
-  padding: clamp(62px, 6.4vw, 102px) max(clamp(24px, 6vw, 96px), calc((100vw - 1600px) / 2));
+  padding: clamp(53px, 5.52vw, 88px) max(clamp(24px, 6vw, 96px), calc((100vw - 1600px) / 2));
   background: #f3eee5;
 }
 
@@ -2440,7 +2440,7 @@
 .v3-pilot-page-plan > header h2 {
   margin: 16px 0 22px;
   font-family: "Archivo Black", sans-serif;
-  font-size: clamp(54px, 5.6vw, 88px);
+  font-size: clamp(24px, 2.42vw, 38px);
   line-height: .9;
   letter-spacing: -.064em;
 }
@@ -2520,7 +2520,7 @@
 }
 
 .v3-pilot-page-value {
-  padding: clamp(62px, 6.4vw, 102px) max(clamp(24px, 6vw, 96px), calc((100vw - 1600px) / 2));
+  padding: clamp(53px, 5.52vw, 88px) max(clamp(24px, 6vw, 96px), calc((100vw - 1600px) / 2));
 }
 
 .v3-pilot-page-value > div:first-child {
@@ -2528,7 +2528,7 @@
 }
 
 .v3-pilot-page-value-grid article {
-  min-height: 300px;
+  min-height: 186px;
 }
 
 .v3-pilot-page-value-grid article > span {
@@ -2538,7 +2538,7 @@
 }
 
 .v3-pilot-page-value-grid h3 {
-  font-size: clamp(30px, 2.7vw, 42px);
+  font-size: clamp(27px, 2.44vw, 38px);
 }
 
 .v3-pilot-page-value-grid p {
@@ -2547,7 +2547,7 @@
 }
 
 .v3-pilot-page-plan {
-  padding: clamp(62px, 6.4vw, 102px) max(clamp(24px, 6vw, 96px), calc((100vw - 1520px) / 2));
+  padding: clamp(53px, 5.52vw, 88px) max(clamp(24px, 6vw, 96px), calc((100vw - 1520px) / 2));
   display: grid;
   grid-template-columns: minmax(330px, .65fr) minmax(680px, 1.35fr);
   align-items: start;
@@ -2571,7 +2571,7 @@
 }
 
 .v3-pilot-page-plan-grid article {
-  min-height: 500px;
+  min-height: 310px;
   padding: clamp(30px, 3.4vw, 48px);
   display: flex;
   flex-direction: column;
@@ -2601,7 +2601,7 @@
 .v3-pilot-page-plan-grid h3 {
   margin: 20px 0 30px;
   font-family: "Archivo Black", sans-serif;
-  font-size: clamp(34px, 3vw, 48px);
+  font-size: clamp(27px, 2.38vw, 38px);
   line-height: .95;
   letter-spacing: -.05em;
 }
@@ -2689,7 +2689,7 @@
   .v3-pilot-page-flow-head h2,
   .v3-pilot-page-value > div:first-child h2,
   .v3-pilot-page-plan > header h2 {
-    font-size: clamp(42px, 12vw, 56px);
+    font-size: clamp(28px, 8.14vw, 38px);
   }
 
   .v3-pilot-page-flow-head p,
@@ -2733,6 +2733,6 @@
   }
 
   .v3-pilot-page-plan-grid article {
-    min-height: 450px;
+    min-height: 279px;
   }
 }
