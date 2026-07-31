@@ -461,7 +461,11 @@
   pointer-events: none;
 }
 
-.tp-insert-body { position: relative; z-index: 1; }
+/* Le corps reste en absolu sur toute la hauteur de l'encart : le passer en
+   relatif pour le superposer au filigrane le réduisait à sa hauteur de contenu,
+   ce qui tassait le haut et laissait un quart de vide en bas. Le filigrane
+   passe dessous par son propre plan. */
+.tp-insert-body { z-index: 1; }
 
 /* Phrase métier et ligne de contact, sous le nom du commerce. */
 .tp-insert-tagline {
