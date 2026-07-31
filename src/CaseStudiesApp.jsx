@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   SmartphoneNfc,
 } from "lucide-react";
+import { Shell } from "./storefront-v3/layouts/StorefrontLayout.jsx";
 import "./case-studies.css";
 
 const PROOF_ROWS = [
@@ -99,56 +100,13 @@ function usePageMeta() {
   }, []);
 }
 
-function Header() {
-  return (
-    <>
-      <a className="cs-skip" href="#contenu">
-        Aller au contenu
-      </a>
-      <header className="cs-header">
-        <a className="cs-brand" href="/" aria-label="Tapote — accueil">
-          <img src="/brand/tapote-logo.svg" alt="tapote." />
-        </a>
-        <nav className="cs-nav" aria-label="Navigation principale">
-          <a href="/boutique">Produits</a>
-          <a href="/comment-ca-marche">Comment ça marche</a>
-          <a href="/preuves">Preuves</a>
-          <a href="/faq">FAQ</a>
-        </nav>
-        <a className="cs-header-cta" href="/devis">
-          Parler du projet <ArrowRight aria-hidden="true" />
-        </a>
-      </header>
-    </>
-  );
-}
-
-function Footer() {
-  return (
-    <footer className="cs-footer">
-      <div>
-        <img src="/brand/tapote-logo.svg" alt="tapote." />
-        <p>Un geste physique. Une action qui compte.</p>
-      </div>
-      <nav aria-label="Navigation de pied de page">
-        <a href="/boutique">Produits</a>
-        <a href="/personnaliser">Studio</a>
-        <a href="/tapote-pilot">Pilot</a>
-        <a href="/faq">FAQ</a>
-        <a href="/devis">Devis</a>
-      </nav>
-      <p className="cs-footer-note">NFC + QR · Studio · Link · Pilot</p>
-    </footer>
-  );
-}
-
 export default function CaseStudiesApp() {
   usePageMeta();
 
   return (
-    <div className="cs-site">
-      <Header />
-      <main id="contenu">
+    <Shell catalogStatus="ready">
+      <div className="cs-site">
+      <main id="main-content">
         <section className="cs-hero">
           <div className="cs-hero-kicker">
             <span>Cas clients</span>
@@ -244,7 +202,7 @@ export default function CaseStudiesApp() {
           </div>
         </section>
       </main>
-      <Footer />
-    </div>
+      </div>
+    </Shell>
   );
 }
