@@ -65,6 +65,8 @@ export function makeCartItem(productId, actionId, options = {}) {
     destinationUrl: options.destinationUrl || "",
     brandLogoId: options.brandLogoId || "",
     logoFileName: options.logoFileName || "",
+    signageId: options.signageId || "",
+    signageFileName: options.signageFileName || "",
     tagline: options.tagline || "",
     contactLine: options.contactLine || "",
     blockColorMode: options.blockColorMode || DEFAULT_BLOCK_COLOR_MODE,

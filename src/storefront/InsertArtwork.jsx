@@ -16,8 +16,7 @@ import { PlatformGlyph } from "./BrandMark.jsx";
 import { platformGlyphForAction } from "./brandIdentity.js";
 import { SURFACE_GEOMETRY, insertSurface } from "./insertGeometry.js";
 import { DEFAULT_BLOCK_COLOR_MODE, resolveBlockPalette } from "./actionPalettes.js";
-import { DEFAULT_MONOGRAM_SHAPE, brandInitialsFor, isMonogramShape, motifDataUri, motifPath } from "./brandMotifs.js";
-import { BrandLogoPlaceholder, BrandMotif } from "./BrandMotif.jsx";
+import { BrandLogoPlaceholder } from "./BrandMotif.jsx";
 import "./insert-artwork.css";
 
 // Typographie française : l'espace qui précède ? ! : ; » est insécable, sinon
@@ -133,7 +132,6 @@ export default function InsertArtwork({
   tapLabel = "",
   tagline = "",
   contactLine = "",
-  brandMotif = DEFAULT_MONOGRAM_SHAPE,
   blockColorMode = DEFAULT_BLOCK_COLOR_MODE,
   showBrand = true,
   personalization = "custom",
@@ -172,20 +170,14 @@ export default function InsertArtwork({
   // Tant que le client n'a rien saisi, l'emplacement du logo reste visible : il
   // montre ce qu'il obtiendra. Dès qu'un nom est écrit, le monogramme prend le
   // relais ; dès qu'un logo est importé, c'est le logo.
-  const namedBrand = brandName.trim() && brandName.trim().toUpperCase() !== "VOTRE MARQUE";
-  const motif = isReady || brandLogo
-    ? ""
-    : motifPath(brandMotif)
-      ? brandMotif
-      : DEFAULT_MONOGRAM_SHAPE;
-  const showLogoSlot = !isReady && !brandLogo && !namedBrand && isMonogramShape(motif);
-  const watermark = isReady
-    ? ""
-    : brandLogo
-      ? brandLogo
-      : motif && !isMonogramShape(motif)
-        ? motifDataUri(motif, colors?.ink || "#161310")
-        : "";
+  // Un client sans logo doit voir un support fini, pas un emplacement vide. Dès
+  // qu'il a écrit son nom, la composition se referme sur son nom : c'est ainsi
+  // que sont dessinées la plupart des enseignes réelles. L'emplacement en
+  // pointillés ne subsiste que sur les aperçus génériques de la vitrine, où il
+  // dit au visiteur ce qu'il pourra mettre.
+  const namedBrand = Boolean(brandName.trim()) && brandName.trim().toUpperCase() !== "VOTRE MARQUE";
+  const showLogoSlot = !isReady && !brandLogo && !namedBrand;
+  const watermark = isReady || !brandLogo ? "" : brandLogo;
 
   const style = {
     "--insert-ratio": ratio,
@@ -230,15 +222,13 @@ export default function InsertArtwork({
             le pied de page reste donc solidaire de la colonne de gauche. */}
         <Wrapper isCard={isCard}>
           <header className="tp-insert-head">
-            <span className="tp-insert-logo">
+            {(isReady || brandLogo || showLogoSlot) && <span className="tp-insert-logo">
               {isReady
                 ? <img className="tp-insert-tapote-logo" src={readyLogo} alt="" />
                 : brandLogo
                 ? <img src={brandLogo} alt="" />
-                : showLogoSlot
-                ? <BrandLogoPlaceholder />
-                : <BrandMotif shape={motif} initials={brandInitialsFor(brandName)} brandName={brandName} />}
-            </span>
+                : <BrandLogoPlaceholder />}
+            </span>}
             {showBrand && !isReady && <b className="tp-insert-brand">{brandName || "VOTRE MARQUE"}</b>}
             {!isReady && finalTagline && <span className="tp-insert-tagline">{finalTagline}</span>}
             {!isReady && finalContactLine && <span className="tp-insert-contact">{finalContactLine}</span>}

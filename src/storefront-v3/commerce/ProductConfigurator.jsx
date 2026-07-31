@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { ArrowRight, Check, CheckCircle2, Globe2, Pipette, Sparkles, Upload, X } from "lucide-react";
+import { ArrowRight, Camera, Check, CheckCircle2, Globe2, Pipette, Sparkles, Upload, X } from "lucide-react";
 import { ACTIONS, formatMoney, PRODUCTS } from "../../../shared/catalog.js";
 import { prepareLogoFile, readFileAsDataUrl } from "../../storefront/logoFile.js";
 import { extractLogoPalette, pickScreenColor } from "../../brandColors.js";
@@ -94,6 +94,10 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
   const [customTapLabel, setCustomTapLabel] = useState(restoredDraft?.customTapLabel || "");
   const [tagline, setTagline] = useState(restoredDraft?.tagline || "");
   const [contactLine, setContactLine] = useState(restoredDraft?.contactLine || "");
+  const [signageId, setSignageId] = useState(restoredDraft?.signageId || "");
+  const [signageFileName, setSignageFileName] = useState(restoredDraft?.signageFileName || "");
+  const [signageStatus, setSignageStatus] = useState(restoredDraft?.signageId ? "success" : "idle");
+  const [signageError, setSignageError] = useState("");
   const [blockColorMode, setBlockColorMode] = useState(restoredDraft?.blockColorMode || DEFAULT_BLOCK_COLOR_MODE);
   const [destinationUrl, setDestinationUrl] = useState(restoredDraft?.destinationUrl || "");
   const [theme, setTheme] = useState(resolveThemeId(restoredDraft?.theme || initialTheme));
@@ -193,9 +197,9 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
   useEffect(() => {
     if (!draftKey || personalization !== "custom") return;
     try {
-      window.sessionStorage.setItem(`${CONFIG_DRAFT_PREFIX}${draftKey}`, JSON.stringify({ actionId, count: safeCount, composition, brandName, brandLogoId, logoFileName, tagline, contactLine, blockColorMode, theme, customHeadline, customSubline, customTapLabel, destinationUrl, primaryColor, secondaryColor, textColor }));
+      window.sessionStorage.setItem(`${CONFIG_DRAFT_PREFIX}${draftKey}`, JSON.stringify({ actionId, count: safeCount, composition, brandName, brandLogoId, logoFileName, signageId, signageFileName, tagline, contactLine, blockColorMode, theme, customHeadline, customSubline, customTapLabel, destinationUrl, primaryColor, secondaryColor, textColor }));
     } catch { /* A full browser storage area must never block configuration or checkout. */ }
-  }, [actionId, blockColorMode, brandLogoId, brandName, composition, contactLine, customHeadline, customSubline, customTapLabel, destinationUrl, draftKey, logoFileName, personalization, primaryColor, safeCount, secondaryColor, tagline, textColor, theme]);
+  }, [actionId, blockColorMode, brandLogoId, brandName, composition, contactLine, signageId, signageFileName, customHeadline, customSubline, customTapLabel, destinationUrl, draftKey, logoFileName, personalization, primaryColor, safeCount, secondaryColor, tagline, textColor, theme]);
   const selectCount = (value) => {
     markConfigurationStarted();
     setCount(value);
@@ -251,6 +255,39 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
       setLogoError(uploadError.message);
     }
   };
+  // Un commerçant sans logo a toujours une enseigne, une devanture ou une carte.
+  // La photographier prend dix secondes et donne exactement ce qu'il faut pour
+  // tracer son identité avant le bon à tirer. Elle n'est jamais imprimée telle
+  // quelle : elle accompagne la commande.
+  const uploadSignage = async (event) => {
+    const selectedFile = event.target.files?.[0];
+    if (!selectedFile) return;
+    setSignageStatus("loading");
+    setSignageError("");
+    setSignageId("");
+    try {
+      const file = await prepareLogoFile(selectedFile);
+      const formData = new FormData();
+      formData.append("logo", file, file.name);
+      const response = await fetch("/api/uploads/logo", { method: "POST", body: formData });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Envoi de la photo impossible.");
+      setSignageId(data.uploadId);
+      setSignageFileName(file.name.slice(0, 120));
+      setSignageStatus("success");
+    } catch (uploadError) {
+      setSignageStatus("error");
+      setSignageError(uploadError.message);
+    }
+  };
+
+  const removeSignage = () => {
+    setSignageId("");
+    setSignageFileName("");
+    setSignageStatus("idle");
+    setSignageError("");
+  };
+
   const removeLogo = () => {
     setBrandLogo("");
     setBrandLogoId("");
@@ -272,6 +309,8 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
       brandName: personalization === "custom" ? brandName : "",
       brandLogoId: personalization === "custom" ? brandLogoId : "",
       logoFileName: personalization === "custom" ? logoFileName : "",
+      signageId: personalization === "custom" ? signageId : "",
+      signageFileName: personalization === "custom" ? signageFileName : "",
       tagline: personalization === "custom" ? tagline : "",
       contactLine: personalization === "custom" ? contactLine : "",
       blockColorMode,
@@ -403,6 +442,29 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
             </div>
             {brandLogo && <div className="v3-uploaded-logo"><img src={brandLogo} alt="Aperçu du logo importé" /><span><strong>{logoFileName}</strong><small>{logoStatus === "success" ? "Affiché dans l’aperçu" : "À retransmettre"}</small></span><button type="button" onClick={removeLogo} aria-label="Retirer le logo"><X size={15} /></button></div>}
             {logoError && <p className="v3-upload-error" role="alert">{logoError} Retirez le fichier pour continuer sans logo.</p>}
+            {/* Sans fichier de logo, le client photographie son enseigne : c'est
+                la matière dont Tapote Studio a besoin pour tracer son identité
+                avant le bon à tirer. */}
+            {!brandLogo && (
+              <div className="v3-signage-step">
+                <label className={`v3-signage-upload is-${signageStatus} ${signageId ? "is-filled" : ""}`}>
+                  <input type="file" accept="image/png,image/jpeg,image/webp" onChange={uploadSignage} disabled={signageStatus === "loading"} />
+                  <Camera size={17} aria-hidden="true" />
+                  <span>
+                    <strong>{signageStatus === "loading" ? "Envoi sécurisé…" : signageId ? "Photo reçue" : "Vous voulez qu’on trace votre logo ?"}</strong>
+                    <small>{signageId ? "Le tracé vous sera proposé avec le bon à tirer" : "Envoyez une photo de votre enseigne — facultatif"}</small>
+                  </span>
+                </label>
+                {signageId && (
+                  <div className="v3-uploaded-logo">
+                    <i className="v3-signage-thumb" aria-hidden="true"><Camera size={16} /></i>
+                    <span><strong>{signageFileName}</strong><small>Jointe à la commande · jamais imprimée telle quelle</small></span>
+                    <button type="button" onClick={removeSignage} aria-label="Retirer la photo d’enseigne"><X size={15} /></button>
+                  </div>
+                )}
+                {signageError && <p className="v3-upload-error" role="alert">{signageError}</p>}
+              </div>
+            )}
             <p className="v3-bat-promise"><CheckCircle2 size={15} aria-hidden="true" /><span>Un bon à tirer vous est envoyé avant impression. Rien ne part sans votre accord.</span></p>
           </div>
           <div className="v3-studio-section">

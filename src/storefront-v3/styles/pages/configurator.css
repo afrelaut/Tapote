@@ -564,3 +564,46 @@
 @media (max-width: 620px) {
   .v3-motif-picker > div { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* ---------- Photo d'enseigne ----------
+   Le client sans fichier de logo n'a pas à renoncer à son identité : il
+   photographie son enseigne, et Tapote Studio en tire un tracé qu'il valide
+   sur le bon à tirer. C'est une action concrète, pas une intention. */
+
+.v3-signage-step { margin-top: 10px; display: grid; gap: 9px; }
+
+.v3-signage-upload {
+  position: relative;
+  min-height: 52px;
+  padding: 10px 13px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #faf9f6;
+  border: 1px dashed #d5cfc4;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color .16s ease, background .16s ease, transform .12s ease;
+}
+
+.v3-signage-upload:hover { border-color: var(--v3-blue); transform: translateY(-1px); }
+.v3-signage-upload:focus-within { outline: 3px solid rgb(36 88 255 / 22%); outline-offset: 2px; }
+.v3-signage-upload input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.v3-signage-upload > svg { flex: 0 0 auto; color: #7b756b; }
+.v3-signage-upload span { display: grid; gap: 2px; min-width: 0; }
+.v3-signage-upload strong { font-size: 12px; font-weight: 750; line-height: 1.3; }
+.v3-signage-upload small { color: var(--v3-muted); font-size: 10px; line-height: 1.4; }
+
+.v3-signage-upload.is-filled { background: #eef6f0; border-style: solid; border-color: #a9d8bd; }
+.v3-signage-upload.is-filled > svg { color: #157a4d; }
+.v3-signage-upload.is-loading { opacity: .75; cursor: wait; }
+
+.v3-signage-thumb {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  color: #157a4d;
+  background: #dff0e6;
+  border-radius: 9px;
+}
