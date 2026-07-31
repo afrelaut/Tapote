@@ -179,7 +179,9 @@
   font-weight: 700;
   letter-spacing: 0.4em;
   text-transform: uppercase;
-  opacity: 0.55;
+  /* Ces mentions sont imprimées en très petit : leur opacité doit rester assez
+     haute pour tenir le seuil de contraste sur toutes les déclinaisons. */
+  opacity: 0.86;
 }
 
 .tp-insert-headline {
@@ -202,7 +204,7 @@
   max-width: 84%;
   font-size: 2.9cqw;
   line-height: 1.3;
-  opacity: 0.72;
+  opacity: 0.86;
 }
 
 .tp-insert-mark {
@@ -469,7 +471,7 @@
   letter-spacing: 0.16em;
   line-height: 1.35;
   text-transform: uppercase;
-  opacity: 0.72;
+  opacity: 0.86;
 }
 
 .tp-insert-contact {
@@ -478,7 +480,7 @@
   font-weight: 600;
   letter-spacing: 0.04em;
   line-height: 1.3;
-  opacity: 0.6;
+  opacity: 0.86;
 }
 
 .tp-insert-plaque .tp-insert-tagline { font-size: 2cqw; }
@@ -572,7 +574,7 @@
   font-weight: 700;
   letter-spacing: 0.34em;
   text-transform: uppercase;
-  opacity: 0.6;
+  opacity: 0.86;
 }
 
 /* ---------- Chevalet A6 (105 × 148 mm) ---------- */
@@ -767,3 +769,17 @@
 
 /* La mention sous le cercle ne doit jamais être rognée par la boîte du logo. */
 .tp-insert-logo .tp-motif { overflow: visible; }
+
+/* À très petite taille de rendu, l'appel « posez votre téléphone ici » pouvait
+   déborder de la moitié colorée et se retrouver en blanc sur blanc au-dessus de
+   la moitié QR. Le texte reste maintenant dans son bloc. */
+.tp-insert-nfc {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.tp-insert-nfc strong,
+.tp-insert-nfc small {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}

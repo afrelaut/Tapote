@@ -1,7 +1,6 @@
 import { ACTIONS, PRODUCTS } from "../../../shared/catalog.js";
 import { DEFAULT_THEME, normalizeHexColor, resolveThemeId } from "../../deviceThemes.js";
 import { DEFAULT_BLOCK_COLOR_MODE } from "../../storefront/actionPalettes.js";
-import { DEFAULT_MONOGRAM_SHAPE } from "../../storefront/brandMotifs.js";
 
 export const MAX_ITEM_QUANTITY = 50;
 
@@ -66,8 +65,6 @@ export function makeCartItem(productId, actionId, options = {}) {
     destinationUrl: options.destinationUrl || "",
     brandLogoId: options.brandLogoId || "",
     logoFileName: options.logoFileName || "",
-    brandMotif: options.brandMotif || DEFAULT_MONOGRAM_SHAPE,
-    logoWanted: Boolean(options.logoWanted),
     tagline: options.tagline || "",
     contactLine: options.contactLine || "",
     blockColorMode: options.blockColorMode || DEFAULT_BLOCK_COLOR_MODE,

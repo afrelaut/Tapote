@@ -717,9 +717,11 @@
     font-size: 39px;
   }
 
+  /* La vignette est volontairement en retrait, mais pas au point de faire
+     tomber le contraste du texte imprimé qu'elle contient. */
   .v3-home-use-list > a > figure {
     width: 54%;
-    opacity: .72;
+    opacity: .92;
   }
 
   .v3-home-pilot-levels > div {

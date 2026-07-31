@@ -86,7 +86,7 @@ export function PilotAppMock({ level = "pilot", compact = false }) {
             <span><small>PILOT PRO · MESURE & ANALYSE</small><strong>Comprendre ce qui fonctionne</strong></span>
             {pro
               ? <span className="pilot-mock__period"><b>7 j</b><b className="is-on">30 j</b><b>90 j</b></span>
-              : <span className="pilot-mock__price"><b>9 €</b><small>/ mois</small></span>}
+              : <span className="pilot-mock__price"><b>Option</b><small>avancée</small></span>}
           </div>
           {pro ? (
             <div className="pilot-mock__chart">

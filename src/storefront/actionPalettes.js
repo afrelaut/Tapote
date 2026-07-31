@@ -17,12 +17,16 @@ export const BLOCK_COLOR_MODES = Object.freeze({
 
 export const DEFAULT_BLOCK_COLOR_MODE = "action";
 
+// Toutes les couleurs de bloc portent du texte blanc : elles doivent donc
+// atteindre 4,5:1 de contraste. Les teintes de marque des plateformes sont
+// assombries juste assez pour rester reconnaissables et lisibles à l'impression
+// comme à l'écran.
 const TAPOTE_BLUE = Object.freeze({ block: "#2458ff", ink: "#ffffff", liseret: "#c3d2ff", label: "Bleu Tapote" });
 
 // Les dégradés restent sobres : deux ou trois arrêts, jamais de bandes franches,
 // pour rester imprimables et lisibles à 105 mm de large.
 const ACTION_PALETTES = Object.freeze({
-  avis: { block: "#4285f4", ink: "#ffffff", liseret: "#cfe0fd", label: "Bleu Google" },
+  avis: { block: "#1c5bd0", ink: "#ffffff", liseret: "#cfe0fd", label: "Bleu Google" },
   instagram: {
     block: "#c9256d",
     gradient: "linear-gradient(142deg, #7a29c9 0%, #c9256d 46%, #e8622a 78%, #f9b23c 100%)",
@@ -37,9 +41,9 @@ const ACTION_PALETTES = Object.freeze({
     liseret: "#c8ccd2",
     label: "Noir TikTok",
   },
-  facebook: { block: "#1877f2", ink: "#ffffff", liseret: "#c9dffd", label: "Bleu Facebook" },
+  facebook: { block: "#0d5fd0", ink: "#ffffff", liseret: "#c9dffd", label: "Bleu Facebook" },
   linkedin: { block: "#0a66c2", ink: "#ffffff", liseret: "#c3dcf3", label: "Bleu LinkedIn" },
-  whatsapp: { block: "#128c4a", ink: "#ffffff", liseret: "#bfe9d1", label: "Vert WhatsApp" },
+  whatsapp: { block: "#0d7a3f", ink: "#ffffff", liseret: "#bfe9d1", label: "Vert WhatsApp" },
   menu: { block: "#a8442a", ink: "#ffffff", liseret: "#f0cec3", label: "Terracotta" },
   commande: { block: "#b4400f", ink: "#ffffff", liseret: "#f3cdbb", label: "Orange brûlé" },
   reservation: { block: "#1e3a8a", ink: "#ffffff", liseret: "#c6d1ed", label: "Bleu nuit" },
@@ -78,6 +82,37 @@ export function liseretFor(color, amount = 0.74) {
   return `#${[r, g, b].map((channel) => channel.toString(16).padStart(2, "0")).join("")}`;
 }
 
+function relativeLuminance(hex) {
+  const rgb = parseHex(hex);
+  if (!rgb) return 0;
+  const [r, g, b] = rgb
+    .map((channel) => channel / 255)
+    .map((channel) => (channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4));
+  return (0.2126 * r) + (0.7152 * g) + (0.0722 * b);
+}
+
+function contrast(first, second) {
+  const a = relativeLuminance(first);
+  const b = relativeLuminance(second);
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+}
+
+// Le contraste du bloc est sécurisé sans intervention du client : on garde sa
+// couleur si elle porte du texte lisible, on choisit l'encre foncée sinon, et
+// en dernier recours on assombrit la teinte jusqu'à passer le seuil.
+function readableBlock(color) {
+  const block = parseHex(color) ? color : TAPOTE_BLUE.block;
+  if (contrast(block, "#ffffff") >= 4.5) return { block, ink: "#ffffff" };
+  if (contrast(block, "#14161c") >= 4.5) return { block, ink: "#14161c" };
+  let darkened = block;
+  for (let step = 0; step < 12; step += 1) {
+    const rgb = parseHex(darkened) || [0, 0, 0];
+    darkened = `#${rgb.map((channel) => clampChannel(channel * 0.88).toString(16).padStart(2, "0")).join("")}`;
+    if (contrast(darkened, "#ffffff") >= 4.5) break;
+  }
+  return { block: darkened, ink: "#ffffff" };
+}
+
 export function actionPalette(actionId) {
   return ACTION_PALETTES[actionId] || TAPOTE_BLUE;
 }
@@ -87,11 +122,11 @@ export function actionPaletteLabel(actionId) {
 }
 
 // Résout la couleur réellement imprimée sur le bloc d'action.
-export function resolveBlockPalette({ mode = DEFAULT_BLOCK_COLOR_MODE, actionId = "avis", brandAccent = "", brandAccentInk = "#ffffff" } = {}) {
+export function resolveBlockPalette({ mode = DEFAULT_BLOCK_COLOR_MODE, actionId = "avis", brandAccent = "" } = {}) {
   if (mode === "tapote") return { ...TAPOTE_BLUE, gradient: "" };
   if (mode === "marque") {
-    const block = brandAccent || TAPOTE_BLUE.block;
-    return { block, gradient: "", ink: brandAccentInk || "#ffffff", liseret: liseretFor(block), label: BLOCK_COLOR_MODES.marque };
+    const safe = readableBlock(brandAccent || TAPOTE_BLUE.block);
+    return { ...safe, gradient: "", liseret: liseretFor(safe.block), label: BLOCK_COLOR_MODES.marque };
   }
   const palette = actionPalette(actionId);
   return { gradient: "", ...palette };

@@ -422,7 +422,7 @@ export function PilotMarketingSection({ pageDetail = false }) {
       </div>
 
       <div className="v3-pilot-product">
-        <div className="v3-pilot-window" aria-label="Aperçu de Tapote Pilot">
+        <div className="v3-pilot-window" role="img" aria-label="Aperçu de l’application Tapote Pilot">
           <PilotAppMock level="pilot" />
         </div>
         <div className="v3-pilot-feature-rail" aria-label="Fonctions incluses de Tapote Pilot">

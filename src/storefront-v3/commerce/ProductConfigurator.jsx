@@ -8,8 +8,6 @@ import { trackStorefrontEvent } from "../../storefront/analytics.js";
 import { CONFIG_DRAFT_PREFIX, cacheLogoPreview, compositionLabel, compositionSurface, getCachedLogoPreview, getProductId, loadConfigDraft, makeCartItem } from "./cart.js";
 import { ACTION_ORDER, READY_ACTION_IDS, campaignHeadlineForAction, readyHeadlineForAction } from "../data/content.js";
 import { BLOCK_COLOR_MODES, DEFAULT_BLOCK_COLOR_MODE, actionPaletteLabel, resolveBlockPalette } from "../../storefront/actionPalettes.js";
-import { DEFAULT_MONOGRAM_SHAPE, MONOGRAM_SHAPES } from "../../storefront/brandMotifs.js";
-import { BrandMotif } from "../../storefront/BrandMotif.jsx";
 
 function CompositionPicker({ count, composition, onChange, labelId }) {
   if (count !== 2) return null;
@@ -95,8 +93,6 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
   const [customTapLabel, setCustomTapLabel] = useState(restoredDraft?.customTapLabel || "");
   const [tagline, setTagline] = useState(restoredDraft?.tagline || "");
   const [contactLine, setContactLine] = useState(restoredDraft?.contactLine || "");
-  const [brandMotif, setBrandMotif] = useState(restoredDraft?.brandMotif || DEFAULT_MONOGRAM_SHAPE);
-  const [logoWanted, setLogoWanted] = useState(Boolean(restoredDraft?.logoWanted));
   const [blockColorMode, setBlockColorMode] = useState(restoredDraft?.blockColorMode || DEFAULT_BLOCK_COLOR_MODE);
   const [destinationUrl, setDestinationUrl] = useState(restoredDraft?.destinationUrl || "");
   const [theme, setTheme] = useState(resolveThemeId(restoredDraft?.theme || initialTheme));
@@ -191,15 +187,14 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
   };
   const previewSurface = compositionSurface(safeCount, composition, surface);
   useEffect(() => {
-    onPreviewChange?.({ surface: previewSurface, baseSurface: surface, actionId, brandName: previewBrandName, brandLogo: previewBrandLogo, brandMotif,
-      logoWanted, tagline: personalization === "custom" ? tagline : "", contactLine: personalization === "custom" ? contactLine : "", blockColorMode, theme, primaryColor: previewPrimaryColor, secondaryColor: previewSecondaryColor, textColor: previewTextColor, customHeadline: previewHeadline, customSubline: personalization === "custom" ? customSubline : "", customTapLabel: personalization === "custom" ? customTapLabel : "", personalization, count: safeCount, composition, productId, productName: product.name, price: product.price });
-  }, [actionId, blockColorMode, brandMotif, logoWanted, composition, contactLine, customSubline, customTapLabel, onPreviewChange, personalization, previewBrandLogo, previewBrandName, previewHeadline, previewPrimaryColor, previewSecondaryColor, previewSurface, previewTextColor, product.name, product.price, productId, safeCount, surface, tagline, theme]);
+    onPreviewChange?.({ surface: previewSurface, baseSurface: surface, actionId, brandName: previewBrandName, brandLogo: previewBrandLogo, tagline: personalization === "custom" ? tagline : "", contactLine: personalization === "custom" ? contactLine : "", blockColorMode, theme, primaryColor: previewPrimaryColor, secondaryColor: previewSecondaryColor, textColor: previewTextColor, customHeadline: previewHeadline, customSubline: personalization === "custom" ? customSubline : "", customTapLabel: personalization === "custom" ? customTapLabel : "", personalization, count: safeCount, composition, productId, productName: product.name, price: product.price });
+  }, [actionId, blockColorMode, composition, contactLine, customSubline, customTapLabel, onPreviewChange, personalization, previewBrandLogo, previewBrandName, previewHeadline, previewPrimaryColor, previewSecondaryColor, previewSurface, previewTextColor, product.name, product.price, productId, safeCount, surface, tagline, theme]);
   useEffect(() => {
     if (!draftKey || personalization !== "custom") return;
     try {
-      window.sessionStorage.setItem(`${CONFIG_DRAFT_PREFIX}${draftKey}`, JSON.stringify({ actionId, count: safeCount, composition, brandName, brandLogoId, logoFileName, brandMotif, logoWanted, tagline, contactLine, blockColorMode, theme, customHeadline, customSubline, customTapLabel, destinationUrl, primaryColor, secondaryColor, textColor }));
+      window.sessionStorage.setItem(`${CONFIG_DRAFT_PREFIX}${draftKey}`, JSON.stringify({ actionId, count: safeCount, composition, brandName, brandLogoId, logoFileName, tagline, contactLine, blockColorMode, theme, customHeadline, customSubline, customTapLabel, destinationUrl, primaryColor, secondaryColor, textColor }));
     } catch { /* A full browser storage area must never block configuration or checkout. */ }
-  }, [actionId, blockColorMode, brandMotif, logoWanted, brandLogoId, brandName, composition, contactLine, customHeadline, customSubline, customTapLabel, destinationUrl, draftKey, logoFileName, personalization, primaryColor, safeCount, secondaryColor, tagline, textColor, theme]);
+  }, [actionId, blockColorMode, brandLogoId, brandName, composition, contactLine, customHeadline, customSubline, customTapLabel, destinationUrl, draftKey, logoFileName, personalization, primaryColor, safeCount, secondaryColor, tagline, textColor, theme]);
   const selectCount = (value) => {
     markConfigurationStarted();
     setCount(value);
@@ -276,8 +271,6 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
       brandName: personalization === "custom" ? brandName : "",
       brandLogoId: personalization === "custom" ? brandLogoId : "",
       logoFileName: personalization === "custom" ? logoFileName : "",
-      brandMotif,
-      logoWanted,
       tagline: personalization === "custom" ? tagline : "",
       contactLine: personalization === "custom" ? contactLine : "",
       blockColorMode,
@@ -409,47 +402,6 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
             </div>
             {brandLogo && <div className="v3-uploaded-logo"><img src={brandLogo} alt="Aperçu du logo importé" /><span><strong>{logoFileName}</strong><small>{logoStatus === "success" ? "Affiché dans l’aperçu" : "À retransmettre"}</small></span><button type="button" onClick={removeLogo} aria-label="Retirer le logo"><X size={15} /></button></div>}
             {logoError && <p className="v3-upload-error" role="alert">{logoError} Retirez le fichier pour continuer sans logo.</p>}
-            {/* Trois portes, pas une grille de pastilles : le client a un logo,
-                il n'en a pas, ou il veut qu'on le lui dessine. Le reste du
-                parcours ne bouge pas selon la porte choisie. */}
-            {!brandLogo && (
-              <div className="v3-identity-route" role="group" aria-label="Votre identité imprimée">
-                <button
-                  type="button"
-                  className={!logoWanted && brandMotif ? "is-selected" : ""}
-                  aria-pressed={!logoWanted && Boolean(brandMotif)}
-                  onClick={() => { markConfigurationStarted(); setLogoWanted(false); setBrandMotif(brandMotif || DEFAULT_MONOGRAM_SHAPE); }}
-                >
-                  <BrandMotif shape={brandMotif || DEFAULT_MONOGRAM_SHAPE} brandName={brandName} />
-                  <span><strong>Monogramme</strong><small>Vos initiales, prêtes tout de suite</small></span>
-                </button>
-                <button
-                  type="button"
-                  className={logoWanted ? "is-selected" : ""}
-                  aria-pressed={logoWanted}
-                  onClick={() => { markConfigurationStarted(); setLogoWanted(true); }}
-                >
-                  <Sparkles aria-hidden="true" />
-                  <span><strong>Dessinez-le pour moi</strong><small>Un tracé proposé avec votre BAT</small></span>
-                </button>
-              </div>
-            )}
-            {!brandLogo && !logoWanted && (
-              <div className="v3-monogram-shapes" role="group" aria-label="Forme du monogramme">
-                {Object.entries(MONOGRAM_SHAPES).map(([shapeId, shape]) => (
-                  <button
-                    type="button"
-                    key={shapeId}
-                    className={brandMotif === shapeId ? "is-selected" : ""}
-                    aria-pressed={brandMotif === shapeId}
-                    aria-label={`Monogramme ${shape.label}`}
-                    onClick={() => { markConfigurationStarted(); setBrandMotif(shapeId); }}
-                  >
-                    <BrandMotif shape={shapeId} brandName={brandName} />
-                  </button>
-                ))}
-              </div>
-            )}
             <p className="v3-bat-promise"><CheckCircle2 size={15} aria-hidden="true" /><span>Un bon à tirer vous est envoyé avant impression. Rien ne part sans votre accord.</span></p>
           </div>
           <div className="v3-studio-section">
