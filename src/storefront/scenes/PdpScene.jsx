@@ -4,18 +4,30 @@ import DeviceFrame from "./DeviceFrame.jsx";
 import ProductStudio3D from "./ProductStudio3D.jsx";
 import { SCENE_BUDGETS } from "./sceneBudgets.js";
 
-// Coins de la vitre du téléphone, en fractions de la scène. Les sept décors
-// composités partagent la même découpe main + téléphone : ils partagent donc le
-// même quadrilatère, mesuré sur l'image de la découpe et non recopié à l'œil.
-const PHONE_SCREEN_QUADS = Object.freeze({
+// Géométrie du verre photographié, reprise de la version en production.
+//
+// Le quadrilatère donne la perspective ; le chemin arrondi qui en découle
+// découpe l'écran sur la silhouette réelle de la vitre, coins compris. Sans
+// cette découpe, la moindre imprécision laisse l'interface déborder sur le
+// biseau ou sur la main.
+
+const PHONE_SCREEN_QUADS = {
+  // Four measured intersections of the photographed glass edges. Keeping the
+  // full quadrilateral (instead of approximating its centre) makes both the
+  // browser chrome and the home indicator parallel to the physical phone.
   "/assets/products/tapote-bg-restaurant-live-screen-v1.webp": [[0.46709, 0.25773], [0.69149, 0.21130], [0.95828, 0.69250], [0.71273, 0.77095]],
-  "/assets/products/tapote-bg-cafe-empty-v3.png": [[0.48850, 0.27000], [0.69050, 0.23350], [0.93450, 0.68000], [0.71150, 0.75150]],
-  "/assets/products/tapote-bg-boulangerie-empty-v2.png": [[0.48850, 0.27000], [0.69050, 0.23350], [0.93450, 0.68000], [0.71150, 0.75150]],
-  "/assets/products/tapote-bg-agence-empty-v2.png": [[0.48850, 0.27000], [0.69050, 0.23350], [0.93450, 0.68000], [0.71150, 0.75150]],
-  "/assets/products/tapote-bg-sport-empty-v2.png": [[0.48850, 0.27000], [0.69050, 0.23350], [0.93450, 0.68000], [0.71150, 0.75150]],
-  "/assets/products/tapote-bg-evenement-empty-v2.png": [[0.48850, 0.27000], [0.69050, 0.23350], [0.93450, 0.68000], [0.71150, 0.75150]],
-  "/assets/products/tapote-bg-formation-empty-v2.png": [[0.48850, 0.27000], [0.69050, 0.23350], [0.93450, 0.68000], [0.71150, 0.75150]],
-  "/assets/products/tapote-bg-beaute-empty-v2.png": [[0.48850, 0.27000], [0.69050, 0.23350], [0.93450, 0.68000], [0.71150, 0.75150]],
+  "/assets/products/tapote-bg-cafe-empty-v3.png": [[0.46709, 0.25773], [0.69149, 0.21130], [0.95828, 0.69250], [0.71273, 0.77095]],
+  "/assets/products/tapote-bg-boulangerie-empty-v2.png": [[0.46709, 0.25773], [0.69149, 0.21130], [0.95828, 0.69250], [0.71273, 0.77095]],
+  "/assets/products/tapote-bg-agence-empty-v2.png": [[0.46709, 0.25773], [0.69149, 0.21130], [0.95828, 0.69250], [0.71273, 0.77095]],
+  "/assets/products/tapote-bg-sport-empty-v2.png": [[0.46709, 0.25773], [0.69149, 0.21130], [0.95828, 0.69250], [0.71273, 0.77095]],
+  "/assets/products/tapote-bg-evenement-empty-v2.png": [[0.46709, 0.25773], [0.69149, 0.21130], [0.95828, 0.69250], [0.71273, 0.77095]],
+  // La scène Coworking réutilise volontairement les pixels et la géométrie
+  // du téléphone Restaurant, superposés sur son propre fond vide.
+  "/assets/products/tapote-bg-formation-empty-v2.png": [[0.46709, 0.25773], [0.69149, 0.21130], [0.95828, 0.69250], [0.71273, 0.77095]],
+  // Contrairement aux autres scènes, le téléphone Café est davantage tourné
+  // et ses quatre bords ne convergent pas autour d'un simple rectangle incliné.
+  // Ces intersections suivent précisément la limite verre / écran de la photo :
+  // toute l'interface partage ainsi le même cadrage, quelle que soit la destination.
   "/assets/products/tapote-bg-cafe-v1.webp": [[0.481659, 0.261563], [0.708932, 0.215311], [0.996810, 0.719298], [0.716906, 0.779904]],
   "/assets/products/tapote-bg-cafe-restaurant-phone-v2.webp": [[0.4872, 0.2720], [0.7105, 0.2290], [0.9848, 0.7177], [0.7273, 0.7735]],
   "/assets/products/tapote-bg-restaurant-v1.webp": [[0.474478, 0.257134], [0.687755, 0.205264], [0.959916, 0.682301], [0.697377, 0.780543]],
@@ -27,12 +39,159 @@ const PHONE_SCREEN_QUADS = Object.freeze({
   "/assets/products/tapote-bg-auto-ecole-v1.webp": [[0.500609, 0.276762], [0.739021, 0.239813], [0.977707, 0.727795], [0.723370, 0.814768]],
   "/assets/products/tapote-bg-automobile-v1.webp": [[0.508017, 0.259777], [0.728628, 0.221889], [0.967728, 0.711728], [0.724802, 0.789559]],
   "/assets/products/tapote-bg-artisan-v1.webp": [[0.497336, 0.248034], [0.727057, 0.210598], [0.976482, 0.723398], [0.723725, 0.800895]],
-  "/assets/products/tapote-bg-agence-v1.webp": [[0.498484, 0.250929], [0.728625, 0.21538], [0.964823, 0.692531], [0.717898, 0.780191]],
+  "/assets/products/tapote-bg-agence-v1.webp": [[0.498484, 0.250929], [0.728625, 0.215380], [0.964823, 0.692531], [0.717898, 0.780191]],
   "/assets/products/tapote-bg-sport-v1.webp": [[0.500117, 0.254376], [0.730542, 0.219908], [0.967212, 0.708945], [0.714041, 0.788721]],
-  "/assets/products/tapote-bg-formation-v1.webp": [[0.50309, 0.252974], [0.732562, 0.215909], [0.975399, 0.708791], [0.721353, 0.782529]],
+  "/assets/products/tapote-bg-formation-v1.webp": [[0.503090, 0.252974], [0.732562, 0.215909], [0.975399, 0.708791], [0.721353, 0.782529]],
   "/assets/products/tapote-bg-evenement-v1.webp": [[0.503473, 0.253848], [0.734066, 0.218198], [0.965786, 0.696765], [0.716194, 0.782694]],
   "/assets/products/tapote-bg-animaux-v1.webp": [[0.472355, 0.285801], [0.685404, 0.230525], [0.936727, 0.674057], [0.708341, 0.757322]],
-});
+};
+
+const PHONE_SCREEN_CLIP_RADII = {
+  // Le téléphone de la scène Café remonte plus vite sur son coin inférieur
+  // gauche que celui du restaurant. Une valeur dédiée évite que l'écran
+  // dynamique dépasse du verre sans modifier son haut, déjà correctement calé.
+  "/assets/products/tapote-bg-cafe-v1.webp": [60, 60, 106, 76],
+  "/assets/products/tapote-bg-cafe-restaurant-phone-v2.webp": [60, 60, 90, 90],
+  "/assets/products/tapote-bg-cafe-empty-v3.png": [60, 60, 82, 76],
+  "/assets/products/tapote-bg-boulangerie-empty-v2.png": [60, 60, 82, 76],
+  "/assets/products/tapote-bg-agence-empty-v2.png": [60, 60, 82, 76],
+  "/assets/products/tapote-bg-sport-empty-v2.png": [60, 60, 82, 76],
+  "/assets/products/tapote-bg-evenement-empty-v2.png": [60, 60, 82, 76],
+  "/assets/products/tapote-bg-formation-empty-v2.png": [60, 60, 82, 76],
+  "/assets/products/tapote-bg-restaurant-v1.webp": [60, 60, 80, 118],
+  "/assets/products/tapote-bg-boulangerie-v1.webp": [60, 60, 95, 79],
+  "/assets/products/tapote-bg-beaute-v1.webp": [60, 60, 90, 83.5],
+  "/assets/products/tapote-bg-medical-v1.webp": [58, 58, 62, 75],
+  "/assets/products/tapote-bg-retail-v1.webp": [60, 60, 88, 79],
+  "/assets/products/tapote-bg-hotel-v1.webp": [58, 58, 69, 58],
+  "/assets/products/tapote-bg-auto-ecole-v1.webp": [60, 60, 105, 81],
+  "/assets/products/tapote-bg-automobile-v1.webp": [58, 58, 77, 59],
+  "/assets/products/tapote-bg-artisan-v1.webp": [54, 54, 67, 55],
+  "/assets/products/tapote-bg-agence-v1.webp": [60, 60, 92, 76],
+  "/assets/products/tapote-bg-sport-v1.webp": [60, 60, 108, 77],
+  "/assets/products/tapote-bg-formation-v1.webp": [60, 60, 95, 58],
+  "/assets/products/tapote-bg-evenement-v1.webp": [60, 60, 92, 83],
+  "/assets/products/tapote-bg-animaux-v1.webp": [58, 58, 70, 77],
+};
+
+// Local control-point corrections for generated glass whose photographed
+// rounded corner does not converge on the mathematical edge intersection.
+// Values are photo pixels and affect only the curve, not the app perspective.
+const PHONE_SCREEN_CLIP_CONTROL_OFFSETS = {
+  "/assets/products/tapote-bg-cafe-v1.webp": { br: [-8, -4] },
+  "/assets/products/tapote-bg-beaute-v1.webp": { br: [-1.5, 7.25] },
+  "/assets/products/tapote-bg-agence-v1.webp": { br: [-0.25, 7.25] },
+  "/assets/products/tapote-bg-sport-v1.webp": { br: [-18.25, 3.25] },
+  "/assets/products/tapote-bg-formation-v1.webp": { br: [-8, 0] },
+};
+
+function roundedPhoneClipPath(sceneImage) {
+  const quad = PHONE_SCREEN_QUADS[sceneImage];
+  if (!quad) return "";
+  const [tl, tr, br, bl] = quad.map(([x, y]) => [x * 1254, y * 1254]);
+  const [tlRadius, trRadius, brRadius, blRadius] = PHONE_SCREEN_CLIP_RADII[sceneImage] || [60, 60, 82, 76];
+  const controlOffsets = PHONE_SCREEN_CLIP_CONTROL_OFFSETS[sceneImage] || {};
+  const shifted = ([x, y], [dx = 0, dy = 0] = []) => [x + dx, y + dy];
+  const tlControl = shifted(tl, controlOffsets.tl);
+  const trControl = shifted(tr, controlOffsets.tr);
+  const brControl = shifted(br, controlOffsets.br);
+  const blControl = shifted(bl, controlOffsets.bl);
+  const along = ([ax, ay], [bx, by], amount) => [ax + ((bx - ax) * amount), ay + ((by - ay) * amount)];
+  const topStart = along(tl, tr, tlRadius / 390);
+  const topEnd = along(tr, tl, trRadius / 390);
+  const rightStart = along(tr, br, trRadius / 844);
+  const rightEnd = along(br, tr, brRadius / 844);
+  const bottomStart = along(br, bl, brRadius / 390);
+  const bottomEnd = along(bl, br, blRadius / 390);
+  const leftStart = along(bl, tl, blRadius / 844);
+  const leftEnd = along(tl, bl, tlRadius / 844);
+  const point = ([x, y]) => `${x.toFixed(2)} ${y.toFixed(2)}`;
+  return [
+    `M ${point(topStart)}`,
+    `L ${point(topEnd)}`,
+    `Q ${point(trControl)} ${point(rightStart)}`,
+    `L ${point(rightEnd)}`,
+    `Q ${point(brControl)} ${point(bottomStart)}`,
+    `L ${point(bottomEnd)}`,
+    `Q ${point(blControl)} ${point(leftStart)}`,
+    `L ${point(leftEnd)}`,
+    `Q ${point(tlControl)} ${point(topStart)}`,
+    "Z",
+  ].join(" ");
+}
+
+function samplePhonePath(pathData) {
+  const tokens = String(pathData || "").match(/[MLQCZ]|-?(?:\d+\.?\d*|\.\d+)/g) || [];
+  if (!tokens.length) return [];
+  const points = [];
+  let index = 0;
+  let current = [0, 0];
+  let start = [0, 0];
+  const number = () => Number(tokens[index++]);
+  const addPoint = (point) => {
+    if (point.every(Number.isFinite)) points.push(point);
+  };
+  const sampleQuadratic = (from, control, to, steps = 10) => {
+    for (let step = 1; step <= steps; step += 1) {
+      const t = step / steps;
+      const inverse = 1 - t;
+      addPoint([
+        (inverse * inverse * from[0]) + (2 * inverse * t * control[0]) + (t * t * to[0]),
+        (inverse * inverse * from[1]) + (2 * inverse * t * control[1]) + (t * t * to[1]),
+      ]);
+    }
+  };
+  const sampleCubic = (from, firstControl, secondControl, to, steps = 14) => {
+    for (let step = 1; step <= steps; step += 1) {
+      const t = step / steps;
+      const inverse = 1 - t;
+      addPoint([
+        (inverse ** 3 * from[0]) + (3 * inverse * inverse * t * firstControl[0]) + (3 * inverse * t * t * secondControl[0]) + (t ** 3 * to[0]),
+        (inverse ** 3 * from[1]) + (3 * inverse * inverse * t * firstControl[1]) + (3 * inverse * t * t * secondControl[1]) + (t ** 3 * to[1]),
+      ]);
+    }
+  };
+
+  while (index < tokens.length) {
+    const command = tokens[index++];
+    if (command === "M") {
+      current = [number(), number()];
+      start = current;
+      addPoint(current);
+    } else if (command === "L") {
+      current = [number(), number()];
+      addPoint(current);
+    } else if (command === "Q") {
+      const control = [number(), number()];
+      const destination = [number(), number()];
+      sampleQuadratic(current, control, destination);
+      current = destination;
+    } else if (command === "C") {
+      const firstControl = [number(), number()];
+      const secondControl = [number(), number()];
+      const destination = [number(), number()];
+      sampleCubic(current, firstControl, secondControl, destination);
+      current = destination;
+    } else if (command === "Z") {
+      current = start;
+    } else {
+      return [];
+    }
+  }
+
+  return points.length < 4 ? [] : points;
+}
+
+// Le masque est exprimé en pixels de la scène, pas en pourcentages : c'est la
+// seule façon de rester juste quand le cadre n'est pas carré et que la photo
+// est recadrée par `object-fit: cover`.
+function phoneClipPolygon(pathData, width, height) {
+  const points = samplePhonePath(pathData);
+  if (!points.length) return "none";
+  const { size, offsetX, offsetY } = coverProjection(width, height);
+  const asPixels = ([x, y]) => `${(offsetX + ((x / 1254) * size)).toFixed(2)}px ${(offsetY + ((y / 1254) * size)).toFixed(2)}px`;
+  return `polygon(${points.map(asPixels).join(", ")})`;
+}
 
 function adjugate3(matrix) {
   return [
@@ -125,21 +284,29 @@ export default function PdpScene({
   useLayoutEffect(() => {
     if (activeView !== "context") return undefined;
     const stage = sceneRef.current?.querySelector(".v3-sector-scene-stage");
+    const frame = sceneRef.current?.querySelector(".tapote-device-frame");
     const screen = sceneRef.current?.querySelector(".tapote-device__screen");
-    if (!stage || !screen) return undefined;
+    if (!stage || !screen || !frame) return undefined;
     if (!destinationQuad) {
       screen.style.transform = "";
+      frame.style.clipPath = "";
       return undefined;
     }
+    const glassPath = roundedPhoneClipPath(image);
     const positionDevice = () => {
       const { width, height } = stage.getBoundingClientRect();
-      if (width && height) screen.style.transform = phoneMatrix3d(destinationQuad, width, height);
+      if (!width || !height) return;
+      screen.style.transform = phoneMatrix3d(destinationQuad, width, height);
+      // La découpe suit la silhouette photographiée du verre : aucune surface
+      // de l'application ne peut passer par-dessus le biseau ou la main.
+      const clip = phoneClipPolygon(glassPath, width, height);
+      frame.style.clipPath = clip === "none" ? "" : clip;
     };
     positionDevice();
     const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(positionDevice);
     observer?.observe(stage);
     return () => observer?.disconnect();
-  }, [activeView, destinationQuad, preview.actionId]);
+  }, [activeView, destinationQuad, image, preview.actionId]);
 
   return (
     <div
