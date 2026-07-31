@@ -145,8 +145,11 @@
   line-height: 1.35;
 }
 
+/* Le sélecteur occupe toute la largeur de l'étape, comme le choix de l'action
+   et celui du mode : trois lignes alignées valent mieux qu'un contrôle isolé au
+   milieu d'un vide. */
 .v3-pdp .v3-quantity-choice {
-  width: min(100%, 330px);
+  width: 100%;
   margin-top: 0;
   padding: 4px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1488,3 +1491,28 @@
     height: 64px;
   }
 }
+
+/* L'étape facultative annonce ce qu'elle contient et réagit au survol comme
+   les autres contrôles du configurateur. */
+.v3-pdp .v3-destination-details summary {
+  min-height: 56px;
+  transition: border-color .16s ease, background .16s ease;
+}
+
+.v3-pdp .v3-destination-details summary > span {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.v3-pdp .v3-destination-details summary strong { font-size: 13px; }
+
+.v3-pdp .v3-destination-details summary small {
+  color: var(--v3-muted);
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.v3-pdp .v3-destination-details summary:hover { background: #f2efe9; }
+.v3-pdp .v3-destination-details[open] summary > b { transform: rotate(45deg); }
+.v3-pdp .v3-destination-details summary > b { transition: transform .18s ease; }

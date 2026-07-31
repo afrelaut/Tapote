@@ -215,14 +215,14 @@
 }
 
 .v3-ready-design-heading > span {
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 820;
 }
 
 .v3-ready-design-heading small {
   color: var(--v3-muted);
-  font-size: 7px;
-  line-height: 1.3;
+  font-size: 10px;
+  line-height: 1.35;
 }
 
 .v3-ready-design-choice {

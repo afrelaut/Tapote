@@ -33,7 +33,8 @@ function ReadyDesignPicker({ onChange, theme }) {
   return (
     <div className="v3-ready-design-panel">
       <div className="v3-ready-design-heading">
-        <span>Couleur du modèle</span>
+        <span>Couleur du support</span>
+        <small>Deux déclinaisons du design Tapote</small>
       </div>
       <div className="v3-ready-design-choice" role="group" aria-label="Choisir le modèle Tapote prêt à poser">
         {Object.keys(DEVICE_THEMES).map((themeId) => {
@@ -360,7 +361,7 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
           <details className={`v3-destination-details ${destinationInvalid ? "is-invalid" : ""}`} open={Boolean(destinationUrl)}>
             <summary>
               <Globe2 size={16} aria-hidden="true" />
-              <span><strong>Lien exact</strong></span>
+              <span><strong>Préciser l’adresse exacte</strong><small>Facultatif — vous pouvez aussi nous l’envoyer après la commande</small></span>
               <b aria-hidden="true">+</b>
             </summary>
             <label className={`v3-destination-field ${destinationInvalid ? "is-invalid" : ""}`}><span><input type="url" value={destinationUrl} onFocus={markConfigurationStarted} onChange={(event) => setDestinationUrl(event.target.value.slice(0, 500))} placeholder="https://votre-lien.fr" aria-label="Adresse exacte à ouvrir" />{destinationInvalid && <small>Le lien doit commencer par https://</small>}</span></label>
@@ -373,10 +374,10 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
         <span className="v3-field-label" id={designLabelId}><b>{designStep}</b><span>Mode</span></span>
         {!lockPersonalization && <div className="v3-design-choice">
           <button type="button" aria-pressed={personalization === "ready"} className={personalization === "ready" ? "is-selected" : ""} onClick={() => selectPersonalization("ready")}>
-            <span><strong>Prêt à poser</strong><small>Design Tapote</small></span>
+            <span><strong>Prêt à poser</strong><small>Le design Tapote, livré tel quel</small></span>
           </button>
           <button type="button" aria-pressed={personalization === "custom"} className={personalization === "custom" ? "is-selected" : ""} onClick={() => selectPersonalization("custom")}>
-            <span><strong>À votre image</strong><small>Logo et couleurs</small></span>
+            <span><strong>À votre image</strong><small>Votre logo, vos couleurs, vos textes</small></span>
           </button>
         </div>}
         {personalization === "ready" && (
