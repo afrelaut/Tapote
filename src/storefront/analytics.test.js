@@ -41,4 +41,17 @@ describe("storefront analytics bridge", () => {
     ]);
     expect(listener).toHaveBeenCalledOnce();
   });
+
+  it("queues events even before an analytics provider is loaded", () => {
+    delete window.dataLayer;
+
+    trackStorefrontEvent("view_item", { product_id: "comptoir_standard" });
+
+    expect(window.dataLayer).toEqual([
+      expect.objectContaining({
+        event: "view_item",
+        product_id: "comptoir_standard",
+      }),
+    ]);
+  });
 });

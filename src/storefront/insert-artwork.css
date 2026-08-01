@@ -24,6 +24,96 @@
   text-align: center;
 }
 
+/* ---------- Aperçu neutre « votre design ici » ----------
+   Utilisé uniquement dans la fiche d’un produit personnalisable. Il montre
+   clairement la surface imprimable sans faire croire qu’un BAT existe déjà. */
+
+.tp-insert-placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #f4f6ff;
+  background:
+    radial-gradient(circle at 78% 18%, rgb(49 96 255 / 23%), transparent 34%),
+    linear-gradient(145deg, #11141b, #080a0f 72%);
+}
+
+.tp-insert-placeholder::before {
+  content: "";
+  position: absolute;
+  inset: 4.4cqw;
+  border: .25cqw solid rgb(255 255 255 / 13%);
+  border-radius: 2.8cqw;
+}
+
+.tp-insert-placeholder-brand {
+  position: absolute;
+  left: 7cqw;
+  top: 6cqw;
+  color: #fff;
+  font-size: 3.1cqw;
+  font-weight: 850;
+  letter-spacing: -.04em;
+}
+
+.tp-insert-placeholder > div {
+  display: grid;
+  justify-items: center;
+  gap: .25cqw;
+  transform: rotate(-2deg);
+}
+
+.tp-insert-placeholder > div small {
+  color: #a9bbff;
+  font-size: 4.2cqw;
+  font-weight: 900;
+  letter-spacing: .17em;
+}
+
+.tp-insert-placeholder > div strong {
+  color: #fff;
+  font-family: "Archivo Black", "Archivo", sans-serif;
+  font-size: 13.8cqw;
+  line-height: .86;
+  letter-spacing: -.065em;
+}
+
+.tp-insert-placeholder > i {
+  position: absolute;
+  width: 7.2cqw;
+  height: 7.2cqw;
+  border-color: #6d8dff;
+  border-style: solid;
+}
+
+.tp-insert-placeholder > i.is-top-left { left: 7cqw; top: 16cqw; border-width: .7cqw 0 0 .7cqw; }
+.tp-insert-placeholder > i.is-top-right { right: 7cqw; top: 16cqw; border-width: .7cqw .7cqw 0 0; }
+.tp-insert-placeholder > i.is-bottom-left { left: 7cqw; bottom: 16cqw; border-width: 0 0 .7cqw .7cqw; }
+.tp-insert-placeholder > i.is-bottom-right { right: 7cqw; bottom: 16cqw; border-width: 0 .7cqw .7cqw 0; }
+
+.tp-insert-placeholder footer {
+  position: absolute;
+  right: 7cqw;
+  bottom: 6cqw;
+  display: flex;
+  align-items: center;
+  gap: 1.5cqw;
+  color: #a9bbff;
+}
+
+.tp-insert-placeholder footer .tp-insert-nfc-icon { width: 6cqw; height: 6cqw; }
+.tp-insert-placeholder footer b { font-size: 1.8cqw; letter-spacing: .12em; }
+
+.tp-insert-carte .tp-insert-placeholder-brand { top: 5cqw; }
+.tp-insert-carte .tp-insert-placeholder > div { grid-template-columns: auto auto auto; gap: 1.5cqw; }
+.tp-insert-carte .tp-insert-placeholder > div small { font-size: 3.8cqw; }
+.tp-insert-carte .tp-insert-placeholder > div strong { font-size: 10.2cqw; }
+.tp-insert-carte .tp-insert-placeholder > i.is-top-left,
+.tp-insert-carte .tp-insert-placeholder > i.is-top-right { top: 12cqw; }
+.tp-insert-carte .tp-insert-placeholder > i.is-bottom-left,
+.tp-insert-carte .tp-insert-placeholder > i.is-bottom-right { bottom: 12cqw; }
+
 /* ---------- En-tête : emplacement logo + nom du commerce ---------- */
 
 .tp-insert-head {
@@ -89,7 +179,9 @@
   font-weight: 700;
   letter-spacing: 0.4em;
   text-transform: uppercase;
-  opacity: 0.55;
+  /* Ces mentions sont imprimées en très petit : leur opacité doit rester assez
+     haute pour tenir le seuil de contraste sur toutes les déclinaisons. */
+  opacity: 0.86;
 }
 
 .tp-insert-headline {
@@ -112,7 +204,7 @@
   max-width: 84%;
   font-size: 2.9cqw;
   line-height: 1.3;
-  opacity: 0.72;
+  opacity: 0.86;
 }
 
 .tp-insert-mark {
@@ -316,14 +408,86 @@
 
 /* ---------- Bloc action : la zone NFC et le QR ---------- */
 
+/* Bloc d'action : sa couleur vient de la source choisie (Tapote, marque ou
+   service) et son liseré imprimé le décolle du fond, comme sur les supports
+   livrés. */
 .tp-insert-action {
+  position: relative;
   display: flex;
   align-items: stretch;
   width: 81.5cqw;
-  color: var(--insert-accent-ink);
-  background: var(--insert-accent);
+  overflow: hidden;
+  color: var(--insert-block-ink, #fff);
+  background: transparent;
   border-radius: 4.2cqw;
+  box-shadow: 0 0 0 0.9cqw var(--insert-block-liseret, transparent);
 }
+
+/* La moitié NFC porte la couleur ; la moitié QR reste blanche pour que le code
+   soit toujours noir sur blanc, quelle que soit la couleur choisie. */
+.tp-insert-nfc {
+  color: var(--insert-block-ink, #fff);
+  background-color: var(--insert-block, var(--insert-accent));
+  background-image: var(--insert-block-image, none);
+}
+
+.tp-insert-qr {
+  color: #141414;
+  background: #fff;
+}
+
+.tp-insert-qr strong,
+.tp-insert-qr small,
+.tp-insert-nfc strong,
+.tp-insert-nfc small {
+  color: inherit;
+}
+
+/* Filigrane : le logo du client, posé en haut et centré, contenu dans la zone
+   imprimable. Il habille le fond sans jamais rogner ni sortir du support. */
+.tp-insert-watermark {
+  position: absolute;
+  z-index: 0;
+  top: 7cqw;
+  left: 50%;
+  width: 62cqw;
+  height: 62cqw;
+  transform: translateX(-50%);
+  background-image: var(--insert-watermark);
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-size: contain;
+  opacity: 0.09;
+  pointer-events: none;
+}
+
+.tp-insert-body { position: relative; z-index: 1; }
+
+/* Phrase métier et ligne de contact, sous le nom du commerce. */
+.tp-insert-tagline {
+  max-width: 92%;
+  font-size: 2.2cqw;
+  font-weight: 650;
+  letter-spacing: 0.16em;
+  line-height: 1.35;
+  text-transform: uppercase;
+  opacity: 0.86;
+}
+
+.tp-insert-contact {
+  max-width: 92%;
+  font-size: 2.1cqw;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.3;
+  opacity: 0.86;
+}
+
+.tp-insert-plaque .tp-insert-tagline { font-size: 2cqw; }
+.tp-insert-plaque .tp-insert-contact { font-size: 1.9cqw; }
+.tp-insert-carte .tp-insert-tagline,
+.tp-insert-carte .tp-insert-contact { display: none; }
+.tp-insert-carte .tp-insert-watermark { top: 4cqw; width: 34cqw; height: 34cqw; }
 
 .tp-insert-nfc,
 .tp-insert-qr {
@@ -339,7 +503,7 @@
 
 .tp-insert-qr {
   flex: 0 0 40%;
-  border-left: 0.2cqw solid color-mix(in srgb, var(--insert-accent-ink) 28%, transparent);
+  border-left: 0.2cqw solid rgb(255 255 255 / 28%);
 }
 
 .tp-insert-nfc-icon {
@@ -385,8 +549,6 @@
 }
 
 .tp-insert.is-ready .tp-insert-nfc {
-  color: #fff;
-  background: linear-gradient(145deg, #3b6bff, var(--insert-accent) 72%);
   border-radius: 4.2cqw 0 0 4.2cqw;
 }
 
@@ -399,7 +561,7 @@
 }
 
 .tp-insert.is-ready .tp-insert-qr small {
-  color: #5d5d5d;
+  color: #3f3f3f;
   opacity: 1;
 }
 
@@ -412,14 +574,32 @@
   font-weight: 700;
   letter-spacing: 0.34em;
   text-transform: uppercase;
-  opacity: 0.6;
+  opacity: 0.86;
 }
 
 /* ---------- Chevalet A6 (105 × 148 mm) ---------- */
 
+/* Rythme vertical : l'emplacement logo tient le haut, le bloc d'accroche est
+   optiquement centré, le bloc d'action et la signature tiennent le bas. La
+   répartition uniforme laissait un vide entre l'accroche et l'action. */
 .tp-insert-chevalet .tp-insert-body {
   padding: 5.5cqw 5cqw 4.5cqw;
   justify-content: space-between;
+}
+
+/* Le bloc d'accroche absorbe l'espace libre et s'y centre : sans cela, un vide
+   asymétrique se creusait entre la phrase d'accroche et le bloc d'action. */
+.tp-insert-chevalet .tp-insert-copy {
+  flex: 1;
+  justify-content: center;
+  /* Le liseré du bloc d'action déborde de sa boîte : sans cette garde, la
+     phrase secondaire venait s'y poser dessus. */
+  padding-bottom: 3.4cqw;
+}
+
+/* Respiration entre le bloc d'action et la signature de bas de page. */
+.tp-insert-chevalet .tp-insert-action {
+  margin-bottom: 3.4cqw;
 }
 
 /* ---------- Plaque 12 × 12 (format carré, tout est plus ramassé) ---------- */
@@ -551,6 +731,22 @@
   letter-spacing: -0.02em;
 }
 
+.tp-brand-mark.is-placeholder svg {
+  stroke-width: 1.4;
+  opacity: .72;
+}
+
+.tp-brand-mark.is-placeholder rect {
+  stroke-dasharray: 3 3;
+}
+
+.tp-brand-mark.is-placeholder text {
+  font-family: "Archivo", sans-serif;
+  font-size: 6px;
+  font-weight: 800;
+  letter-spacing: .1em;
+}
+
 /* Pictogrammes de plateforme */
 
 .tp-glyph { display: inline-block; line-height: 0; }
@@ -558,3 +754,32 @@
 .tp-glyph-google svg { stroke: none; }
 .tp-glyph svg .is-filled { fill: currentColor; stroke: none; }
 .tp-glyph-tiktok svg .is-shadow { fill: currentColor; stroke: none; opacity: 0.32; }
+
+/* Emblème métier : même tracé que le filigrane, à la couleur de l'encre du
+   support, dimensionné comme un logo importé. */
+.tp-insert-logo .tp-emblem {
+  width: 100%;
+  height: 100%;
+  color: var(--insert-ink);
+}
+
+/* Emplacement du logo : le tracé est fin et la mention tient sous le cercle,
+   donc l'aperçu ne donne plus l'impression d'un gabarit inachevé. */
+.tp-insert-logo .tp-logo-slot { opacity: .62; }
+
+/* La mention sous le cercle ne doit jamais être rognée par la boîte du logo. */
+.tp-insert-logo .tp-motif { overflow: visible; }
+
+/* À très petite taille de rendu, l'appel « posez votre téléphone ici » pouvait
+   déborder de la moitié colorée et se retrouver en blanc sur blanc au-dessus de
+   la moitié QR. Le texte reste maintenant dans son bloc. */
+.tp-insert-nfc {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.tp-insert-nfc strong,
+.tp-insert-nfc small {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}

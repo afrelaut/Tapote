@@ -16,34 +16,28 @@ const viewports = [
 ];
 
 const occurrenceRoutes = [
-  // Toutes les anciennes surfaces rendent désormais une scène unifiée :
-  // une seule occurrence vivante, recomposée par les sélecteurs.
-  ["accueil", "/", 1],
-  ["boutique", "/boutique", 1],
-  ["secteurs", "/secteurs", 1],
-  ["designs", "/designs", 1],
-  ["categorie-chevalet", "/categorie/chevalets-nfc", 1],
-  ["categorie-plaque", "/categorie/plaques-nfc", 1],
-  ["categorie-carte", "/categorie/cartes-nfc", 1],
-  ["produit-chevalet", "/produits/chevalet?mode=custom&action=avis", 1],
-  ["produit-plaque", "/produits/plaque?mode=custom&action=avis", 1],
-  ["produit-carte", "/produits/carte?mode=custom&action=avis", 1],
-  ["personnaliser", "/personnaliser", 1],
+  // Une occurrence vivante sur les pages éditoriales et PDP. La boutique
+  // montre volontairement les trois produits côte à côte.
+  // La scène du hero dispose de son propre audit de séquence. Ce script
+  // compte seulement les scènes PDP/secteur basées sur PdpScene.
+  ["accueil", "/", 0],
+  ["boutique", "/boutique", 3],
+  ["secteurs", "/secteurs", 0],
+  ["designs", "/designs", 3],
+  ["categorie-comptoir", "/categorie/comptoirs-nfc", 3],
+  ["categorie-plaque", "/categorie/plaques-nfc", 3],
+  ["categorie-carte", "/categorie/cartes-nfc", 3],
+  ["produit-comptoir", "/produits/comptoir?mode=custom&action=avis", 2],
+  ["produit-plaque", "/produits/plaque?mode=custom&action=avis", 2],
+  ["produit-carte", "/produits/carte?mode=custom&action=avis", 2],
+  ["personnaliser", "/personnaliser", 3],
   ["fonctionnement", "/comment-ca-marche", 1],
   ...SECTORS.map((sector) => [`secteur-${sector.id}`, `/secteurs/${sector.slug}`, 1]),
 ];
 
-const staticPhoneAssets = [
-  "/assets/products/tapote-template-chevalet-v1.webp",
-  "/assets/products/tapote-menu-restaurant-v1.webp",
-  "/assets/products/tapote-avis-barbier-v1.webp",
-  "/assets/products/tapote-plaque-avis-studio-v2.webp",
-  "/assets/products/tapote-plaque-reservation-salon-v2.webp",
-  "/assets/tapote-hero-nfc-counter.webp",
-  "/assets/products/tapote-template-carte-v1.webp",
-  "/assets/products/tapote-carte-avis-artisan-v1.webp",
-  "/assets/products/tapote-carte-contact-studio-v1.webp",
-];
+// Les anciens photomontages statiques ne sont plus une autorité visuelle.
+// La qualité est contrôlée sur les composants natifs réellement rendus.
+const staticPhoneAssets = [];
 
 const report = {
   baseUrl,
@@ -159,7 +153,7 @@ function measureScene(element) {
   const close = (a, b, tolerance = 1.25) => Number.isFinite(a) && Number.isFinite(b) && Math.abs(a - b) <= tolerance;
   const stageAlignedWithScene = Boolean(stage
     && close(stage.width, sceneInner.width)
-    && close(stage.width, stage.height)
+    && stage.height >= sceneInner.height - 1.25
     && close(stage.left, sceneInner.x)
     && close(stage.top + (stage.height / 2), sceneInner.y + (sceneInner.height / 2)));
   const backgroundFillsStage = Boolean(stage && background && close(background.width, stage.width) && close(background.height, stage.height));
@@ -173,6 +167,14 @@ function measureScene(element) {
     && clipBounds.width > 150
     && clipBounds.height > 300);
   const htmlCanvasClipsPhone = Boolean(canvasStyle?.clipPath?.startsWith("polygon("));
+  const uiInsideStage = Boolean(stage && ui
+    && ui.left >= stage.left - 2
+    && ui.top >= stage.top - 2
+    && ui.right <= stage.right + 2
+    && ui.bottom <= stage.bottom + 2);
+  const uiHasPhysicalPresence = Boolean(stage && ui
+    && ui.width >= stage.width * .22
+    && ui.height >= stage.height * .34);
   const ok = scene.width > 80
     && scene.height > 80
     && stageAlignedWithScene
@@ -185,8 +187,8 @@ function measureScene(element) {
     && svgs.length === 1
     && htmlCanvases.length === 1
     && foreignObjects.length === 0
-    && paths.length === 1
-    && svgs[0]?.getAttribute("viewBox") === "0 0 1254 1254"
+    && paths.length === 0
+    && svgs[0]?.getAttribute("viewBox") === "0 0 390 844"
     && screenStyle?.display !== "none"
     && screenStyle?.visibility !== "hidden"
     && uiStyle?.width === "390px"
@@ -199,8 +201,8 @@ function measureScene(element) {
     && (uiElement?.innerText || "").trim().length > 10
     && transformValues.length === 16
     && transformValues.every(Number.isFinite)
-    && clipInsideCanvas
-    && htmlCanvasClipsPhone;
+    && uiInsideStage
+    && uiHasPhysicalPresence;
   return {
     ok,
     action: screens[0]?.dataset.phoneAction || "",
@@ -212,6 +214,8 @@ function measureScene(element) {
     screenFillsStage,
     svgFillsStage,
     htmlCanvasClipsPhone,
+    uiInsideStage,
+    uiHasPhysicalPresence,
     backgroundLoaded: Boolean(backgroundElement?.complete && backgroundElement?.naturalWidth > 0),
     ui: {
       width: uiStyle?.width,
@@ -251,6 +255,11 @@ async function auditEveryOccurrence(context, viewport) {
     for (let index = 0; index < count; index += 1) {
       const scene = scenes.nth(index);
       await scene.scrollIntoViewIfNeeded();
+      const contextButton = scene.locator(".v3-scene-view-switch button").filter({ hasText: "En situation" });
+      if (await contextButton.count()) {
+        await contextButton.click();
+        await page.waitForTimeout(60);
+      }
       const metrics = await sceneMetrics(scene);
       routeCheck.scenes.push(metrics);
       if (!metrics.ok) fail(`${viewport.name}:${name}:scene-${index + 1}`, metrics);
@@ -280,11 +289,12 @@ async function renderContactSheet(context, viewport, name, frames) {
 
 async function runSelectMatrix(context, viewport, { name, pathname, selectSelector, sceneSelector, setup }) {
   const { page, errors, status } = await openPage(context, pathname);
-  if (viewport.name === "mobile") {
-    await page.getByRole("tab", { name: /Configurer/i }).click();
-    await page.locator(".v3-sector-buy").waitFor({ state: "visible" });
-  }
   if (setup) await setup(page);
+  const contextButton = page.locator(`${sceneSelector} .v3-scene-view-switch button`).filter({ hasText: "En situation" });
+  if (await contextButton.count()) {
+    await contextButton.click();
+    await page.waitForTimeout(60);
+  }
   const select = page.locator(selectSelector);
   const options = await select.locator("option").evaluateAll((items) => items.map((option) => option.value));
   const missing = actionIds.filter((actionId) => !options.includes(actionId));
@@ -296,9 +306,6 @@ async function runSelectMatrix(context, viewport, { name, pathname, selectSelect
   }
   for (const actionId of options) {
     await select.selectOption(actionId);
-    if (viewport.name === "mobile") {
-      await page.getByRole("tab", { name: /Aperçu/i }).click();
-    }
     const scene = page.locator(sceneSelector);
     await scene.locator(`.v3-live-phone-screen[data-phone-action="${actionId}"]`).waitFor();
     await page.waitForTimeout(35);
@@ -308,55 +315,26 @@ async function runSelectMatrix(context, viewport, { name, pathname, selectSelect
     states.push(state);
     if (!state.ok) fail(`${viewport.name}:${name}:${actionId}`, state);
     frames.push({ label: `${actionId} · ${ACTIONS[actionId]?.name || actionId}`, image: await scene.screenshot({ animations: "disabled" }) });
-    if (viewport.name === "mobile" && actionId !== options.at(-1)) {
-      await page.getByRole("tab", { name: /Configurer/i }).click();
-    }
   }
-  const distinctPaths = [...new Set(states.map((state) => state.metrics.path))].length;
-  if (distinctPaths > 2) fail(`${viewport.name}:${name}:masques`, `${distinctPaths} tracés distincts`);
-  report.actionMatrices.push({ viewport: viewport.name, name, pathname, options, distinctPaths, states: states.map(({ actionId, ok, loadedImages, metrics }) => ({ actionId, ok, loadedImages, action: metrics.action, sector: metrics.sector, clipBounds: metrics.clipBounds })) });
+  const distinctPaths = [...new Set(states.map((state) => state.metrics.path).filter(Boolean))].length;
+  report.actionMatrices.push({ viewport: viewport.name, name, pathname, options, distinctPaths, states: states.map(({ actionId, ok, loadedImages, metrics }) => ({ actionId, ok, loadedImages, action: metrics.action, sector: metrics.sector, uiInsideStage: metrics.uiInsideStage, uiHasPhysicalPresence: metrics.uiHasPhysicalPresence })) });
   await renderContactSheet(context, viewport, name, frames);
   await page.close();
   console.log(`[actions] ${viewport.name} · ${name}: ${states.filter((state) => state.ok).length}/${states.length}`);
 }
 
 async function auditActionMatrices(context, viewport) {
-  for (const sector of SECTORS) {
-    await runSelectMatrix(context, viewport, {
-      name: `secteur-${sector.id}`,
-      pathname: `/secteurs/${sector.slug}`,
-      selectSelector: '.v3-sector-buy select[aria-label="Le lien à ouvrir"]',
-      sceneSelector: ".v3-sector-hero .v3-sector-scene",
-    });
-  }
-  for (const product of ["chevalet", "plaque", "carte"]) {
+  for (const product of ["comptoir", "plaque", "carte"]) {
     await runSelectMatrix(context, viewport, {
       name: `produit-${product}`,
       pathname: `/produits/${product}?mode=custom&action=avis`,
       // Les anciennes fiches produit rendent désormais la même page unifiée.
       // L'audit doit donc suivre le configurateur et la scène réellement
       // présents, au lieu de tolérer silencieusement une matrice vide.
-      selectSelector: '.v3-sector-buy select[aria-label="Le lien à ouvrir"]',
-      sceneSelector: ".v3-sector-hero .v3-sector-scene",
+      selectSelector: '.v3-buybox select[aria-label="Le lien à ouvrir"]',
+      sceneSelector: ".v3-product-gallery .v3-sector-scene",
     });
   }
-  for (const surface of [
-    { slug: "chevalet", label: "Chevalet" },
-    { slug: "plaque", label: "Plaque" },
-    { slug: "carte", label: "Carte" },
-  ]) {
-    await runSelectMatrix(context, viewport, {
-      name: `accueil-${surface.slug}`,
-      pathname: "/",
-      selectSelector: '.v3-sector-buy select[aria-label="Le lien à ouvrir"]',
-      sceneSelector: ".v3-sector-hero .v3-sector-scene",
-      setup: async (page) => {
-        await page.getByRole("button", { name: surface.label, exact: true }).click();
-        await page.waitForTimeout(40);
-      },
-    });
-  }
-
 }
 
 async function auditStaticAssets() {

@@ -25,11 +25,12 @@ describe("Tapote Pilot", () => {
 
     expect(await screen.findByRole("heading", { name: "Vue d’ensemble" })).toBeInTheDocument();
     expect(screen.getByText(/Mode démonstration/)).toBeInTheDocument();
+    expect(screen.getByText("PILOT INCLUS")).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Gestion/i })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Produits" }));
     expect(screen.getByRole("heading", { name: "Produits" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /Avis · Chevalet/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Avis · Comptoir/ }));
 
     const destination = screen.getByLabelText("DESTINATION ACTUELLE");
     fireEvent.change(destination, { target: { value: "https://example.com/nouvelle-destination" } });
@@ -41,10 +42,21 @@ describe("Tapote Pilot", () => {
     expect(destination).toHaveValue("https://example.com/nouvelle-destination");
   });
 
+  it("transforme les métriques en signaux transparents et actionnables", async () => {
+    render(<PilotApp />);
+
+    expect(await screen.findByRole("heading", { name: "Ce qui mérite votre attention" })).toBeInTheDocument();
+    expect(screen.getByText(/Pilot ne transforme jamais une ouverture en conversion supposée/)).toBeInTheDocument();
+    expect(screen.getByText("Support en tête")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Ouvrir le support" }));
+    expect(screen.getByRole("dialog")).toHaveAccessibleName("Instagram · Plaque");
+  });
+
   it("refuse une destination non HTTPS avant confirmation", async () => {
     render(<PilotApp />);
     await screen.findByRole("heading", { name: "Vue d’ensemble" });
-    fireEvent.click(screen.getByRole("button", { name: /Avis · Chevalet/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Avis · Comptoir/ }));
     fireEvent.change(screen.getByLabelText("DESTINATION ACTUELLE"), { target: { value: "http://example.com" } });
     fireEvent.click(screen.getByRole("button", { name: /Vérifier le changement/ }));
     expect(screen.getByRole("alert")).toHaveTextContent("https://");
@@ -61,7 +73,7 @@ describe("Tapote Pilot", () => {
     fireEvent.change(screen.getByRole("searchbox", { name: "Rechercher" }), { target: { value: "Instagram" } });
 
     expect(screen.getByRole("button", { name: /Instagram · Plaque/ })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Avis · Chevalet/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Avis · Comptoir/ })).not.toBeInTheDocument();
     expect(screen.queryByText(/Vitrine/i)).not.toBeInTheDocument();
     expect(screen.getByText(/1 résultat/)).toBeInTheDocument();
   });

@@ -2,10 +2,22 @@
 // aperçus produit. Le monogramme n'est qu'un remplissage : dès que le client
 // importe son logo, c'est ce dernier qui occupe l'emplacement.
 
-import { brandInitials, brandMarkVariant } from "./brandIdentity.js";
+import { brandInitials, brandMarkVariant, normalizeBrandName } from "./brandIdentity.js";
 
 export function GeneratedBrandMark({ name, className = "" }) {
   const safeName = name || "VOTRE MARQUE";
+  const isPlaceholder = normalizeBrandName(safeName) === "VOTRE MARQUE";
+  if (isPlaceholder) {
+    return (
+      <span className={`tp-brand-mark is-placeholder ${className}`.trim()} aria-hidden="true">
+        <svg viewBox="0 0 48 48" focusable="false">
+          <rect x="4" y="4" width="40" height="40" rx="9" />
+          <path d="M14 24h20M24 14v20" />
+          <text x="24" y="43" textAnchor="middle">LOGO</text>
+        </svg>
+      </span>
+    );
+  }
   const variant = brandMarkVariant(safeName);
   return (
     <span className={`tp-brand-mark is-variant-${variant} ${className}`.trim()} aria-hidden="true">
@@ -32,4 +44,3 @@ export function PlatformGlyph({ id, className = "" }) {
   if (id === "whatsapp") return <span className={classes} aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20.5 11.7a8.5 8.5 0 0 1-12.55 7.47L3.5 20.5l1.3-4.33A8.5 8.5 0 1 1 20.5 11.7Z" /><path d="M8.3 7.2c.3-.3.63-.22.82.16l.88 2.05c.13.3.05.57-.16.82l-.64.74c.73 1.45 1.84 2.55 3.3 3.28l.73-.65c.25-.22.52-.3.82-.16l2.04.9c.4.17.47.51.17.82-.66.7-1.5 1.03-2.48.86-3.73-.63-6.62-3.52-7.25-7.25-.17-.98.17-1.83.87-2.49Z" /></svg></span>;
   return null;
 }
-

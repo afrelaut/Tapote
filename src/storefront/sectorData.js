@@ -3,6 +3,11 @@ import { TARGETS } from "../../shared/catalog.js";
 const restaurantPhoneSubjectLayers = [
   {
     image: "/assets/products/tapote-restaurant-phone-hand-cutout-v1.png",
+    mask: "/assets/products/tapote-restaurant-phone-mask-v2.png",
+  },
+  {
+    image: "/assets/products/tapote-restaurant-phone-hand-cutout-v1.png",
+    mask: "/assets/products/tapote-restaurant-hand-mask-v2.png",
   },
 ];
 
@@ -57,7 +62,8 @@ const sectorRows = [
     description: "Réservation du prochain créneau, avis et réseaux dans un même univers.",
     placement: "À l’accueil, au miroir ou sur la table de soin.",
     script: "« Votre prochaine réservation est juste ici. »",
-    image: "/assets/products/tapote-bg-beaute-v1.webp",
+    image: "/assets/products/tapote-bg-beaute-empty-v2.png",
+    subjectLayers: restaurantPhoneSubjectLayers,
     category: "Beauté & bien-être",
     recommendedProductId: "pack_duo",
     composition: { comptoir: 1, plaque: 1 },
@@ -98,7 +104,7 @@ const sectorRows = [
     script: "« Wi-Fi, horaires et bonnes adresses : tout est ici. »",
     image: "/assets/products/tapote-bg-hotel-v1.webp",
     category: "Hébergement & tourisme",
-    recommendedProductId: "pack_cinq",
+    recommendedProductId: "pack_duo",
     composition: { comptoir: 2, plaque: 3 },
     actionIds: ["multiliens", "wifi", "avis"],
   },
@@ -165,7 +171,7 @@ const sectorRows = [
     image: "/assets/products/tapote-bg-sport-empty-v2.png",
     subjectLayers: restaurantPhoneSubjectLayers,
     category: "Sport & collectif",
-    recommendedProductId: "pack_cinq",
+    recommendedProductId: "pack_duo",
     composition: { comptoir: 2, plaque: 3 },
     actionIds: ["reservation", "fidelite", "instagram"],
   },
@@ -179,7 +185,7 @@ const sectorRows = [
     image: "/assets/products/tapote-bg-formation-empty-v2.png",
     subjectLayers: restaurantPhoneSubjectLayers,
     category: "Bureaux & événements",
-    recommendedProductId: "pack_cinq",
+    recommendedProductId: "pack_duo",
     composition: { comptoir: 2, plaque: 3 },
     actionIds: ["multiliens", "wifi", "formulaire"],
   },
@@ -193,7 +199,7 @@ const sectorRows = [
     image: "/assets/products/tapote-bg-evenement-empty-v2.png",
     subjectLayers: restaurantPhoneSubjectLayers,
     category: "Bureaux & événements",
-    recommendedProductId: "pack_cinq",
+    recommendedProductId: "pack_duo",
     composition: { comptoir: 2, plaque: 3 },
     actionIds: ["multiliens", "paiement", "instagram"],
   },
@@ -215,6 +221,7 @@ const sectorRows = [
 export const SECTORS = sectorRows.map((row) => ({
   ...TARGETS[row.id],
   ...row,
+  exampleBrand: "VOTRE MARQUE",
   promise: `${row.title} : l’usage prioritaire est déjà choisi, les autres restent accessibles en un geste.`,
 }));
 
