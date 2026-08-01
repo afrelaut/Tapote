@@ -81,9 +81,13 @@ describe("Boutique Tapote V3", () => {
     expect(screen.getByRole("heading", { name: /Vos supports.*Leurs destinations/i })).toBeVisible();
     expect(screen.getByText("Studio à l’étape de personnalisation")).toBeVisible();
     expect(screen.getAllByText("Tapote Pilot inclus").length).toBeGreaterThan(0);
+    expect(screen.getByRole("heading", { name: /Un support imprimé est figé/i })).toBeVisible();
+    expect(screen.getByText("Le NFC et le QR ouvrent la même destination Tapote.")).toBeVisible();
+    // Tout chiffre publié doit rester attaché à sa source datée.
+    expect(screen.getByText(/Avis Vérifiés by Skeepers.*fin 2024/)).toBeVisible();
     expect(screen.queryByText(/Tapote Link/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/20\s*000|30\s*000/)).not.toBeInTheDocument();
-    expect(document.querySelectorAll("#main-content > section")).toHaveLength(8);
+    expect(document.querySelectorAll("#main-content > section")).toHaveLength(9);
     expect(screen.getAllByRole("main")).toHaveLength(1);
   });
 
@@ -210,7 +214,7 @@ describe("Boutique Tapote V3", () => {
     fireEvent.click(screen.getByRole("button", { name: /À votre image/i }));
     expect(screen.getByLabelText("Nom de votre entreprise")).toBeVisible();
     fireEvent.change(screen.getByLabelText("Nom de votre entreprise"), { target: { value: "CAFÉ RICO" } });
-    fireEvent.change(screen.getByLabelText("Le lien à ouvrir"), { target: { value: "instagram" } });
+    fireEvent.click(screen.getByRole("button", { name: "Instagram" }));
     fireEvent.change(screen.getByLabelText("Adresse exacte à ouvrir"), { target: { value: "https://instagram.com/tapote" } });
     fireEvent.click(screen.getByRole("button", { name: /Ajouter au panier/i }));
     expect(JSON.parse(window.localStorage.getItem("tapote-cart-v3"))).toEqual([
@@ -227,7 +231,7 @@ describe("Boutique Tapote V3", () => {
     renderRoute("/produits/comptoir?action=avis");
     expect(screen.getByRole("img", { name: "Écran du téléphone après ouverture : Avis Google" })).toBeVisible();
 
-    fireEvent.change(screen.getByLabelText("Le lien à ouvrir"), { target: { value: "menu" } });
+    fireEvent.click(screen.getByRole("button", { name: "Menu" }));
     expect(screen.getByRole("img", { name: "Écran du téléphone après ouverture : Menu" })).toBeVisible();
 
     fireEvent.change(screen.getByRole("combobox", { name: "Choisir votre activité" }), { target: { value: "salon" } });

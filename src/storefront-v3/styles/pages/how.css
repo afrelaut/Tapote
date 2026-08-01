@@ -247,13 +247,13 @@
 }
 
 .v3-how-flow-section {
-  padding: clamp(49px, 5.69vw, 88px) clamp(24px, 7vw, 120px);
+  padding: clamp(40px, 4.1vw, 62px) clamp(24px, 7vw, 120px);
   background: #fff;
 }
 
 .v3-how-flow-section > header {
   max-width: 960px;
-  margin-bottom: clamp(56px, 7vw, 98px);
+  margin-bottom: clamp(26px, 3vw, 42px);
 }
 
 .v3-how-flow-section > header h2,
@@ -261,7 +261,7 @@
 .v3-how-journey > header h2,
 .v3-how-link-copy h2,
 .v3-how-faq > header h2 {
-  margin: 17px 0 22px;
+  margin: 12px 0 14px;
   font-family: "Archivo Black", sans-serif;
   font-size: clamp(24px, 2.59vw, 38px);
   line-height: .91;
@@ -339,7 +339,7 @@
 }
 
 .v3-how-channels {
-  padding: clamp(53px, 5.87vw, 88px) clamp(24px, 7vw, 120px);
+  padding: clamp(40px, 4.1vw, 62px) clamp(24px, 7vw, 120px);
   color: #fff;
   background: var(--how-night);
 }
@@ -350,7 +350,7 @@
 
 .v3-how-channels-heading {
   max-width: 1110px;
-  margin-bottom: clamp(54px, 7vw, 90px);
+  margin-bottom: clamp(26px, 3vw, 42px);
 }
 
 .v3-how-channel-grid {
@@ -512,11 +512,11 @@
 }
 
 .v3-how-link-system {
-  padding: clamp(49px, 5.87vw, 88px) clamp(24px, 7vw, 120px);
+  padding: clamp(40px, 4.1vw, 62px) clamp(24px, 7vw, 120px);
   display: grid;
   grid-template-columns: minmax(0, .85fr) minmax(560px, 1.15fr);
   align-items: center;
-  gap: clamp(60px, 8vw, 130px);
+  gap: clamp(32px, 4vw, 64px);
   background: #fff;
 }
 
@@ -749,8 +749,7 @@
 }
 
 .v3-how-final {
-  min-height: 403px;
-  padding: clamp(51px, 6.05vw, 88px) clamp(24px, 7vw, 120px);
+  padding: clamp(40px, 4.1vw, 62px) clamp(24px, 7vw, 120px);
   display: flex;
   flex-direction: column;
   align-items: center;

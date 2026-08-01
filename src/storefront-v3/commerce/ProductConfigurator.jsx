@@ -393,9 +393,24 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
       <CompositionPicker count={safeCount} composition={composition} onChange={setComposition} labelId={compositionLabelId} />
       <div className="v3-field-block v3-field-destination">
         <span className="v3-field-label" id={linkLabelId}><b>{linkStep}</b><span>Action</span></span>
-        <select aria-label="Le lien à ouvrir" aria-describedby={linkLabelId} value={actionId} onChange={(event) => selectAction(event.target.value)}>
-          {availableActions.map((action) => <option value={action.id} key={action.id}>{action.name}</option>)}
-        </select>
+        {/* Le menu déroulant natif rompait la logique du configurateur : les
+            deux autres étapes se choisissent par cartes cliquables. */}
+        <div className="v3-action-choice" role="group" aria-label="Le lien à ouvrir" aria-describedby={linkLabelId}>
+          {availableActions.map((action) => {
+            const selected = actionId === action.id;
+            return (
+              <button
+                type="button"
+                key={action.id}
+                className={selected ? "is-selected" : ""}
+                aria-pressed={selected}
+                onClick={() => selectAction(action.id)}
+              >
+                {action.name}
+              </button>
+            );
+          })}
+        </div>
         {productOnly ? (
           <details className={`v3-destination-details ${destinationInvalid ? "is-invalid" : ""}`} open={Boolean(destinationUrl)}>
             <summary>

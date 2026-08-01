@@ -5,6 +5,7 @@ import { SECTORS } from "../../storefront/sectorData.js";
 import { getProductId, makeCartItem } from "../commerce/cart.js";
 import { BuyBox } from "../commerce/ProductConfigurator.jsx";
 import { HOME_SCENES, PRODUCT_PAGES, SHOP_ITEMS, readyHeadlineForAction, taxLabel } from "../data/content.js";
+import { PilotAppMock } from "../marketing/PilotAppMock.jsx";
 import { NotFound } from "./LegalPages.jsx";
 import { ProductExamplesSection, ProductFaqSection, ProductOrderJourney, RelatedProducts, SectorSelector, WhyTapote } from "../marketing/MarketingSections.jsx";
 import { ProductScene, SectorScene } from "../scenes/ProductScene.jsx";
@@ -227,19 +228,22 @@ export function ProductPage({ page, onAdd }) {
         </div>
       </section>
       <ProductOrderJourney data={data} />
+      {/* La moitié droite de cette section était vide : elle porte désormais
+          l'écran réel de l'application, qui montre au lieu de raconter. */}
       <section className="v3-pdp-pilot" aria-labelledby={`v3-${data.key}-pilot-title`}>
-        <div>
+        <div className="v3-pdp-pilot-copy">
           <span className="v3-eyebrow">TAPOTE PILOT INCLUS</span>
           <h2 id={`v3-${data.key}-pilot-title`}>Le support reste.<br />Sa destination évolue.</h2>
           <p>Retrouvez {data.name} et vérifiez la destination qu’il ouvre. Avec Tapote Pilot Pro, remplacez ce lien à distance, sans réimprimer ni réencoder le support.</p>
           <ul>
             <li><Check /> Gestion des supports</li>
-            <li><Check /> Modification des destinations</li>
+            <li><Check /> Destination active visible</li>
             <li><Check /> Accès inclus avec le produit</li>
           </ul>
           <a href="/connexion">Accéder à Tapote Pilot <ArrowRight /></a>
+          <p className="v3-pdp-pilot-pro"><strong>Pilot Pro</strong> ajoute le changement de destination à distance, les analyses par période et lieu, les exports et le multi-sites. <a href="/tapote-pilot">Comparer les usages <ArrowRight /></a></p>
         </div>
-        <p className="v3-pdp-pilot-pro"><strong>Pilot Pro</strong> ajoute des fonctions avancées pour les périodes, lieux, équipes, exports et organisations multi-sites. <a href="/tapote-pilot">Comparer les usages <ArrowRight /></a></p>
+        <div className="v3-pdp-pilot-mock" role="img" aria-label="Aperçu de l’application Tapote Pilot"><PilotAppMock level="pilot" /></div>
       </section>
       <ProductFaqSection data={data} />
       <RelatedProducts current={data.key} />

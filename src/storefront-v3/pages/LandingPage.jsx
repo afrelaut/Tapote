@@ -1,7 +1,7 @@
 import { lazy, Suspense } from "react";
 import { ArrowRight, Layers3, Palette, SmartphoneNfc, Sparkles } from "lucide-react";
 import { MotionConfig, motion } from "motion/react";
-import { FinalCommercialCta, HomePilotSection, HowStrip, OfferArchitectureSection, SectorCommercialSection, StorefrontFaq } from "../marketing/MarketingSections.jsx";
+import { FinalCommercialCta, FrozenSupportSection, HomePilotSection, HowStrip, OfferArchitectureSection, SectorCommercialSection, StorefrontFaq } from "../marketing/MarketingSections.jsx";
 
 const Hero3D = lazy(() => import("../../storefront/Hero3D.jsx"));
 
@@ -52,6 +52,7 @@ export function LandingPage() {
         <span><Palette /> Studio à l’étape de personnalisation</span>
         <span><Sparkles /> Prêt à poser ou à votre image</span>
       </section>
+      <FrozenSupportSection />
       <OfferArchitectureSection />
       <HowStrip />
       <SectorCommercialSection />
