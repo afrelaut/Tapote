@@ -209,32 +209,79 @@ export function SectorCommercialSection() {
   );
 }
 
+// Section « problème » : elle pose le manque avant de présenter l'offre, comme
+// le font les concurrents. Aucune statistique — la source de vérité interdit
+// tout chiffre non prouvé — donc on s'appuie sur des faits mécaniques, et les
+// réponses reprennent mot pour mot les promesses autorisées (§9.1).
+const FROZEN_POINTS = [
+  {
+    icon: Link2,
+    title: "Le lien change, pas le carton",
+    today: "Une adresse imprimée reste celle du jour de l’impression. Changer de page de réservation ou d’avis oblige à refaire le support.",
+    answer: "Avec Tapote Pilot Pro, changez la destination sans réimprimer ni réencoder le support.",
+  },
+  {
+    icon: SmartphoneNfc,
+    title: "Deux gestes, une destination",
+    today: "Certains approchent leur téléphone, d’autres cherchent un QR. Gérer deux supports séparés, c’est deux choses à tenir à jour.",
+    answer: "Le NFC et le QR ouvrent la même destination Tapote.",
+  },
+  {
+    icon: Globe2,
+    title: "Rien à installer",
+    today: "Un visiteur ne télécharge pas une application pour laisser un avis ou consulter un menu. Chaque étape en plus est une étape perdue.",
+    answer: "Aucune application à installer pour le visiteur.",
+  },
+];
+
+export function FrozenSupportSection() {
+  return (
+    <section className="v3-frozen" aria-labelledby="v3-frozen-title">
+      <header>
+        <span className="v3-frozen-pill">LE PROBLÈME</span>
+        <h2 id="v3-frozen-title">Un support imprimé est figé.<br /><em>Votre activité, non.</em></h2>
+        <p>Le support ne bouge pas. Ce qu’il ouvre, si.</p>
+      </header>
+      {/* Chiffres tiers, sourcés et datés : la source de vérité interdit tout
+          chiffre non prouvé, donc l'attribution reste visible à l'écran. */}
+      <dl className="v3-frozen-stats">
+        <div><dt>81 %</dt><dd>se renseignent en ligne avant de se rendre en magasin</dd></div>
+        <div><dt>46 %</dt><dd>lisent les avis sur Google</dd></div>
+        <div><dt>71 %</dt><dd>laissent un avis dans les sept jours suivant leur achat</dd></div>
+      </dl>
+      <p className="v3-frozen-source">Source : Avis Vérifiés by Skeepers, 50 000 consommateurs en France, Italie et Espagne, fin 2024.</p>
+      <ul>
+        {FROZEN_POINTS.map(({ icon: Icon, title, today, answer }) => (
+          <li key={title}>
+            <i><Icon /></i>
+            <h3>{title}</h3>
+            <p className="v3-frozen-today"><small>AUJOURD’HUI</small>{today}</p>
+            <p className="v3-frozen-answer"><small>AVEC TAPOTE</small>{answer}</p>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 export function HomePilotSection() {
   return (
     <section className="v3-home-pilot" aria-labelledby="v3-home-pilot-title">
       <div className="v3-home-pilot-copy">
         <span className="v3-eyebrow"><Layers3 size={14} /> TAPOTE PILOT</span>
         <h2 id="v3-home-pilot-title">Vos supports.<br />Leurs destinations.</h2>
-        <p>Tapote Pilot est inclus pour associer vos supports, voir leurs destinations et changer un lien. Tapote Pilot Pro ajoute les fonctions avancées lorsqu’elles sont activées.</p>
+        <p>Tapote Pilot est inclus pour retrouver vos supports et voir la destination que chacun ouvre. Tapote Pilot Pro ajoute le changement de lien à distance et la mesure des ouvertures.</p>
         <div className="v3-home-pilot-levels">
-          <div><small>INCLUS</small><strong>Tapote Pilot</strong><span>Supports, destinations et changements de lien</span></div>
-          <div><small>OPTION AVANCÉE</small><strong>Tapote Pilot Pro</strong><span>Périodes, comparaisons et exports disponibles</span></div>
+          <div><small>INCLUS</small><strong>Tapote Pilot</strong><span>Vos supports et leur destination active</span></div>
+          <div><small>OPTION AVANCÉE</small><strong>Tapote Pilot Pro</strong><span>Changement de lien, périodes, comparaisons et exports</span></div>
         </div>
         <a href="/tapote-pilot">Découvrir Tapote Pilot <ArrowRight /></a>
       </div>
-      <div className="v3-home-pilot-window" aria-label="Aperçu fonctionnel de Tapote Pilot">
-        <header><span><img src="/brand/tapote-logo-light.svg" alt="" /><b>PILOT</b></span><small>MES SUPPORTS</small></header>
-        <div className="v3-home-pilot-window-body">
-          <nav aria-label="Navigation de l’aperçu Pilot"><b><Grid3X3 /> Supports</b><span><Link2 /> Destinations</span><span><Clock3 /> Historique</span></nav>
-          <div>
-            <span className="v3-home-pilot-window-title"><small>SUPPORTS ACTIFS</small><strong>Choisir un support</strong></span>
-            <ul>
-              <li><i><ProductArt surface="comptoir" actionId="avis" brandName="tapote." theme="nuit" personalization="ready" /></i><span><b>Tapote Comptoir</b><small>Avis Google</small></span><ArrowRight /></li>
-              <li><i><ProductArt surface="plaque" actionId="reservation" brandName="tapote." theme="creme" personalization="ready" /></i><span><b>Tapote Plaque</b><small>Réservation</small></span><ArrowRight /></li>
-              <li><i><ProductArt surface="carte" actionId="contact" brandName="tapote." theme="creme" personalization="ready" /></i><span><b>Tapote Card</b><small>Contact</small></span><ArrowRight /></li>
-            </ul>
-          </div>
-        </div>
+      {/* La vitrine montrait une interface inventée, différente de celle de la
+          page Pilot. Les deux affichent désormais le même écran, celui de
+          l'application réelle. */}
+      <div className="v3-home-pilot-window" role="img" aria-label="Aperçu de l’application Tapote Pilot">
+        <PilotAppMock level="pilot" />
       </div>
     </section>
   );
@@ -328,7 +375,13 @@ export function RelatedProducts({ current }) {
             <b>Découvrir <ArrowRight /></b>
           </a>
         ))}
-        <a className="is-pack" href="/boutique#packs"><span>DEUX POINTS DE CONTACT</span><strong>Pack Local</strong><small>Un Comptoir et une Plaque avec une identité cohérente.</small><b>Voir le pack <ArrowRight /></b></a>
+        <a className="is-pack" href="/boutique#packs">
+          <span className="v3-related-product-art is-pack-preview" aria-hidden="true">
+            <ProductArt surface="comptoir" actionId="avis" theme="nuit" personalization="ready" brandName="tapote." />
+            <ProductArt surface="plaque" actionId="avis" theme="creme" personalization="ready" brandName="tapote." />
+          </span>
+          <span>DEUX POINTS DE CONTACT</span><strong>Pack Local</strong><small>Un Comptoir et une Plaque avec une identité cohérente.</small><b>Voir le pack <ArrowRight /></b>
+        </a>
       </div>
     </section>
   );
@@ -338,7 +391,7 @@ export function ProductOrderJourney({ data }) {
   const steps = [
     { number: "01", icon: Palette, title: "Choisissez", copy: `Sélectionnez ${data.name}, l’action, le mode et la quantité. Le prix est visible avant l’ajout au panier.` },
     { number: "02", icon: FileCheck2, title: "On prépare", copy: "Tapote associe la destination au NFC et au QR. En mode À votre image, vous validez le BAT avant production." },
-    { number: "03", icon: PackageCheck, title: "Vous posez", copy: "Le support arrive encodé et testé. Sa destination reste modifiable dans Tapote Pilot." },
+    { number: "03", icon: PackageCheck, title: "Vous posez", copy: "Le support arrive encodé et testé. Vous retrouvez sa destination active dans Tapote Pilot." },
   ];
   return (
     <section className="v3-product-journey" aria-labelledby={`v3-${data.key}-journey-title`}>
@@ -393,7 +446,7 @@ export function HowStrip() {
       <div className="v3-step-grid">
         <article><b>01</b><Palette /><h3>Choisissez</h3><p>Un support, une action et un design prêt à poser ou à votre image.</p></article>
         <article><b>02</b><Globe2 /><h3>On prépare</h3><p>Le même lien est associé au NFC et au QR, puis contrôlé avant l’envoi.</p></article>
-        <article><b>03</b><PackageCheck /><h3>Vous posez</h3><p>Le support fonctionne immédiatement. Le lien reste modifiable dans Tapote Pilot.</p></article>
+        <article><b>03</b><PackageCheck /><h3>Vous posez</h3><p>Le support fonctionne immédiatement. Sa destination reste visible dans Tapote Pilot.</p></article>
       </div>
     </section>
   );

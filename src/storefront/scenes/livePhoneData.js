@@ -34,7 +34,7 @@ export const RESTAURANT_PHONE_MEDIA = Object.freeze({
 const PHONE_SCENE_SECTORS = Object.freeze({
   "/assets/products/tapote-bg-cafe-v1.webp": "cafe",
   "/assets/products/tapote-bg-cafe-restaurant-phone-v2.webp": "cafe",
-  "/assets/products/tapote-bg-cafe-empty-v3.png": "cafe",
+  "/assets/products/tapote-bg-cafe-empty-v3.webp": "cafe",
   "/assets/products/tapote-bg-restaurant-live-screen-v1.webp": "restaurant",
   "/assets/products/tapote-bg-restaurant-v1.webp": "restaurant",
   "/assets/products/tapote-bg-boulangerie-v1.webp": "boulangerie",

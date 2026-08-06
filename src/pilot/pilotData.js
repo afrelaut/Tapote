@@ -89,14 +89,14 @@ const demoProducts = [
   },
 ];
 
-export function createDemoWorkspace() {
+export function createDemoWorkspace({ plan = "included" } = {}) {
   return {
     organization: { id: "demo-org", name: "Café Mistral" },
     membership: { role: "owner" },
-    // Le changement de destination relève de Tapote Pilot Pro. La bêta et la
-    // démonstration tournent sur ce niveau : aucun compte existant ne perd la
-    // main sur ses liens tant que la facturation Pro n'est pas branchée.
-    plan: "pro",
+    // La démonstration montre par défaut le niveau réellement livré avec un
+    // support, pour qu'un visiteur ne croie pas acquise une fonction facturée
+    // séparément. Les tests peuvent demander « pro » pour couvrir l'autre cas.
+    plan: plan === "pro" ? "pro" : "included",
     locations: [
       { id: "demo-location-1", name: "Café Mistral · République" },
       { id: "demo-location-2", name: "Café Mistral · Bastille" },
@@ -151,7 +151,7 @@ async function loadLegacyPilotMembership(client) {
   const [membershipsResult, managementProfilesResult] = await Promise.all([
     client
       .from("organization_members")
-      .select("organization_id,role,created_at")
+      .select("organization_id,role,created_at,organizations(pilot_plan)")
       .eq("user_id", userId)
       .order("created_at", { ascending: true }),
     client
@@ -171,7 +171,13 @@ async function loadLegacyPilotMembership(client) {
   // Compatibility path for projects where the new RPC has not reached the
   // schema cache yet. It may resolve a real Pilot membership only; it must
   // never manufacture Gestion access from client-visible membership tables.
-  if (pilotMemberships.length === 1) return { ...pilotMemberships[0], access_scope: "pilot" };
+  if (pilotMemberships.length === 1) {
+    const [membership] = pilotMemberships;
+    // La jointure imbriquée arrive selon les cas en objet ou en tableau : on
+    // remonte la formule au même niveau que celle renvoyée par le RPC.
+    const organization = Array.isArray(membership.organizations) ? membership.organizations[0] : membership.organizations;
+    return { ...membership, pilot_plan: organization?.pilot_plan, access_scope: "pilot" };
+  }
   return null;
 }
 
@@ -263,7 +269,10 @@ export async function loadPilotWorkspace(client, options = {}) {
   return {
     organization: organizationResult.data,
     membership: { role: membership.role, accessScope: membership.access_scope || "pilot" },
-    plan: membership.plan || "pro",
+    // Le verrou doit échouer fermé : sans formule explicitement « pro », le
+    // compte reste sur le niveau inclus. Un défaut permissif rendrait le
+    // changement de destination gratuit dès qu'une donnée manque.
+    plan: membership.pilot_plan === "pro" ? "pro" : "included",
     availableOrganizations: membership.available_organizations || [],
     locations,
     products,

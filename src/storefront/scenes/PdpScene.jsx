@@ -1,8 +1,12 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { lazy, Suspense, useLayoutEffect, useRef, useState } from "react";
 import { Image, Rotate3D } from "lucide-react";
 import DeviceFrame from "./DeviceFrame.jsx";
-import ProductStudio3D from "./ProductStudio3D.jsx";
 import { SCENE_BUDGETS } from "./sceneBudgets.js";
+
+/* Importé statiquement, ce composant embarquait tout Three.js dans le bundle
+   principal du storefront : chaque page — FAQ, CGV, panier comprises — le
+   téléchargeait alors que la 3D ne sert qu'ici, et seulement si WebGL répond. */
+const ProductStudio3D = lazy(() => import("./ProductStudio3D.jsx"));
 
 // Géométrie du verre photographié, reprise de la version en production.
 //
@@ -16,7 +20,7 @@ const PHONE_SCREEN_QUADS = {
   // full quadrilateral (instead of approximating its centre) makes both the
   // browser chrome and the home indicator parallel to the physical phone.
   "/assets/products/tapote-bg-restaurant-live-screen-v1.webp": [[0.46709, 0.25773], [0.69149, 0.21130], [0.95828, 0.69250], [0.71273, 0.77095]],
-  "/assets/products/tapote-bg-cafe-empty-v3.png": [[0.46709, 0.25773], [0.69149, 0.21130], [0.95828, 0.69250], [0.71273, 0.77095]],
+  "/assets/products/tapote-bg-cafe-empty-v3.webp": [[0.46709, 0.25773], [0.69149, 0.21130], [0.95828, 0.69250], [0.71273, 0.77095]],
   "/assets/products/tapote-bg-boulangerie-empty-v2.png": [[0.46709, 0.25773], [0.69149, 0.21130], [0.95828, 0.69250], [0.71273, 0.77095]],
   "/assets/products/tapote-bg-agence-empty-v2.png": [[0.46709, 0.25773], [0.69149, 0.21130], [0.95828, 0.69250], [0.71273, 0.77095]],
   "/assets/products/tapote-bg-sport-empty-v2.png": [[0.46709, 0.25773], [0.69149, 0.21130], [0.95828, 0.69250], [0.71273, 0.77095]],
@@ -52,7 +56,7 @@ const PHONE_SCREEN_CLIP_RADII = {
   // dynamique dépasse du verre sans modifier son haut, déjà correctement calé.
   "/assets/products/tapote-bg-cafe-v1.webp": [60, 60, 106, 76],
   "/assets/products/tapote-bg-cafe-restaurant-phone-v2.webp": [60, 60, 90, 90],
-  "/assets/products/tapote-bg-cafe-empty-v3.png": [60, 60, 82, 76],
+  "/assets/products/tapote-bg-cafe-empty-v3.webp": [60, 60, 82, 76],
   "/assets/products/tapote-bg-boulangerie-empty-v2.png": [60, 60, 82, 76],
   "/assets/products/tapote-bg-agence-empty-v2.png": [60, 60, 82, 76],
   "/assets/products/tapote-bg-sport-empty-v2.png": [60, 60, 82, 76],
@@ -279,6 +283,14 @@ export default function PdpScene({
   const [viewMode, setViewMode] = useState("studio");
   const destinationQuad = PHONE_SCREEN_QUADS[image];
   const mixedPack = preview.surface === "mix";
+  // Le duo peut réunir deux supports différents ("mix") ou deux identiques
+  // ("2 Comptoirs", "2 Plaques") : dans les deux cas, les deux objets réels
+  // doivent apparaître, jamais un seul rendu deux fois par défaut.
+  const composedDuo = [
+    ...Array(preview.composition?.comptoir || 0).fill("comptoir"),
+    ...Array(preview.composition?.plaque || 0).fill("plaque"),
+  ].slice(0, 2);
+  const duoSurfaces = mixedPack ? (composedDuo.length === 2 ? composedDuo : ["comptoir", "plaque"]) : null;
   const activeView = compact || mixedPack ? "context" : viewMode;
 
   useLayoutEffect(() => {
@@ -329,26 +341,54 @@ export default function PdpScene({
       )}
       {activeView === "studio" ? (
         <div className="v3-sector-scene-studio">
-          <ProductStudio3D
-            surface={preview.surface}
-            actionId={preview.actionId}
-            primaryColor={preview.primaryColor}
-            accentColor={preview.secondaryColor}
-            textColor={preview.textColor}
-            destinationUrl={preview.destinationUrl}
-            sectorId={sectorId}
-            sectorTitle={sectorTitle}
-            brandName={preview.brandName}
-            brandLogo={preview.brandLogo}
-            brandMotif={preview.brandMotif}
-            tagline={preview.tagline}
-            contactLine={preview.contactLine}
-            blockColorMode={preview.blockColorMode}
-            customHeadline={preview.customHeadline}
-            customSubline={preview.customSubline}
-            customTapLabel={preview.customTapLabel}
-            personalization={preview.personalization}
-          />
+          {/* Le repli reprend la composition exacte du studio — support à plat
+              et téléphone — pour que le chargement différé ne fasse ni
+              disparaître le téléphone ni sauter la mise en page. */}
+          <Suspense fallback={(
+            <div className="tapote-product-studio is-pdp is-fallback" data-render-mode="static">
+              <div className="tapote-product-studio__fallback" aria-hidden="true">
+                {renderSupport({ surface: preview.surface, className: "tapote-product-studio__fallback-art" })}
+              </div>
+              <DeviceFrame
+                actionId={preview.actionId}
+                sectorId={sectorId}
+                sectorTitle={sectorTitle}
+                brandName={preview.brandName}
+                brandLogo={preview.brandLogo}
+                primaryColor={preview.primaryColor}
+                secondaryColor={preview.secondaryColor}
+                textColor={preview.textColor}
+                personalization={preview.personalization}
+                destinationUrl={preview.destinationUrl}
+                accentColor={preview.secondaryColor}
+                embedded={false}
+                className="tapote-studio-device"
+              />
+            </div>
+          )}
+          >
+            <ProductStudio3D
+              surface={preview.surface}
+              actionId={preview.actionId}
+              primaryColor={preview.primaryColor}
+              accentColor={preview.secondaryColor}
+              textColor={preview.textColor}
+              destinationUrl={preview.destinationUrl}
+              sectorId={sectorId}
+              sectorTitle={sectorTitle}
+              brandName={preview.brandName}
+              brandLogo={preview.brandLogo}
+              brandMotif={preview.brandMotif}
+              tagline={preview.tagline}
+              contactLine={preview.contactLine}
+              blockColorMode={preview.blockColorMode}
+              customHeadline={preview.customHeadline}
+              customSubline={preview.customSubline}
+              customTapLabel={preview.customTapLabel}
+              personalization={preview.personalization}
+              renderFallback={() => renderSupport({ surface: preview.surface, className: "tapote-product-studio__fallback-art" })}
+            />
+          </Suspense>
         </div>
       ) : (
         <div className="v3-sector-scene-stage">
@@ -373,8 +413,8 @@ export default function PdpScene({
           ))}
           {mixedPack ? (
             <div className="v3-sector-scene-support v3-sector-scene-support-mix">
-              {renderSupport({ surface: "comptoir", className: "is-mix-comptoir" })}
-              {renderSupport({ surface: "plaque", className: "is-mix-plaque" })}
+              {renderSupport({ surface: duoSurfaces[0], className: "is-mix-comptoir" })}
+              {renderSupport({ surface: duoSurfaces[1], className: "is-mix-plaque" })}
             </div>
           ) : renderSupport({ surface: preview.surface, className: "v3-sector-scene-support" })}
           <DeviceFrame

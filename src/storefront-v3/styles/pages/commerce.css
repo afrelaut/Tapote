@@ -52,7 +52,7 @@
   margin: 0;
   padding: 9px;
   background: #f4f2ed;
-  border: 1px solid #d9d6cf;
+  border: 1px solid #d9d4ca;
   border-radius: 16px 16px 0 0;
 }
 
@@ -81,13 +81,13 @@
   margin-bottom: 12px;
   align-items: center;
   color: #77736b;
-  font-size: 9px;
+  font-size: var(--v3-text-xs);
   letter-spacing: .02em;
 }
 
 .v3-pdp .v3-buybox-kicker {
   color: var(--v3-blue);
-  font-size: 9px;
+  font-size: var(--v3-text-xs);
   font-weight: 850;
   letter-spacing: .13em;
 }
@@ -102,8 +102,8 @@
 
 .v3-pdp .v3-buybox-intro p {
   max-width: 510px;
-  color: #6c6861;
-  font-size: 11px;
+  color: #676158;
+  font-size: var(--v3-text-sm);
   line-height: 1.5;
 }
 
@@ -120,15 +120,23 @@
   column-gap: 8px;
 }
 
+/* Les titres du Studio sont du texte nu, sans la pastille numérotée ni le
+   libellé d'aide : la grille ci-dessus les enfermait dans sa colonne de 24 px,
+   où « Couleur du bloc d'action » se cassait sur quatre lignes. */
+.v3-pdp .v3-live-studio .v3-field-label {
+  display: block;
+  font-size: var(--v3-text-sm);
+}
+
 .v3-pdp .v3-buybox .v3-field-label > b {
   width: 24px;
   height: 24px;
   display: grid;
   place-items: center;
   color: var(--v3-blue);
-  background: #eef2ff;
+  background: #edf1ff;
   border-radius: 50%;
-  font-size: 9px;
+  font-size: var(--v3-text-xs);
   font-weight: 850;
 }
 
@@ -141,7 +149,7 @@
 .v3-pdp .v3-buybox .v3-field-label > small {
   min-width: 0;
   color: #858078;
-  font-size: 9px;
+  font-size: var(--v3-text-xs);
   line-height: 1.35;
 }
 
@@ -154,7 +162,7 @@
   padding: 4px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 4px;
-  background: #f1efe9;
+  background: #f4f2ed;
   border-radius: 13px;
 }
 
@@ -178,13 +186,13 @@
   grid-column: 2;
   grid-row: 1;
   align-self: center;
-  font-size: 9px;
+  font-size: var(--v3-text-xs);
 }
 
 .v3-pdp .v3-buybox select {
   height: 50px;
   padding-left: 14px;
-  border-color: #d8d4cc;
+  border-color: #d9d4ca;
   border-radius: 10px;
   font-size: 12px;
 }
@@ -197,19 +205,76 @@
 .v3-pdp .v3-destination-details {
   margin-top: 8px;
   overflow: hidden;
-  border: 1px solid #dedbd4;
+  border: 1px solid #dcdbd6;
   border-radius: 10px;
-  background: #f7f7f5;
+  background: #fbfaf7;
 }
 
-.v3-pdp .v3-destination-details summary {
-  min-height: 48px;
-  padding: 8px 10px;
+/* L'action se choisit comme la quantité et le mode : par cartes, pas par un
+   menu déroulant natif qui n'obéit ni à nos hauteurs ni à notre typographie. */
+.v3-action-choice {
   display: grid;
-  grid-template-columns: 17px minmax(0, 1fr) 20px;
+  grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
+  gap: 6px;
+}
+
+/* Six actions en avant, les douze autres derrière « Plus d'actions » : la
+   grille reste compacte pour ne pas repousser l'étape « Mode » sous la ligne
+   de flottaison. */
+.v3-action-choice button {
+  min-height: 40px;
+  padding: 0 11px;
+  display: flex;
   align-items: center;
-  gap: 8px;
-  color: #5e5a53;
+  color: #24211e;
+  background: #fff;
+  border: 1px solid var(--v3-line, #e3e0da);
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .16s var(--v3-ease), background .16s var(--v3-ease), transform .16s var(--v3-ease);
+}
+
+.v3-action-choice button:hover { border-color: #b9c6f0; transform: translateY(-1px); }
+
+.v3-action-choice button.is-selected {
+  color: var(--v3-blue, #285cff);
+  background: #f2f5ff;
+  border-color: var(--v3-blue, #285cff);
+  box-shadow: inset 0 0 0 1px var(--v3-blue, #285cff);
+}
+
+/* min-height 32px : en dessous, la cible tactile passait à 17 px de haut sur
+   mobile, sous le minimum recommandé. */
+.v3-action-more {
+  margin-top: 4px;
+  min-height: 32px;
+  padding: 0 2px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--v3-blue, #285cff);
+  background: none;
+  border: 0;
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* L'encart facultatif ressemblait à une note grisée : il annonce maintenant
+   qu'il s'ouvre. */
+.v3-pdp .v3-destination-details summary {
+  min-height: 56px;
+  padding: 10px 12px;
+  display: grid;
+  grid-template-columns: 17px minmax(0, 1fr) 28px;
+  align-items: center;
+  gap: 10px;
+  color: #625d55;
   cursor: pointer;
   list-style: none;
 }
@@ -226,25 +291,37 @@
 
 .v3-pdp .v3-destination-details summary strong {
   color: #24211e;
-  font-size: 11px;
+  font-size: 13px;
 }
+
+.v3-pdp .v3-destination-details summary:hover strong { color: var(--v3-blue, #285cff); }
 
 .v3-pdp .v3-destination-details summary small {
   overflow: hidden;
   color: #77736b;
-  font-size: 9px;
+  font-size: var(--v3-text-sm);
   line-height: 1.25;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+/* Le « + » devient un vrai bouton visible, et pivote une fois ouvert. */
 .v3-pdp .v3-destination-details summary > b {
+  width: 28px;
+  height: 28px;
   display: grid;
   place-items: center;
-  font-size: 18px;
+  color: var(--v3-blue, #285cff);
+  background: #edf1ff;
+  border: 1px solid #cdd9fb;
+  border-radius: 9px;
+  font-size: 17px;
   font-weight: 400;
-  transition: transform .2s ease;
+  transition: transform .2s var(--v3-ease), background .16s var(--v3-ease);
 }
+
+.v3-pdp .v3-destination-details summary:hover > b { background: #dfe7ff; }
+.v3-pdp .v3-destination-details[open] summary > b { transform: rotate(45deg); }
 
 .v3-pdp .v3-destination-details[open] summary > b {
   transform: rotate(45deg);
@@ -252,7 +329,7 @@
 
 .v3-pdp .v3-destination-details .v3-destination-field {
   margin: 0 8px 8px;
-  border-color: #d8d5ce;
+  border-color: #d9d4ca;
   background: #fff;
 }
 
@@ -267,8 +344,8 @@
 }
 
 .v3-pdp .v3-design-choice button em {
-  color: #817c74;
-  font-size: 7px;
+  color: #858078;
+  font-size: var(--v3-text-2xs);
   font-style: normal;
   font-weight: 850;
   letter-spacing: .09em;
@@ -279,7 +356,7 @@
 }
 
 .v3-pdp .v3-design-choice button small {
-  font-size: 9px;
+  font-size: var(--v3-text-xs);
 }
 
 .v3-pdp .v3-design-choice button.is-selected em {
@@ -289,7 +366,7 @@
 .v3-pdp .v3-ready-design-panel {
   margin-top: 8px;
   padding: 9px;
-  background: #f5f3ee;
+  background: #f4f2ed;
   border: 0;
 }
 
@@ -299,11 +376,11 @@
   grid-template-columns: minmax(150px, .72fr) minmax(230px, 1.28fr);
   align-items: center;
   gap: 18px;
-  border-color: #d9d5cd;
+  border-color: #d9d4ca;
 }
 
 .v3-pdp .v3-buybox-summary small {
-  font-size: 9px;
+  font-size: var(--v3-text-xs);
   line-height: 1.35;
 }
 
@@ -315,8 +392,8 @@
 }
 
 .v3-pdp .v3-buybox-summary em {
-  color: #6c6861;
-  font-size: 9px;
+  color: #676158;
+  font-size: var(--v3-text-xs);
 }
 
 .v3-pdp .v3-buybox-summary button {
@@ -332,7 +409,7 @@
 .v3-pdp .v3-buy-reassurance {
   margin-top: 14px;
   gap: 10px 18px;
-  color: #6c6861;
+  color: #676158;
 }
 
 .v3-pdp .v3-field-label > small {
@@ -342,16 +419,26 @@
 }
 
 .v3-pdp-pilot {
-  padding: clamp(72px, 9vw, 132px) clamp(22px, 7vw, 112px);
+  padding: clamp(48px, 6.0vw, 88px) clamp(22px, 7vw, 112px);
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 34px;
+  grid-template-columns: minmax(320px, 0.85fr) minmax(0, 1.15fr);
+  align-items: center;
+  gap: 34px 48px;
   color: #fff;
   background: #285cff;
 }
 
-.v3-pdp-pilot > div {
-  max-width: 860px;
+.v3-pdp-pilot-copy { max-width: 620px; }
+
+.v3-pdp-pilot-mock {
+  min-width: 0;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 30px 70px rgb(4 10 30 / 38%);
+}
+
+@media (max-width: 980px) {
+  .v3-pdp-pilot { grid-template-columns: minmax(0, 1fr); }
 }
 
 .v3-pdp-pilot .v3-eyebrow {
@@ -361,7 +448,7 @@
 .v3-pdp-pilot h2 {
   margin: 15px 0 20px;
   font-family: "Archivo Black", sans-serif;
-  font-size: clamp(48px, 6vw, 86px);
+  font-size: clamp(24px, 2.65vw, 38px);
   line-height: .9;
   letter-spacing: -.06em;
 }
@@ -374,7 +461,9 @@
   line-height: 1.65;
 }
 
-.v3-pdp-pilot ul {
+/* Ces listes appartiennent à la colonne texte : l'aperçu de l'application a
+   ses propres listes, qui ne doivent pas hériter du contraste sur fond bleu. */
+.v3-pdp-pilot-copy ul {
   margin: 28px 0;
   padding: 0;
   display: grid;
@@ -382,7 +471,7 @@
   border-top: 1px solid rgb(255 255 255 / 28%);
 }
 
-.v3-pdp-pilot li {
+.v3-pdp-pilot-copy li {
   min-height: 58px;
   display: flex;
   align-items: center;
@@ -392,7 +481,7 @@
   font-weight: 760;
 }
 
-.v3-pdp-pilot li svg {
+.v3-pdp-pilot-copy li svg {
   width: 14px;
   color: #fff;
 }
@@ -404,9 +493,9 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  color: #101218;
+  color: #111318;
   background: #fff;
-  font-size: 10px;
+  font-size: var(--v3-text-xs);
   font-weight: 850;
 }
 
@@ -451,8 +540,8 @@
   display: flex;
   flex-direction: column;
   color: #fff;
-  background: #14171d;
-  border: 1px solid #2b2f38;
+  background: #17191f;
+  border: 1px solid #2a2e38;
   border-radius: 14px;
 }
 
@@ -462,8 +551,8 @@
 }
 
 .v3-quote-routing span {
-  color: #9ca3b3;
-  font-size: 9px;
+  color: #9aa1ae;
+  font-size: var(--v3-text-xs);
   font-weight: 850;
   letter-spacing: .1em;
   text-transform: uppercase;
@@ -471,7 +560,7 @@
 
 .v3-quote-routing > div span { color: #c4d2ff; }
 .v3-quote-routing b { margin-top: 9px; font-size: 14px; line-height: 1.35; }
-.v3-quote-routing small { margin-top: auto; display: flex; align-items: center; gap: 7px; color: #9cb5ff; font-size: 10px; font-weight: 800; }
+.v3-quote-routing small { margin-top: auto; display: flex; align-items: center; gap: 7px; color: #9db4ff; font-size: var(--v3-text-xs); font-weight: 800; }
 .v3-quote-routing svg { width: 13px; }
 
 .v3-quote-form {
@@ -498,7 +587,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #807c74;
+  color: #858078;
   background: transparent;
   border: 0;
   border-right: 1px solid var(--v3-line);
@@ -508,17 +597,17 @@
 .v3-quote-progress button:last-child { border-right: 0; }
 .v3-quote-progress button:disabled { cursor: default; opacity: .58; }
 .v3-quote-progress button.is-active { color: var(--v3-ink); }
-.v3-quote-progress button.is-complete { color: #16704d; }
+.v3-quote-progress button.is-complete { color: #14704b; }
 
 .v3-quote-progress b {
   width: 28px;
   height: 28px;
   display: grid;
   place-items: center;
-  color: #6d6a63;
-  background: #efede8;
+  color: #716b63;
+  background: #ecebe7;
   border-radius: 50%;
-  font-size: 10px;
+  font-size: var(--v3-text-xs);
 }
 
 .v3-quote-progress .is-active b {
@@ -528,11 +617,11 @@
 
 .v3-quote-progress .is-complete b {
   color: #fff;
-  background: #16704d;
+  background: #14704b;
 }
 
 .v3-quote-progress b svg { width: 13px; }
-.v3-quote-progress span { font-size: 11px; font-weight: 800; }
+.v3-quote-progress span { font-size: var(--v3-text-sm); font-weight: 800; }
 
 .v3-quote-step {
   display: grid;
@@ -569,7 +658,7 @@
 .v3-quote-step > div:first-child p {
   margin: 0;
   color: var(--v3-muted);
-  font-size: 11px;
+  font-size: var(--v3-text-sm);
   line-height: 1.45;
 }
 
@@ -592,7 +681,7 @@
 
 .v3-quote-step label > span small {
   color: var(--v3-muted);
-  font-size: 10px;
+  font-size: var(--v3-text-xs);
   font-weight: 560;
 }
 
@@ -629,7 +718,7 @@
   gap: 8px;
   justify-self: end;
   color: #fff;
-  background: #12151c;
+  background: #10131c;
   border: 0;
   border-radius: 10px;
   font-size: 12px;
@@ -639,7 +728,7 @@
 
 .v3-quote-next:disabled {
   color: #99958c;
-  background: #ebe8e2;
+  background: #ece6dc;
   cursor: not-allowed;
 }
 
@@ -656,7 +745,7 @@
 .v3-quote-step-actions > button:first-child {
   min-height: 48px;
   padding: 0 16px;
-  color: #65625c;
+  color: #676158;
   background: transparent;
   border: 1px solid var(--v3-line);
   border-radius: 9px;
@@ -678,12 +767,12 @@
   padding: 12px;
   display: grid;
   gap: 3px;
-  border-right: 1px solid #ddd9d1;
+  border-right: 1px solid #d9d4ca;
 }
 
 .v3-quote-summary > div:last-child { border-right: 0; }
-.v3-quote-summary dt { color: #77736b; font-size: 7px; font-weight: 820; letter-spacing: .08em; text-transform: uppercase; }
-.v3-quote-summary dd { margin: 0; overflow-wrap: anywhere; font-size: 11px; font-weight: 760; }
+.v3-quote-summary dt { color: #77736b; font-size: var(--v3-text-2xs); font-weight: 820; letter-spacing: .08em; text-transform: uppercase; }
+.v3-quote-summary dd { margin: 0; overflow-wrap: anywhere; font-size: var(--v3-text-sm); font-weight: 760; }
 
 .v3-quote-commitment {
   margin: 0;
@@ -692,9 +781,9 @@
   align-items: flex-start;
   gap: 8px;
   color: #4f4d47;
-  background: #eef5ff;
+  background: #f2f5ff;
   border-radius: 9px;
-  font-size: 10px;
+  font-size: var(--v3-text-xs);
   line-height: 1.45;
 }
 
@@ -808,7 +897,7 @@
     opacity: 0;
     pointer-events: none;
     transform: translateY(18px);
-    transition: opacity .22s ease, transform .22s ease;
+    transition: opacity .22s var(--v3-ease), transform .22s var(--v3-ease);
   }
 
   .v3-pdp .v3-mobile-product-cta.is-visible {
@@ -831,8 +920,8 @@
 
   .v3-quote-routing > * { min-height: 112px; }
   .v3-quote-form { min-height: 0; padding: 24px 18px; }
-  .v3-quote-progress span { font-size: 10px; }
-  .v3-quote-summary > div { border-right: 0; border-bottom: 1px solid #ddd9d1; }
+  .v3-quote-progress span { font-size: var(--v3-text-xs); }
+  .v3-quote-summary > div { border-right: 0; border-bottom: 1px solid #d9d4ca; }
   .v3-quote-summary > div:last-child { border-bottom: 0; }
   .v3-quote-step-actions { align-items: stretch !important; }
   .v3-quote-step-actions .v3-primary-cta { flex: 1; }
@@ -854,7 +943,7 @@
 }
 
 .v3-founder-hero + .v3-proof-band svg {
-  color: #89a5ff;
+  color: #8ca4ff;
 }
 
 .v3-home-section-head {
@@ -864,7 +953,7 @@
 .v3-home-section-head h2 {
   margin: 15px 0 18px;
   font-family: "Archivo Black", sans-serif;
-  font-size: clamp(46px, 6vw, 88px);
+  font-size: clamp(24px, 2.59vw, 38px);
   line-height: .9;
   letter-spacing: -.062em;
 }
@@ -872,15 +961,15 @@
 .v3-home-section-head > p {
   max-width: 660px;
   margin: 0;
-  color: #686d78;
+  color: #656b75;
   font-size: 15px;
   line-height: 1.65;
 }
 
 .v3-home-products {
-  padding: clamp(72px, 9vw, 132px) clamp(22px, 6vw, 96px);
+  padding: clamp(48px, 6.0vw, 88px) clamp(22px, 6vw, 96px);
   color: #111318;
-  background: #f3f2ed;
+  background: #f4f2ed;
 }
 
 .v3-home-product-grid {
@@ -895,21 +984,21 @@
   min-width: 0;
   display: grid;
   grid-template-columns: minmax(250px, .9fr) minmax(260px, 1.1fr);
-  background: #f8f7f3;
+  background: #fbfaf7;
   border-right: 1px solid #cfd0cb;
   border-bottom: 1px solid #cfd0cb;
 }
 
 .v3-home-product-visual {
   position: relative;
-  min-height: 300px;
+  min-height: 186px;
   overflow: hidden;
   display: grid;
   place-items: center;
   color: #fff;
   background:
     radial-gradient(circle at 48% 45%, rgb(75 105 214 / 28%), transparent 33%),
-    linear-gradient(145deg, #161922, #08090d);
+    linear-gradient(145deg, #161922, #0b0d12);
 }
 
 .v3-home-product-visual > span {
@@ -917,7 +1006,8 @@
   z-index: 2;
   top: 18px;
   left: 18px;
-  font-size: 8px;
+  color: #fff;
+  font-size: var(--v3-text-2xs);
   font-weight: 850;
   letter-spacing: .11em;
 }
@@ -933,7 +1023,7 @@
 .v3-home-product-visual .v3-product-art {
   width: min(47%, 190px);
   filter: drop-shadow(0 26px 22px rgb(0 0 0 / 35%));
-  transition: transform .34s cubic-bezier(.2, .8, .2, 1);
+  transition: transform .34s var(--v3-ease);
 }
 
 .v3-home-product.is-plaque .v3-home-product-visual .v3-product-art {
@@ -977,7 +1067,7 @@
 }
 
 .v3-home-product-copy {
-  min-height: 300px;
+  min-height: 186px;
   padding: clamp(26px, 3vw, 44px);
   display: flex;
   flex-direction: column;
@@ -986,14 +1076,14 @@
 .v3-home-product-copy h3 {
   margin: 0 0 14px;
   font-family: "Archivo Black", sans-serif;
-  font-size: clamp(28px, 2.5vw, 42px);
+  font-size: clamp(25px, 2.26vw, 38px);
   line-height: .95;
   letter-spacing: -.05em;
 }
 
 .v3-home-product-copy > p {
   margin: 0;
-  color: #686d78;
+  color: #656b75;
   font-size: 12px;
   line-height: 1.6;
 }
@@ -1019,7 +1109,7 @@
   display: block;
   margin-top: 1px;
   color: #6b7079;
-  font-size: 10px;
+  font-size: var(--v3-text-xs);
   font-weight: 700;
   letter-spacing: .04em;
 }
@@ -1037,7 +1127,7 @@
   color: #fff;
   background: #111318;
   border: 1px solid #111318;
-  font-size: 10px;
+  font-size: var(--v3-text-xs);
   font-weight: 850;
 }
 
@@ -1056,7 +1146,7 @@
 }
 
 .v3-home-uses {
-  padding: clamp(72px, 9vw, 132px) clamp(22px, 7vw, 112px);
+  padding: clamp(48px, 6.0vw, 88px) clamp(22px, 7vw, 112px);
   color: #111318;
   background: #fff;
 }
@@ -1072,9 +1162,9 @@
   grid-template-columns: 42px 54px minmax(250px, 1fr) minmax(150px, .45fr) 28px;
   align-items: center;
   gap: clamp(14px, 2vw, 30px);
-  color: #15171c;
+  color: #17191f;
   border-bottom: 1px solid #cfd2d9;
-  transition: padding .24s ease, color .24s ease;
+  transition: padding .24s var(--v3-ease), color .24s var(--v3-ease);
 }
 
 .v3-home-use-list > a:hover {
@@ -1084,8 +1174,8 @@
 }
 
 .v3-home-use-list > a > span {
-  color: #8b9099;
-  font-size: 9px;
+  color: #8a8f97;
+  font-size: var(--v3-text-xs);
   font-weight: 850;
 }
 
@@ -1107,19 +1197,19 @@
 .v3-home-use-list h3 {
   margin: 0 0 7px;
   font-family: "Archivo Black", sans-serif;
-  font-size: clamp(24px, 2.7vw, 40px);
+  font-size: clamp(24px, 2.56vw, 38px);
   line-height: .95;
   letter-spacing: -.05em;
 }
 
 .v3-home-use-list > a > div > p {
   margin: 0;
-  color: #747985;
-  font-size: 11px;
+  color: #747b86;
+  font-size: var(--v3-text-sm);
 }
 
 .v3-home-use-list strong {
-  font-size: 11px;
+  font-size: var(--v3-text-sm);
 }
 
 .v3-home-uses-all {
@@ -1130,8 +1220,8 @@
 }
 
 .v3-home-pilot {
-  min-height: 760px;
-  padding: clamp(72px, 9vw, 132px) clamp(22px, 7vw, 112px);
+  min-height: 471px;
+  padding: clamp(48px, 6.0vw, 88px) clamp(22px, 7vw, 112px);
   display: grid;
   grid-template-columns: minmax(320px, .85fr) minmax(500px, 1.15fr);
   align-items: center;
@@ -1139,7 +1229,7 @@
   color: #fff;
   background:
     radial-gradient(circle at 79% 38%, rgb(41 83 232 / 30%), transparent 32%),
-    #0d0f14;
+    #0b0d12;
 }
 
 .v3-home-pilot-copy .v3-eyebrow {
@@ -1149,7 +1239,7 @@
 .v3-home-pilot-copy h2 {
   margin: 16px 0 21px;
   font-family: "Archivo Black", sans-serif;
-  font-size: clamp(52px, 6vw, 90px);
+  font-size: clamp(24px, 2.53vw, 38px);
   line-height: .88;
   letter-spacing: -.065em;
 }
@@ -1157,7 +1247,7 @@
 .v3-home-pilot-copy > p {
   max-width: 600px;
   margin: 0;
-  color: #bcc1cc;
+  color: #c2c6d1;
   font-size: 15px;
   line-height: 1.65;
 }
@@ -1179,8 +1269,8 @@
 }
 
 .v3-home-pilot-levels small {
-  color: #88a3ff;
-  font-size: 8px;
+  color: #8ca4ff;
+  font-size: var(--v3-text-xs);
   font-weight: 850;
   letter-spacing: .09em;
 }
@@ -1190,8 +1280,8 @@
 }
 
 .v3-home-pilot-levels span {
-  color: #9ba1ad;
-  font-size: 10px;
+  color: #9aa1ae;
+  font-size: var(--v3-text-xs);
   line-height: 1.5;
 }
 
@@ -1202,151 +1292,14 @@
   border-color: #fff;
 }
 
+/* Simple cadre : l'intérieur est l'écran réel de l'application (PilotAppMock),
+   qui apporte sa propre mise en page depuis pilot-mock.css. */
 .v3-home-pilot-window {
+  min-width: 0;
   overflow: hidden;
-  background: #f5f6f8;
   border: 1px solid rgb(255 255 255 / 20%);
   border-radius: 22px;
   box-shadow: 0 40px 100px rgb(0 0 0 / 40%);
-}
-
-.v3-home-pilot-window > header {
-  min-height: 64px;
-  padding: 0 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  color: #fff;
-  background: #171a22;
-}
-
-.v3-home-pilot-window > header > span {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-}
-
-.v3-home-pilot-window > header img {
-  width: 74px;
-}
-
-.v3-home-pilot-window > header b,
-.v3-home-pilot-window > header small {
-  font-size: 8px;
-  letter-spacing: .1em;
-}
-
-.v3-home-pilot-window-body {
-  min-height: 480px;
-  display: grid;
-  grid-template-columns: 150px minmax(0, 1fr);
-  color: #111318;
-}
-
-.v3-home-pilot-window-body > nav {
-  padding: 26px 15px;
-  display: grid;
-  align-content: start;
-  gap: 9px;
-  color: #555b67;
-  background: #e8eaf0;
-}
-
-.v3-home-pilot-window-body > nav > * {
-  min-height: 40px;
-  padding: 0 11px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border-radius: 8px;
-  font-size: 9px;
-}
-
-.v3-home-pilot-window-body > nav b {
-  color: #fff;
-  background: var(--v3-blue);
-}
-
-.v3-home-pilot-window-body > nav svg {
-  width: 14px;
-}
-
-.v3-home-pilot-window-body > div {
-  padding: clamp(24px, 4vw, 46px);
-}
-
-.v3-home-pilot-window-title {
-  display: grid;
-  gap: 6px;
-}
-
-.v3-home-pilot-window-title small {
-  color: var(--v3-blue);
-  font-size: 8px;
-  font-weight: 850;
-  letter-spacing: .1em;
-}
-
-.v3-home-pilot-window-title strong {
-  font-size: 22px;
-}
-
-.v3-home-pilot-window ul {
-  margin: 28px 0 0;
-  padding: 0;
-  list-style: none;
-  border-top: 1px solid #d3d6dd;
-}
-
-.v3-home-pilot-window li {
-  min-height: 104px;
-  display: grid;
-  grid-template-columns: 74px minmax(0, 1fr) 18px;
-  align-items: center;
-  gap: 15px;
-  border-bottom: 1px solid #d3d6dd;
-}
-
-.v3-home-pilot-window li > i {
-  width: 68px;
-  height: 72px;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  background: #dadee7;
-  border-radius: 9px;
-}
-
-.v3-home-pilot-window li .v3-product-art {
-  width: 43px;
-  filter: drop-shadow(0 8px 7px rgb(0 0 0 / 20%));
-}
-
-.v3-home-pilot-window li:nth-child(2) .v3-product-art {
-  width: 49px;
-}
-
-.v3-home-pilot-window li:nth-child(3) .v3-product-art {
-  width: 56px;
-}
-
-.v3-home-pilot-window li > span {
-  display: grid;
-  gap: 5px;
-}
-
-.v3-home-pilot-window li b {
-  font-size: 12px;
-}
-
-.v3-home-pilot-window li small {
-  color: #5d626d;
-  font-size: 10px;
-}
-
-.v3-home-pilot-window li > svg {
-  width: 15px;
-  color: #9297a2;
 }
 
 @media (max-width: 1180px) {
@@ -1356,7 +1309,7 @@
 
   .v3-home-product-visual,
   .v3-home-product-copy {
-    min-height: 268px;
+    min-height: 180px;
   }
 
   .v3-home-pilot {
@@ -1374,7 +1327,7 @@
   }
 
   .v3-home-product-visual {
-    min-height: 262px;
+    min-height: 180px;
   }
 
   .v3-home-product-copy {
@@ -1407,26 +1360,6 @@
   .v3-home-pilot-levels span {
     grid-column: 1 / -1;
   }
-
-  .v3-home-pilot-window-body {
-    min-height: 0;
-    grid-template-columns: 1fr;
-  }
-
-  .v3-home-pilot-window-body > nav {
-    padding: 10px;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .v3-home-pilot-window-body > nav > * {
-    padding: 0 7px;
-    justify-content: center;
-    font-size: 7px;
-  }
-
-  .v3-home-pilot-window-body > div {
-    padding: 24px 18px;
-  }
 }
 
 @media (max-width: 480px) {
@@ -1443,7 +1376,7 @@
   }
 
   .v3-home-product-visual {
-    min-height: 270px;
+    min-height: 180px;
   }
 
   .v3-home-product-copy {
@@ -1469,34 +1402,13 @@
   .v3-home-pilot-window {
     border-radius: 15px;
   }
-
-  .v3-home-pilot-window > header {
-    min-height: 56px;
-  }
-
-  .v3-home-pilot-window-body > nav span {
-    font-size: 0;
-  }
-
-  .v3-home-pilot-window-body > nav span svg {
-    width: 15px;
-  }
-
-  .v3-home-pilot-window li {
-    grid-template-columns: 60px minmax(0, 1fr) 16px;
-  }
-
-  .v3-home-pilot-window li > i {
-    width: 56px;
-    height: 64px;
-  }
 }
 
 /* L'étape facultative annonce ce qu'elle contient et réagit au survol comme
    les autres contrôles du configurateur. */
 .v3-pdp .v3-destination-details summary {
   min-height: 56px;
-  transition: border-color .16s ease, background .16s ease;
+  transition: border-color .16s var(--v3-ease), background .16s var(--v3-ease);
 }
 
 .v3-pdp .v3-destination-details summary > span {
@@ -1507,12 +1419,17 @@
 
 .v3-pdp .v3-destination-details summary strong { font-size: 13px; }
 
+/* Cette explication était rognée par une ellipse sur mobile : elle tient sur
+   deux lignes plutôt que de perdre la moitié de sa phrase. */
 .v3-pdp .v3-destination-details summary small {
+  overflow: visible;
   color: var(--v3-muted);
-  font-size: 10px;
+  font-size: var(--v3-text-2xs);
   line-height: 1.35;
+  text-overflow: clip;
+  white-space: normal;
 }
 
-.v3-pdp .v3-destination-details summary:hover { background: #f2efe9; }
+.v3-pdp .v3-destination-details summary:hover { background: #f4f2ed; }
 .v3-pdp .v3-destination-details[open] summary > b { transform: rotate(45deg); }
-.v3-pdp .v3-destination-details summary > b { transition: transform .18s ease; }
+.v3-pdp .v3-destination-details summary > b { transition: transform .18s var(--v3-ease); }

@@ -11,4 +11,37 @@
   --v3-focus: #1748d4;
   --v3-radius: 24px;
   --v3-shadow: 0 24px 70px rgb(15 20 32 / 10%);
+
+  /* Échelle typographique. Le dépôt comptait 262 tailles de police distinctes,
+     dont 180 utilisées une seule fois, et le texte courant s'étalait sur tous
+     les entiers de 8 à 16 px : des ajustements au pixel, pas une échelle.
+     Ces sept degrés couvrent l'ensemble des besoins réels. Le corps de texte
+     part de 15 px, et 16 px est le plancher de tout champ de saisie, sous
+     peine de déclencher le zoom automatique d'iOS.
+     Migration progressive : les valeurs en dur restent valides, mais toute
+     nouvelle règle doit puiser ici. */
+  --v3-text-2xs: 11px;
+  --v3-text-xs: 12px;
+  --v3-text-sm: 13px;
+  --v3-text-base: 15px;
+  --v3-text-md: 17px;
+  --v3-text-lg: 21px;
+  --v3-text-xl: 27px;
+  --v3-text-input: 16px;
+
+  /* Échelle d'espacement, sur une base de 4 px. */
+  --v3-space-1: 4px;
+  --v3-space-2: 8px;
+  --v3-space-3: 12px;
+  --v3-space-4: 16px;
+  --v3-space-5: 24px;
+  --v3-space-6: 32px;
+  --v3-space-7: 48px;
+  --v3-space-8: 72px;
+
+  /* Courbe signature. Elle existait déjà dans le dépôt — en CSS et dans les
+     transitions Framer Motion — mais 72 transitions retombaient sur le « ease »
+     par défaut du navigateur, qui donne le mouvement générique de n'importe
+     quel site. Une seule courbe, partout. */
+  --v3-ease: cubic-bezier(.2, .8, .2, 1);
 }

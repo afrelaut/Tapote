@@ -658,7 +658,7 @@ function SupportView() {
   );
 }
 
-function ProductInspector({ product, canEdit, proPlan = true, interactions, onClose, onSave, toast }) {
+function ProductInspector({ product, canEdit, proPlan = false, interactions, onClose, onSave, toast }) {
   const [targetUrl, setTargetUrl] = useState(product.targetUrl);
   const [confirming, setConfirming] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -747,7 +747,11 @@ function ProductInspector({ product, canEdit, proPlan = true, interactions, onCl
             <textarea id="pilot-target" aria-label="DESTINATION ACTUELLE" rows="3" value={targetUrl} onChange={(event) => { setTargetUrl(event.target.value); setConfirming(false); setError(""); }} readOnly={!canEdit} />
             {error && <p className="pilot-field-error" role="alert">{error}</p>}
             {canEdit && !confirming && <button className="pilot-primary-action" type="button" onClick={prepareSave}>Vérifier le changement <ArrowRight size={17} /></button>}
-            {!canEdit && <p className="pilot-readonly">{proPlan ? "Votre rôle permet uniquement la consultation." : "Le changement de destination fait partie de Tapote Pilot Pro. Votre formule affiche vos supports et la page que chacun ouvre."}</p>}
+            {/* Le verrou expliquait la limite sans jamais offrir de chemin :
+                l'intention d'achat est ici, l'offre doit l'être aussi. */}
+            {!canEdit && (proPlan
+              ? <p className="pilot-readonly">Votre rôle permet uniquement la consultation.</p>
+              : <p className="pilot-readonly">Le changement de destination fait partie de Tapote Pilot Pro. Votre formule affiche vos supports et la page que chacun ouvre. <a href="/tapote-pilot" target="_blank" rel="noreferrer">Découvrir Pilot Pro <ArrowRight size={13} /></a></p>)}
           </section>
           {confirming && (
             <section className="pilot-confirm-change">
@@ -782,7 +786,9 @@ function EmptyWorkspace({ email }) {
   );
 }
 
-export default function PilotApp() {
+// `demoPlan` ne sert qu'à la démonstration et aux tests : il choisit le niveau
+// simulé. Les comptes réels tiennent leur formule de la base, jamais d'ici.
+export default function PilotApp({ demoPlan = "included" }) {
   const [previewDemo, setPreviewDemo] = useState(false);
   const [session, setSession] = useState(isPilotDemo ? { user: { id: "demo-user", email: "demo@tapote.fr" } } : null);
   const [authLoading, setAuthLoading] = useState(!isPilotDemo && isPilotConfigured);
@@ -840,19 +846,22 @@ export default function PilotApp() {
     if (!session) return undefined;
     let active = true;
     const request = demoMode
-      ? Promise.resolve(createDemoWorkspace())
+      ? Promise.resolve(createDemoWorkspace({ plan: demoPlan }))
       : loadPilotWorkspace(pilotSupabase, { organizationId: managementOrganizationId || undefined });
     request.then((result) => { if (active) { setWorkspace(result); setWorkspaceError(""); } }).catch(() => {
       if (active) setWorkspaceError("Pilot n’a pas pu charger vos données. Vérifiez votre connexion puis réessayez.");
     }).finally(() => { if (active) setWorkspaceLoading(false); });
     return () => { active = false; };
-  }, [session, demoMode, managementOrganizationId]);
+  }, [session, demoMode, demoPlan, managementOrganizationId]);
 
   const analytics = useMemo(() => workspace ? analyticsFor(workspace, period, locationId) : null, [workspace, period, locationId]);
   const selectedProduct = workspace?.products.find((product) => product.id === selectedProductId) || null;
   // Le remplacement d'une destination est une fonction Tapote Pilot Pro : le
   // rôle donne le droit d'agir, le plan donne l'accès à la fonction.
-  const hasProPlan = (workspace?.plan || "pro") === "pro";
+  // Verrou fermé : seule une formule explicitement « pro » ouvre la fonction.
+  // Un défaut permissif l'offrait à tous les comptes, y compris quand la
+  // donnée manquait.
+  const hasProPlan = workspace?.plan === "pro";
   const canEdit = workspace
     && hasProPlan
     && workspace.membership.accessScope !== "management"
@@ -949,7 +958,7 @@ export default function PilotApp() {
               ? workspace.organization.name
               : "Données à jour"}</small>
         </div>
-        <button className="pilot-sidebar-change" type="button" onClick={() => { setSelectedProductId(workspace.products[0]?.id || null); setMenuOpen(false); }} disabled={!workspace.products.length}><Link2 size={18} /><span>{workspace.membership.accessScope === "management" ? "Consulter un support" : "Changer un lien"}</span><ArrowRight size={16} /></button>
+        <button className="pilot-sidebar-change" type="button" onClick={() => { setSelectedProductId(workspace.products[0]?.id || null); setMenuOpen(false); }} disabled={!workspace.products.length}><Link2 size={18} /><span>{workspace.membership.accessScope === "management" || !canEdit ? "Consulter un support" : "Changer un lien"}</span><ArrowRight size={16} /></button>
         <nav aria-label="Navigation Pilot">
           {Object.entries(views).map(([key, item]) => {
             const Icon = item.icon;

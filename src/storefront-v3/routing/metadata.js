@@ -1,12 +1,22 @@
 import { findSectorBySlug, SECTORS } from "../../storefront/sectorData.js";
 import { PRODUCT_PAGES, resolveProductPageSlug } from "../data/content.js";
 
+/* Google tronque les descriptions vers 158 caractères. Les fiches produit
+   composaient la leur à partir d'un texte variable et dépassaient. */
+const META_DESCRIPTION_MAX = 158;
+
+const clampDescription = (text) => {
+  if (text.length <= META_DESCRIPTION_MAX) return text;
+  const cut = text.slice(0, META_DESCRIPTION_MAX + 1);
+  return `${cut.slice(0, cut.lastIndexOf(" ")).replace(/[\s,;:.]+$/, "")}…`;
+};
+
 export function pageMetadata(path) {
   if (path === "/") return ["Tapote — le bon geste, au bon moment", "Comptoir, plaque et carte NFC + QR pour ouvrir l’avis, le menu, la réservation ou le lien utile. Boutique simple ou personnalisation en direct."];
   if (path === "/boutique" || path.startsWith("/categorie/")) return ["Boutique NFC + QR | Tapote", "Tapote Comptoir, Tapote Plaque, Tapote Card et Pack Local, prêts à poser ou à votre image."];
   if (path.startsWith("/produits/")) {
     const product = PRODUCT_PAGES[resolveProductPageSlug(path.split("/")[2])];
-    if (product) return [`${product.name}${/nfc/i.test(product.name) ? "" : " NFC"} + QR | Tapote`, `${product.description} Prêt à poser ou à votre image, avec destination initiale configurée et Tapote Pilot inclus.`];
+    if (product) return [`${product.name}${/nfc/i.test(product.name) ? "" : " NFC"} + QR | Tapote`, clampDescription(`${product.description} Prêt à poser ou à votre image, Tapote Pilot inclus.`)];
   }
   if (path === "/designs") return ["Designs NFC + QR | Tapote", "Découvrez les designs Tapote pour les avis, Instagram, Facebook, le Wi-Fi, les menus, les réservations et tous vos liens."];
   if (path === "/secteurs") return [`Tapote pour votre secteur | ${SECTORS.length} usages concrets`, "Découvrez les supports NFC + QR et les usages Tapote adaptés à votre métier."];
@@ -16,7 +26,7 @@ export function pageMetadata(path) {
   }
   if (path === "/personnaliser") return ["Créer mon Tapote personnalisé", "Personnalisez Tapote Comptoir, Tapote Plaque ou Tapote Card : logo, textes, couleurs et action."];
   if (path === "/comment-ca-marche") return ["Comment fonctionne Tapote ?", "NFC, QR code, encodage et changement de destination à distance expliqués simplement."];
-  if (path === "/tapote-pilot") return ["Tapote Pilot inclus et Pilot Pro | Tapote", "Tapote Pilot est inclus pour activer les supports et gérer leurs destinations. Pilot Pro ajoute statistiques, périodes, lieux, équipes, exports et multi-sites."];
+  if (path === "/tapote-pilot") return ["Tapote Pilot inclus et Pilot Pro | Tapote", "Tapote Pilot est inclus pour activer vos supports et suivre leurs destinations. Pilot Pro ajoute statistiques, périodes, lieux, exports et multi-sites."];
   if (path === "/faq") return ["FAQ Tapote | NFC, QR, produits et livraison", "Réponses détaillées sur les supports Tapote, le NFC, le QR, le Studio, Pilot, Pilot Pro, la livraison et les projets multi-sites."];
   if (path === "/panier") return ["Votre panier | Tapote", "Vérifiez vos supports Tapote, leur composition, la livraison et les options."];
   if (path === "/devis") return ["Devis volume et multi-sites | Tapote", "Décrivez votre besoin de 10 supports ou plus et recevez une proposition Tapote claire et adaptée."];

@@ -7,13 +7,13 @@
 
 .pilot-mock {
   --mock-rail: #0f0f10;
-  --mock-paper: #f7f4ee;
+  --mock-paper: #f4f2ed;
   --mock-blue: #2458ff;
   --mock-line: #e2ddd3;
   display: grid;
   grid-template-columns: 176px minmax(0, 1fr);
   overflow: hidden;
-  color: #16161a;
+  color: #111318;
   background: var(--mock-paper);
   border-radius: 14px;
   font-size: 12px;
@@ -27,7 +27,7 @@
   flex-direction: column;
   gap: 14px;
   padding: 16px 12px;
-  color: #d5d2cb;
+  color: #d9d4ca;
   background: var(--mock-rail);
 }
 
@@ -56,7 +56,7 @@
 
 .pilot-mock__rail nav svg { width: 13px; height: 13px; flex: 0 0 auto; }
 .pilot-mock__rail nav .is-active { color: #fff; background: var(--mock-blue); }
-.pilot-mock__rail nav .is-action { color: #17140c; background: #f5b32d; }
+.pilot-mock__rail nav .is-action { color: #19150f; background: #f5b32d; }
 .pilot-mock__rail nav .is-action svg:last-child { margin-left: auto; }
 .pilot-mock__rail nav .is-locked { color: #a5a099; background: rgb(255 255 255 / 8%); }
 
@@ -102,7 +102,7 @@
 }
 
 .pilot-mock__head em svg { width: 11px; height: 11px; }
-.pilot-mock__head em.is-pro { color: #1b3fd0; background: #e2eaff; }
+.pilot-mock__head em.is-pro { color: #1b3fd0; background: #dfe7ff; }
 
 /* ---------- Bloc « changer un lien » ---------- */
 
@@ -117,7 +117,7 @@
 
 .pilot-mock__link-copy small { color: var(--mock-blue); font-size: 8px; font-weight: 850; letter-spacing: .09em; }
 .pilot-mock__link-copy strong { display: block; margin: 5px 0 6px; font-family: "Archivo Black", sans-serif; font-size: 17px; line-height: 1.02; letter-spacing: -.04em; }
-.pilot-mock__link-copy p { margin: 0; color: #57524b; font-size: 9.5px; line-height: 1.45; }
+.pilot-mock__link-copy p { margin: 0; color: #57524b; font-size: 10px; line-height: 1.45; }
 
 .pilot-mock__link-card {
   padding: 11px;
@@ -129,13 +129,13 @@
   border-radius: 11px;
 }
 
-.pilot-mock__field { display: flex; align-items: center; gap: 8px; padding: 7px 9px; background: #f6f4ef; border: 1px solid var(--mock-line); border-radius: 8px; }
+.pilot-mock__field { display: flex; align-items: center; gap: 8px; padding: 7px 9px; background: #f4f2ed; border: 1px solid var(--mock-line); border-radius: 8px; }
 .pilot-mock__field i { display: grid; place-items: center; width: 22px; height: 22px; color: #fff; background: var(--mock-blue); border-radius: 6px; }
 .pilot-mock__field svg { width: 12px; height: 12px; }
-.pilot-mock__field b { min-width: 0; overflow: hidden; font-size: 9.5px; text-overflow: ellipsis; white-space: nowrap; }
+.pilot-mock__field b { min-width: 0; overflow: hidden; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
 
 .pilot-mock__current { display: grid; gap: 2px; padding-top: 2px; }
-.pilot-mock__current small { color: #6a655d; font-size: 7.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.pilot-mock__current small { color: #676158; font-size: 8px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .pilot-mock__current b { font-size: 13px; }
 
 .pilot-mock__cta {
@@ -154,7 +154,7 @@
 
 .pilot-mock__cta svg { width: 12px; height: 12px; }
 .pilot-mock__link-card.is-locked { background: #f4f2ed; }
-.pilot-mock__link-card.is-locked .pilot-mock__cta { color: #4f4b44; background: #e0dbd1; }
+.pilot-mock__link-card.is-locked .pilot-mock__cta { color: #4d4841; background: #e2ddd3; }
 
 .pilot-mock__counter {
   padding: 12px;
@@ -162,13 +162,13 @@
   align-content: start;
   gap: 4px;
   color: #fff;
-  background: #111113;
+  background: #0f0f10;
   border-radius: 11px;
 }
 
-.pilot-mock__counter small { color: #f5b32d; font-size: 7.5px; font-weight: 820; letter-spacing: .08em; }
+.pilot-mock__counter small { color: #f5b32d; font-size: 8px; font-weight: 820; letter-spacing: .08em; }
 .pilot-mock__counter strong { font-family: "Archivo Black", sans-serif; font-size: 30px; line-height: 1; letter-spacing: -.05em; }
-.pilot-mock__counter p { margin: 0; color: #c8c4bd; font-size: 8px; line-height: 1.4; }
+.pilot-mock__counter p { margin: 0; color: #c9c4bb; font-size: 8px; line-height: 1.4; }
 .pilot-mock__counter em { display: flex; align-items: center; gap: 5px; margin-top: 6px; color: #9fe7c4; font-size: 8px; font-style: normal; }
 .pilot-mock__counter i { width: 5px; height: 5px; background: #38d996; border-radius: 50%; }
 
@@ -192,30 +192,30 @@
 
 .pilot-mock__support-id { min-width: 0; display: grid; gap: 2px; }
 .pilot-mock__support-id b { overflow: hidden; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
-.pilot-mock__support-id small { display: flex; align-items: center; gap: 5px; color: #6a655d; font-size: 7.5px; }
+.pilot-mock__support-id small { display: flex; align-items: center; gap: 5px; color: #676158; font-size: 8px; }
 .pilot-mock__support-id u { width: 5px; height: 5px; background: #38d996; border-radius: 50%; }
 
 .pilot-mock__support-place { min-width: 0; overflow: hidden; color: #5c574f; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
 .pilot-mock__support-destination { min-width: 0; display: grid; gap: 2px; }
-.pilot-mock__support-destination small { color: #6a655d; font-size: 7px; font-weight: 800; letter-spacing: .07em; }
-.pilot-mock__support-destination b { overflow: hidden; font-size: 9.5px; text-overflow: ellipsis; white-space: nowrap; }
+.pilot-mock__support-destination small { color: #676158; font-size: 7px; font-weight: 800; letter-spacing: .07em; }
+.pilot-mock__support-destination b { overflow: hidden; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
 
 .pilot-mock__support-count { display: grid; justify-items: end; gap: 1px; }
 .pilot-mock__support-count b { font-family: "Archivo Black", sans-serif; font-size: 16px; letter-spacing: -.04em; }
 .pilot-mock__support-count b.is-muted { color: #b4afa6; }
-.pilot-mock__support-count small { color: #6a655d; font-size: 7px; font-weight: 800; letter-spacing: .07em; }
+.pilot-mock__support-count small { color: #676158; font-size: 7px; font-weight: 800; letter-spacing: .07em; }
 
 /* ---------- Bloc analytique ---------- */
 
-.pilot-mock__analytics { padding: 14px 18px 18px; background: #eaf0ff; }
-.pilot-mock__analytics.is-teaser { background: #f2f0ea; }
+.pilot-mock__analytics { padding: 14px 18px 18px; background: #edf1ff; }
+.pilot-mock__analytics.is-teaser { background: #f4f2ed; }
 
 .pilot-mock__analytics-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .pilot-mock__analytics-head small { color: var(--mock-blue); font-size: 8px; font-weight: 850; letter-spacing: .09em; }
 .pilot-mock__analytics-head strong { display: block; margin-top: 3px; font-family: "Archivo Black", sans-serif; font-size: 15px; letter-spacing: -.04em; }
 
 .pilot-mock__period { display: flex; gap: 4px; }
-.pilot-mock__period b { padding: 5px 8px; background: #fff; border: 1px solid #cfd8f5; border-radius: 7px; font-size: 8.5px; font-weight: 800; }
+.pilot-mock__period b { padding: 5px 8px; background: #fff; border: 1px solid #cfd8f5; border-radius: 7px; font-size: 8px; font-weight: 800; }
 .pilot-mock__period b.is-on { color: #fff; background: var(--mock-blue); border-color: var(--mock-blue); }
 
 .pilot-mock__price { flex: 0 0 auto; display: flex; align-items: baseline; gap: 4px; white-space: nowrap; }
@@ -233,8 +233,8 @@
 .pilot-mock__bars i.is-qr { background: #f5b32d; }
 
 .pilot-mock__locked-list { margin: 12px 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px 14px; }
-.pilot-mock__locked-list li { display: flex; align-items: center; gap: 7px; color: #55504a; font-size: 9.5px; }
-.pilot-mock__locked-list svg { width: 11px; height: 11px; flex: 0 0 auto; color: #a49f96; }
+.pilot-mock__locked-list li { display: flex; align-items: center; gap: 7px; color: #57524b; font-size: 10px; }
+.pilot-mock__locked-list svg { width: 11px; height: 11px; flex: 0 0 auto; color: #a5a099; }
 
 /* ---------- Sélecteur des deux niveaux ---------- */
 
@@ -243,12 +243,12 @@
 /* Le sélecteur vit aussi bien sur fond clair que sur fond sombre : les couleurs
    viennent de variables que la section peut redéfinir. */
 .pilot-level-demo {
-  --switch-surface: #efece5;
-  --switch-border: #ddd8ce;
-  --switch-ink: #55524c;
-  --switch-active-ink: #10131b;
+  --switch-surface: #f6f1e8;
+  --switch-border: #e2ddd3;
+  --switch-ink: #57524b;
+  --switch-active-ink: #10131c;
   --switch-active-surface: #fff;
-  --switch-note: #5f5c56;
+  --switch-note: #625d55;
 }
 
 .pilot-level-switch {
@@ -280,7 +280,7 @@
 .pilot-level-switch button.is-active {
   color: var(--switch-active-ink);
   background: var(--switch-active-surface);
-  box-shadow: 0 4px 14px rgb(20 18 14 / 10%);
+  box-shadow: 0 3px 7px rgb(18 16 13 / 12%);
 }
 
 .pilot-level-note { margin: 0; color: var(--switch-note); font-size: 12px; line-height: 1.5; }

@@ -1,7 +1,7 @@
 import { lazy, Suspense } from "react";
 import { ArrowRight, Layers3, Palette, SmartphoneNfc, Sparkles } from "lucide-react";
 import { MotionConfig, motion } from "motion/react";
-import { FinalCommercialCta, HomePilotSection, HowStrip, OfferArchitectureSection, SectorCommercialSection, StorefrontFaq } from "../marketing/MarketingSections.jsx";
+import { FinalCommercialCta, FrozenSupportSection, HomePilotSection, HowStrip, OfferArchitectureSection, SectorCommercialSection, StorefrontFaq } from "../marketing/MarketingSections.jsx";
 
 const Hero3D = lazy(() => import("../../storefront/Hero3D.jsx"));
 
@@ -49,9 +49,10 @@ export function LandingPage() {
       <section className="v3-proof-band" aria-label="Principes Tapote">
         <span><SmartphoneNfc /> NFC + QR sur chaque support</span>
         <span><Layers3 /> Tapote Pilot inclus</span>
-        <span><Palette /> Studio à l’étape de personnalisation</span>
+        <span><Palette /> BAT avant fabrication personnalisée</span>
         <span><Sparkles /> Prêt à poser ou à votre image</span>
       </section>
+      <FrozenSupportSection />
       <OfferArchitectureSection />
       <HowStrip />
       <SectorCommercialSection />

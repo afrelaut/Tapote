@@ -11,6 +11,12 @@ export const STOREFRONT_PROMISES = {
 
 export const READY_ACTION_IDS = [...ACTION_ORDER];
 
+/* Les six actions autorisées telles quelles par la source de vérité §9.1
+   (avis, menu, réservation, contact, Wi-Fi, URL choisie). Les douze autres
+   restent commandables, mais repliées : dix-huit boutons d'un bloc repoussaient
+   l'étape « Mode » de 174 px sous la ligne de flottaison. */
+export const FEATURED_ACTION_IDS = ["avis", "menu", "reservation", "wifi", "contact", "autre"];
+
 export const campaignHeadlineForAction = (actionId) => ACTIONS[actionId]?.campaignHeadline || ACTIONS[actionId]?.headline || "";
 
 export const readyHeadlineForAction = (actionId) => (
@@ -26,8 +32,8 @@ export const PRODUCT_PAGES = {
     description: "À la caisse, à l’accueil ou sur une table : votre marque reste visible et le bon lien s’ouvre en un geste.",
     placements: "Caisse · accueil · table",
     size: "Format posé · caractéristiques confirmées avant production",
-    technical: ["Support visible au comptoir", "Finition confirmée avant production", "NFC + QR reliés à la même destination"],
-    uses: ["Avis et fidélité à la caisse", "Menu ou réservation sur table", "Accueil, Wi-Fi et informations pratiques"],
+    technical: ["Support visible au comptoir", "Finition confirmée avant production"],
+    uses: ["Avis et fidélité à la caisse", "Menu ou réservation sur table", "Accueil, Wi-Fi et informations pratiques", "Contact ou page de votre choix"],
     inBox: "1 Tapote Comptoir avec NFC configuré et QR code associé.",
   },
   plaque: {
@@ -38,8 +44,8 @@ export const PRODUCT_PAGES = {
     description: "Un point de contact fixe, placé là où votre client a naturellement le téléphone en main.",
     placements: "Entrée · mur · miroir · point fixe",
     size: "Format et fixation confirmés avant production",
-    technical: ["Point de contact fixe", "Finition confirmée avant production", "NFC + QR reliés à la même destination"],
-    uses: ["Avis à la sortie", "Réservation à l’accueil", "Informations pratiques à un emplacement fixe"],
+    technical: ["Point de contact fixe", "Finition confirmée avant production"],
+    uses: ["Avis à la sortie", "Réservation à l’accueil", "Informations pratiques à un emplacement fixe", "Menu ou page de votre choix"],
     inBox: "1 Tapote Plaque avec NFC configuré et QR code associé.",
   },
   carte: {
@@ -50,8 +56,8 @@ export const PRODUCT_PAGES = {
     description: "Pour les rendez-vous, livraisons, visites et équipes terrain. Elle se tend, se tapote et se range en une seconde.",
     placements: "Terrain · rendez-vous · livraison",
     size: "Format poche · caractéristiques confirmées avant production",
-    technical: ["Support mobile remis en main propre", "Finition confirmée avant production", "NFC + QR reliés à la même destination"],
-    uses: ["Coordonnées en rendez-vous", "Avis après une prestation", "Catalogue, paiement ou réservation sur le terrain"],
+    technical: ["Support mobile remis en main propre", "Finition confirmée avant production"],
+    uses: ["Coordonnées en rendez-vous", "Avis après une prestation", "Catalogue, paiement ou réservation sur le terrain", "Site ou page de votre choix"],
     inBox: "1 Tapote Card imprimée, avec NFC configuré et QR code associé.",
   },
 };
@@ -59,22 +65,35 @@ export const PRODUCT_PAGES = {
 export const resolveProductPageSlug = (slug) => slug === "comptoir" ? "chevalet" : slug;
 
 export const LEGAL_DETAILS = {
-  company: import.meta.env.VITE_LEGAL_COMPANY || "Aymeric Frelaut (Tapote)",
+  // L'article L526-22 du Code de commerce impose la mention « EI » dans la
+  // dénomination, et l'article R123-237 du même code le RCS avec sa ville.
+  company: import.meta.env.VITE_LEGAL_COMPANY || "Aymeric Frelaut EI (Tapote)",
   capital: import.meta.env.VITE_LEGAL_CAPITAL || "Entrepreneur individuel (EI) — capital social non applicable",
   address: import.meta.env.VITE_LEGAL_ADDRESS || "24 rue Labouret, 92700 Colombes, France",
-  registration: import.meta.env.VITE_LEGAL_REGISTRATION || "SIREN 105 019 103 — SIRET 105 019 103 00016 — immatriculé au RNE le 15 mai 2026",
+  registration: import.meta.env.VITE_LEGAL_REGISTRATION || "SIREN 105 019 103 — SIRET 105 019 103 00016 — RCS Nanterre 105 019 103 — immatriculé au RNE le 15 mai 2026",
   vat: import.meta.env.VITE_LEGAL_VAT || "",
   director: import.meta.env.VITE_LEGAL_DIRECTOR || "Aymeric Frelaut",
   contact: import.meta.env.VITE_LEGAL_CONTACT || "aymeric@tapote.fr — +33 6 63 15 04 49",
   privacyContact: import.meta.env.VITE_LEGAL_PRIVACY_CONTACT || import.meta.env.VITE_LEGAL_CONTACT || "aymeric@tapote.fr",
   returnsAddress: import.meta.env.VITE_LEGAL_RETURNS_ADDRESS || "24 rue Labouret, 92700 Colombes, France",
   dataRetention: import.meta.env.VITE_LEGAL_DATA_RETENTION || "Les demandes commerciales sans commande sont conservées au maximum trois ans après le dernier contact ; les journaux de sécurité, au maximum douze mois hors incident ou obligation légale ; les fichiers de personnalisation, pendant l’exécution de la commande puis trois ans pour le support et la défense des droits.",
+  // L'article L616-1 du Code de la consommation impose de communiquer le
+  // médiateur sur le site ET dans les CGV. L'adhésion à un médiateur agréé
+  // CECMC est une démarche externe : tant qu'elle n'a pas abouti, le champ
+  // reste vide et la mention correspondante n'est pas publiée.
+  mediator: import.meta.env.VITE_LEGAL_MEDIATOR || "",
   version: import.meta.env.VITE_LEGAL_VERSION || "22 juillet 2026",
   host: import.meta.env.VITE_LEGAL_HOST || "HOSTINGER INTERNATIONAL LIMITED, 61 Lordou Vironos str., 6023 Larnaca, Chypre — compliance@hostinger.com",
 };
 
-// Le statut fiscal public des prix reste à décider dans la source de vérité.
-export const taxLabel = import.meta.env.VITE_LEGAL_TAX_LABEL || "prix actuel";
+// Le repli « prix actuel » ne veut rien dire fiscalement et s'affichait tel
+// quel en production (« 89 € prix actuel »), ce qui contrevient à l'obligation
+// d'information sur les prix. Le repli retenu correspond au régime le plus
+// probable pour une entreprise individuelle immatriculée en 2026 : la
+// franchise en base de TVA.
+// À CONFIRMER : si Tapote est assujettie à la TVA, renseigner
+// VITE_LEGAL_TAX_LABEL (« HT » en B2B, « TTC » sinon) et STRIPE_TAX_BEHAVIOR.
+export const taxLabel = import.meta.env.VITE_LEGAL_TAX_LABEL || "TVA non applicable, art. 293 B du CGI";
 export const shippingPolicyReady = import.meta.env.VITE_SHIPPING_POLICY_READY === "true";
 
 export const SHOP_MENU_PREVIEWS = {
@@ -155,7 +174,7 @@ export const STOREFRONT_FAQ = [
   ["Tapote Studio est-il un produit séparé ?", "Non. Tapote Studio intervient uniquement pendant la personnalisation d’un Comptoir, d’une Plaque, d’une Card ou d’un Pack Local. Le support reste toujours le produit acheté."],
   ["Le NFC fonctionne-t-il sans application ?", "Oui. Sur un téléphone compatible, le client approche son appareil de la zone indiquée. Le QR code reste présent comme solution de secours."],
   ["Puis-je changer la destination après la livraison ?", "Oui, avec Tapote Pilot Pro. Tapote Pilot est inclus pour retrouver vos supports et voir la destination active ; le remplacement du lien à distance, sans réimprimer ni réencoder, fait partie de l’option Pro."],
-  ["Quelle différence entre Tapote Pilot et Pilot Pro ?", "Tapote Pilot couvre l’activation, les supports, les destinations et les changements de lien. Pilot Pro ajoute statistiques, périodes, lieux, équipes, exports et multi-sites."],
+  ["Quelle différence entre Tapote Pilot et Pilot Pro ?", "Tapote Pilot couvre l’activation, les supports et le suivi des destinations. Pilot Pro ajoute le changement de lien à distance, les statistiques, périodes, lieux, équipes, exports et multi-sites."],
   ["Quels sont les délais ?", "Le délai est confirmé à la prise en charge. Une version personnalisée démarre seulement après validation du BAT ; une série de 10 supports ou plus passe par un devis documenté."],
 ];
 
@@ -177,7 +196,7 @@ export const FAQ_GROUPS = [
       ["Faut-il installer une application ?", "Non. Le client approche son téléphone ou scanne le QR code, puis la destination s’ouvre dans son navigateur habituel."],
       ["Le NFC fonctionne-t-il sur tous les téléphones ?", "La grande majorité des smartphones récents lisent le NFC. Le QR code ouvre la même destination et reste toujours disponible comme second chemin."],
       ["Puis-je changer le lien après la livraison ?", "Oui, avec Tapote Pilot Pro. Le suivi de vos supports et de leur destination reste inclus dans Tapote Pilot ; le changement de lien à distance est une fonction Pro."],
-      ["Quelle différence entre Tapote Pilot et Pilot Pro ?", "Tapote Pilot couvre l’activation, les supports, les destinations et les changements de lien. Pilot Pro ajoute statistiques, périodes, lieux, équipes, exports et multi-sites."],
+      ["Quelle différence entre Tapote Pilot et Pilot Pro ?", "Tapote Pilot couvre l’activation, les supports et le suivi des destinations. Pilot Pro ajoute le changement de lien à distance, les statistiques, périodes, lieux, équipes, exports et multi-sites."],
     ],
   },
   {
@@ -293,6 +312,6 @@ export const PRODUCT_FAQ_SPECIFIC = {
 export const WHY_TAPOTE = [
   { icon: CircleDollarSign, title: "Un prix produit complet", copy: "Support, impression, NFC, QR, configuration du lien initial et contrôle sont réunis dans le prix affiché." },
   { icon: FileCheck2, title: "Votre Studio sur la fiche", copy: "Vous personnalisez le support choisi sans repartir dans un configurateur séparé. Un BAT technique final contrôle les marges et le QR avant impression." },
-  { icon: Link2, title: "Pilot inclus", copy: "Activez vos supports, retrouvez leurs destinations et changez un lien sans réencoder ni réimprimer." },
+  { icon: Link2, title: "Pilot inclus", copy: "Activez vos supports et retrouvez la destination que chacun ouvre. Le changement de lien à distance relève de l’option Pilot Pro." },
   { icon: SmartphoneNfc, title: "NFC + QR testés un par un", copy: "Les deux accès sont vérifiés sur téléphone, support par support, avant la livraison." },
 ];

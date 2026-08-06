@@ -20,8 +20,8 @@ describe("Tapote Pilot", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Si cette adresse possède un compte Pilot");
   });
 
-  it("affiche le workspace de démonstration et permet de changer une destination", async () => {
-    render(<PilotApp />);
+  it("affiche le workspace de démonstration et permet de changer une destination avec Pilot Pro", async () => {
+    render(<PilotApp demoPlan="pro" />);
 
     expect(await screen.findByRole("heading", { name: "Vue d’ensemble" })).toBeInTheDocument();
     expect(screen.getByText(/Mode démonstration/)).toBeInTheDocument();
@@ -42,6 +42,19 @@ describe("Tapote Pilot", () => {
     expect(destination).toHaveValue("https://example.com/nouvelle-destination");
   });
 
+  /* Le verrou Pro n'existait pas : sans formule explicite, tout compte pouvait
+     remplacer ses destinations, y compris sans abonnement. */
+  it("verrouille le changement de destination sans Pilot Pro", async () => {
+    render(<PilotApp />);
+
+    await screen.findByRole("heading", { name: "Vue d’ensemble" });
+    fireEvent.click(screen.getByRole("button", { name: /Avis · Comptoir/ }));
+
+    expect(screen.getByLabelText("DESTINATION ACTUELLE")).toHaveAttribute("readonly");
+    expect(screen.queryByRole("button", { name: /Vérifier le changement/ })).not.toBeInTheDocument();
+    expect(screen.getByText(/fait partie de Tapote Pilot Pro/i)).toBeInTheDocument();
+  });
+
   it("transforme les métriques en signaux transparents et actionnables", async () => {
     render(<PilotApp />);
 
@@ -54,7 +67,7 @@ describe("Tapote Pilot", () => {
   });
 
   it("refuse une destination non HTTPS avant confirmation", async () => {
-    render(<PilotApp />);
+    render(<PilotApp demoPlan="pro" />);
     await screen.findByRole("heading", { name: "Vue d’ensemble" });
     fireEvent.click(screen.getByRole("button", { name: /Avis · Comptoir/ }));
     fireEvent.change(screen.getByLabelText("DESTINATION ACTUELLE"), { target: { value: "http://example.com" } });
