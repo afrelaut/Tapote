@@ -216,6 +216,7 @@ export default function ProductStudio3D({
   personalization = "ready",
   hero = false,
   className = "",
+  renderFallback,
 }) {
   const hostRef = useRef(null);
   const canvasRef = useRef(null);
@@ -491,7 +492,10 @@ export default function ProductStudio3D({
         />
       </div>
       <canvas ref={canvasRef} className="tapote-product-studio__canvas" hidden={!eligible} aria-hidden="true" />
-      {!ready && <div className="tapote-product-studio__fallback" aria-hidden="true" />}
+      {/* Sans WebGL éligible (VM, GPU désactivé, reduced-motion) l'objet 3D ne
+          rend jamais : ce repli montre le vrai produit à plat plutôt qu'un
+          cadre vide, seul le téléphone flottant restant sinon visible. */}
+      {!ready && <div className="tapote-product-studio__fallback" aria-hidden="true">{renderFallback?.()}</div>}
       <DeviceFrame
         actionId={actionId}
         sectorId={sectorId}

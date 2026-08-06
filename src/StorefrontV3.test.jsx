@@ -79,7 +79,7 @@ describe("Boutique Tapote V3", () => {
     expect(screen.getByRole("heading", { name: /Quatre choix.*Le prix tout de suite/i })).toBeVisible();
     expect(screen.getByRole("heading", { name: /Vous choisissez.*On prépare.*Vous posez/i })).toBeVisible();
     expect(screen.getByRole("heading", { name: /Vos supports.*Leurs destinations/i })).toBeVisible();
-    expect(screen.getByText("Studio à l’étape de personnalisation")).toBeVisible();
+    expect(screen.getByText("BAT avant fabrication personnalisée")).toBeVisible();
     expect(screen.getAllByText("Tapote Pilot inclus").length).toBeGreaterThan(0);
     expect(screen.getByRole("heading", { name: /Un support imprimé est figé/i })).toBeVisible();
     expect(screen.getByText("Le NFC et le QR ouvrent la même destination Tapote.")).toBeVisible();
@@ -204,6 +204,15 @@ describe("Boutique Tapote V3", () => {
     fireEvent.click(screen.getByRole("button", { name: "Ajouter au panier" }));
     expect(screen.getByText(/Le catalogue ne peut pas être vérifié/i)).toBeVisible();
     expect(window.localStorage.getItem("tapote-cart-v3")).toBe("[]");
+    // Un échec ne doit jamais emprunter l’habillage du succès : ni le titre
+    // « Ajouté au panier », ni le lien vers un panier resté vide.
+    const alert = screen.getByRole("alert");
+    expect(alert).toBeVisible();
+    expect(within(alert).getByText("Ajout impossible")).toBeVisible();
+    expect(screen.queryByText("Ajouté au panier")).not.toBeInTheDocument();
+    // Le panier de l’en-tête reste, lui, toujours présent : on ne contrôle que
+    // les actions proposées par l’alerte elle-même.
+    expect(within(alert).queryByRole("link", { name: /Voir le panier/i })).not.toBeInTheDocument();
   });
 
   it("intègre le Studio directement dans la fiche du support sans changer de page", async () => {
@@ -214,6 +223,10 @@ describe("Boutique Tapote V3", () => {
     fireEvent.click(screen.getByRole("button", { name: /À votre image/i }));
     expect(screen.getByLabelText("Nom de votre entreprise")).toBeVisible();
     fireEvent.change(screen.getByLabelText("Nom de votre entreprise"), { target: { value: "CAFÉ RICO" } });
+    // Instagram ne fait pas partie des six actions mises en avant : il faut
+    // d’abord déplier « Plus d’actions ».
+    expect(screen.queryByRole("button", { name: "Instagram" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Plus d’actions/ }));
     fireEvent.click(screen.getByRole("button", { name: "Instagram" }));
     fireEvent.change(screen.getByLabelText("Adresse exacte à ouvrir"), { target: { value: "https://instagram.com/tapote" } });
     fireEvent.click(screen.getByRole("button", { name: /Ajouter au panier/i }));
@@ -301,7 +314,7 @@ describe("Boutique Tapote V3", () => {
     expect(screen.getByRole("button", { name: "Menu" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("img", { name: "Écran du téléphone après ouverture : Menu" })).toBeVisible();
     expect(screen.getByRole("heading", { name: /Changez la destination.*Pas l’objet/i })).toBeVisible();
-    expect(screen.getByText("Modifier la destination")).toBeVisible();
+    expect(screen.getByText("Voir la destination active")).toBeVisible();
     expect(screen.getByText("Pilot Pro", { selector: "strong" })).toBeVisible();
     expect(document.querySelector(".v3-how-plan-panel")).not.toHaveTextContent(/Tarif|€|mois/i);
   });
@@ -329,6 +342,35 @@ describe("Boutique Tapote V3", () => {
     expect(screen.getByRole("heading", { name: "Conditions générales de vente", level: 1 })).toBeVisible();
     expect(screen.getByRole("heading", { name: /Personnalisation et BAT/i })).toBeVisible();
     expect(screen.getByRole("heading", { name: /Conformité et réclamations/i })).toBeVisible();
+  });
+
+  /* La readiness gate vérifie que les variables légales sont remplies, jamais
+     que les CGV contiennent les clauses obligatoires : basculer LEGAL_READY
+     ouvrirait la vente quel que soit le contenu publié. Ce test ferme l'écart. */
+  it("publie les mentions contractuelles obligatoires avant toute vente", () => {
+    renderRoute("/cgv");
+    const cgv = document.querySelector(".v3-legal-sections").textContent;
+    expect(cgv).toMatch(/rétractation/i);
+    expect(cgv).toMatch(/L221-28/);
+    expect(cgv).toMatch(/garantie légale de conformité/i);
+    expect(cgv).toMatch(/vices cachés/i);
+    expect(cgv).toMatch(/médiateur de la consommation/i);
+    expect(cgv).not.toMatch(/prix actuel/i);
+  });
+
+  it("expose les mentions légales et la politique de confidentialité attendues", () => {
+    renderRoute("/mentions-legales");
+    const mentions = document.querySelector(".v3-legal-sections").textContent;
+    expect(mentions).toMatch(/\bEI\b/);
+    expect(mentions).toMatch(/RCS/);
+
+    cleanup();
+    renderRoute("/confidentialite");
+    const privacy = document.querySelector(".v3-legal-sections").textContent;
+    expect(privacy).toMatch(/Sentry/);
+    expect(privacy).toMatch(/clauses contractuelles types/i);
+    expect(privacy).toMatch(/portabilité/i);
+    expect(privacy).toMatch(/Cookies et traceurs/i);
   });
 
   it("rend une vraie page introuvable sans planter", () => {

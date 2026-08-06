@@ -375,7 +375,13 @@ export function RelatedProducts({ current }) {
             <b>Découvrir <ArrowRight /></b>
           </a>
         ))}
-        <a className="is-pack" href="/boutique#packs"><span>DEUX POINTS DE CONTACT</span><strong>Pack Local</strong><small>Un Comptoir et une Plaque avec une identité cohérente.</small><b>Voir le pack <ArrowRight /></b></a>
+        <a className="is-pack" href="/boutique#packs">
+          <span className="v3-related-product-art is-pack-preview" aria-hidden="true">
+            <ProductArt surface="comptoir" actionId="avis" theme="nuit" personalization="ready" brandName="tapote." />
+            <ProductArt surface="plaque" actionId="avis" theme="creme" personalization="ready" brandName="tapote." />
+          </span>
+          <span>DEUX POINTS DE CONTACT</span><strong>Pack Local</strong><small>Un Comptoir et une Plaque avec une identité cohérente.</small><b>Voir le pack <ArrowRight /></b>
+        </a>
       </div>
     </section>
   );
@@ -385,7 +391,7 @@ export function ProductOrderJourney({ data }) {
   const steps = [
     { number: "01", icon: Palette, title: "Choisissez", copy: `Sélectionnez ${data.name}, l’action, le mode et la quantité. Le prix est visible avant l’ajout au panier.` },
     { number: "02", icon: FileCheck2, title: "On prépare", copy: "Tapote associe la destination au NFC et au QR. En mode À votre image, vous validez le BAT avant production." },
-    { number: "03", icon: PackageCheck, title: "Vous posez", copy: "Le support arrive encodé et testé. Sa destination reste modifiable dans Tapote Pilot." },
+    { number: "03", icon: PackageCheck, title: "Vous posez", copy: "Le support arrive encodé et testé. Vous retrouvez sa destination active dans Tapote Pilot." },
   ];
   return (
     <section className="v3-product-journey" aria-labelledby={`v3-${data.key}-journey-title`}>
@@ -440,7 +446,7 @@ export function HowStrip() {
       <div className="v3-step-grid">
         <article><b>01</b><Palette /><h3>Choisissez</h3><p>Un support, une action et un design prêt à poser ou à votre image.</p></article>
         <article><b>02</b><Globe2 /><h3>On prépare</h3><p>Le même lien est associé au NFC et au QR, puis contrôlé avant l’envoi.</p></article>
-        <article><b>03</b><PackageCheck /><h3>Vous posez</h3><p>Le support fonctionne immédiatement. Le lien reste modifiable dans Tapote Pilot.</p></article>
+        <article><b>03</b><PackageCheck /><h3>Vous posez</h3><p>Le support fonctionne immédiatement. Sa destination reste visible dans Tapote Pilot.</p></article>
       </div>
     </section>
   );

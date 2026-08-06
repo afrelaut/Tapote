@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { ArrowRight, Check, CheckCircle2, CircleDollarSign, Link2, MapPin, PackageCheck, Plus, SmartphoneNfc, Sparkles, Star } from "lucide-react";
 import { ACTIONS, formatMoney, PRODUCTS } from "../../../shared/catalog.js";
 import { SECTORS } from "../../storefront/sectorData.js";
-import { getProductId, makeCartItem } from "../commerce/cart.js";
+import { compositionSurface, getProductId, makeCartItem } from "../commerce/cart.js";
 import { BuyBox } from "../commerce/ProductConfigurator.jsx";
 import { HOME_SCENES, PRODUCT_PAGES, SHOP_ITEMS, readyHeadlineForAction, taxLabel } from "../data/content.js";
 import { PilotAppMock } from "../marketing/PilotAppMock.jsx";
@@ -191,7 +191,7 @@ export function ProductPage({ page, onAdd }) {
           <SectorScene
             key={`${productSector.id}-${data.key}`}
             sector={productSector}
-            preview={{ ...productPreview, surface: data.key, baseSurface: data.key, count: 1 }}
+            preview={{ ...productPreview, surface: compositionSurface(productPreview.count || 1, productPreview.composition, data.key), baseSurface: data.key, count: productPreview.count || 1 }}
             className="v3-product-live-scene"
           />
         </div>

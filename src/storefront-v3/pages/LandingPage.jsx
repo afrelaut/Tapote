@@ -49,7 +49,7 @@ export function LandingPage() {
       <section className="v3-proof-band" aria-label="Principes Tapote">
         <span><SmartphoneNfc /> NFC + QR sur chaque support</span>
         <span><Layers3 /> Tapote Pilot inclus</span>
-        <span><Palette /> Studio à l’étape de personnalisation</span>
+        <span><Palette /> BAT avant fabrication personnalisée</span>
         <span><Sparkles /> Prêt à poser ou à votre image</span>
       </section>
       <FrozenSupportSection />

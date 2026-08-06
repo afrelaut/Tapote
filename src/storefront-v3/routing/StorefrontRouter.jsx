@@ -9,7 +9,7 @@ import { resolveStorefrontPage } from "./routes.jsx";
 
 export default function StorefrontV3() {
   const [cart, setCart] = useState(loadCart);
-  const [cartNotice, setCartNotice] = useState("");
+  const [cartNotice, setCartNotice] = useState(null);
   const [catalogState, setCatalogState] = useState({ status: "loading", availableProductIds: null });
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
   useEffect(() => { window.localStorage.setItem(CART_KEY, JSON.stringify(cart)); }, [cart]);
@@ -72,12 +72,12 @@ export default function StorefrontV3() {
   const addToCart = (item, options = {}) => {
     const normalized = { ...item, quantity: normalizedQuantity(item.quantity) };
     if (catalogState.status !== "ready") {
-      setCartNotice("Le catalogue ne peut pas être vérifié pour le moment. Réessayez dans quelques secondes.");
-      return;
+      setCartNotice({ tone: "error", title: "Ajout impossible", message: "Le catalogue ne peut pas être vérifié pour le moment. Réessayez dans quelques secondes." });
+      return false;
     }
     if (!catalogState.availableProductIds?.has(normalized.productId)) {
-      setCartNotice("Ce produit n’est momentanément pas disponible. Le catalogue vient d’être actualisé.");
-      return;
+      setCartNotice({ tone: "error", title: "Produit indisponible", message: "Ce produit n’est momentanément pas disponible. Le catalogue vient d’être actualisé." });
+      return false;
     }
     setCart((current) => {
       if (Number.isInteger(options.replaceIndex) && current[options.replaceIndex]) {
@@ -92,7 +92,11 @@ export default function StorefrontV3() {
     const notice = product.kind === "pack"
       ? `${product.supportCount} supports · ${product.personalization === "custom" ? "À votre image" : "Prêts à poser"} · ${ACTIONS[normalized.actionId].name}${normalized.supportComposition ? ` · ${compositionLabel(normalized.supportComposition)}` : ""}`
       : `${product.name.replace(/ · .+$/, "")} · ${ACTIONS[normalized.actionId].name}`;
-    setCartNotice(Number.isInteger(options.replaceIndex) ? `Configuration mise à jour · ${notice}` : notice);
+    setCartNotice({
+      tone: "success",
+      title: Number.isInteger(options.replaceIndex) ? "Configuration mise à jour" : "Ajouté au panier",
+      message: notice,
+    });
     trackStorefrontEvent("add_to_cart", {
       product_id: normalized.productId,
       product_name: product.name,
@@ -104,6 +108,7 @@ export default function StorefrontV3() {
       update: Number.isInteger(options.replaceIndex),
     });
     if (options.returnToCart) window.setTimeout(() => window.location.assign("/panier"), 120);
+    return true;
   };
   const page = resolveStorefrontPage({
     path,
@@ -112,5 +117,5 @@ export default function StorefrontV3() {
     addToCart,
     availableProductIds: catalogState.availableProductIds,
   });
-  return <Shell cartCount={cartCount} cartNotice={cartNotice} onCloseNotice={() => setCartNotice("")} compactCheckout={path.startsWith("/commande")} catalogStatus={catalogState.status}>{page}</Shell>;
+  return <Shell cartCount={cartCount} cartNotice={cartNotice} onCloseNotice={() => setCartNotice(null)} compactCheckout={path.startsWith("/commande")} catalogStatus={catalogState.status}>{page}</Shell>;
 }

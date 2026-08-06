@@ -6,7 +6,7 @@ import { extractLogoPalette, pickScreenColor } from "../../brandColors.js";
 import { DEFAULT_THEME, DEVICE_THEMES, THEME_LABELS, resolveThemeId } from "../../deviceThemes.js";
 import { trackStorefrontEvent } from "../../storefront/analytics.js";
 import { CONFIG_DRAFT_PREFIX, cacheLogoPreview, compositionLabel, compositionSurface, getCachedLogoPreview, getProductId, loadConfigDraft, makeCartItem } from "./cart.js";
-import { ACTION_ORDER, READY_ACTION_IDS, campaignHeadlineForAction, readyHeadlineForAction } from "../data/content.js";
+import { ACTION_ORDER, FEATURED_ACTION_IDS, READY_ACTION_IDS, campaignHeadlineForAction, readyHeadlineForAction } from "../data/content.js";
 import { BLOCK_COLOR_MODES, DEFAULT_BLOCK_COLOR_MODE, actionPaletteLabel, resolveBlockPalette } from "../../storefront/actionPalettes.js";
 
 function CompositionPicker({ count, composition, onChange, labelId }) {
@@ -153,6 +153,7 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
     observer.observe(summaryRef.current);
     return () => observer.disconnect();
   }, [compact, productOnly]);
+  const [showAllActions, setShowAllActions] = useState(false);
   const [logoStatus, setLogoStatus] = useState(restoredDraft?.brandLogoId ? "success" : "idle");
   const [logoError, setLogoError] = useState("");
   const [added, setAdded] = useState(false);
@@ -165,6 +166,14 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
   const availableActions = ACTION_ORDER
     .filter((id) => personalization !== "ready" || READY_ACTION_IDS.includes(id))
     .map((id) => ACTIONS[id]);
+  // Une action choisie hors des six mises en avant reste visible : sinon le
+  // repli ferait disparaître la sélection en cours.
+  const selectedActionIsExtra = !FEATURED_ACTION_IDS.includes(actionId);
+  const actionsExpanded = showAllActions || selectedActionIsExtra;
+  const shownActions = actionsExpanded
+    ? availableActions
+    : availableActions.filter((action) => FEATURED_ACTION_IDS.includes(action.id));
+  const hiddenActionCount = availableActions.length - shownActions.length;
   const previewBrandName = personalization === "ready" ? initialBrandName : brandName || "VOTRE MARQUE";
   const previewBrandLogo = personalization === "ready" ? "" : brandLogo;
   const previewPrimaryColor = personalization === "ready" ? readyColors.paper : primaryColor;
@@ -178,7 +187,11 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
   const previewHeadline = personalization === "custom" ? customHeadline : readyHeadline;
   const logoPending = personalization === "custom" && (logoStatus === "loading" || Boolean(brandLogo && !brandLogoId));
   const destinationInvalid = Boolean(destinationUrl && !/^https:\/\/.+/i.test(destinationUrl));
-  const logoPendingLabel = logoStatus === "loading" ? "Envoi du logo…" : "Logo à retransmettre";
+  const logoPendingLabel = logoStatus === "loading"
+    ? "Envoi du logo…"
+    : logoStatus === "error"
+      ? "Logo en erreur — retirez-le"
+      : "Logo à retransmettre";
   const selectPersonalization = (value) => {
     markConfigurationStarted();
     setPersonalization(value);
@@ -303,7 +316,7 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
   };
   const add = () => {
     if (logoPending || destinationInvalid) return;
-    onAdd(makeCartItem(productId, actionId, {
+    const wasAdded = onAdd(makeCartItem(productId, actionId, {
       targetId,
       supportComposition: composition,
       brandName: personalization === "custom" ? brandName : "",
@@ -323,6 +336,7 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
       customTapLabel: personalization === "custom" ? customTapLabel : "",
       destinationUrl,
     }));
+    if (wasAdded === false) return;
     setAdded(true);
     window.setTimeout(() => setAdded(false), 1500);
   };
@@ -396,7 +410,7 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
         {/* Le menu déroulant natif rompait la logique du configurateur : les
             deux autres étapes se choisissent par cartes cliquables. */}
         <div className="v3-action-choice" role="group" aria-label="Le lien à ouvrir" aria-describedby={linkLabelId}>
-          {availableActions.map((action) => {
+          {shownActions.map((action) => {
             const selected = actionId === action.id;
             return (
               <button
@@ -411,6 +425,16 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
             );
           })}
         </div>
+        {!selectedActionIsExtra && (
+          <button
+            type="button"
+            className="v3-action-more"
+            aria-expanded={actionsExpanded}
+            onClick={() => setShowAllActions((open) => !open)}
+          >
+            {actionsExpanded ? "Moins d’actions" : `Plus d’actions (${hiddenActionCount})`}
+          </button>
+        )}
         {productOnly ? (
           <details className={`v3-destination-details ${destinationInvalid ? "is-invalid" : ""}`} open={Boolean(destinationUrl)}>
             <summary>
@@ -550,7 +574,7 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
         <div><span>{product.name}</span><strong>{formatMoney(product.price)}</strong></div>
         <button type="button" onClick={add} disabled={logoPending || destinationInvalid}>{logoPending ? logoPendingLabel : destinationInvalid ? "Vérifier le lien" : added ? <><Check size={18} /> Ajouté</> : <>Ajouter au panier <ArrowRight size={18} /></>}</button>
       </div>
-      {(productOnly || compact) && <aside className={`v3-mobile-product-cta ${initialCtaPassed && !summaryVisible ? "is-visible" : ""}`} aria-label="Résumé de la configuration"><span><small>{product.kind === "pack" && composition ? compositionLabel(composition) : product.name.replace(/ · .+$/, "")}</small><strong>{formatMoney(product.price)}</strong></span><button type="button" onClick={add} disabled={logoPending || destinationInvalid}>{destinationInvalid ? "Lien invalide" : added ? "Ajouté" : "Ajouter"} <ArrowRight /></button></aside>}
+      {(productOnly || compact) && <aside className={`v3-mobile-product-cta ${initialCtaPassed && !summaryVisible ? "is-visible" : ""}`} aria-label="Résumé de la configuration"><span><small>{product.kind === "pack" && composition ? compositionLabel(composition) : product.name.replace(/ · .+$/, "")}</small><strong>{formatMoney(product.price)}</strong></span><button type="button" onClick={add} disabled={logoPending || destinationInvalid}>{logoPending ? logoPendingLabel : destinationInvalid ? "Lien invalide" : added ? "Ajouté" : "Ajouter"} <ArrowRight /></button></aside>}
     </section>
   );
 }

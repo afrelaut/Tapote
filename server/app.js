@@ -359,8 +359,8 @@ function normalizeClientError(body) {
 export function createApp({ config, repository, storage, logger, outboxWorker, stripe: injectedStripe, storefrontHtml: injectedStorefrontHtml } = {}) {
   const stripe = injectedStripe ?? (config.stripeSecretKey ? new Stripe(config.stripeSecretKey) : null);
   const app = express();
-  const checkoutLimiter = limiter(60 * 60 * 1_000, 20, "Trop de tentatives de paiement. Réessaie dans quelques minutes.");
-  const uploadLimiter = limiter(60 * 60 * 1_000, 30, "Trop d’envois de fichiers. Réessaie plus tard.");
+  const checkoutLimiter = limiter(60 * 60 * 1_000, 20, "Trop de tentatives de paiement. Réessayez dans quelques minutes.");
+  const uploadLimiter = limiter(60 * 60 * 1_000, 30, "Trop d’envois de fichiers. Réessayez plus tard.");
   const leadLimiter = limiter(60 * 60 * 1_000, 10, "Trop de demandes envoyées. Réessaie plus tard.");
   const statusLimiter = limiter(15 * 60 * 1_000, 60, "Trop de vérifications. Réessaie dans quelques minutes.");
   const clientErrorLimiter = limiter(5 * 60 * 1_000, 20, "Trop de diagnostics envoyés.");
@@ -733,7 +733,7 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
         .map(([name]) => name);
       if (config.isProduction && missingChecks.length > 0) {
         request.log.error({ missingChecks }, "Checkout bloqué par la readiness");
-        return response.status(503).json({ error: "La boutique finalise sa configuration. Réessaie un peu plus tard." });
+        return response.status(503).json({ error: "La boutique finalise sa configuration. Réessayez un peu plus tard." });
       }
       if (!config.legalReady || !config.legalVersion) {
         return response.status(503).json({ error: "La vente est verrouillée tant que les informations légales ne sont pas validées." });
