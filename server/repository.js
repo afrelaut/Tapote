@@ -516,6 +516,40 @@ class PostgresRepository {
     }));
   }
 
+  async getJarvisReadSummary(scopes) {
+    const requested = new Set(scopes);
+    const wants = {
+      management: ["commercial", "operations", "admin"].some((scope) => requested.has(scope)),
+      inventory: requested.has("stock") || requested.has("operations"),
+      clients: requested.has("client") || requested.has("commercial"),
+      pilot: requested.has("pilot") || requested.has("client"),
+    };
+    const client = await this.pool.connect();
+    try {
+      await client.query("begin read only");
+      await client.query("set local statement_timeout = '3000ms'");
+      await client.query("set local role jarvis_reader");
+      const [management, inventory, clients, pilot] = await Promise.all([
+        wants.management ? client.query("select status, payment_status, order_count, total_cents, next_due_on from jarvis_read.management_summary order by status, payment_status") : { rows: [] },
+        wants.inventory ? client.query("select category, item_count, stock_quantity, reserved_quantity, low_stock_count from jarvis_read.inventory_summary order by category nulls last") : { rows: [] },
+        wants.clients ? client.query("select health, segment, client_count from jarvis_read.client_summary order by health, segment nulls last") : { rows: [] },
+        wants.pilot ? client.query("select status, product_type, product_count, last_activation_at from jarvis_read.pilot_summary order by status, product_type") : { rows: [] },
+      ]);
+      await client.query("commit");
+      return {
+        management: management.rows.map((row) => ({ status: row.status, paymentStatus: row.payment_status, orderCount: Number(row.order_count), totalCents: Number(row.total_cents), nextDueOn: row.next_due_on || null })),
+        inventory: inventory.rows.map((row) => ({ category: row.category || null, itemCount: Number(row.item_count), stockQuantity: Number(row.stock_quantity), reservedQuantity: Number(row.reserved_quantity), lowStockCount: Number(row.low_stock_count) })),
+        clients: clients.rows.map((row) => ({ health: row.health, segment: row.segment || null, clientCount: Number(row.client_count) })),
+        pilot: pilot.rows.map((row) => ({ status: row.status, productType: row.product_type, productCount: Number(row.product_count), lastActivationAt: row.last_activation_at || null })),
+      };
+    } catch (error) {
+      await client.query("rollback").catch(() => undefined);
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
   async resolveTapoteLink(shortCode) {
     const result = await this.pool.query(
       `select id, target_url, active

@@ -8,7 +8,7 @@ import helmet from "helmet";
 import multer from "multer";
 import pinoHttp from "pino-http";
 import Stripe from "stripe";
-import { randomUUID } from "node:crypto";
+import { randomUUID, timingSafeEqual } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -175,6 +175,23 @@ function bearerToken(request) {
   const authorization = String(request.headers.authorization || "").trim();
   const match = authorization.match(/^Bearer\s+([^\s]+)$/i);
   return match?.[1] || "";
+}
+
+const jarvisReadScopes = new Set(["commercial", "client", "operations", "stock", "marketing", "admin", "pilot"]);
+
+function validSecret(candidate, expected) {
+  const left = Buffer.from(String(candidate || ""));
+  const right = Buffer.from(String(expected || ""));
+  return left.length === right.length && left.length >= 32 && timingSafeEqual(left, right);
+}
+
+function requestedJarvisScopes(value) {
+  const requested = String(value || "")
+    .split(",")
+    .map((scope) => scope.trim())
+    .filter(Boolean);
+  if (!requested.length || requested.some((scope) => !jarvisReadScopes.has(scope))) return null;
+  return [...new Set(requested)];
 }
 
 function checkoutReturnUrl(request, config) {
@@ -364,6 +381,7 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
   const leadLimiter = limiter(60 * 60 * 1_000, 10, "Trop de demandes envoyées. Réessaie plus tard.");
   const statusLimiter = limiter(15 * 60 * 1_000, 60, "Trop de vérifications. Réessaie dans quelques minutes.");
   const clientErrorLimiter = limiter(5 * 60 * 1_000, 20, "Trop de diagnostics envoyés.");
+  const jarvisReadLimiter = limiter(60 * 1_000, 30, "Trop de lectures Jarvis. Réessaie dans une minute.");
 
   app.disable("x-powered-by");
   if (config.trustProxyHops > 0) app.set("trust proxy", config.trustProxyHops);
@@ -448,6 +466,43 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
     } catch (error) {
       request.log.error({ err: error }, "Readiness production indisponible");
       return response.status(503).json({ ready: false });
+    }
+  });
+
+  app.get("/api/jarvis/summary", jarvisReadLimiter, async (request, response) => {
+    response.set({
+      "Cache-Control": "private, no-store, max-age=0",
+      "X-Robots-Tag": "noindex, nofollow",
+    });
+    if (!config.jarvisReadToken || config.jarvisReadToken.length < 32) {
+      return response.status(404).json({ error: "Route indisponible." });
+    }
+    if (!validSecret(bearerToken(request), config.jarvisReadToken)) {
+      request.log.warn("Lecture Jarvis refusée");
+      return response.status(401).json({ error: "Accès refusé." });
+    }
+    const scopes = requestedJarvisScopes(request.query.scopes);
+    if (!scopes) return response.status(400).json({ error: "Périmètre de lecture invalide." });
+    if (!repository.durable || typeof repository.getJarvisReadSummary !== "function") {
+      return response.status(503).json({ error: "Pont de lecture indisponible." });
+    }
+    try {
+      const summary = await repository.getJarvisReadSummary(scopes);
+      const readiness = getProductionChecks(config, { repository, storage });
+      return response.json({
+        ...summary,
+        diagnostics: {
+          readiness: {
+            ready: readiness.ready,
+            missingChecks: Object.entries(readiness.checks)
+              .filter(([, ready]) => !ready)
+              .map(([name]) => name),
+          },
+        },
+      });
+    } catch (error) {
+      request.log.error({ err: error }, "Pont de lecture Jarvis indisponible");
+      return response.status(503).json({ error: "Pont de lecture indisponible." });
     }
   });
 
