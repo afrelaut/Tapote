@@ -90,7 +90,10 @@ export function compositionLabel(composition) {
 
 export function compositionSurface(count, composition, fallback = "comptoir") {
   if (count <= 1 || !composition) return fallback;
-  if (composition.comptoir > 0 && composition.plaque > 0) return "mix";
+  // Deux supports, qu'ils soient identiques ("2 Comptoirs") ou mixtes ("1
+  // Comptoir + 1 Plaque"), doivent se voir dans l'aperçu : la scène "mix"
+  // rend deux objets, jamais un seul, quel que soit le duo commandé.
+  if ((composition.comptoir || 0) + (composition.plaque || 0) === 2) return "mix";
   return composition.plaque > 0 ? "plaque" : "comptoir";
 }
 

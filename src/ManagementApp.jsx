@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
   AlertTriangle,
+  ArrowLeft,
   ArrowRight,
   ArrowUpRight,
   BadgeCheck,
@@ -64,11 +65,12 @@ import {
   signOutManager,
   subscribeToManagement,
   updateManagementOrderStatus,
+  MANAGEMENT_STATUS_FLOW,
 } from "./management/repository.js";
 import { isManagementConfigured } from "./management/supabase.js";
 import "./management.css";
 
-const statusFlow = ["payment_pending", "paid", "bat", "supply", "assembly", "quality", "ready", "shipped"];
+const statusFlow = MANAGEMENT_STATUS_FLOW;
 const tapoteShortCodePattern = /^[a-f0-9]{10}$/i;
 const tapoteRedirectBaseUrl = String(import.meta.env.VITE_REDIRECT_BASE_URL || "https://t.tapote.fr").trim().replace(/\/$/, "");
 const isManagementDemo = import.meta.env.VITE_MANAGEMENT_DEMO === "true";
@@ -873,7 +875,7 @@ function OrderCustomizationLine({ line }) {
   </article>;
 }
 
-function OrderDrawer({ order, client, onClose, advanceOrder, onOpenClient, onActivatePilot, assignedProducts, details, detailsState }) {
+function OrderDrawer({ order, client, onClose, advanceOrder, rewindOrder, onOpenClient, onActivatePilot, assignedProducts, details, detailsState }) {
   if (!order || !client) return null;
   const currentIndex = statusFlow.indexOf(order.status);
   return (
@@ -895,6 +897,16 @@ function OrderDrawer({ order, client, onClose, advanceOrder, onOpenClient, onAct
           {statusFlow.map((status, index) => <div key={status} className={cx(index <= currentIndex && "is-done", index === currentIndex && "is-current")}><i>{index < currentIndex ? <Check size={12} /> : null}</i><p><b>{statusMeta[status].label}</b><small>{index < currentIndex ? "Terminé" : index === currentIndex ? "Étape actuelle" : "À venir"}</small></p></div>)}
         </div></section>
         <section className="pilot-drawer-note"><span>NOTE ATELIER</span><p>{order.note}</p></section>
+        {/* Le retour n'existe que dans la fiche, jamais sur le tableau de
+            production : corriger doit être possible, pas accidentel. */}
+        {!isClosedOrder(order) && currentIndex > 0 && (
+          <div className="pilot-drawer-rewind">
+            <button type="button" onClick={() => rewindOrder(order.id)}>
+              <ArrowLeft size={14} />Revenir à « {statusMeta[statusFlow[currentIndex - 1]]?.label} »
+            </button>
+            <small>Corrige une étape validée par erreur. L’action est tracée dans le journal.</small>
+          </div>
+        )}
         <footer>{!isClosedOrder(order) ? <button className="pilot-primary" onClick={() => advanceOrder(order.id)}>{statusMeta[order.status]?.action || "Étape suivante"}<ArrowRight size={16} /></button> : <button className="pilot-secondary" onClick={onClose}><CheckCircle2 size={16} />Commande {order.status === "cancelled" ? "annulée" : "terminée"}</button>}<button className="pilot-secondary" onClick={() => window.print()}><Download size={16} />Bon de production</button></footer>
       </aside>
     </div>
@@ -1357,6 +1369,34 @@ export default function TapoteManagementApp() {
       setSyncing(false);
     }
   };
+  /* L'avancement reste en un clic — c'est le geste courant, il doit rester
+     rapide. C'est l'erreur qui devient réparable, plutôt que d'imposer une
+     confirmation à chaque étape du flux normal. */
+  const rewindOrder = async (orderId) => {
+    const currentOrder = data.orders.find((item) => item.id === orderId);
+    if (!currentOrder || !access) return;
+    const index = statusFlow.indexOf(currentOrder.status);
+    if (index <= 0) {
+      showToast("Cette commande est déjà à la première étape.");
+      return;
+    }
+    if (currentOrder.status === "shipped") {
+      showToast("Une commande expédiée ne peut plus revenir en arrière.");
+      return;
+    }
+    const previousStatus = statusFlow[index - 1];
+    setSyncing(true);
+    try {
+      const updated = await updateManagementOrderStatus(access.organizationId, currentOrder, previousStatus, currentOrder.tracking);
+      setData((current) => ({ ...current, orders: current.orders.map((item) => item.id === orderId ? updated : item) }));
+      showToast(`${orderId} est revenue à « ${statusMeta[previousStatus]?.label || previousStatus} ».`);
+    } catch (error) {
+      showToast(toUserMessage(error, `Impossible de revenir en arrière sur ${orderId}.`));
+      await refreshData({ quiet: true });
+    } finally {
+      setSyncing(false);
+    }
+  };
   const createOrder = async (form) => {
     if (!access) return;
     setSyncing(true);
@@ -1546,7 +1586,7 @@ export default function TapoteManagementApp() {
         </main>
       </div>
       <ManagementMobileNav currentView={view} onNavigate={navigate} onMenu={() => setNavOpen(true)} counts={navCounts} />
-      <OrderDrawer order={order} client={order ? clientMap[order.clientId] : null} assignedProducts={order ? data.encodedProducts.filter((product) => product.orderId === order.recordId && product.status === "assigned").length : 0} details={selectedOrderDetails} detailsState={selectedOrderDetailsState} onClose={() => setSelectedOrder(null)} advanceOrder={advanceOrder} onActivatePilot={setPilotActivationOrder} onOpenClient={(clientId) => { setSelectedOrder(null); setSelectedClient(clientId); setView("clients"); }} />
+      <OrderDrawer order={order} client={order ? clientMap[order.clientId] : null} assignedProducts={order ? data.encodedProducts.filter((product) => product.orderId === order.recordId && product.status === "assigned").length : 0} details={selectedOrderDetails} detailsState={selectedOrderDetailsState} onClose={() => setSelectedOrder(null)} advanceOrder={advanceOrder} rewindOrder={rewindOrder} onActivatePilot={setPilotActivationOrder} onOpenClient={(clientId) => { setSelectedOrder(null); setSelectedClient(clientId); setView("clients"); }} />
       {newOrderOpen && <NewOrderModal clients={data.clients} onClose={() => setNewOrderOpen(false)} onCreate={createOrder} />}
       {newClientOpen && <NewClientModal onClose={() => setNewClientOpen(false)} onCreate={createClient} />}
       {newInventoryOpen && <NewInventoryModal onClose={() => setNewInventoryOpen(false)} onCreate={createInventory} />}

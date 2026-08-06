@@ -2,6 +2,12 @@ import { managementSupabase } from "./supabase.js";
 
 const managementRoles = ["owner", "admin", "manager"];
 
+/* Le flux de production, source unique partagée avec l'interface et alignée sur
+   celui que la fonction `advance_management_order` applique en base. */
+export const MANAGEMENT_STATUS_FLOW = [
+  "payment_pending", "paid", "bat", "supply", "assembly", "quality", "ready", "shipped",
+];
+
 function assertClient() {
   if (!managementSupabase) throw new Error("Supabase n’est pas configuré pour TAPOTE Gestion.");
   return managementSupabase;
@@ -393,7 +399,17 @@ export async function updateManagementOrderStatus(organizationId, order, nextSta
     target_tracking_number: trackingNumber || null,
   });
   throwIfError(error);
-  await recordActivity(organizationId, nextStatus === "shipped" ? "ship" : "order", `${order.id} est passée au statut « ${nextStatus} »`, { order_id: order.recordId, status: nextStatus });
+  // Une correction n'est pas un avancement : le journal doit permettre de
+  // retrouver qui est revenu en arrière, et sur quelle étape.
+  const rewound = MANAGEMENT_STATUS_FLOW.indexOf(nextStatus) < MANAGEMENT_STATUS_FLOW.indexOf(order.status);
+  await recordActivity(
+    organizationId,
+    nextStatus === "shipped" ? "ship" : "order",
+    rewound
+      ? `${order.id} est revenue de « ${order.status} » à « ${nextStatus} » (correction)`
+      : `${order.id} est passée au statut « ${nextStatus} »`,
+    { order_id: order.recordId, status: nextStatus, ...(rewound ? { rewound: true, from_status: order.status } : {}) },
+  );
   return {
     ...mapOrder(data),
     pilotStatus: order.pilotStatus === "active"

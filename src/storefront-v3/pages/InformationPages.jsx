@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ArrowRight, Check, CheckCircle2, Clock3, Clapperboard, ClipboardList, Globe2, Layers3, Link2, MapPin, MessageCircle, Plus, QrCode, Search, ShieldCheck, SmartphoneNfc, Zap } from "lucide-react";
 import { motion } from "motion/react";
-import { ACTIONS } from "../../../shared/catalog.js";
+import { ACTIONS, formatMoney, PILOT_PLANS } from "../../../shared/catalog.js";
 import { SECTOR_CATEGORIES, SECTORS } from "../../storefront/sectorData.js";
 import { ProductArt } from "../scenes/ProductArt.jsx";
 import { FAQ_GROUPS, PILOT_PROOF_TRACKS } from "../data/content.js";
@@ -176,7 +176,7 @@ export function SectorLandingPage({ sector }) {
           <span>COMPOSITION CONSEILLÉE</span>
           <strong>{recommendation.composition}</strong>
           <div><ProductArt surface={preview.surface} actionId={sector.actionIds[0]} brandName="VOTRE MARQUE" theme={preview.theme} personalization="custom" customHeadline={preview.customHeadline} /></div>
-          <ul><li><Check /> NFC + QR</li><li><Check /> Lien modifiable</li><li><Check /> BAT avant production</li></ul>
+          <ul><li><Check /> NFC + QR</li><li><Check /> Destination visible dans Pilot</li><li><Check /> BAT avant production</li></ul>
         </aside>
       </section>
       <HowStrip />
@@ -272,13 +272,14 @@ export function PilotMarketingPage() {
           <article className="is-pro">
             <span>OPTION AVANCÉE</span>
             <h3>Tapote Pilot Pro</h3>
+            <strong className="v3-pilot-pro-price">{formatMoney(PILOT_PLANS.pilotPro.price)}<small> / mois</small></strong>
             <ul>
               <li><Check /> Changer la destination à distance</li>
               <li><Check /> Analyses par période, lieu et support</li>
               <li><Check /> Comparaisons multi-sites</li>
               <li><Check /> Historique, statistiques NFC / QR et exports</li>
             </ul>
-            <p>Disponible séparément lorsque votre organisation a besoin d’analyses avancées.</p>
+            <p>Disponible séparément lorsque votre organisation a besoin d’analyses avancées, ou {formatMoney(PILOT_PLANS.pilotProAnnual.price)} par an.</p>
           </article>
         </div>
       </section>
@@ -320,7 +321,7 @@ export function HowPage() {
           <div className="v3-how-hero-proof" aria-label="Principaux avantages">
             <span><Check /> iPhone & Android</span>
             <span><Check /> QR de secours</span>
-            <span><Check /> Lien modifiable</span>
+            <span><Check /> Destination visible dans Pilot</span>
           </div>
         </div>
 
@@ -430,7 +431,7 @@ export function HowPage() {
             <h3>Tapote Pilot</h3>
             <strong>Inclus<small> avec le support</small></strong>
             <ul>
-              <li><Check /> Modifier la destination</li>
+              <li><Check /> Voir la destination active</li>
               <li><Check /> Conserver le même NFC + QR</li>
               <li><Check /> Retrouver vos supports et destinations</li>
             </ul>

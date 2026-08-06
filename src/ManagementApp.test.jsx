@@ -4,6 +4,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-libra
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const repository = vi.hoisted(() => ({
+  MANAGEMENT_STATUS_FLOW: ["payment_pending", "paid", "bat", "supply", "assembly", "quality", "ready", "shipped"],
   advanceManagementEncodedProduct: vi.fn(),
   activateManagementOrderPilot: vi.fn(),
   assignManagementEncodedProduct: vi.fn(),
@@ -176,6 +177,35 @@ describe("TAPOTE Gestion", () => {
       "paid",
       "",
     ));
+  });
+
+  /* Le flux n'allait que vers l'avant : une étape validée par erreur était
+     définitive, et la commande ne pouvait que continuer vers l'expédition. */
+  it("permet de corriger une étape validée par erreur", async () => {
+    render(<TapoteManagementApp />);
+    await screen.findByRole("heading", { name: "Vue d’ensemble" });
+    fireEvent.click(screen.getByRole("button", { name: /Commandes/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Ouvrir TPT-1050" }));
+
+    fireEvent.click(screen.getByRole("button", { name: /Revenir à/ }));
+
+    await waitFor(() => expect(repository.updateManagementOrderStatus).toHaveBeenCalledWith(
+      "org-1",
+      expect.objectContaining({ id: "TPT-1050", status: "ready" }),
+      "quality",
+      "",
+    ));
+  });
+
+  it("refuse de faire revenir une commande déjà expédiée", async () => {
+    render(<TapoteManagementApp />);
+    await screen.findByRole("heading", { name: "Vue d’ensemble" });
+    fireEvent.click(screen.getByRole("button", { name: /Commandes/ }));
+    // Les commandes expédiées sont hors du filtre « Actives » par défaut.
+    fireEvent.click(screen.getByRole("button", { name: /^Expédiées$/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "Ouvrir TPT-1049" }));
+
+    expect(screen.queryByRole("button", { name: /Revenir à/ })).not.toBeInTheDocument();
   });
 
   it("expose toutes les informations de fabrication et le logo privé signé", async () => {

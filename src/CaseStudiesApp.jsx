@@ -135,9 +135,7 @@ export default function CaseStudiesApp() {
               Le produit numérique est déjà visible. La preuve terrain se construit maintenant :
               installation, geste réel et résultat mesuré dans un contexte précis.
             </p>
-            <a href="/preuves">
-              Voir le centre de preuves <ArrowRight aria-hidden="true" />
-            </a>
+            <span className="cs-proof-center-pending">Le centre de preuves ouvrira dès les premières mesures terrain publiables.</span>
           </div>
         </section>
 

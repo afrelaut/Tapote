@@ -452,7 +452,7 @@
 
 .pilot-organization > span {
   color: rgba(255, 255, 255, .48);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 800;
   letter-spacing: .12em;
 }
@@ -817,7 +817,7 @@
 .pilot-location-section > div:first-child > span,
 .pilot-advanced-heading > div:first-child > span {
   color: var(--blue);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 800;
   letter-spacing: .12em;
 }
@@ -1333,7 +1333,7 @@
 
 .pilot-signals > header > span {
   color: var(--blue);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 800;
   letter-spacing: .12em;
 }
@@ -1373,7 +1373,7 @@
   align-self: start;
   padding-top: 4px;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: .1em;
 }
@@ -1404,7 +1404,7 @@
 
 .pilot-signal-list small {
   color: var(--muted);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: .09em;
   text-transform: uppercase;
@@ -1437,7 +1437,7 @@
   border: 0;
   border-bottom: 1px solid currentColor;
   cursor: pointer;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 800;
   white-space: nowrap;
   transition: color 150ms, gap 150ms;
@@ -1554,13 +1554,18 @@
   font-size: 15px;
 }
 
+/* Cette ligne porte le numéro de série, celui qui permet au commerçant de
+   reconnaître son support physique : sur écran étroit, l'ellipse le coupait
+   en plein milieu. Elle passe à la ligne plutôt que d'être rognée. */
 .pilot-product-name small {
   margin-top: 7px;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 6px;
   color: var(--muted);
   font-size: 12px;
+  white-space: normal;
 }
 
 .pilot-product-name small i {
@@ -1594,7 +1599,7 @@
 .pilot-product-destination small,
 .pilot-product-count small {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
 }
@@ -1619,7 +1624,7 @@
 
 .pilot-product-count small {
   margin-top: 3px;
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .pilot-row-arrow {
@@ -2058,7 +2063,7 @@
 
 .pilot-destination-heading span {
   color: #287049;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 800;
 }
 
@@ -2163,15 +2168,25 @@
 }
 
 .pilot-field-error,
+/* Cette règle était déclarée deux fois, la seconde annulant la couleur de la
+   première : une seule suffit. */
 .pilot-readonly {
   margin: 10px 0 0;
-  color: #a4382f;
+  color: var(--muted);
   font-size: 13px;
   line-height: 1.5;
 }
 
-.pilot-readonly {
-  color: var(--muted);
+.pilot-readonly a {
+  margin-left: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--blue);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  white-space: nowrap;
 }
 
 .pilot-confirm-change {
@@ -2718,11 +2733,14 @@
     height: 32px;
   }
 
+  /* Le numéro de série identifie le support physique : le rogner sur écran
+     étroit rend la ligne inutile. Elle passe à la ligne. */
   .pilot-product-name small {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    display: flex;
+    flex-wrap: wrap;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
   }
 
   .pilot-product-name small i {
@@ -2735,7 +2753,7 @@
   }
 
   .pilot-product-count small {
-    font-size: 9px;
+    font-size: 12px;
   }
 
   .pilot-product-tools {
@@ -2895,7 +2913,7 @@
     max-width: 110px;
     overflow: hidden;
     color: var(--muted);
-    font-size: 11px;
+    font-size: 13px;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -2981,7 +2999,7 @@
 
   .pilot-mobile-nav button span {
     overflow: hidden;
-    font-size: 8px;
+    font-size: 11px;
     font-weight: 760;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -3061,11 +3079,11 @@
   }
 
   .pilot-free-promise b {
-    font-size: 11px;
+    font-size: 13px;
   }
 
   .pilot-free-promise > span {
-    font-size: 10px;
+    font-size: 12px;
   }
 
   .pilot-link-workspace {
@@ -3149,7 +3167,7 @@
 
   .pilot-basic-counter > span {
     grid-column: 1 / -1;
-    font-size: 9px;
+    font-size: 12px;
   }
 
   .pilot-basic-counter > strong {
@@ -3161,13 +3179,13 @@
   .pilot-basic-counter > p {
     grid-column: 2;
     grid-row: 2;
-    font-size: 11px;
+    font-size: 13px;
   }
 
   .pilot-basic-counter > small {
     grid-column: 1 / -1;
     grid-row: 3;
-    font-size: 10px;
+    font-size: 12px;
   }
 
   .pilot-location-section {
@@ -3241,7 +3259,7 @@
   }
 
   .pilot-signal-list p {
-    font-size: 11px;
+    font-size: 13px;
   }
 
   .pilot-signal-list button {
@@ -3279,7 +3297,7 @@
   }
 
   .pilot-product-name small {
-    font-size: 9px;
+    font-size: 12px;
   }
 
   .pilot-product-count b {
@@ -3369,7 +3387,7 @@
   color: #1b3fd0;
   background: #e8eeff;
   border-radius: 999px;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: .09em;
 }

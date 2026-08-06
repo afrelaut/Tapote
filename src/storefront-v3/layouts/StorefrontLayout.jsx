@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { ArrowRight, CheckCircle2, ChevronDown, Menu, ShieldCheck, ShoppingBag, UserRound, X } from "lucide-react";
+import { AlertTriangle, ArrowRight, CheckCircle2, ChevronDown, Menu, ShieldCheck, ShoppingBag, UserRound, X } from "lucide-react";
 import { ProductArt } from "../scenes/ProductArt.jsx";
 import { SHOP_MENU_PREVIEWS } from "../data/content.js";
 
@@ -194,6 +194,9 @@ function Header({ cartCount, compact = false }) {
           <a href="/comment-ca-marche" onClick={() => setOpen(false)}>Comment ça marche</a>
           <a href="/tapote-pilot" onClick={() => setOpen(false)}>Tapote Pilot</a>
           <a href="/devis" onClick={() => setOpen(false)}>Entreprises & devis</a>
+          {/* Le footer masque la colonne "Aide" sur mobile : sans ce lien, la FAQ
+              et le contact devenaient injoignables depuis la plupart des pages. */}
+          <a className="v3-mobile-faq" href="/faq" onClick={() => setOpen(false)}>Questions fréquentes</a>
           <a className="v3-mobile-login" href="/connexion" onClick={() => setOpen(false)}>Accéder à Tapote Pilot</a>
         </nav>
         <div className="v3-header-actions">
@@ -224,9 +227,29 @@ function Footer() {
   );
 }
 
+/* Un échec d'ajout empruntait l'habillage du succès : coche verte, titre
+   « Ajouté au panier » et lien « Voir le panier » vers un panier resté vide.
+   Le ton porte maintenant le titre, l'icône, le rôle ARIA et les actions. */
 function CartNotice({ notice, onClose }) {
   if (!notice) return null;
-  return <aside className="v3-cart-notice" role="status" aria-live="polite"><div><CheckCircle2 /><span><strong>Ajouté au panier</strong><small>{notice}</small></span><button type="button" onClick={onClose} aria-label="Fermer"><X /></button></div><span><button type="button" onClick={onClose}>Continuer mes achats</button><a href="/panier">Voir le panier <ArrowRight /></a></span></aside>;
+  const failed = notice.tone === "error";
+  return (
+    <aside
+      className={failed ? "v3-cart-notice is-error" : "v3-cart-notice"}
+      role={failed ? "alert" : "status"}
+      aria-live={failed ? "assertive" : "polite"}
+    >
+      <div>
+        {failed ? <AlertTriangle /> : <CheckCircle2 />}
+        <span><strong>{notice.title}</strong><small>{notice.message}</small></span>
+        <button type="button" onClick={onClose} aria-label="Fermer"><X /></button>
+      </div>
+      <span>
+        <button type="button" onClick={onClose}>{failed ? "Fermer" : "Continuer mes achats"}</button>
+        {!failed && <a href="/panier">Voir le panier <ArrowRight /></a>}
+      </span>
+    </aside>
+  );
 }
 
 function focusMainContent() {

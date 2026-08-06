@@ -2,12 +2,12 @@ import { TARGETS } from "../../shared/catalog.js";
 
 const restaurantPhoneSubjectLayers = [
   {
-    image: "/assets/products/tapote-restaurant-phone-hand-cutout-v1.png",
-    mask: "/assets/products/tapote-restaurant-phone-mask-v2.png",
+    image: "/assets/products/tapote-restaurant-phone-hand-cutout-v1.webp",
+    mask: "/assets/products/tapote-restaurant-phone-mask-v2.webp",
   },
   {
-    image: "/assets/products/tapote-restaurant-phone-hand-cutout-v1.png",
-    mask: "/assets/products/tapote-restaurant-hand-mask-v2.png",
+    image: "/assets/products/tapote-restaurant-phone-hand-cutout-v1.webp",
+    mask: "/assets/products/tapote-restaurant-hand-mask-v2.webp",
   },
 ];
 
@@ -21,7 +21,7 @@ const sectorRows = [
     description: "Avis, fidélité et Wi-Fi au moment du paiement ou de l’accueil.",
     placement: "Sur le comptoir, juste à côté du terminal de paiement.",
     script: "« Si vous avez aimé, vous pouvez tapoter ici. »",
-    image: "/assets/products/tapote-bg-cafe-empty-v3.png",
+    image: "/assets/products/tapote-bg-cafe-empty-v3.webp",
     subjectLayers: restaurantPhoneSubjectLayers,
     category: "Restauration & commerce",
     recommendedProductId: "pack_duo",
