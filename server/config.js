@@ -67,6 +67,7 @@ export function loadConfig(env = process.env) {
     sentryDsn: String(env.SENTRY_DSN || "").trim(),
     logLevel: String(env.LOG_LEVEL || (isProduction ? "info" : "debug")).trim(),
     outboxIntervalMs: Math.max(2_000, readNumber(env.OUTBOX_INTERVAL_MS, 10_000)),
+    jarvisReadToken: String(env.JARVIS_READ_TOKEN || "").trim(),
   };
 }
 

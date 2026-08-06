@@ -803,4 +803,71 @@ describe("API Tapote", () => {
     expect(paused.status).toBe(410);
     expect(paused.text).toContain("Lien en pause");
   });
+
+  const jarvisToken = "z".repeat(40);
+
+  it("masque le pont Jarvis quand aucun jeton n'est configuré", async () => {
+    const context = makeContext();
+    const response = await request(context.app)
+      .get("/api/jarvis/summary?scopes=commercial")
+      .set("Authorization", `Bearer ${jarvisToken}`);
+    expect(response.status).toBe(404);
+    expect(response.headers["cache-control"]).toContain("no-store");
+    expect(response.headers["x-robots-tag"]).toContain("noindex");
+  });
+
+  it("refuse la lecture Jarvis sans jeton valide", async () => {
+    const context = makeContext({ JARVIS_READ_TOKEN: jarvisToken });
+    const missing = await request(context.app).get("/api/jarvis/summary?scopes=commercial");
+    const wrong = await request(context.app)
+      .get("/api/jarvis/summary?scopes=commercial")
+      .set("Authorization", `Bearer ${"a".repeat(40)}`);
+    expect(missing.status).toBe(401);
+    expect(wrong.status).toBe(401);
+  });
+
+  it("rejette un périmètre de lecture Jarvis invalide", async () => {
+    const context = makeContext({ JARVIS_READ_TOKEN: jarvisToken });
+    const empty = await request(context.app)
+      .get("/api/jarvis/summary")
+      .set("Authorization", `Bearer ${jarvisToken}`);
+    const bad = await request(context.app)
+      .get("/api/jarvis/summary?scopes=inconnu")
+      .set("Authorization", `Bearer ${jarvisToken}`);
+    expect(empty.status).toBe(400);
+    expect(bad.status).toBe(400);
+  });
+
+  it("signale un pont indisponible quand le dépôt n'est pas durable", async () => {
+    const context = makeContext({ JARVIS_READ_TOKEN: jarvisToken });
+    const response = await request(context.app)
+      .get("/api/jarvis/summary?scopes=commercial")
+      .set("Authorization", `Bearer ${jarvisToken}`);
+    expect(response.status).toBe(503);
+  });
+
+  it("renvoie le résumé Jarvis agrégé avec les diagnostics de production", async () => {
+    const repository = {
+      durable: true,
+      getJarvisReadSummary: vi.fn(async (scopes) => ({
+        management: scopes.includes("commercial")
+          ? [{ status: "in_production", paymentStatus: "paid", orderCount: 3, totalCents: 12000, nextDueOn: "2026-09-01" }]
+          : [],
+        inventory: [],
+        clients: [],
+        pilot: [],
+      })),
+    };
+    const context = makeContext({ JARVIS_READ_TOKEN: jarvisToken }, null, { repository });
+    const response = await request(context.app)
+      .get("/api/jarvis/summary?scopes=commercial,commercial")
+      .set("Authorization", `Bearer ${jarvisToken}`);
+    expect(response.status).toBe(200);
+    expect(repository.getJarvisReadSummary).toHaveBeenCalledWith(["commercial"]);
+    expect(response.body.management).toHaveLength(1);
+    expect(response.body.diagnostics.readiness).toMatchObject({
+      ready: expect.any(Boolean),
+      missingChecks: expect.any(Array),
+    });
+  });
 });
