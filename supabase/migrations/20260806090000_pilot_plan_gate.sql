@@ -23,6 +23,10 @@ comment on column public.organizations.pilot_plan is
 
 -- Le RPC ne renvoyait que organization_id, role et created_at : la formule
 -- doit voyager avec la souscription, sinon le client ne peut pas la vérifier.
+-- PostgreSQL refuse de changer le type de retour d'une fonction existante :
+-- il faut la supprimer avant de la recréer avec sa colonne supplémentaire.
+drop function if exists public.get_my_pilot_membership();
+
 create or replace function public.get_my_pilot_membership()
 returns table (
   organization_id uuid,
