@@ -314,7 +314,7 @@ export function HowPage() {
         <div className="v3-how-hero-copy">
           <span className="v3-eyebrow v3-eyebrow-dark">NFC + QR · AUCUNE APP À INSTALLER</span>
           <h1>Un geste.<br />La bonne action.</h1>
-          <p>Votre client approche son téléphone ou scanne le QR. Tapote ouvre immédiatement l’avis, le menu, la réservation ou le lien que vous avez choisi.</p>
+          <p>Votre client approche son téléphone. La page que vous avez choisie s’ouvre.</p>
           <div className="v3-how-hero-actions">
             <a href="/boutique">Voir les supports <ArrowRight /></a>
           </div>
@@ -362,25 +362,24 @@ export function HowPage() {
         <header>
           <span className="v3-eyebrow">LE GESTE EN TROIS SECONDES</span>
           <h2 id="v3-how-flow-title">Du support au résultat.<br />Sans étape inutile.</h2>
-          <p>Le client n’a pas besoin de comprendre la technologie. Il voit l’invitation, tapote et agit sur la page familière qui s’ouvre.</p>
         </header>
         <div className="v3-link-flow">
           <article>
             <span>01</span>
             <SmartphoneNfc />
-            <div><small>LE GESTE</small><h3>Il tapote</h3><p>Le téléphone détecte la puce NFC. Si besoin, le QR reste visible juste à côté.</p></div>
+            <div><small>LE GESTE</small><h3>Il tapote</h3><p>Le téléphone détecte la puce. Le QR reste juste à côté.</p></div>
           </article>
           <ArrowRight aria-hidden="true" />
           <article>
             <span>02</span>
             <Zap />
-            <div><small>LE LIEN</small><h3>Tapote dirige</h3><p>Le lien court du support retrouve la destination que vous avez activée.</p></div>
+            <div><small>LE LIEN</small><h3>Tapote dirige</h3><p>Le support retrouve la destination que vous avez activée.</p></div>
           </article>
           <ArrowRight aria-hidden="true" />
           <article>
             <span>03</span>
             <Globe2 />
-            <div><small>LE RÉSULTAT</small><h3>La bonne page s’ouvre</h3><p>Google, menu, agenda, Wi-Fi, contact ou votre propre page : sans application intermédiaire.</p></div>
+            <div><small>LE RÉSULTAT</small><h3>La bonne page s’ouvre</h3><p>Avis, menu, agenda, Wi-Fi ou contact. Sans application.</p></div>
           </article>
         </div>
       </section>
@@ -395,17 +394,17 @@ export function HowPage() {
             <div className="v3-how-channel-number">01</div>
             <SmartphoneNfc />
             <h3>Approcher le téléphone</h3>
-            <p>Le NFC est adapté au comptoir, à la table ou à une carte remise en main propre. Une notification apparaît ; le client la touche pour ouvrir le lien.</p>
+            <p>Au comptoir, à table ou carte en main : une notification apparaît, le client la touche.</p>
             <ul>
-              <li><Check /> NFC activé sur la majorité des smartphones récents</li>
-              <li><Check /> Aucun appairage ni application Tapote</li>
+              <li><Check /> Actif sur la majorité des smartphones récents</li>
+              <li><Check /> Aucun appairage ni application</li>
             </ul>
           </article>
           <article>
             <div className="v3-how-channel-number">02</div>
             <QrCode />
             <h3>Scanner avec l’appareil photo</h3>
-            <p>Le QR offre un chemin universel et visible. Il prend le relais si le NFC est désactivé, indisponible ou simplement moins familier.</p>
+            <p>Le chemin universel. Il prend le relais dès que le NFC n’est pas disponible.</p>
             <ul>
               <li><Check /> Le même lien et la même destination</li>
               <li><Check /> Intégré au design, toujours accessible</li>
@@ -418,7 +417,7 @@ export function HowPage() {
         <div className="v3-how-link-copy">
           <span className="v3-eyebrow">LE SUPPORT RESTE · LE LIEN ÉVOLUE</span>
           <h2 id="v3-how-link-title">Changez la destination.<br />Pas l’objet.</h2>
-          <p>Le NFC et le QR pointent vers une adresse Tapote stable. Tapote Pilot vous montre cette adresse et ce qu’elle ouvre ; avec Tapote Pilot Pro, vous remplacez la page finale à distance : une nouvelle carte, une autre campagne ou un nouveau lien d’avis, sans réimprimer.</p>
+          <p>Le NFC et le QR pointent vers une adresse Tapote stable. Pilot vous montre ce qu’elle ouvre ; Pilot Pro remplace cette page à distance, sans réimprimer le support.</p>
           <div className="v3-how-link-route" aria-label="Exemple de redirection Tapote">
             <div><small>IMPRIMÉ SUR LE SUPPORT</small><strong>tapote.fr/t/votre-support</strong><span>reste identique</span></div>
             <ArrowRight aria-hidden="true" />
@@ -437,7 +436,7 @@ export function HowPage() {
             </ul>
             <a href="/connexion">Accéder à Tapote Pilot <ArrowRight /></a>
           </div>
-          <p className="v3-how-pro-note"><strong>Pilot Pro</strong> ajoute les analyses avancées par période, lieu et support, ainsi que les exports et le multi-sites. <a href="/tapote-pilot">Comparer les usages <ArrowRight /></a></p>
+          <p className="v3-how-pro-note"><strong>Pilot Pro</strong> ajoute les analyses, les exports et le multi-sites. <a href="/tapote-pilot">Comparer les usages <ArrowRight /></a></p>
         </div>
       </section>
 
@@ -457,7 +456,7 @@ export function HowPage() {
           </details>
           <details>
             <summary>Puis-je changer le lien après réception ? <Plus /></summary>
-            <p>Oui, avec Tapote Pilot Pro. Tapote Pilot, inclus, affiche le support et la page qu’il ouvre ; le remplacement à distance de cette page est une fonction Pro.</p>
+            <p>Oui, avec Tapote Pilot Pro. Pilot, inclus, affiche la page ouverte ; la remplacer à distance est une fonction Pro.</p>
           </details>
           <details>
             <summary>Quelle page puis-je ouvrir ? <Plus /></summary>

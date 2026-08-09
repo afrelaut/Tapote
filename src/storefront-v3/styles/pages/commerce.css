@@ -1433,3 +1433,127 @@
 .v3-pdp .v3-destination-details summary:hover { background: #f4f2ed; }
 .v3-pdp .v3-destination-details[open] summary > b { transform: rotate(45deg); }
 .v3-pdp .v3-destination-details summary > b { transition: transform .18s var(--v3-ease); }
+
+/* Aperçu rappelable — téléphone
+   La scène occupe le haut de la fiche : dès qu'on descend dans les réglages,
+   le support que l'on personnalise sort de l'écran. Ce raccourci le ramène en
+   grand, par-dessus la page, sans faire perdre sa position dans le formulaire. */
+/* `.v3-mobile-product-cta button` habille les boutons de la barre et l'emporte
+   sur une classe seule : le raccourci doit donc être désigné depuis son parent
+   pour rester absent des grands écrans, où la scène ne quitte jamais l'écran. */
+.v3-mobile-product-cta .v3-mobile-preview-open { display: none; }
+.v3-preview-sheet { display: none; }
+
+@media (max-width: 760px) {
+  .v3-mobile-product-cta .v3-mobile-preview-open {
+    flex: 0 0 auto;
+    min-height: 44px;
+    padding: 0 11px 0 9px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #eef1f8;
+    background: rgb(255 255 255 / 11%);
+    border: 1px solid rgb(255 255 255 / 16%);
+    border-radius: 11px;
+    font-size: var(--v3-text-xs);
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .v3-mobile-preview-open svg { width: 16px; height: 16px; }
+
+  /* Le résumé garde la priorité : le raccourci se contente de la place restante. */
+  .v3-mobile-product-cta > span { flex: 1 1 auto; }
+  .v3-mobile-product-cta { padding-left: 9px; gap: 8px; }
+  .v3-mobile-product-cta strong { font-size: 15px; }
+
+  .v3-preview-sheet {
+    position: fixed;
+    z-index: 70;
+    inset: 0;
+    display: flex;
+    align-items: flex-end;
+  }
+
+  .v3-preview-sheet-backdrop {
+    position: absolute;
+    inset: 0;
+    padding: 0;
+    background: rgb(6 8 12 / 62%);
+    border: 0;
+    /* Safari n'accepte la propriété sans préfixe que depuis la version 18 : sur
+       les iPhone encore à iOS 17, seul le préfixé applique le flou. */
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+    cursor: pointer;
+  }
+
+  .v3-preview-sheet-panel {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    /* Sur iPhone, `vh` se mesure barre d'outils rétractée : la feuille dépassait
+       du bas tant que la barre restait déployée. `dvh` suit la hauteur réelle,
+       avec `vh` en repli pour les navigateurs qui l'ignorent. */
+    max-height: 92vh;
+    max-height: 92dvh;
+    padding: 14px 14px calc(16px + env(safe-area-inset-bottom));
+    display: grid;
+    gap: 12px;
+    overflow-y: auto;
+    background: #f7f6f2;
+    border-radius: 22px 22px 0 0;
+    box-shadow: 0 -18px 60px rgb(0 0 0 / 34%);
+    animation: v3-preview-sheet-in .26s cubic-bezier(.2, .8, .2, 1) both;
+  }
+
+  .v3-preview-sheet-panel > header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .v3-preview-sheet-panel > header > span { display: grid; gap: 2px; }
+  .v3-preview-sheet-panel > header small { color: #6d7180; font-size: var(--v3-text-xs); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+  .v3-preview-sheet-panel > header strong { font-size: 19px; }
+
+  .v3-preview-sheet-panel > header button {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    color: #14171d;
+    background: #fff;
+    border: 1px solid #dcdad3;
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  .v3-preview-sheet-panel > header button svg { width: 18px; }
+
+  .v3-preview-sheet-resume {
+    min-height: 50px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #fff;
+    background: #101216;
+    border: 0;
+    border-radius: 13px;
+    font-size: var(--v3-text-sm);
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .v3-preview-sheet-resume svg { width: 16px; }
+
+  body.v3-preview-sheet-open { overflow: hidden; }
+}
+
+@keyframes v3-preview-sheet-in {
+  from { opacity: 0; transform: translateY(22px); }
+  to { opacity: 1; transform: translateY(0); }
+}

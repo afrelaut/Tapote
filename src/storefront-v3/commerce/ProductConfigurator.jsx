@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { ArrowRight, Camera, Check, CheckCircle2, Globe2, Pipette, Sparkles, Upload, X } from "lucide-react";
+import { ArrowRight, Camera, Check, CheckCircle2, Eye, Globe2, Pipette, Sparkles, Upload, X } from "lucide-react";
 import { ACTIONS, formatMoney, PRODUCTS } from "../../../shared/catalog.js";
 import { prepareLogoFile, readFileAsDataUrl } from "../../storefront/logoFile.js";
 import { extractLogoPalette, pickScreenColor } from "../../brandColors.js";
@@ -72,7 +72,7 @@ function ReadyDesignPicker({ onChange, theme }) {
   );
 }
 
-export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "avis", initialCount = 1, initialComposition, initialPersonalization = "ready", initialTheme = DEFAULT_THEME, initialBrandName = "VOTRE MARQUE", initialReadyHeadline = "", targetId = "cafe", title = "Choisissez votre Tapote.", productOnly = false, compact = false, allowAllSurfaces = false, lockPersonalization = false, onPreviewChange, draftKey = "", stickyTriggerRef }) {
+export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "avis", initialCount = 1, initialComposition, initialPersonalization = "ready", initialTheme = DEFAULT_THEME, initialBrandName = "VOTRE MARQUE", initialReadyHeadline = "", targetId = "cafe", title = "Choisissez votre Tapote.", productOnly = false, compact = false, allowAllSurfaces = false, lockPersonalization = false, onPreviewChange, draftKey = "", stickyTriggerRef, onOpenPreview }) {
   const initialColors = DEVICE_THEMES[resolveThemeId(initialTheme)];
   const restoredDraft = useMemo(() => initialPersonalization === "custom" || draftKey.startsWith("cart:") ? loadConfigDraft(draftKey) : null, [draftKey, initialPersonalization]);
   const [personalization, setPersonalization] = useState(initialPersonalization);
@@ -574,7 +574,21 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
         <div><span>{product.name}</span><strong>{formatMoney(product.price)}</strong></div>
         <button type="button" onClick={add} disabled={logoPending || destinationInvalid}>{logoPending ? logoPendingLabel : destinationInvalid ? "Vérifier le lien" : added ? <><Check size={18} /> Ajouté</> : <>Ajouter au panier <ArrowRight size={18} /></>}</button>
       </div>
-      {(productOnly || compact) && <aside className={`v3-mobile-product-cta ${initialCtaPassed && !summaryVisible ? "is-visible" : ""}`} aria-label="Résumé de la configuration"><span><small>{product.kind === "pack" && composition ? compositionLabel(composition) : product.name.replace(/ · .+$/, "")}</small><strong>{formatMoney(product.price)}</strong></span><button type="button" onClick={add} disabled={logoPending || destinationInvalid}>{logoPending ? logoPendingLabel : destinationInvalid ? "Lien invalide" : added ? "Ajouté" : "Ajouter"} <ArrowRight /></button></aside>}
+      {(productOnly || compact) && (
+        <aside className={`v3-mobile-product-cta ${initialCtaPassed && !summaryVisible ? "is-visible" : ""}`} aria-label="Résumé de la configuration">
+          {/* Sur téléphone, la scène reste tout en haut de la page : dès qu'on
+              descend dans les réglages, on ne voit plus ce que l'on modifie.
+              Ce bouton rouvre l'aperçu en grand, sans perdre sa place. */}
+          {onOpenPreview && (
+            <button type="button" className="v3-mobile-preview-open" onClick={onOpenPreview} aria-label="Voir mon design en grand">
+              <Eye aria-hidden="true" />
+              <span>Mon design</span>
+            </button>
+          )}
+          <span><small>{product.kind === "pack" && composition ? compositionLabel(composition) : product.name.replace(/ · .+$/, "")}</small><strong>{formatMoney(product.price)}</strong></span>
+          <button type="button" onClick={add} disabled={logoPending || destinationInvalid}>{logoPending ? logoPendingLabel : destinationInvalid ? "Lien invalide" : added ? "Ajouté" : "Ajouter"} <ArrowRight /></button>
+        </aside>
+      )}
     </section>
   );
 }
