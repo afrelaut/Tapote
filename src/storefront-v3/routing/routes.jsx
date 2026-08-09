@@ -1,7 +1,7 @@
 import { resolveProductPageSlug } from "../data/content.js";
 import { CartPage, CheckoutPage, ConfirmationPage, QuotePage } from "../pages/CheckoutPages.jsx";
 import { ProductPage, ShopPage } from "../pages/CommercePages.jsx";
-import { FaqPage, HowPage, PilotMarketingPage } from "../pages/InformationPages.jsx";
+import { HowPage, PilotMarketingPage } from "../pages/InformationPages.jsx";
 import { LandingPage } from "../pages/LandingPage.jsx";
 import { LegalPage, NotFound } from "../pages/LegalPages.jsx";
 
@@ -24,7 +24,6 @@ export function resolveStorefrontPage({
   }
   if (path === "/comment-ca-marche") return <HowPage />;
   if (path === "/tapote-pilot") return <PilotMarketingPage />;
-  if (path === "/faq") return <FaqPage />;
   if (path === "/panier") return <CartPage cart={cart} setCart={setCart} onAdd={addToCart} />;
   if (path === "/devis") return <QuotePage />;
   if (path === "/commande") return <CheckoutPage cart={cart} />;

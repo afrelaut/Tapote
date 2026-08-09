@@ -2,7 +2,6 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright-core";
 import { ACTIONS, PRODUCTS } from "../shared/catalog.js";
-import { SECTORS } from "../src/storefront/sectorData.js";
 
 const baseUrl =
   process.env.TAPOTE_PHONE_AUDIT_URL ||
@@ -16,23 +15,22 @@ const viewports = [
 ];
 
 const occurrenceRoutes = [
-  // Une occurrence vivante sur les pages éditoriales et PDP. La boutique
-  // montre volontairement les trois produits côte à côte.
-  // La scène du hero dispose de son propre audit de séquence. Ce script
-  // compte seulement les scènes PDP/secteur basées sur PdpScene.
+  // Les téléphones des cartes boutique et de la démonstration d'accueil sont
+  // des composants CSS autonomes. Ici, on contrôle uniquement les scènes
+  // interactives de fiche produit basées sur PdpScene : l'aperçu principal et
+  // l'exemple en situation de chaque support.
   ["accueil", "/", 0],
-  ["boutique", "/boutique", 3],
-  ["secteurs", "/secteurs", 0],
-  ["designs", "/designs", 3],
-  ["categorie-comptoir", "/categorie/comptoirs-nfc", 3],
-  ["categorie-plaque", "/categorie/plaques-nfc", 3],
-  ["categorie-carte", "/categorie/cartes-nfc", 3],
+  ["boutique", "/boutique", 0],
+  ["designs", "/designs", 0],
+  ["categorie-comptoir", "/categorie/chevalets-nfc", 0],
+  ["categorie-plaque", "/categorie/plaques-nfc", 0],
+  ["categorie-carte", "/categorie/cartes-nfc", 0],
   ["produit-comptoir", "/produits/comptoir?mode=custom&action=avis", 2],
   ["produit-plaque", "/produits/plaque?mode=custom&action=avis", 2],
   ["produit-carte", "/produits/carte?mode=custom&action=avis", 2],
-  ["personnaliser", "/personnaliser", 3],
+  ["personnaliser", "/personnaliser", 0],
   ["fonctionnement", "/comment-ca-marche", 1],
-  ...SECTORS.map((sector) => [`secteur-${sector.id}`, `/secteurs/${sector.slug}`, 1]),
+  ["pilot", "/tapote-pilot", 0],
 ];
 
 // Les anciens photomontages statiques ne sont plus une autorité visuelle.
@@ -287,7 +285,7 @@ async function renderContactSheet(context, viewport, name, frames) {
   await page.close();
 }
 
-async function runSelectMatrix(context, viewport, { name, pathname, selectSelector, sceneSelector, setup }) {
+async function runActionMatrix(context, viewport, { name, pathname, actionGroupSelector, sceneSelector, setup }) {
   const { page, errors, status } = await openPage(context, pathname);
   if (setup) await setup(page);
   const contextButton = page.locator(`${sceneSelector} .v3-scene-view-switch button`).filter({ hasText: "En situation" });
@@ -295,19 +293,29 @@ async function runSelectMatrix(context, viewport, { name, pathname, selectSelect
     await contextButton.click();
     await page.waitForTimeout(60);
   }
-  const select = page.locator(selectSelector);
-  const options = await select.locator("option").evaluateAll((items) => items.map((option) => option.value));
-  const missing = actionIds.filter((actionId) => !options.includes(actionId));
-  const unexpected = options.filter((actionId) => !actionIds.includes(actionId));
+  const moreActions = page.locator(".v3-action-more");
+  if (await moreActions.count() && /Voir/i.test(await moreActions.innerText())) {
+    await moreActions.click();
+  }
+  const actionGroup = page.locator(actionGroupSelector);
+  const options = await actionGroup.getByRole("button").allTextContents();
+  const actionNames = Object.fromEntries(actionIds.map((actionId) => [actionId, ACTIONS[actionId].name]));
+  const missing = actionIds.filter((actionId) => !options.some((label) => label.trim() === actionNames[actionId]));
+  const unexpected = options.filter((label) => !Object.values(actionNames).includes(label.trim()));
   const frames = [];
   const states = [];
   if (status !== 200 || errors.length || missing.length || unexpected.length || options.length !== actionIds.length) {
     fail(`${viewport.name}:${name}:options`, { status, errors, count: options.length, missing, unexpected });
   }
-  for (const actionId of options) {
-    await select.selectOption(actionId);
+  for (const actionId of actionIds) {
+    await actionGroup.getByRole("button", { name: actionNames[actionId], exact: true }).click();
     const scene = page.locator(sceneSelector);
     await scene.locator(`.v3-live-phone-screen[data-phone-action="${actionId}"]`).waitFor();
+    await page.waitForFunction(
+      (selector) => [...document.querySelectorAll(`${selector} img`)].every((image) => image.complete && image.naturalWidth > 0),
+      sceneSelector,
+      { timeout: 5_000 },
+    ).catch(() => {});
     await page.waitForTimeout(35);
     const metrics = await sceneMetrics(scene);
     const loadedImages = await scene.locator("img").evaluateAll((images) => images.every((image) => image.complete && image.naturalWidth > 0));
@@ -317,7 +325,7 @@ async function runSelectMatrix(context, viewport, { name, pathname, selectSelect
     frames.push({ label: `${actionId} · ${ACTIONS[actionId]?.name || actionId}`, image: await scene.screenshot({ animations: "disabled" }) });
   }
   const distinctPaths = [...new Set(states.map((state) => state.metrics.path).filter(Boolean))].length;
-  report.actionMatrices.push({ viewport: viewport.name, name, pathname, options, distinctPaths, states: states.map(({ actionId, ok, loadedImages, metrics }) => ({ actionId, ok, loadedImages, action: metrics.action, sector: metrics.sector, uiInsideStage: metrics.uiInsideStage, uiHasPhysicalPresence: metrics.uiHasPhysicalPresence })) });
+  report.actionMatrices.push({ viewport: viewport.name, name, pathname, options: actionIds, distinctPaths, states: states.map(({ actionId, ok, loadedImages, metrics }) => ({ actionId, ok, loadedImages, action: metrics.action, sector: metrics.sector, uiInsideStage: metrics.uiInsideStage, uiHasPhysicalPresence: metrics.uiHasPhysicalPresence })) });
   await renderContactSheet(context, viewport, name, frames);
   await page.close();
   console.log(`[actions] ${viewport.name} · ${name}: ${states.filter((state) => state.ok).length}/${states.length}`);
@@ -325,13 +333,10 @@ async function runSelectMatrix(context, viewport, { name, pathname, selectSelect
 
 async function auditActionMatrices(context, viewport) {
   for (const product of ["comptoir", "plaque", "carte"]) {
-    await runSelectMatrix(context, viewport, {
+    await runActionMatrix(context, viewport, {
       name: `produit-${product}`,
       pathname: `/produits/${product}?mode=custom&action=avis`,
-      // Les anciennes fiches produit rendent désormais la même page unifiée.
-      // L'audit doit donc suivre le configurateur et la scène réellement
-      // présents, au lieu de tolérer silencieusement une matrice vide.
-      selectSelector: '.v3-buybox select[aria-label="Le lien à ouvrir"]',
+      actionGroupSelector: '.v3-buybox [role="group"][aria-label="Le lien à ouvrir"]',
       sceneSelector: ".v3-product-gallery .v3-sector-scene",
     });
   }

@@ -149,7 +149,10 @@ function Header({ cartCount, compact = false }) {
             <button ref={shopToggleRef} type="button" aria-expanded={shopMenuOpen} aria-controls="v3-shop-mega" onClick={() => setShopMenuOpen((value) => !value)}>
               Boutique <ChevronDown />
             </button>
-            <a className="v3-shop-mobile-link" href="/boutique" onClick={() => setOpen(false)}>Boutique</a>
+            <a className="v3-shop-mobile-link" href="/boutique" onClick={() => setOpen(false)}>
+              <span><strong>Toute la boutique</strong><small>Comparer les supports et les deux finitions</small></span>
+              <ArrowRight aria-hidden="true" />
+            </a>
             {/* Le menu large montre le produit ; sa version téléphone n'en
                 donnait que le nom. Or c'est là que se fait l'essentiel des
                 visites : on y choisit un support sans jamais l'avoir vu. Chaque
@@ -159,14 +162,21 @@ function Header({ cartCount, compact = false }) {
                 const preview = SHOP_MENU_PREVIEWS[previewId];
                 return (
                   <a href={preview.href} onClick={() => setOpen(false)} key={previewId}>
-                    <span className="v3-mobile-product-art" aria-hidden="true">
-                      <ProductArt
-                        surface={preview.surface}
-                        actionId={preview.actionId}
-                        brandName="tapote."
-                        theme={preview.theme}
-                        personalization="ready"
-                      />
+                    <span className={`v3-mobile-product-art ${previewId === "packs" ? "is-pack-composition" : ""}`} aria-hidden="true">
+                      {previewId === "packs" ? (
+                        <>
+                          <ProductArt surface="comptoir" actionId="avis" brandName="tapote." theme="nuit" personalization="ready" className="is-pack-comptoir" />
+                          <ProductArt surface="plaque" actionId="instagram" brandName="tapote." theme="creme" personalization="ready" className="is-pack-plaque" />
+                        </>
+                      ) : (
+                        <ProductArt
+                          surface={preview.surface}
+                          actionId={preview.actionId}
+                          brandName="tapote."
+                          theme={preview.theme}
+                          personalization="ready"
+                        />
+                      )}
                     </span>
                     <span className="v3-mobile-product-copy">
                       <strong>{preview.title}</strong>
@@ -176,6 +186,11 @@ function Header({ cartCount, compact = false }) {
                 );
               })}
             </div>
+            <a className="v3-mobile-custom-link" href="/personnaliser" onClick={() => setOpen(false)}>
+              <img className="v3-mobile-custom-mark" src="/brand/tapote-mark.svg" alt="" aria-hidden="true" />
+              <span><strong>Créer mon Tapote</strong><small>Logo, couleurs et textes dans Tapote Studio</small></span>
+              <ArrowRight aria-hidden="true" />
+            </a>
             <div className={shopMenuOpen ? "v3-shop-mega is-open" : "v3-shop-mega"} id="v3-shop-mega">
               <div className="v3-shop-mega-column">
                 <strong>Les supports</strong>
@@ -195,15 +210,22 @@ function Header({ cartCount, compact = false }) {
               </div>
               <a className={`v3-shop-mega-feature is-${activeShopPreview.surface}`} href={activeShopPreview.href}>
                 <span>{activeShopPreview.eyebrow}</span>
-                <div className="v3-shop-mega-product" aria-hidden="true">
-                  <ProductArt
-                    key={activeShopPreviewId}
-                    surface={activeShopPreview.surface}
-                    actionId={activeShopPreview.actionId}
-                    brandName="tapote."
-                    theme={activeShopPreview.theme}
-                    personalization="ready"
-                  />
+                <div className={`v3-shop-mega-product ${activeShopPreviewId === "packs" ? "is-pack-composition" : ""}`} aria-hidden="true">
+                  {activeShopPreviewId === "packs" ? (
+                    <>
+                      <ProductArt surface="comptoir" actionId="avis" brandName="tapote." theme="nuit" personalization="ready" className="is-pack-comptoir" />
+                      <ProductArt surface="plaque" actionId="instagram" brandName="tapote." theme="creme" personalization="ready" className="is-pack-plaque" />
+                    </>
+                  ) : (
+                    <ProductArt
+                      key={activeShopPreviewId}
+                      surface={activeShopPreview.surface}
+                      actionId={activeShopPreview.actionId}
+                      brandName="tapote."
+                      theme={activeShopPreview.theme}
+                      personalization="ready"
+                    />
+                  )}
                 </div>
                 <strong>{activeShopPreview.title}</strong>
                 <em>{activeShopPreview.detail}</em>
@@ -211,13 +233,10 @@ function Header({ cartCount, compact = false }) {
               </a>
             </div>
           </div>
-          <a href="/comment-ca-marche" onClick={() => setOpen(false)}>Comment ça marche</a>
-          <a href="/tapote-pilot" onClick={() => setOpen(false)}>Tapote Pilot</a>
-          <a href="/devis" onClick={() => setOpen(false)}>Entreprises & devis</a>
-          {/* Le footer masque la colonne "Aide" sur mobile : sans ce lien, la FAQ
-              et le contact devenaient injoignables depuis la plupart des pages. */}
-          <a className="v3-mobile-faq" href="/faq" onClick={() => setOpen(false)}>Questions fréquentes</a>
-          <a className="v3-mobile-login" href="/connexion" onClick={() => setOpen(false)}>Accéder à Tapote Pilot</a>
+          <a className="v3-mobile-nav-row" href="/comment-ca-marche" onClick={() => setOpen(false)}><span><strong>Comment ça marche</strong><small>Comprendre le geste NFC + QR</small></span><ArrowRight aria-hidden="true" /></a>
+          <a className="v3-mobile-nav-row" href="/tapote-pilot" onClick={() => setOpen(false)}><span><strong>Tapote Pilot</strong><small>Gérer vos supports et leurs destinations</small></span><ArrowRight aria-hidden="true" /></a>
+          <a className="v3-mobile-nav-row" href="/devis" onClick={() => setOpen(false)}><span><strong>Entreprises & devis</strong><small>Accompagnement dès 10 supports</small></span><ArrowRight aria-hidden="true" /></a>
+          <a className="v3-mobile-login" href="/connexion" onClick={() => setOpen(false)}><UserRound aria-hidden="true" /><span><strong>Espace Tapote Pilot</strong><small>Retrouver mes supports</small></span><ArrowRight aria-hidden="true" /></a>
         </nav>
         <div className="v3-header-actions">
           <a className="v3-login" href="/connexion"><UserRound size={16} /> Connexion</a>
@@ -240,7 +259,7 @@ function Footer() {
         <div><Brand /><p>Transformez chaque visite<br />en la bonne action.</p><small>NFC + QR · Prêt à poser ou à votre image · Tapote Pilot inclus.</small></div>
         <div><strong>Acheter</strong><a href="/boutique">Toute la boutique</a><a href="/produits/comptoir">Tapote Comptoir</a><a href="/produits/plaque">Tapote Plaque</a><a href="/produits/carte">Tapote Card</a><a href="/boutique#packs">Pack Local</a></div>
         <div><strong>Découvrir</strong><a href="/boutique">Choisir un support</a><a href="/comment-ca-marche">Comment ça marche</a><a href="/tapote-pilot">Tapote Pilot</a><a href="/devis">Devis dès 10 supports</a></div>
-        <div><strong>Aide</strong><a href="/faq">Questions fréquentes</a><a href="mailto:aymeric@tapote.fr">Nous contacter</a><a href="/cgv">Livraison et garanties</a><a href="/confidentialite">Données et confidentialité</a><a href="/connexion">Accéder à Pilot</a></div>
+        <div><strong>Aide</strong><a href="mailto:aymeric@tapote.fr">Nous contacter</a><a href="/cgv">Livraison et garanties</a><a href="/confidentialite">Données et confidentialité</a><a href="/connexion">Accéder à Pilot</a></div>
       </div>
       <div className="v3-footer-bottom"><span>© 2026 Tapote</span><a href="/mentions-legales">Mentions légales</a><a href="/cgv">CGV</a><a href="/confidentialite">Confidentialité</a></div>
     </footer>

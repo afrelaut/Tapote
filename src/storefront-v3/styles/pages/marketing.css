@@ -559,16 +559,26 @@
 .v3-why-stage {
   min-width: 0;
   min-height: 397px;
-  padding: 23px;
+  padding: 0;
+  overflow: visible;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  color: #fff;
+  background: #fff;
+  border-radius: 26px;
+  box-shadow: 0 32px 80px rgb(33 29 24 / 17%);
+}
+
+.v3-why-stage-visual {
+  min-height: 326px;
+  padding: 23px 23px 0;
   overflow: hidden;
   display: grid;
-  grid-template-rows: auto 1fr auto;
-  color: #fff;
+  grid-template-rows: auto minmax(0, 1fr);
   background:
     radial-gradient(circle at 72% 26%, rgb(73 112 255 / 42%), transparent 19rem),
     linear-gradient(145deg, #111318, #15214e);
-  border-radius: 26px;
-  box-shadow: 0 32px 80px rgb(33 29 24 / 17%);
+  border-radius: 26px 26px 0 0;
 }
 
 .v3-why-stage-head {
@@ -619,10 +629,11 @@
   z-index: 4;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  border: 1px solid rgb(255 255 255 / 15%);
-  border-radius: 14px;
-  background: rgb(6 8 14 / 48%);
-  backdrop-filter: blur(12px);
+  color: #273044;
+  background: #fff;
+  border: 1px solid #dfe3eb;
+  border-top: 0;
+  border-radius: 0 0 18px 18px;
 }
 
 .v3-why-checks span {
@@ -633,7 +644,7 @@
   align-items: center;
   justify-content: center;
   gap: 7px;
-  border-right: 1px solid rgb(255 255 255 / 12%);
+  border-right: 1px solid #e1e4eb;
   font-size: var(--v3-text-xs);
   font-weight: 760;
   text-align: center;
@@ -646,7 +657,7 @@
 .v3-why-checks svg {
   width: 16px;
   flex: 0 0 auto;
-  color: #8facff;
+  color: #2458ff;
 }
 
 .v3-why-content {
@@ -995,8 +1006,13 @@
 
   .v3-why-stage {
     min-height: 322px;
-    padding: 17px;
     border-radius: 20px;
+  }
+
+  .v3-why-stage-visual {
+    min-height: 272px;
+    padding: 17px 17px 0;
+    border-radius: 20px 20px 0 0;
   }
 
   .v3-why-art {
@@ -1059,6 +1075,95 @@
   .v3-card-quantity p {
     padding: 3px 5px 5px;
   }
+}
+
+/* Ouverture Tapote Pilot : une seule démonstration, immédiatement compréhensible. */
+.v3-pilot-page-flow {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  color: #fff;
+  background:
+    radial-gradient(circle at 88% 6%, rgb(49 91 255 / 42%), transparent 34%),
+    linear-gradient(145deg, #0b0e17 0%, #11182d 58%, #0b0e17 100%);
+}
+.v3-pilot-page-flow::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: -170px;
+  right: -100px;
+  width: 520px;
+  height: 520px;
+  border: 1px solid rgb(128 157 255 / 20%);
+  border-radius: 50%;
+  box-shadow: 0 0 0 70px rgb(78 119 255 / 5%), 0 0 0 140px rgb(78 119 255 / 3%);
+}
+.v3-pilot-page-flow-head { max-width: 920px; margin-bottom: clamp(38px, 5vw, 66px); }
+.v3-pilot-page-flow-head .v3-eyebrow { color: #9db4ff; }
+.v3-pilot-page-flow-head h1 {
+  max-width: 830px;
+  margin: 18px 0 20px;
+  color: #fff;
+  font-size: clamp(48px, 6vw, 92px);
+  line-height: .88;
+  letter-spacing: -.072em;
+}
+.v3-pilot-page-flow-head p { max-width: 650px; color: #bec6d8; font-size: 16px; }
+.v3-pilot-page-flow-actions { margin-top: 28px; display: flex; align-items: center; flex-wrap: wrap; gap: 18px; }
+.v3-pilot-page-flow-actions a { min-height: 52px; padding: 0 18px; display: inline-flex; align-items: center; gap: 10px; color: #10131c; background: #fff; border-radius: 11px; font-size: 12px; font-weight: 820; }
+.v3-pilot-page-flow-actions a:hover { transform: translateY(-2px); }
+.v3-pilot-page-flow-actions a svg { width: 16px; }
+.v3-pilot-page-flow-actions span { display: inline-flex; align-items: center; gap: 7px; color: #c7cede; font-size: 11px; font-weight: 720; }
+.v3-pilot-page-flow-actions span svg { width: 16px; color: #58d6a0; }
+.v3-pilot-page-flow-grid { display: grid; align-items: start; }
+.v3-pilot-page-steps { display: grid; gap: 12px; }
+.v3-pilot-page-steps article {
+  min-height: 0;
+  padding: 18px;
+  display: grid;
+  grid-template-columns: 24px 44px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  background: rgb(255 255 255 / 6%);
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+}
+.v3-pilot-page-steps article > span { color: #829fff; font-size: 10px; font-weight: 850; }
+.v3-pilot-page-steps article > i { width: 42px; height: 42px; display: grid; place-items: center; color: #fff; background: #2458ff; border: 0; border-radius: 12px; }
+.v3-pilot-page-steps article > i svg { width: 19px; }
+.v3-pilot-page-steps h3 { margin: 0 0 4px; color: #fff; font-size: 16px; }
+.v3-pilot-page-steps p { margin: 0; color: #aeb7cc; font-size: 11px; line-height: 1.45; }
+.v3-pilot-page-demo {
+  padding: 12px;
+  background: rgb(255 255 255 / 96%);
+  border: 1px solid rgb(255 255 255 / 28%);
+  border-radius: 24px;
+  box-shadow: 0 36px 90px rgb(0 0 0 / 36%);
+}
+.v3-pilot-page-demo .pilot-level-demo {
+  --switch-surface: #f0eee9;
+  --switch-border: #dedbd4;
+  --switch-ink: #5b5650;
+  --switch-active-ink: #10131c;
+  --switch-active-surface: #fff;
+  --switch-note: #66615a;
+}
+.v3-pilot-page-demo .pilot-level-switch { margin: 0 0 4px; }
+
+@media (max-width: 900px) {
+  .v3-pilot-page-flow { padding: 54px 18px 60px; }
+  .v3-pilot-page-flow-head { margin-bottom: 34px; }
+  .v3-pilot-page-flow-head h1 { font-size: clamp(44px, 13.2vw, 64px); }
+  .v3-pilot-page-flow-head p { color: #bdc5d6; font-size: 14px; line-height: 1.55; }
+  .v3-pilot-page-flow-actions { align-items: flex-start; flex-direction: column; gap: 13px; }
+  .v3-pilot-page-flow-actions a { width: 100%; justify-content: center; }
+  .v3-pilot-page-flow-grid { grid-template-columns: 1fr; gap: 30px; }
+  .v3-pilot-page-steps article { min-height: 0; grid-template-columns: 22px 40px minmax(0, 1fr); padding: 15px; }
+  .v3-pilot-page-steps article > i { width: 40px; height: 40px; }
+  .v3-pilot-page-steps h3 { font-size: 15px; }
+  .v3-pilot-page-demo { margin: 0 -6px; padding: 7px; border-radius: 19px; }
 }
 
 /* Priorité finale : CTA principal et proportions constantes du contenu aux
@@ -1337,7 +1442,7 @@
     padding: 7px 4px;
     flex-direction: column;
     gap: 3px;
-    border-right: 1px solid rgb(255 255 255 / 12%);
+    border-right: 1px solid #e1e4eb;
     border-bottom: 0;
     font-size: var(--v3-text-xs);
     text-align: center;
@@ -2435,6 +2540,7 @@
   margin-bottom: clamp(50px, 6vw, 84px);
 }
 
+.v3-pilot-page-flow-head h1,
 .v3-pilot-page-flow-head h2,
 .v3-pilot-page-value > div:first-child h2,
 .v3-pilot-page-plan > header h2 {
@@ -2704,6 +2810,7 @@
     padding: 76px 18px;
   }
 
+  .v3-pilot-page-flow-head h1,
   .v3-pilot-page-flow-head h2,
   .v3-pilot-page-value > div:first-child h2,
   .v3-pilot-page-plan > header h2 {
@@ -2753,4 +2860,55 @@
   .v3-pilot-page-plan-grid article {
     min-height: 279px;
   }
+}
+
+/* Ces règles restent en dernier : l'ancienne version claire du bloc Pilot ne
+   doit pas reprendre la main selon la largeur d'écran. */
+.v3-pilot-page .v3-pilot-page-flow {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  color: #fff;
+  background:
+    radial-gradient(circle at 88% 6%, rgb(49 91 255 / 42%), transparent 34%),
+    linear-gradient(145deg, #0b0e17 0%, #11182d 58%, #0b0e17 100%);
+}
+.v3-pilot-page .v3-pilot-page-flow-head { max-width: 920px; margin-bottom: clamp(38px, 5vw, 66px); }
+.v3-pilot-page .v3-pilot-page-flow-head .v3-eyebrow { color: #9db4ff; }
+.v3-pilot-page .v3-pilot-page-flow-head h1 {
+  max-width: 830px;
+  margin: 18px 0 20px;
+  color: #fff;
+  font-size: clamp(48px, 6vw, 92px);
+  line-height: .88;
+  letter-spacing: -.072em;
+}
+.v3-pilot-page .v3-pilot-page-flow-head p { max-width: 650px; color: #bec6d8; font-size: 16px; }
+.v3-pilot-page .v3-pilot-page-flow-grid { display: grid; align-items: start; }
+.v3-pilot-page .v3-pilot-page-steps { display: grid; gap: 12px; }
+.v3-pilot-page .v3-pilot-page-steps article {
+  min-height: 0;
+  padding: 18px;
+  display: grid;
+  grid-template-columns: 24px 44px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  background: rgb(255 255 255 / 6%);
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 16px;
+}
+.v3-pilot-page .v3-pilot-page-steps article > span { color: #829fff; }
+.v3-pilot-page .v3-pilot-page-steps article > i { width: 42px; height: 42px; color: #fff; background: #2458ff; border: 0; border-radius: 12px; }
+.v3-pilot-page .v3-pilot-page-steps h3 { margin: 0 0 4px; color: #fff; font-size: 16px; }
+.v3-pilot-page .v3-pilot-page-steps p { margin: 0; color: #aeb7cc; font-size: 11px; line-height: 1.45; }
+.v3-pilot-page .v3-pilot-page-demo { padding: 12px; background: #fff; border: 1px solid rgb(255 255 255 / 28%); border-radius: 24px; box-shadow: 0 36px 90px rgb(0 0 0 / 36%); }
+
+@media (max-width: 900px) {
+  .v3-pilot-page .v3-pilot-page-flow { padding: 54px 18px 60px; }
+  .v3-pilot-page .v3-pilot-page-flow-head { margin-bottom: 34px; }
+  .v3-pilot-page .v3-pilot-page-flow-head h1 { font-size: clamp(44px, 13.2vw, 64px); }
+  .v3-pilot-page .v3-pilot-page-flow-head p { color: #bdc5d6; font-size: 14px; line-height: 1.55; }
+  .v3-pilot-page .v3-pilot-page-flow-grid { grid-template-columns: 1fr; gap: 30px; }
+  .v3-pilot-page .v3-pilot-page-steps article { grid-template-columns: 22px 40px minmax(0, 1fr); padding: 15px; }
+  .v3-pilot-page .v3-pilot-page-demo { margin: 0 -6px; padding: 7px; border-radius: 19px; }
 }

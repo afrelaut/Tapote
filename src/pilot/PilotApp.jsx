@@ -305,33 +305,35 @@ export function PilotLogin({ onDemo, authClient = pilotSupabase }) {
   return (
     <main className="pilot-login">
       <section className="pilot-login-copy">
-        <PilotLogo />
+        <PilotLogo dark />
         <div className="pilot-login-heading">
-          <span className="pilot-kicker">ESPACE CLIENT · BÊTA PRIVÉE</span>
+          <span className="pilot-kicker">ESPACE CLIENT · TAPOTE PILOT</span>
           <h1>Vos produits.<br /><em>Le bon lien.</em></h1>
           <p>Retrouvez vos supports et la page que chacun ouvre. Avec Tapote Pilot Pro, changez cette destination sans réimprimer.</p>
         </div>
-        <div className="pilot-auth-methods" role="group" aria-label="Mode de connexion">
-          <button type="button" className={method === "password" ? "is-active" : ""} aria-pressed={method === "password"} onClick={() => { setMethod("password"); setMessage(""); setStatus("idle"); }}>Mot de passe</button>
-          <button type="button" className={method === "magic" ? "is-active" : ""} aria-pressed={method === "magic"} onClick={() => { setMethod("magic"); setMessage(""); setStatus("idle"); }}>Lien sécurisé</button>
-        </div>
-        <form onSubmit={submit} className="pilot-login-form">
-          <label htmlFor="pilot-email">Adresse e-mail invitée</label>
-          <div className="pilot-login-entry">
-            <div className="pilot-login-inputs">
-              <input id="pilot-email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="vous@commerce.fr" required autoComplete="email" aria-describedby={message ? "pilot-login-message" : undefined} />
-              {method === "password" && <input id="pilot-password" aria-label="Mot de passe" type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Mot de passe" required minLength={8} autoComplete="current-password" />}
-            </div>
-            <button type="submit" disabled={status === "loading" || cooldown > 0}>
-              {status === "loading" ? <LoaderCircle className="pilot-spin" size={18} /> : <ArrowRight size={18} />}
-              <span>{method === "password" ? "Ouvrir Pilot" : cooldown > 0 ? `Renvoyer dans ${cooldown} s` : "Recevoir mon lien"}</span>
-            </button>
+        <div className="pilot-login-panel">
+          <div className="pilot-auth-methods" role="group" aria-label="Mode de connexion">
+            <button type="button" className={method === "password" ? "is-active" : ""} aria-pressed={method === "password"} onClick={() => { setMethod("password"); setMessage(""); setStatus("idle"); }}>Mot de passe</button>
+            <button type="button" className={method === "magic" ? "is-active" : ""} aria-pressed={method === "magic"} onClick={() => { setMethod("magic"); setMessage(""); setStatus("idle"); }}>Lien sécurisé</button>
           </div>
-          {method === "password" && <button className="pilot-password-reset" type="button" onClick={requestPasswordReset} disabled={status === "loading" || cooldown > 0}>Mot de passe oublié&nbsp;?</button>}
-          {message && <p id="pilot-login-message" className={`pilot-form-message pilot-form-${status}`} role={status === "error" ? "alert" : "status"}>{message}</p>}
-        </form>
-        <small>Accès sur invitation uniquement. Le lien sécurisé reste disponible sans mot de passe.</small>
-        {onDemo && <button className="pilot-demo-access" type="button" onClick={onDemo}><Sparkles size={17} />Explorer la démonstration</button>}
+          <form onSubmit={submit} className="pilot-login-form">
+            <label htmlFor="pilot-email">Adresse e-mail invitée</label>
+            <div className="pilot-login-entry">
+              <div className="pilot-login-inputs">
+                <input id="pilot-email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="vous@commerce.fr" required autoComplete="email" aria-describedby={message ? "pilot-login-message" : undefined} />
+                {method === "password" && <input id="pilot-password" aria-label="Mot de passe" type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Mot de passe" required minLength={8} autoComplete="current-password" />}
+              </div>
+              <button type="submit" disabled={status === "loading" || cooldown > 0}>
+                {status === "loading" ? <LoaderCircle className="pilot-spin" size={18} /> : <ArrowRight size={18} />}
+                <span>{method === "password" ? "Ouvrir Pilot" : cooldown > 0 ? `Renvoyer dans ${cooldown} s` : "Recevoir mon lien"}</span>
+              </button>
+            </div>
+            {method === "password" && <button className="pilot-password-reset" type="button" onClick={requestPasswordReset} disabled={status === "loading" || cooldown > 0}>Mot de passe oublié&nbsp;?</button>}
+            {message && <p id="pilot-login-message" className={`pilot-form-message pilot-form-${status}`} role={status === "error" ? "alert" : "status"}>{message}</p>}
+          </form>
+          <small>Accès sur invitation uniquement. Le lien sécurisé reste disponible sans mot de passe.</small>
+          {onDemo && <button className="pilot-demo-access" type="button" onClick={onDemo}><Sparkles size={17} />Explorer la démonstration</button>}
+        </div>
       </section>
       <aside className="pilot-login-visual" aria-hidden="true">
         <img src="/assets/tapote-hero-a6-hd.webp" alt="" />

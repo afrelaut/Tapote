@@ -12,7 +12,7 @@ export function OfferArchitectureSection() {
     {
       id: "comptoir",
       productId: "comptoir_standard",
-      eyebrow: "CAISSE · ACCUEIL · TABLE",
+      eyebrow: "CHEVALET · POSE LIBRE",
       title: "Tapote Comptoir",
       copy: "Le support visible au moment du paiement, de l’accueil ou du service.",
       href: "/produits/comptoir",
@@ -24,31 +24,31 @@ export function OfferArchitectureSection() {
     {
       id: "plaque",
       productId: "plaque_standard",
-      eyebrow: "MUR · MIROIR · ENTRÉE",
+      eyebrow: "POINT FIXE · FORMAT PLAQUE",
       title: "Tapote Plaque",
       copy: "Le point d’action fixe qui reste lisible à l’entrée, au mur ou sur un miroir.",
       href: "/produits/plaque",
       cta: "Voir Tapote Plaque",
       surface: "plaque",
-      actionId: "reservation",
+      actionId: "instagram",
       theme: "creme",
     },
     {
       id: "carte",
       productId: "carte_standard",
-      eyebrow: "MOBILE · TERRAIN",
+      eyebrow: "FORMAT POCHE · MOBILE",
       title: "Tapote Card",
       copy: "Le format poche pour les rendez-vous, les visites et les équipes terrain.",
       href: "/produits/carte",
       cta: "Voir Tapote Card",
       surface: "carte",
-      actionId: "contact",
+      actionId: "linkedin",
       theme: "creme",
     },
     {
       id: "pack-local",
       productId: "pack_duo_standard",
-      eyebrow: "CAISSE + ENTRÉE",
+      eyebrow: "DUO COMPTOIR + PLAQUE",
       title: "Pack Local",
       copy: "Un Comptoir et une Plaque pour couvrir deux moments complémentaires dans un même lieu.",
       href: "/boutique#packs",
@@ -93,7 +93,7 @@ export function OfferArchitectureSection() {
           </article>
         ))}
       </div>
-      <a className="v3-home-products-all" href="/boutique">Comparer les quatre offres <ArrowRight /></a>
+      <a className="v3-home-products-all" href="/boutique">Voir les quatre offres <ArrowRight /></a>
     </section>
   );
 }
@@ -216,50 +216,49 @@ const FROZEN_POINTS = [
   {
     icon: Link2,
     title: "Le lien change, pas le carton",
-    today: "Une adresse imprimée reste celle du jour de l’impression. Changer de page de réservation ou d’avis oblige à refaire le support.",
     answer: "Avec Tapote Pilot Pro, changez la destination sans réimprimer ni réencoder le support.",
   },
   {
     icon: SmartphoneNfc,
     title: "Deux gestes, une destination",
-    today: "Certains approchent leur téléphone, d’autres cherchent un QR. Gérer deux supports séparés, c’est deux choses à tenir à jour.",
     answer: "Le NFC et le QR ouvrent la même destination Tapote.",
   },
   {
     icon: Globe2,
     title: "Rien à installer",
-    today: "Un visiteur ne télécharge pas une application pour laisser un avis ou consulter un menu. Chaque étape en plus est une étape perdue.",
     answer: "Aucune application à installer pour le visiteur.",
   },
 ];
 
-export function FrozenSupportSection() {
+export function FrozenSupportSection({ children }) {
   return (
-    <section className="v3-frozen" aria-labelledby="v3-frozen-title">
-      <header>
-        <span className="v3-frozen-pill">LE PROBLÈME</span>
-        <h2 id="v3-frozen-title">Un support imprimé est figé.<br /><em>Votre activité, non.</em></h2>
-        <p>Le support ne bouge pas. Ce qu’il ouvre, si.</p>
-      </header>
-      {/* Chiffres tiers, sourcés et datés : la source de vérité interdit tout
-          chiffre non prouvé, donc l'attribution reste visible à l'écran. */}
-      <dl className="v3-frozen-stats">
-        <div><dt>81 %</dt><dd>se renseignent en ligne avant de se rendre en magasin</dd></div>
-        <div><dt>46 %</dt><dd>lisent les avis sur Google</dd></div>
-        <div><dt>71 %</dt><dd>laissent un avis dans les sept jours suivant leur achat</dd></div>
-      </dl>
-      <p className="v3-frozen-source">Source : Avis Vérifiés by Skeepers, 50 000 consommateurs en France, Italie et Espagne, fin 2024.</p>
-      <ul>
-        {FROZEN_POINTS.map(({ icon: Icon, title, today, answer }) => (
-          <li key={title}>
-            <i><Icon /></i>
-            <h3>{title}</h3>
-            <p className="v3-frozen-today"><small>AUJOURD’HUI</small>{today}</p>
-            <p className="v3-frozen-answer"><small>AVEC TAPOTE</small>{answer}</p>
-          </li>
-        ))}
-      </ul>
-    </section>
+    <>
+      <section className="v3-frozen v3-frozen-evidence" aria-labelledby="v3-frozen-title">
+        <header>
+          <span className="v3-frozen-pill">LE PROBLÈME</span>
+          <h2 id="v3-frozen-title">Un support imprimé est figé.<br /><em>Votre activité, non.</em></h2>
+          <p>Le support ne bouge pas. Ce qu’il ouvre, si.</p>
+        </header>
+        <dl className="v3-frozen-stats">
+          <div><dt>81 %</dt><dd>se renseignent en ligne avant de se rendre en magasin</dd></div>
+          <div><dt>46 %</dt><dd>lisent les avis sur Google</dd></div>
+          <div><dt>71 %</dt><dd>laissent un avis dans les sept jours suivant leur achat</dd></div>
+        </dl>
+        <p className="v3-frozen-source">Source : Avis Vérifiés by Skeepers, 50 000 consommateurs en France, Italie et Espagne, fin 2024.</p>
+      </section>
+      {children}
+      <section className="v3-frozen v3-frozen-points" aria-label="Pourquoi Tapote simplifie le lien">
+        <ul>
+          {FROZEN_POINTS.map(({ icon: Icon, title, answer }) => (
+            <li key={title}>
+              <i><Icon /></i>
+              <h3>{title}</h3>
+              <p className="v3-frozen-answer">{answer}</p>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </>
   );
 }
 
@@ -293,7 +292,7 @@ export function StorefrontFaq() {
       <div>
         {STOREFRONT_FAQ.slice(0, 4).map(([question, answer]) => <details key={question}><summary>{question}<Plus /></summary><p>{answer}</p></details>)}
       </div>
-      <a className="v3-faq-all-link" href="/faq">Consulter toute la FAQ <ArrowRight /></a>
+      <a className="v3-faq-all-link" href="mailto:aymeric@tapote.fr">Une autre question ? Écrivez-nous <ArrowRight /></a>
     </section>
   );
 }
@@ -309,8 +308,8 @@ export function FinalCommercialCta() {
       </div>
       <div className="v3-final-commercial-stage" aria-hidden="true">
         <ProductArt surface="comptoir" actionId="avis" brandName="tapote." theme="nuit" personalization="ready" className="is-comptoir" />
-        <ProductArt surface="plaque" actionId="reservation" brandName="tapote." theme="creme" personalization="ready" className="is-plaque" />
-        <ProductArt surface="carte" actionId="contact" brandName="tapote." theme="nuit" personalization="ready" className="is-carte" />
+        <ProductArt surface="plaque" actionId="instagram" brandName="tapote." theme="creme" personalization="ready" className="is-plaque" />
+        <ProductArt surface="carte" actionId="linkedin" brandName="tapote." theme="nuit" personalization="ready" className="is-carte" />
       </div>
     </section>
   );
@@ -356,8 +355,8 @@ export function RelatedProducts({ current }) {
   const related = SHOP_ITEMS.filter((item) => item.surface !== current).slice(0, 2);
   const previews = {
     comptoir: { actionId: "avis", theme: "nuit" },
-    plaque: { actionId: "reservation", theme: "creme" },
-    carte: { actionId: "contact", theme: "nuit" },
+    plaque: { actionId: "instagram", theme: "creme" },
+    carte: { actionId: "linkedin", theme: "nuit" },
   };
   return (
     <section className="v3-section v3-related-products" aria-labelledby="v3-related-title">
@@ -432,7 +431,7 @@ export function ProductFaqSection({ data }) {
   const questions = [...(PRODUCT_FAQ_SPECIFIC[data.key] || []), ...PRODUCT_FAQ_COMMON.slice(0, 3)];
   return (
     <section className="v3-product-faq" aria-labelledby={`v3-${data.key}-faq-title`}>
-      <header><span className="v3-eyebrow">QUESTIONS FRÉQUENTES</span><h2 id={`v3-${data.key}-faq-title`}>Avant de commander.</h2><p>Les réponses essentielles sur {data.name}.</p><a href="/faq">Voir toute la FAQ <ArrowRight /></a></header>
+      <header><span className="v3-eyebrow">QUESTIONS FRÉQUENTES</span><h2 id={`v3-${data.key}-faq-title`}>Avant de commander.</h2><p>Les réponses essentielles sur {data.name}.</p><a href="mailto:aymeric@tapote.fr">Une autre question ? <ArrowRight /></a></header>
       <div>{questions.map(([question, answer]) => <details key={question}><summary>{question}<Plus /></summary><p>{answer}</p></details>)}</div>
     </section>
   );
@@ -492,13 +491,15 @@ export function WhyTapote() {
     <section className="v3-section v3-why" aria-labelledby="v3-why-title">
       <div className="v3-why-layout">
         <div className="v3-why-stage" aria-label="Exemple d’un support Tapote prêt à être posé">
-          <div className="v3-why-stage-head">
-            <span>PRÊT À POSER</span>
-            <b>01 — Support complet</b>
-          </div>
-          <div className="v3-why-art" aria-hidden="true">
-            <ProductArt surface="comptoir" actionId="avis" brandName="tapote." theme="creme" personalization="ready" className="is-main" />
-            <ProductArt surface="carte" actionId="avis" brandName="tapote." theme="nuit" personalization="ready" className="is-card" />
+          <div className="v3-why-stage-visual">
+            <div className="v3-why-stage-head">
+              <span>PRÊT À POSER</span>
+              <b>01 — Support complet</b>
+            </div>
+            <div className="v3-why-art" aria-hidden="true">
+              <ProductArt surface="comptoir" actionId="avis" brandName="tapote." theme="creme" personalization="ready" className="is-main" />
+              <ProductArt surface="carte" actionId="avis" brandName="tapote." theme="nuit" personalization="ready" className="is-card" />
+            </div>
           </div>
           <div className="v3-why-checks">
             <span><SmartphoneNfc /> NFC encodé</span>

@@ -69,7 +69,7 @@ export function PilotAppMock({ level = "pilot", compact = false }) {
           <div className="pilot-mock__section-head"><small>MES SUPPORTS</small><strong>Prêts à être utilisés</strong></div>
           {SUPPORTS.map((support) => (
             <article key={support.serial}>
-              <i><ProductArt surface={support.surface} actionId={support.action} brandName="tapote." theme={support.theme} personalization="ready" /></i>
+              <i className={`is-${support.surface} is-${support.theme}`}><ProductArt surface={support.surface} actionId={support.action} brandName="tapote." theme={support.theme} personalization="ready" /></i>
               <span className="pilot-mock__support-id">
                 <b>{support.label}</b>
                 <small><u />Actif · {support.serial}</small>

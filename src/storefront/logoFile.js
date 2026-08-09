@@ -21,7 +21,32 @@ const LOGO_EXTENSION_TYPES = new Map([
   ["svg", "image/svg+xml"],
 ]);
 
+const LOGO_TYPE_EXTENSIONS = new Map([
+  ["image/png", "png"],
+  ["image/jpeg", "jpg"],
+  ["image/webp", "webp"],
+]);
+
 export const MAX_LOGO_BYTES = 2 * 1024 * 1024;
+
+async function detectBitmapType(file) {
+  const bytes = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+  if (bytes.length >= 8
+    && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47
+    && bytes[4] === 0x0d && bytes[5] === 0x0a && bytes[6] === 0x1a && bytes[7] === 0x0a) return "image/png";
+  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "image/jpeg";
+  if (bytes.length >= 12
+    && bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46
+    && bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50) return "image/webp";
+  return "";
+}
+
+function nameForType(name, mimeType) {
+  const extension = LOGO_TYPE_EXTENSIONS.get(mimeType);
+  if (!extension) return name;
+  const stem = name.replace(/\.[^.]+$/, "") || "logo";
+  return `${stem}.${extension}`;
+}
 
 export function readFileAsDataUrl(file) {
   return new Promise((resolve, reject) => {
@@ -69,10 +94,15 @@ async function convertSvgLogo(file) {
 
 export async function prepareLogoFile(file) {
   const extension = file.name.split(".").pop()?.toLowerCase() || "";
-  const canonicalType = LOGO_MIME_ALIASES.get(file.type.toLowerCase()) || LOGO_EXTENSION_TYPES.get(extension) || "";
-  if (!canonicalType || file.size > MAX_LOGO_BYTES) {
+  const declaredType = LOGO_MIME_ALIASES.get(file.type.toLowerCase()) || LOGO_EXTENSION_TYPES.get(extension) || "";
+  if (!declaredType || file.size > MAX_LOGO_BYTES) {
     throw new Error("PNG, JPG, WebP ou SVG uniquement, 2 Mo maximum.");
   }
-  const normalizedFile = file.type === canonicalType ? file : new File([file], file.name, { type: canonicalType, lastModified: file.lastModified });
+  const detectedType = declaredType === "image/svg+xml" ? "" : await detectBitmapType(file);
+  const canonicalType = detectedType || declaredType;
+  const normalizedName = nameForType(file.name, canonicalType);
+  const normalizedFile = file.type === canonicalType && file.name === normalizedName
+    ? file
+    : new File([file], normalizedName, { type: canonicalType, lastModified: file.lastModified });
   return canonicalType === "image/svg+xml" ? convertSvgLogo(normalizedFile) : normalizedFile;
 }

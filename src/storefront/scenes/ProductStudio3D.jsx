@@ -231,12 +231,18 @@ export default function ProductStudio3D({
   const hostRef = useRef(null);
   const canvasRef = useRef(null);
   const artworkRef = useRef(null);
-  const [ready, setReady] = useState(false);
+  // La disponibilité appartient à une texture précise. Un simple booléen
+  // restait vrai pendant le premier rendu suivant un changement de secteur :
+  // Safari montrait alors une frame de l'ancien objet avec les nouveaux textes.
+  // En liant l'état à artworkKey, le canvas ne devient visible qu'une fois la
+  // première frame exacte de la nouvelle configuration réellement dessinée.
+  const [readyArtworkKey, setReadyArtworkKey] = useState("");
   const [capturedArtwork, setCapturedArtwork] = useState(null);
   // La texture est régénérée dès qu'un élément imprimé change : sans le nom, le
   // logo et les textes, l'objet 3D restait au design Tapote générique alors que
   // le client venait de personnaliser son support.
   const artworkKey = [surface, actionId, primaryColor, accentColor, textColor, personalization, brandName, brandLogo, brandMotif, tagline, contactLine, blockColorMode, customHeadline, customSubline, customTapLabel].join(":");
+  const ready = readyArtworkKey === artworkKey;
   const [eligible, setEligible] = useState(() => (
     typeof window !== "undefined"
     && (typeof window.matchMedia !== "function" || !window.matchMedia("(prefers-reduced-motion: reduce)").matches)
@@ -295,8 +301,6 @@ export default function ProductStudio3D({
     const canvas = canvasRef.current;
     const artworkCanvas = capturedArtwork?.key === artworkKey ? capturedArtwork.canvas : null;
     if (!host || !canvas || !eligible || !artworkCanvas) return undefined;
-    setReady(false);
-
     const mobile = window.matchMedia("(max-width: 760px)").matches;
     const budget = mobile ? SCENE_BUDGETS.mobile : SCENE_BUDGETS.desktop;
     const renderer = new WebGLRenderer({
@@ -345,7 +349,7 @@ export default function ProductStudio3D({
     const product = buildProduct(surface, texture, primaryColor);
     // Keep the physical relationship credible beside a ~147 mm smartphone:
     // Comptoir is roughly phone-height, Plaque slightly shorter, Card compact.
-    const baseScale = surface === "carte" ? 0.58 : surface === "plaque" ? 0.84 : 0.88;
+    const baseScale = surface === "carte" ? 0.82 : surface === "plaque" ? 0.84 : 0.88;
     const heroScale = surface === "comptoir" ? 1.08 : surface === "plaque" ? 0.74 : 0.64;
     // Le support est le produit vendu : il doit dominer la scène. Le téléphone
     // n'est là que pour prouver le geste, pas pour voler la vedette.
@@ -354,10 +358,16 @@ export default function ProductStudio3D({
     product.scale.setScalar(finalScale);
     // Sur mobile le téléphone occupe la moitié droite du cadre : l'objet se
     // décale vers la gauche pour rester entier et lisible à côté de lui.
-    const objectX = hero ? (mobile ? 0.42 : 0.72) : (mobile ? -0.52 : -0.30);
-    // Le socle du chevalet doit rester dans le cadre : l'objet est remonté sur
-    // la fiche produit, où la scène est plus haute que large.
-    const objectY = (surface === "comptoir" ? 0.18 : 0.05) + (hero ? 0 : 0.34);
+    const objectX = hero
+      ? (mobile ? 0.42 : 0.72)
+      : surface === "carte"
+        ? (mobile ? -0.76 : -0.46)
+        : (mobile ? -0.52 : -0.30);
+    // Le socle du chevalet reste posé dans le cadre. L'ancien décalage initial
+    // de +0,34 faisait d'abord apparaître l'objet trop haut, avant que la boucle
+    // d'animation ne le redescende progressivement.
+    const restingObjectY = surface === "comptoir" ? (hero ? 0.18 : -0.04) : surface === "carte" ? 0.02 : 0.05;
+    const objectY = restingObjectY;
     product.position.set(objectX, objectY, 0);
     product.rotation.set(
       surface === "carte" ? -0.12 : -0.025,
@@ -422,7 +432,14 @@ export default function ProductStudio3D({
       const width = Math.max(1, host.clientWidth);
       const height = Math.max(1, host.clientHeight);
       const pixelRatioByArea = Math.sqrt(budget.maxCanvasPixels / (width * height));
-      const pixelRatio = Math.max(0.75, Math.min(window.devicePixelRatio || 1, budget.maxDpr, pixelRatioByArea));
+      // Certains aperçus mobiles sont ouverts dans un navigateur qui expose un
+      // DPR de 1, même sur un écran très dense. Rendre le canvas à cette valeur
+      // sous-échantillonne alors toute l'impression (logo, texte et QR). La
+      // définition minimale reste bornée par le budget de pixels pour conserver
+      // un rendu fluide sur iPhone, mais garantit une vraie finesse Retina.
+      const minimumPixelRatio = mobile ? 2 : 1.5;
+      const requestedPixelRatio = Math.max(window.devicePixelRatio || 1, minimumPixelRatio);
+      const pixelRatio = Math.max(0.75, Math.min(requestedPixelRatio, budget.maxDpr, pixelRatioByArea));
       renderer.setPixelRatio(pixelRatio);
       renderer.setSize(width, height, false);
       camera.aspect = width / height;
@@ -444,18 +461,18 @@ export default function ProductStudio3D({
       const baseRotationX = surface === "carte" ? -0.12 : -0.025;
       product.rotation.y += ((baseRotationY + (pointerX * 0.28)) - product.rotation.y) * 0.045;
       product.rotation.x += ((baseRotationX - (pointerY * 0.12)) - product.rotation.x) * 0.045;
-      product.position.y += (((surface === "comptoir" ? 0.18 : 0.05) + (Math.sin(elapsed * 0.68) * 0.035)) - product.position.y) * 0.08;
+      product.position.y += ((restingObjectY + (Math.sin(elapsed * 0.68) * 0.035)) - product.position.y) * 0.08;
       renderer.render(scene, camera);
       if (!rendered) {
         rendered = true;
-        setReady(true);
+        setReadyArtworkKey(artworkKey);
       }
       frameId = window.requestAnimationFrame(render);
     };
 
     const onContextLost = (event) => {
       event.preventDefault();
-      setReady(false);
+      setReadyArtworkKey("");
       setEligible(false);
     };
 
@@ -514,7 +531,15 @@ export default function ProductStudio3D({
       {/* Sans WebGL éligible (VM, GPU désactivé, reduced-motion) l'objet 3D ne
           rend jamais : ce repli montre le vrai produit à plat plutôt qu'un
           cadre vide, seul le téléphone flottant restant sinon visible. */}
-      {!ready && <div className="tapote-product-studio__fallback" aria-hidden="true">{renderFallback?.()}</div>}
+      {!ready && (eligible ? (
+        <div className="tapote-product-studio__loading" role="status" aria-label="Chargement de l’aperçu 3D">
+          <span aria-hidden="true"><i /><i /><i /></span>
+          <strong>Votre Tapote prend forme</strong>
+          <small>Aperçu 3D en préparation…</small>
+        </div>
+      ) : (
+        <div className="tapote-product-studio__fallback" aria-hidden="true">{renderFallback?.()}</div>
+      ))}
       <DeviceFrame
         actionId={actionId}
         sectorId={sectorId}

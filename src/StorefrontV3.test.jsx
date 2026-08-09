@@ -31,6 +31,10 @@ async function waitForCatalog() {
   await waitFor(() => expect(document.querySelector(".v3-site")).toHaveAttribute("data-catalog-status", "ready"));
 }
 
+function fillRequiredDestination(url = "https://example.com/tapote") {
+  fireEvent.change(screen.getByLabelText("Lien obligatoire à ouvrir"), { target: { value: url } });
+}
+
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
@@ -76,20 +80,26 @@ describe("Boutique Tapote V3", () => {
   it("présente une landing de marque orientée produit sans preuve inventée", () => {
     renderRoute("/");
     expect(screen.getByRole("heading", { level: 1, name: /Le bon geste.*Au bon moment/i })).toBeVisible();
+    expect(screen.getByRole("heading", { name: /Le geste devient.*une vraie fonction/i })).toBeVisible();
     expect(screen.getByRole("heading", { name: /Quatre choix.*Le prix tout de suite/i })).toBeVisible();
-    expect(screen.getByRole("heading", { name: /Vous choisissez.*On prépare.*Vous posez/i })).toBeVisible();
-    expect(screen.getByRole("heading", { name: /Vos supports.*Leurs destinations/i })).toBeVisible();
+    expect(screen.getByRole("heading", { name: /Une action utile.*Au bon endroit/i })).toBeVisible();
     expect(screen.getByText("BAT avant fabrication personnalisée")).toBeVisible();
     expect(screen.getAllByText("Tapote Pilot inclus").length).toBeGreaterThan(0);
-    expect(screen.getByRole("heading", { name: /Un support imprimé est figé/i })).toBeVisible();
-    expect(screen.getByText("Le NFC et le QR ouvrent la même destination Tapote.")).toBeVisible();
-    // Tout chiffre publié doit rester attaché à sa source datée.
-    expect(screen.getByText(/Avis Vérifiés by Skeepers.*fin 2024/)).toBeVisible();
+    expect(screen.getByRole("heading", { name: /Prêt à créer le vôtre/i })).toBeVisible();
+    // La landing s'arrête après les usages prioritaires et son CTA final :
+    // l'ancien bloc éditorial long n'est plus rendu ici.
+    expect(screen.queryByRole("heading", { name: /Un support imprimé est figé/i })).not.toBeInTheDocument();
     expect(screen.queryByText(/Tapote Link/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/20\s*000|30\s*000/)).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Voir les recommandations par activité/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Solutions par métier/i })).not.toBeInTheDocument();
-    expect(document.querySelectorAll("#main-content > section")).toHaveLength(9);
+    expect(document.querySelector(".v3-home-pilot")).not.toBeInTheDocument();
+    expect(document.querySelector(".v3-faq")).not.toBeInTheDocument();
+    const proof = document.querySelector(".v3-proof-band");
+    const feature = document.querySelector(".v3-feature-3d");
+    const products = document.querySelector(".v3-home-products");
+    expect(proof.compareDocumentPosition(feature) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(feature.compareDocumentPosition(products) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getAllByRole("main")).toHaveLength(1);
   });
 
@@ -99,12 +109,10 @@ describe("Boutique Tapote V3", () => {
     expect(screen.queryByRole("link", { name: "Preuves" })).not.toBeInTheDocument();
   });
 
-  it("propose une FAQ complète et filtrable", () => {
+  it("retire la page FAQ autonome", () => {
     renderRoute("/faq");
-    expect(screen.getByRole("heading", { level: 1, name: /Une réponse claire.*Avant de commander/i })).toBeVisible();
-    fireEvent.change(screen.getByRole("searchbox", { name: "Rechercher dans la FAQ" }), { target: { value: "BAT" } });
-    expect(screen.getByText("Qu’est-ce qu’un BAT ?")).toBeVisible();
-    expect(screen.queryByText("Quel support choisir ?")).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Cette page n’existe pas." })).toBeVisible();
+    expect(screen.queryByRole("searchbox", { name: /FAQ/i })).not.toBeInTheDocument();
   });
 
   it("montre les quatre offres publiques, leurs prix et mène vers la boutique", () => {
@@ -113,13 +121,12 @@ describe("Boutique Tapote V3", () => {
     expect(screen.getByRole("heading", { name: "Tapote Plaque" }).closest("article")).toHaveTextContent("59 €");
     expect(screen.getByRole("heading", { name: "Tapote Card" }).closest("article")).toHaveTextContent("39 €");
     expect(screen.getByRole("heading", { name: "Pack Local" }).closest("article")).toHaveTextContent("119 €");
-    expect(screen.getAllByRole("link", { name: "Voir la boutique" })[0]).toHaveAttribute("href", "/boutique");
+    expect(screen.getByRole("link", { name: "Voir les quatre offres" })).toHaveAttribute("href", "/boutique");
   });
 
   it("sépare la découverte de Tapote Pilot de la connexion", () => {
     renderRoute("/tapote-pilot");
-    expect(screen.getByRole("heading", { level: 1, name: /Le bon lien.*Même après la pose/i })).toBeVisible();
-    expect(screen.getByRole("heading", { name: /Le lien change.*Le support reste/i })).toBeVisible();
+    expect(screen.getByRole("heading", { level: 1, name: /Le lien change.*Le support reste/i })).toBeVisible();
     expect(screen.queryByText(/tarif en validation/i)).not.toBeInTheDocument();
     expect(screen.getAllByRole("link", { name: /Accéder à Tapote Pilot/i }).every((link) => link.getAttribute("href") === "/connexion")).toBe(true);
     expect(document.title).toContain("Tapote Pilot");
@@ -167,8 +174,9 @@ describe("Boutique Tapote V3", () => {
     renderRoute("/produits/chevalet?mode=custom");
     expect(screen.getByRole("heading", { level: 1, name: "Tapote Comptoir" })).toBeVisible();
     expect(screen.getByText("Tapote Studio")).toBeVisible();
-    expect(screen.getByText(/Un BAT technique final vérifie/i)).toBeVisible();
-    expect(screen.getAllByRole("button", { name: "Ajouter au panier" })).toHaveLength(1);
+    expect(screen.getByText(/Nous vérifions le design, le QR et la zone NFC/i)).toBeVisible();
+    expect(within(document.querySelector(".v3-buybox-summary")).getByRole("button", { name: /Ajouter le lien/i })).toBeVisible();
+    expect(document.querySelectorAll(".v3-buybox-summary")).toHaveLength(1);
     expect(screen.getAllByText("89 €", { selector: "strong" }).length).toBeGreaterThan(0);
   });
 
@@ -183,6 +191,7 @@ describe("Boutique Tapote V3", () => {
     renderRoute("/produits/chevalet?mode=custom");
     await waitForCatalog();
     fireEvent.click(screen.getByRole("button", { name: /2 supports/i }));
+    fillRequiredDestination();
     fireEvent.click(screen.getByRole("button", { name: "Ajouter au panier" }));
     expect(screen.getByText("Ajouté au panier")).toBeVisible();
     expect(JSON.parse(window.localStorage.getItem("tapote-cart-v3"))).toEqual([
@@ -193,6 +202,7 @@ describe("Boutique Tapote V3", () => {
   it("ajoute la version prête à servir depuis sa fiche", async () => {
     renderRoute("/produits/carte?mode=ready");
     await waitForCatalog();
+    fillRequiredDestination();
     fireEvent.click(screen.getByRole("button", { name: "Ajouter au panier" }));
     expect(JSON.parse(window.localStorage.getItem("tapote-cart-v3"))).toEqual([
       expect.objectContaining({ productId: "carte_standard", actionId: "contact", quantity: 1 }),
@@ -203,6 +213,7 @@ describe("Boutique Tapote V3", () => {
     vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false })));
     renderRoute("/produits/carte?mode=ready");
     await waitFor(() => expect(document.querySelector(".v3-site")).toHaveAttribute("data-catalog-status", "error"));
+    fillRequiredDestination();
     fireEvent.click(screen.getByRole("button", { name: "Ajouter au panier" }));
     expect(screen.getByText(/Le catalogue ne peut pas être vérifié/i)).toBeVisible();
     expect(window.localStorage.getItem("tapote-cart-v3")).toBe("[]");
@@ -226,11 +237,11 @@ describe("Boutique Tapote V3", () => {
     expect(screen.getByLabelText("Nom de votre entreprise")).toBeVisible();
     fireEvent.change(screen.getByLabelText("Nom de votre entreprise"), { target: { value: "CAFÉ RICO" } });
     // Instagram ne fait pas partie des six actions mises en avant : il faut
-    // d’abord déplier « Plus d’actions ».
+    // d’abord déplier les actions secondaires.
     expect(screen.queryByRole("button", { name: "Instagram" })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /Plus d’actions/ }));
+    fireEvent.click(screen.getByRole("button", { name: /autres actions/ }));
     fireEvent.click(screen.getByRole("button", { name: "Instagram" }));
-    fireEvent.change(screen.getByLabelText("Adresse exacte à ouvrir"), { target: { value: "https://instagram.com/tapote" } });
+    fillRequiredDestination("https://instagram.com/tapote");
     fireEvent.click(screen.getByRole("button", { name: /Ajouter au panier/i }));
     expect(JSON.parse(window.localStorage.getItem("tapote-cart-v3"))).toEqual([
       expect.objectContaining({
@@ -298,9 +309,9 @@ describe("Boutique Tapote V3", () => {
   it("complète la fiche produit avec processus, Pilot inclus et FAQ", () => {
     renderRoute("/produits/comptoir?action=avis");
     expect(screen.getByRole("heading", { name: /Vous choisissez.*On contrôle le reste/i })).toBeVisible();
-    expect(screen.getByRole("heading", { name: /Le support reste.*Sa destination évolue/i })).toBeVisible();
-    expect(screen.getByText("Gestion des supports")).toBeVisible();
-    expect(screen.getByText("Pilot Pro", { selector: "strong" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: /Retrouvez ce support après la pose/i })).toBeVisible();
+    expect(screen.getByRole("link", { name: /Découvrir Tapote Pilot/i })).toHaveAttribute("href", "/tapote-pilot");
+    expect(screen.queryByText("Gestion des supports")).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Avant de commander." })).toBeVisible();
   });
 
@@ -314,13 +325,14 @@ describe("Boutique Tapote V3", () => {
 
   it("démontre les destinations et garde Pilot Pro sans prix inventé", () => {
     renderRoute("/comment-ca-marche");
-    fireEvent.click(screen.getByRole("button", { name: "Menu" }));
-    expect(screen.getByRole("button", { name: "Menu" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("img", { name: "Écran du téléphone après ouverture : Menu" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Instagram · Plaque" }));
+    expect(screen.getByRole("button", { name: "Instagram · Plaque" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("img", { name: "Écran du téléphone après ouverture : Instagram" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "LinkedIn · Card" })).toBeVisible();
     expect(screen.getByRole("heading", { name: /Changez la destination.*Pas l’objet/i })).toBeVisible();
     expect(screen.getByText("Voir la destination active")).toBeVisible();
-    expect(screen.getByText("Pilot Pro", { selector: "strong" })).toBeVisible();
-    expect(document.querySelector(".v3-how-plan-panel")).not.toHaveTextContent(/Tarif|€|mois/i);
+    expect(screen.getByRole("heading", { name: "Tapote Pilot Pro" })).toBeVisible();
+    expect(document.querySelector(".v3-how-plan-panel")).toHaveTextContent(/9 €\s*\/ mois/i);
   });
 
   it("récapitule le prix et Tapote Pilot inclus dans la commande", () => {
@@ -337,7 +349,7 @@ describe("Boutique Tapote V3", () => {
       logoFileName: "",
     }]));
     renderRoute("/commande");
-    expect(screen.getByText(/Tapote Pilot est inclus pour l’activation/i)).toBeVisible();
+    expect(screen.getByText(/Tapote Pilot est inclus pour retrouver vos supports/i)).toBeVisible();
     expect(screen.getAllByText("79 €").length).toBeGreaterThan(0);
   });
 

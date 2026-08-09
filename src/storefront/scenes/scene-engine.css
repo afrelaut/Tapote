@@ -1522,7 +1522,16 @@
   height: 100%;
   display: block;
   cursor: grab;
+  opacity: 1;
+  transition: opacity .18s ease-out;
 }
+
+/* Le canvas WebGL existe avant sa première frame correcte. Sur WebKit, le
+   laisser visible pendant cette fenêtre expose une géométrie non cadrée ou la
+   dernière texture. Il reste donc entièrement masqué jusqu'au signal émis
+   juste après renderer.render(). */
+.tapote-product-studio.is-fallback .tapote-product-studio__canvas { opacity: 0; }
+.tapote-product-studio.is-live .tapote-product-studio__canvas { opacity: 1; }
 
 .tapote-product-studio__artwork-source {
   position: fixed;
@@ -1555,6 +1564,58 @@
   gap: 8px;
   text-align: center;
   background: linear-gradient(145deg, #101522, #080a0f);
+}
+
+.tapote-product-studio__loading {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 8px;
+  color: #283044;
+  text-align: center;
+  background:
+    radial-gradient(70% 58% at 50% 42%, rgb(255 255 255 / 82%), transparent 72%),
+    linear-gradient(145deg, #f4f7fb, #dce2ec);
+}
+
+.tapote-product-studio__loading > span {
+  position: relative;
+  width: 70px;
+  height: 70px;
+  margin-bottom: 3px;
+  display: grid;
+  place-items: center;
+}
+
+.tapote-product-studio__loading > span::before {
+  content: "t.";
+  position: relative;
+  z-index: 2;
+  color: #2458ff;
+  font-family: "Archivo Black", sans-serif;
+  font-size: 27px;
+  letter-spacing: -.08em;
+}
+
+.tapote-product-studio__loading > span i {
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgb(36 88 255 / 24%);
+  border-radius: 50%;
+  animation: tapote-studio-loading 1.8s ease-out infinite;
+}
+
+.tapote-product-studio__loading > span i:nth-child(2) { animation-delay: .42s; }
+.tapote-product-studio__loading > span i:nth-child(3) { animation-delay: .84s; }
+.tapote-product-studio__loading strong { font-size: 14px; }
+.tapote-product-studio__loading small { color: #6b7280; font-size: 11px; }
+
+@keyframes tapote-studio-loading {
+  0% { opacity: .72; transform: scale(.34); }
+  72%, 100% { opacity: 0; transform: scale(1); }
 }
 
 /* Le rendu 3D décale l'objet vers la gauche pour laisser sa place au téléphone
@@ -2741,6 +2802,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .tapote-product-studio__loading > span i { animation: none; opacity: .18; }
   .tapote-product-studio__nfc i { animation: none; opacity: 0; }
   .tapote-product-studio:hover .tapote-device-frame.v3-live-phone-screen.tapote-studio-device {
     transform: translateY(-49%) rotate(4deg);

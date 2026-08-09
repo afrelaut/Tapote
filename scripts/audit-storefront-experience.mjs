@@ -510,6 +510,12 @@ async function auditMobileProfile(browser, profile) {
   const product = await context.newPage();
   const flushProductErrors = await goto(product, profile.productPath, `pdp-mobile-${profile.name}`);
   const productMetrics = await layoutMetrics(product, "main");
+  // La destination est une donnée de production obligatoire : la recette doit
+  // désormais configurer un lien valide avant de tester l'ajout au panier.
+  const destinationField = product.getByRole("textbox", { name: /Lien obligatoire à ouvrir/i });
+  if (await destinationField.count() === 1) {
+    await destinationField.fill("https://example.com/tapote-audit");
+  }
   const add = product.getByRole("button", { name: /Ajouter au panier/i });
   const addCount = await add.count();
   const productHeroCount = await product.locator(".v3-product-hero").count();

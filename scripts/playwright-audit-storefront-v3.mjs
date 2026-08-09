@@ -3,7 +3,6 @@ import AxeBuilder from "@axe-core/playwright";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { PRODUCTS } from "../shared/catalog.js";
-import { SECTORS } from "../src/storefront/sectorData.js";
 
 const baseUrl = process.env.TAPOTE_AUDIT_URL || "http://127.0.0.1:5173";
 const outputDir = path.resolve("output/playwright/v3-final");
@@ -149,7 +148,6 @@ async function auditPublicRoutes(context) {
     "/",
     "/boutique",
     "/designs",
-    "/secteurs",
     "/personnaliser",
     "/categorie/chevalets-nfc",
     "/categorie/plaques-nfc",
@@ -158,7 +156,6 @@ async function auditPublicRoutes(context) {
     "/produits/comptoir?mode=ready",
     "/produits/plaque?mode=custom",
     "/produits/carte?mode=custom",
-    ...SECTORS.map((sector) => `/secteurs/${sector.slug}`),
     "/comment-ca-marche",
     "/tapote-pilot",
     "/devis",
@@ -226,6 +223,7 @@ const shop = await auditPage(desktop, "/boutique", "boutique-desktop", async (pa
 await shop.close();
 
 const product = await auditPage(desktop, "/produits/comptoir?mode=custom", "produit-personnalise-desktop", async (page) => {
+  await page.getByRole("textbox", { name: /Lien obligatoire à ouvrir/i }).fill("https://example.com/tapote-audit");
   const addButtons = page.getByRole("button", { name: /Ajouter au panier/i });
   assert("un-seul-cta-ajouter-au-panier", await addButtons.count() === 1);
   assert("personnalisation-et-bat-expliques", /Tapote Studio/i.test(await page.locator("main").innerText()) && /BAT/i.test(await page.locator("main").innerText()));
@@ -236,7 +234,7 @@ const product = await auditPage(desktop, "/produits/comptoir?mode=custom", "prod
 await product.close();
 
 const studio = await auditPage(desktop, "/personnaliser?support=comptoir&mode=custom&lien=avis&count=1", "studio-desktop", async (page) => {
-  assert("studio-apercus-presents", await page.locator(".v3-shop-grid .v3-sector-scene").count() >= 3);
+  assert("studio-apercus-presents", await page.locator(".v3-shop-grid .v3-product-art").count() >= 3);
   assert("studio-reste-facultatif", /BAT|aperçu|personnal/i.test(await page.locator("main").innerText()));
   await page.screenshot({ path: path.join(outputDir, "04-studio-desktop.png"), fullPage: false });
 });
@@ -261,6 +259,7 @@ const homeMobile = await auditPage(mobile, "/", "landing-mobile", async (page) =
 await homeMobile.close();
 
 const productMobile = await auditPage(mobile, "/produits/plaque?mode=custom", "produit-mobile", async (page) => {
+  await page.getByRole("textbox", { name: /Lien obligatoire à ouvrir/i }).fill("https://example.com/tapote-audit-mobile");
   assert("cta-produit-mobile-unique", await page.getByRole("button", { name: /Ajouter au panier/i }).count() === 1);
   assert("cta-produit-mobile-visible", await page.getByRole("button", { name: /Ajouter au panier/i }).isVisible());
   await page.screenshot({ path: path.join(outputDir, "06-produit-mobile.png"), fullPage: false });
@@ -268,7 +267,8 @@ const productMobile = await auditPage(mobile, "/produits/plaque?mode=custom", "p
 await productMobile.close();
 
 const pilotMobile = await auditPage(mobile, "/tapote-pilot", "pilot-marketing-mobile", async (page) => {
-  assert("pilot-pro-sans-prix-invente", !/9\s*€|89\s*€/.test(await page.locator("main").innerText()));
+  const pilotText = await page.locator("main").innerText();
+  assert("pilot-pro-tarifs-clairs", /9\s*€\s*\/\s*mois/i.test(pilotText) && /89\s*€[^\n]*par an/i.test(pilotText));
   assert("pilot-pro-offre-distincte", /option avancée|offre distincte/i.test(await page.locator("main").innerText()));
 });
 await pilotMobile.close();

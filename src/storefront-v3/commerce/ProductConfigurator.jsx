@@ -1,13 +1,23 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { ArrowRight, Camera, Check, CheckCircle2, Eye, Globe2, Pipette, Sparkles, Upload, X } from "lucide-react";
+import { ArrowRight, Camera, Check, CheckCircle2, Globe2, Pipette, Sparkles, Upload, X } from "lucide-react";
 import { ACTIONS, formatMoney, PRODUCTS } from "../../../shared/catalog.js";
 import { prepareLogoFile, readFileAsDataUrl } from "../../storefront/logoFile.js";
 import { extractLogoPalette, pickScreenColor } from "../../brandColors.js";
-import { DEFAULT_THEME, DEVICE_THEMES, THEME_LABELS, resolveThemeId } from "../../deviceThemes.js";
+import { DEFAULT_THEME, DEVICE_THEMES, THEME_LABELS, readableInk, resolveThemeId } from "../../deviceThemes.js";
 import { trackStorefrontEvent } from "../../storefront/analytics.js";
+import { friendlyUploadError, readUploadPayload } from "../../storefront/uploadResponse.js";
 import { CONFIG_DRAFT_PREFIX, cacheLogoPreview, compositionLabel, compositionSurface, getCachedLogoPreview, getProductId, loadConfigDraft, makeCartItem } from "./cart.js";
 import { ACTION_ORDER, FEATURED_ACTION_IDS, READY_ACTION_IDS, campaignHeadlineForAction, readyHeadlineForAction } from "../data/content.js";
-import { BLOCK_COLOR_MODES, DEFAULT_BLOCK_COLOR_MODE, actionPaletteLabel, resolveBlockPalette } from "../../storefront/actionPalettes.js";
+import { DEFAULT_BLOCK_COLOR_MODE, resolveBlockPalette } from "../../storefront/actionPalettes.js";
+
+function isValidHttpsUrl(value) {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "https:" && Boolean(parsed.hostname);
+  } catch {
+    return false;
+  }
+}
 
 function CompositionPicker({ count, composition, onChange, labelId }) {
   if (count !== 2) return null;
@@ -72,9 +82,10 @@ function ReadyDesignPicker({ onChange, theme }) {
   );
 }
 
-export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "avis", initialCount = 1, initialComposition, initialPersonalization = "ready", initialTheme = DEFAULT_THEME, initialBrandName = "VOTRE MARQUE", initialReadyHeadline = "", targetId = "cafe", title = "Choisissez votre Tapote.", productOnly = false, compact = false, allowAllSurfaces = false, lockPersonalization = false, onPreviewChange, draftKey = "", stickyTriggerRef, onOpenPreview }) {
-  const initialColors = DEVICE_THEMES[resolveThemeId(initialTheme)];
+export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "avis", initialCount = 1, initialComposition, initialPersonalization = "ready", initialTheme = DEFAULT_THEME, initialBrandName = "VOTRE MARQUE", initialReadyHeadline = "", targetId = "cafe", title = "Choisissez votre Tapote.", productOnly = false, compact = false, allowAllSurfaces = false, lockPersonalization = false, onPreviewChange, draftKey = "", stickyTriggerRef }) {
   const restoredDraft = useMemo(() => initialPersonalization === "custom" || draftKey.startsWith("cart:") ? loadConfigDraft(draftKey) : null, [draftKey, initialPersonalization]);
+  const restoredTheme = resolveThemeId(restoredDraft?.theme || initialTheme);
+  const restoredThemeColors = DEVICE_THEMES[restoredTheme];
   const [personalization, setPersonalization] = useState(initialPersonalization);
   const [surface, setSurface] = useState(initialSurface);
   const restoredCount = [1, 2].includes(Number(restoredDraft?.count)) ? Number(restoredDraft.count) : initialCount;
@@ -98,19 +109,22 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
   const [signageFileName, setSignageFileName] = useState(restoredDraft?.signageFileName || "");
   const [signageStatus, setSignageStatus] = useState(restoredDraft?.signageId ? "success" : "idle");
   const [signageError, setSignageError] = useState("");
-  const [blockColorMode, setBlockColorMode] = useState(restoredDraft?.blockColorMode || DEFAULT_BLOCK_COLOR_MODE);
+  // Les anciens brouillons pouvaient mémoriser le « Bleu Tapote ». Le Studio
+  // ne propose désormais que deux choix compréhensibles : la couleur de
+  // l'action ou une couleur personnalisée pour le pavé NFC.
+  const [blockColorMode, setBlockColorMode] = useState(restoredDraft?.blockColorMode === "marque" ? "marque" : DEFAULT_BLOCK_COLOR_MODE);
   const [destinationUrl, setDestinationUrl] = useState(restoredDraft?.destinationUrl || "");
-  const [theme, setTheme] = useState(resolveThemeId(restoredDraft?.theme || initialTheme));
-  const [primaryColor, setPrimaryColor] = useState(restoredDraft?.primaryColor || initialColors.paper);
-  const [secondaryColor, setSecondaryColor] = useState(restoredDraft?.secondaryColor || initialColors.accent);
-  const [textColor, setTextColor] = useState(restoredDraft?.textColor || initialColors.ink);
-  // Choisir une déclinaison réapplique ses trois couleurs : le client voit
-  // immédiatement le résultat sans toucher au réglage fin.
+  const [destinationTouched, setDestinationTouched] = useState(false);
+  const [theme, setTheme] = useState(restoredTheme);
+  const [primaryColor, setPrimaryColor] = useState(restoredDraft?.primaryColor || restoredThemeColors.paper);
+  const [secondaryColor, setSecondaryColor] = useState(restoredDraft?.secondaryColor || restoredThemeColors.accent);
+  const [textColor, setTextColor] = useState(restoredDraft?.textColor || restoredThemeColors.ink);
+  // Choisir une déclinaison ne change que le fond et l'encre du support. La
+  // couleur personnalisée du pavé NFC reste intacte.
   const applyTheme = (nextTheme) => {
     const palette = DEVICE_THEMES[nextTheme];
     setTheme(nextTheme);
     setPrimaryColor(palette.paper);
-    setSecondaryColor(palette.accent);
     setTextColor(palette.ink);
     setPaletteDetected(false);
     setColorsManuallyEdited(false);
@@ -118,6 +132,7 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
     markConfigurationStarted();
   };
   const summaryRef = useRef(null);
+  const destinationInputRef = useRef(null);
   const supportLabelId = useId();
   const quantityLabelId = useId();
   const compositionLabelId = useId();
@@ -186,15 +201,22 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
     : "";
   const previewHeadline = personalization === "custom" ? customHeadline : readyHeadline;
   const logoPending = personalization === "custom" && (logoStatus === "loading" || Boolean(brandLogo && !brandLogoId));
-  const destinationInvalid = Boolean(destinationUrl && !/^https:\/\/.+/i.test(destinationUrl));
+  const destinationReady = isValidHttpsUrl(destinationUrl.trim());
+  const destinationInvalid = destinationTouched && !destinationReady;
   const logoPendingLabel = logoStatus === "loading"
     ? "Envoi du logo…"
     : logoStatus === "error"
-      ? "Logo en erreur — retirez-le"
+      ? "Finaliser l’envoi du logo"
       : "Logo à retransmettre";
   const selectPersonalization = (value) => {
     markConfigurationStarted();
     setPersonalization(value);
+    if (value === "custom" && personalization !== "custom" && !colorsManuallyEdited && !brandLogo) {
+      const palette = DEVICE_THEMES.creme;
+      setTheme("creme");
+      setPrimaryColor(palette.paper);
+      setTextColor(palette.ink);
+    }
     if (value === "ready" && !READY_ACTION_IDS.includes(actionId)) {
       setActionId("avis");
     }
@@ -250,22 +272,28 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
           setManualPalettePreserved(true);
           return;
         }
-        setPrimaryColor(palette.primary);
-        setSecondaryColor(palette.secondary);
+        // Le logo ne recolore jamais tout le carton. Sa teinte dominante est
+        // proposée uniquement sur le pavé NFC, dont le rôle est explicite.
+        if (primaryColor.toLowerCase() === DEVICE_THEMES.nuit.paper) {
+          setTheme("creme");
+          setPrimaryColor(DEVICE_THEMES.creme.paper);
+          setTextColor(DEVICE_THEMES.creme.ink);
+        }
+        setSecondaryColor(palette.primary);
+        setBlockColorMode("marque");
         setPaletteDetected(true);
       });
       setLogoFileName(file.name.slice(0, 120));
       const formData = new FormData();
       formData.append("logo", file, file.name);
       const response = await fetch("/api/uploads/logo", { method: "POST", body: formData });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Envoi du logo impossible.");
+      const data = await readUploadPayload(response, "Le logo est bien visible dans l’aperçu, mais son envoi sécurisé n’a pas abouti.");
       cacheLogoPreview(data.uploadId, dataUrl);
       setBrandLogoId(data.uploadId);
       setLogoStatus("success");
     } catch (uploadError) {
       setLogoStatus("error");
-      setLogoError(uploadError.message);
+      setLogoError(friendlyUploadError(uploadError, "Le logo"));
     }
   };
   // Un commerçant sans logo a toujours une enseigne, une devanture ou une carte.
@@ -283,14 +311,13 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
       const formData = new FormData();
       formData.append("logo", file, file.name);
       const response = await fetch("/api/uploads/logo", { method: "POST", body: formData });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Envoi de la photo impossible.");
+      const data = await readUploadPayload(response, "La photo est prête, mais son envoi sécurisé n’a pas abouti.");
       setSignageId(data.uploadId);
       setSignageFileName(file.name.slice(0, 120));
       setSignageStatus("success");
     } catch (uploadError) {
       setSignageStatus("error");
-      setSignageError(uploadError.message);
+      setSignageError(friendlyUploadError(uploadError, "La photo"));
     }
   };
 
@@ -307,15 +334,22 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
     setLogoFileName("");
     setLogoStatus("idle");
     setLogoError("");
-    setPrimaryColor(initialColors.paper);
-    setSecondaryColor(initialColors.accent);
-    setTextColor(initialColors.ink);
+    const palette = DEVICE_THEMES[theme];
+    setPrimaryColor(palette.paper);
+    setSecondaryColor(palette.accent);
+    setTextColor(palette.ink);
+    setBlockColorMode(DEFAULT_BLOCK_COLOR_MODE);
     setPaletteDetected(false);
     setColorsManuallyEdited(false);
     setManualPalettePreserved(false);
   };
   const add = () => {
-    if (logoPending || destinationInvalid) return;
+    if (logoPending) return;
+    if (!destinationReady) {
+      setDestinationTouched(true);
+      destinationInputRef.current?.focus();
+      return;
+    }
     const wasAdded = onAdd(makeCartItem(productId, actionId, {
       targetId,
       supportComposition: composition,
@@ -334,7 +368,7 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
       customHeadline: personalization === "custom" ? customHeadline : readyHeadline,
       customSubline: personalization === "custom" ? customSubline : "",
       customTapLabel: personalization === "custom" ? customTapLabel : "",
-      destinationUrl,
+      destinationUrl: destinationUrl.trim(),
     }));
     if (wasAdded === false) return;
     setAdded(true);
@@ -351,7 +385,11 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
   const designStep = linkStep + 1;
   return (
     <section id={productOnly ? "configurer" : undefined} className={`v3-buybox ${compact ? "is-compact" : ""} ${productOnly ? "is-product-only" : ""}`} aria-label="Configurer l’achat">
-      <div className="v3-buybox-intro"><h2>{title}</h2></div>
+      <div className="v3-buybox-intro">
+        <span className="v3-buybox-kicker"><Sparkles size={14} aria-hidden="true" /> Tapote Studio</span>
+        <h2>{title}</h2>
+        <p>Chaque choix s’affiche instantanément dans l’aperçu.</p>
+      </div>
       <div className={`v3-core-choice-grid ${showSupports && showQuantity ? "" : "is-single"}`}>
         {showSupports && (
           <div className="v3-field-block" role="group" aria-labelledby={supportLabelId}>
@@ -432,23 +470,39 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
             aria-expanded={actionsExpanded}
             onClick={() => setShowAllActions((open) => !open)}
           >
-            {actionsExpanded ? "Moins d’actions" : `Plus d’actions (${hiddenActionCount})`}
+            {actionsExpanded ? "Réduire la liste" : `Voir les ${hiddenActionCount} autres actions`}
           </button>
         )}
-        {productOnly ? (
-          <details className={`v3-destination-details ${destinationInvalid ? "is-invalid" : ""}`} open={Boolean(destinationUrl)}>
-            <summary>
-              <Globe2 size={16} aria-hidden="true" />
-              <span><strong>Préciser l’adresse exacte</strong><small>Facultatif — vous pouvez aussi nous l’envoyer après la commande</small></span>
-              <b aria-hidden="true">+</b>
-            </summary>
-            <label className={`v3-destination-field ${destinationInvalid ? "is-invalid" : ""}`}><span><input type="url" value={destinationUrl} onFocus={markConfigurationStarted} onChange={(event) => setDestinationUrl(event.target.value.slice(0, 500))} placeholder="https://votre-lien.fr" aria-label="Adresse exacte à ouvrir" />{destinationInvalid && <small>Le lien doit commencer par https://</small>}</span></label>
-          </details>
-        ) : (
-          <label className={`v3-destination-field ${destinationInvalid ? "is-invalid" : ""}`}><Globe2 size={16} /><span><input type="url" value={destinationUrl} onFocus={markConfigurationStarted} onChange={(event) => setDestinationUrl(event.target.value.slice(0, 500))} placeholder="https://votre-lien.fr" aria-label="Adresse exacte à ouvrir" /><small>{destinationInvalid ? "Le lien doit commencer par https://" : "Adresse initiale encodée dans le NFC et le QR. Vous pouvez aussi la transmettre après la commande, avant production."}</small></span></label>
-        )}
+        <div className={`v3-destination-card ${destinationInvalid ? "is-invalid" : ""} ${destinationReady ? "is-ready" : ""}`}>
+          <div className="v3-destination-card-heading">
+            <Globe2 size={18} aria-hidden="true" />
+            <span><strong>Lien ouvert par ce Tapote</strong><small>La page affichée après le tap ou le scan.</small></span>
+            <em>{destinationReady ? "Prêt" : "Obligatoire"}</em>
+          </div>
+          <label className={`v3-destination-field ${destinationInvalid ? "is-invalid" : ""}`}>
+            <span>
+              <input
+                ref={destinationInputRef}
+                type="url"
+                required
+                aria-required="true"
+                value={destinationUrl}
+                onFocus={markConfigurationStarted}
+                onBlur={() => setDestinationTouched(true)}
+                onChange={(event) => {
+                  setDestinationUrl(event.target.value.slice(0, 500));
+                  if (destinationTouched) setDestinationTouched(true);
+                }}
+                placeholder="https://votre-lien.fr"
+                aria-label="Lien obligatoire à ouvrir"
+              />
+              <small>{destinationInvalid ? "Ajoutez une adresse complète commençant par https://" : destinationReady ? "Lien valide · il sera associé au NFC et au QR." : "Exemple : votre fiche Google, menu, Instagram ou prise de rendez-vous."}</small>
+            </span>
+            {destinationReady && <CheckCircle2 size={19} aria-hidden="true" />}
+          </label>
+        </div>
       </div>
-      <div className="v3-field-block" role="group" aria-labelledby={designLabelId}>
+      <div className="v3-field-block v3-mode-field" role="group" aria-labelledby={designLabelId}>
         <span className="v3-field-label" id={designLabelId}><b>{designStep}</b><span>Mode</span></span>
         {!lockPersonalization && <div className="v3-design-choice">
           <button type="button" aria-pressed={personalization === "ready"} className={personalization === "ready" ? "is-selected" : ""} onClick={() => selectPersonalization("ready")}>
@@ -468,9 +522,9 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
       {personalization === "ready" && !compact && !productOnly && <div className="v3-field-block v3-personalization-panel v3-campaign-design-panel"><span className="v3-field-label">Design Tapote recommandé</span><div className="v3-campaign-design-note"><Sparkles /><span><strong>{campaignHeadlineForAction(actionId)}</strong><small>Composition optimisée automatiquement pour {ACTIONS[actionId].name}.</small></span><a href="/">Voir la collection <ArrowRight /></a></div></div>}
       {personalization === "custom" && (
         <div className="v3-field-block v3-branding-fields v3-personalization-panel v3-live-studio">
-          <div className="v3-studio-heading"><span><Sparkles size={15} /><strong>Tapote Studio</strong></span></div>
+          <div className="v3-studio-heading"><span><Sparkles size={15} /><strong>Votre design</strong></span><small><i aria-hidden="true" /> Aperçu en direct</small></div>
           <div className="v3-studio-section">
-            <span className="v3-field-label">Identité imprimée</span>
+            <div className="v3-studio-title-row"><span className="v3-field-label">Votre identité</span><small>Nom et logo imprimés sur le support.</small></div>
             <div className="v3-identity-grid">
               <input value={brandName} onChange={(event) => setBrandName(event.target.value.slice(0, 28))} placeholder="Nom de votre entreprise" aria-label="Nom de votre entreprise" />
               <label className={`v3-logo-upload is-${logoStatus}`}>
@@ -479,19 +533,20 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
                 <span><strong>{logoStatus === "loading" ? "Envoi sécurisé…" : brandLogo ? "Remplacer le logo" : "Ajouter votre logo"}</strong><small>PNG, JPG, WebP ou SVG · 2 Mo max.</small></span>
               </label>
             </div>
-            {brandLogo && <div className="v3-uploaded-logo"><img src={brandLogo} alt="Aperçu du logo importé" /><span><strong>{logoFileName}</strong><small>{logoStatus === "success" ? "Affiché dans l’aperçu" : "À retransmettre"}</small></span><button type="button" onClick={removeLogo} aria-label="Retirer le logo"><X size={15} /></button></div>}
-            {logoError && <p className="v3-upload-error" role="alert">{logoError} Retirez le fichier pour continuer sans logo.</p>}
+            {brandLogo && <div className="v3-uploaded-logo"><img src={brandLogo} alt="Aperçu du logo importé" /><span><strong>{logoFileName}</strong><small>{logoStatus === "success" ? "Logo reçu · aperçu à jour" : logoStatus === "error" ? "Aperçu à jour · envoi à relancer" : "Aperçu à jour"}</small></span><button type="button" onClick={removeLogo} aria-label="Retirer le logo"><X size={15} /></button></div>}
+            {logoError && <p className="v3-upload-error" role="alert">{logoError} Sélectionnez-le à nouveau pour relancer l’envoi.</p>}
             {/* Sans fichier de logo, le client photographie son enseigne : c'est
                 la matière dont Tapote Studio a besoin pour tracer son identité
                 avant le bon à tirer. */}
             {!brandLogo && (
-              <div className="v3-signage-step">
+              <details className="v3-signage-step">
+                <summary>Je n’ai pas encore de fichier logo</summary>
                 <label className={`v3-signage-upload is-${signageStatus} ${signageId ? "is-filled" : ""}`}>
                   <input type="file" accept="image/png,image/jpeg,image/webp" onChange={uploadSignage} disabled={signageStatus === "loading"} />
                   <Camera size={17} aria-hidden="true" />
                   <span>
-                    <strong>{signageStatus === "loading" ? "Envoi sécurisé…" : signageId ? "Photo reçue" : "Vous voulez qu’on trace votre logo ?"}</strong>
-                    <small>{signageId ? "Le tracé vous sera proposé avec le bon à tirer" : "Envoyez une photo de votre enseigne — facultatif"}</small>
+                    <strong>{signageStatus === "loading" ? "Envoi sécurisé…" : signageId ? "Photo reçue" : "Photographier mon enseigne"}</strong>
+                    <small>{signageId ? "Le tracé vous sera proposé avec le bon à tirer" : "Tapote pourra vous proposer un tracé propre."}</small>
                   </span>
                 </label>
                 {signageId && (
@@ -502,27 +557,65 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
                   </div>
                 )}
                 {signageError && <p className="v3-upload-error" role="alert">{signageError}</p>}
-              </div>
+              </details>
             )}
-            <p className="v3-bat-promise"><CheckCircle2 size={15} aria-hidden="true" /><span>Un bon à tirer vous est envoyé avant impression. Rien ne part sans votre accord.</span></p>
           </div>
           <div className="v3-studio-section">
-            <span className="v3-field-label">Textes imprimés</span>
+            <div className="v3-studio-title-row"><span className="v3-field-label">Vos textes</span><small>Les deux lignes principales suffisent dans la plupart des cas.</small></div>
             <div className="v3-live-copy-fields">
               <label className="is-wide"><span>Message principal <em>{customHeadline.length}/64</em></span><input value={customHeadline} onChange={(event) => setCustomHeadline(event.target.value.slice(0, 64))} placeholder={campaignHeadlineForAction(actionId)} aria-label="Message principal imprimé" /></label>
               <label className="is-wide"><span>Phrase secondaire <em>{customSubline.length}/90</em></span><input value={customSubline} onChange={(event) => setCustomSubline(event.target.value.slice(0, 90))} placeholder={ACTIONS[actionId].campaignSubline || ACTIONS[actionId].subline} aria-label="Phrase secondaire imprimée" /></label>
-              <label><span>Appel à l’action <em>{customTapLabel.length}/32</em></span><input value={customTapLabel} onChange={(event) => setCustomTapLabel(event.target.value.slice(0, 32))} placeholder="Tapotez ici" aria-label="Appel à l’action imprimé" /></label>
-              <label className="is-wide"><span>Phrase métier <em>{tagline.length}/48</em></span><input value={tagline} onChange={(event) => setTagline(event.target.value.slice(0, 48))} placeholder="Librairie BD · Jeux de société · Figurines" aria-label="Phrase métier imprimée" /></label>
-              <label className="is-wide"><span>Réseau, site ou téléphone <em>{contactLine.length}/48</em></span><input value={contactLine} onChange={(event) => setContactLine(event.target.value.slice(0, 48))} placeholder="@votrecompte · 01 23 45 67 89" aria-label="Réseau, site ou téléphone imprimé" /></label>
             </div>
+            <details className="v3-studio-optional">
+              <summary>Textes complémentaires</summary>
+              <div className="v3-live-copy-fields">
+                <label className="is-wide"><span>Appel à l’action <em>{customTapLabel.length}/32</em></span><input value={customTapLabel} onChange={(event) => setCustomTapLabel(event.target.value.slice(0, 32))} placeholder="Tapotez ici" aria-label="Appel à l’action imprimé" /></label>
+                <label className="is-wide"><span>Phrase métier <em>{tagline.length}/48</em></span><input value={tagline} onChange={(event) => setTagline(event.target.value.slice(0, 48))} placeholder="Librairie BD · Jeux de société · Figurines" aria-label="Phrase métier imprimée" /></label>
+                <label className="is-wide"><span>Réseau, site ou téléphone <em>{contactLine.length}/48</em></span><input value={contactLine} onChange={(event) => setContactLine(event.target.value.slice(0, 48))} placeholder="@votrecompte · 01 23 45 67 89" aria-label="Réseau, site ou téléphone imprimé" /></label>
+              </div>
+            </details>
           </div>
 
-          {/* Couleur du bloc d'action : Tapote, la marque du client, ou la
-              couleur du service ouvert par le lien. */}
           <div className="v3-studio-section">
-            <span className="v3-field-label">Couleur du bloc d’action</span>
-            <div className="v3-block-color-choice" role="group" aria-label="Source de couleur du bloc d’action">
-              {Object.entries(BLOCK_COLOR_MODES).map(([mode, label]) => {
+            <div className="v3-studio-title-row"><span className="v3-field-label">Couleurs du support</span><small>Chaque réglage indique exactement la zone imprimée qu’il modifie.</small></div>
+            <span className="v3-studio-subheading">Raccourcis Noir / Clair</span>
+            <div className="v3-theme-choice" role="group" aria-label="Déclinaison de couleur">
+              {Object.keys(DEVICE_THEMES).map((themeId) => {
+                const presetSelected = primaryColor.toLowerCase() === DEVICE_THEMES[themeId].paper && textColor.toLowerCase() === DEVICE_THEMES[themeId].ink;
+                return (
+                <button type="button" key={themeId} className={presetSelected ? "is-selected" : ""} aria-pressed={presetSelected} onClick={() => applyTheme(themeId)}>
+                  <span aria-hidden="true" style={{ background: DEVICE_THEMES[themeId].paper, color: DEVICE_THEMES[themeId].ink, borderColor: DEVICE_THEMES[themeId].ink }}>Aa</span>
+                  <b>{THEME_LABELS[themeId]}</b>
+                  {presetSelected && <Check size={16} aria-hidden="true" />}
+                </button>
+              );})}
+            </div>
+            <div className="v3-support-color-controls" aria-label="Réglages précis des couleurs du support">
+              <label>
+                <span><strong>Fond du support</strong></span>
+                <div>
+                  <input type="color" value={primaryColor} onChange={(event) => { const color = event.target.value; setPrimaryColor(color); setTextColor(readableInk(color)); setPaletteDetected(false); setColorsManuallyEdited(true); setManualPalettePreserved(false); }} aria-label="Couleur de fond du support" />
+                  <code>{primaryColor.toUpperCase()}</code>
+                  {typeof window !== "undefined" && "EyeDropper" in window && <button type="button" onClick={() => pickScreenColor((color) => { setPrimaryColor(color); setTextColor(readableInk(color)); setPaletteDetected(false); setColorsManuallyEdited(true); setManualPalettePreserved(false); })} aria-label="Prélever la couleur de fond à l’écran"><Pipette size={14} /> Pipette</button>}
+                </div>
+              </label>
+              <label>
+                <span><strong>Textes du support</strong></span>
+                <div>
+                  <input type="color" value={textColor} onChange={(event) => { setTextColor(event.target.value); setColorsManuallyEdited(true); setManualPalettePreserved(false); }} aria-label="Couleur des textes du support" />
+                  <code>{textColor.toUpperCase()}</code>
+                  {typeof window !== "undefined" && "EyeDropper" in window && <button type="button" onClick={() => pickScreenColor((color) => { setTextColor(color); setColorsManuallyEdited(true); setManualPalettePreserved(false); })} aria-label="Prélever la couleur des textes à l’écran"><Pipette size={14} /> Pipette</button>}
+                </div>
+              </label>
+            </div>
+            <div className="v3-nfc-color-heading">
+              <span className="v3-studio-subheading">Couleur du pavé NFC</span>
+            </div>
+            <div className="v3-block-color-choice" role="group" aria-label="Choisir la couleur du pavé NFC imprimé">
+              {[
+                { mode: "action", title: "Action choisie" },
+                { mode: "marque", title: "Personnalisée" },
+              ].map(({ mode, title: optionTitle }) => {
                 const preview = resolveBlockPalette({ mode, actionId, brandAccent: secondaryColor });
                 return (
                   <button
@@ -533,60 +626,37 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
                     onClick={() => { markConfigurationStarted(); setBlockColorMode(mode); }}
                   >
                     <i style={{ background: preview.gradient || preview.block, boxShadow: `0 0 0 3px ${preview.liseret}` }} aria-hidden="true" />
-                    <span><strong>{label}</strong><small>{mode === "action" ? actionPaletteLabel(actionId) : mode === "marque" ? secondaryColor.toUpperCase() : "#2458FF"}</small></span>
+                    <span><strong>{optionTitle}</strong></span>
+                    {blockColorMode === mode && <Check size={16} aria-hidden="true" />}
                   </button>
                 );
               })}
             </div>
+            {blockColorMode === "marque" && (
+              <div className="v3-nfc-custom-color">
+                <label>
+                  <span>Couleur appliquée au pavé NFC</span>
+                  <div>
+                    <input type="color" value={secondaryColor} onChange={(event) => { setSecondaryColor(event.target.value); setPaletteDetected(false); setColorsManuallyEdited(true); setManualPalettePreserved(false); }} aria-label="Couleur du pavé NFC" />
+                    <code>{secondaryColor.toUpperCase()}</code>
+                    {typeof window !== "undefined" && "EyeDropper" in window && <button type="button" onClick={() => pickScreenColor((color) => { setSecondaryColor(color); setPaletteDetected(false); setColorsManuallyEdited(true); setManualPalettePreserved(false); })} aria-label="Prélever la couleur du pavé NFC à l’écran"><Pipette size={14} /> Pipette</button>}
+                  </div>
+                </label>
+                <small>{manualPalettePreserved ? "Votre réglage a été conservé après l’import du logo." : paletteDetected ? "Couleur extraite de votre logo. Vous pouvez l’ajuster." : "Le texte blanc ou noir est choisi automatiquement pour rester lisible."}</small>
+              </div>
+            )}
           </div>
-          <div className="v3-studio-section">
-            <span className="v3-field-label">Couleur du support</span>
-            {/* Deux déclinaisons du design Tapote : c'est le choix par défaut.
-                Le réglage couleur par couleur reste possible, mais replié. */}
-            <div className="v3-theme-choice" role="group" aria-label="Déclinaison de couleur">
-              {Object.keys(DEVICE_THEMES).map((themeId) => (
-                <button
-                  type="button"
-                  key={themeId}
-                  className={theme === themeId ? "is-selected" : ""}
-                  aria-pressed={theme === themeId}
-                  onClick={() => applyTheme(themeId)}
-                >
-                  <span aria-hidden="true" style={{ background: DEVICE_THEMES[themeId].paper, color: DEVICE_THEMES[themeId].ink, borderColor: DEVICE_THEMES[themeId].ink }}>Aa</span>
-                  <b>{THEME_LABELS[themeId]}</b>
-                </button>
-              ))}
-            </div>
-            <details className="v3-advanced-colors">
-              <summary>Utiliser mes propres couleurs</summary>
-            <div className="v3-brand-colors" aria-label="Couleurs de votre identité">
-            <label><span>Couleur principale</span><div><input type="color" value={primaryColor} onChange={(event) => { setPrimaryColor(event.target.value); setPaletteDetected(false); setColorsManuallyEdited(true); setManualPalettePreserved(false); }} aria-label="Couleur principale" /><code>{primaryColor.toUpperCase()}</code>{typeof window !== "undefined" && "EyeDropper" in window && <button type="button" onClick={() => pickScreenColor((color) => { setPrimaryColor(color); setPaletteDetected(false); setColorsManuallyEdited(true); setManualPalettePreserved(false); })} aria-label="Prélever la couleur principale à l’écran"><Pipette size={14} /> Pipette</button>}</div></label>
-            <label><span>Couleur secondaire</span><div><input type="color" value={secondaryColor} onChange={(event) => { setSecondaryColor(event.target.value); setPaletteDetected(false); setColorsManuallyEdited(true); setManualPalettePreserved(false); }} aria-label="Couleur secondaire" /><code>{secondaryColor.toUpperCase()}</code>{typeof window !== "undefined" && "EyeDropper" in window && <button type="button" onClick={() => pickScreenColor((color) => { setSecondaryColor(color); setPaletteDetected(false); setColorsManuallyEdited(true); setManualPalettePreserved(false); })} aria-label="Prélever la couleur secondaire à l’écran"><Pipette size={14} /> Pipette</button>}</div></label>
-            <label><span>Couleur du texte</span><div><input type="color" value={textColor} onChange={(event) => { setTextColor(event.target.value); setColorsManuallyEdited(true); setManualPalettePreserved(false); }} aria-label="Couleur du texte" /><code>{textColor.toUpperCase()}</code>{typeof window !== "undefined" && "EyeDropper" in window && <button type="button" onClick={() => pickScreenColor((color) => { setTextColor(color); setColorsManuallyEdited(true); setManualPalettePreserved(false); })} aria-label="Prélever la couleur du texte à l’écran"><Pipette size={14} /> Pipette</button>}</div></label>
-            <small>{manualPalettePreserved ? "Logo importé : vos couleurs choisies ont été conservées." : paletteDetected ? "Palette détectée depuis votre logo. Ajustez-la si besoin." : "Choisissez les trois couleurs ou conservez la proposition Tapote."} Le contraste d’impression est sécurisé automatiquement et le QR reste noir sur blanc.</small>
-            </div>
-            </details>
-          </div>
-          <p className="v3-studio-contract"><CheckCircle2 size={15} /><span><strong>L’aperçu prépare votre commande.</strong><small>Un BAT technique final vérifie les marges, le QR et la zone NFC avant toute impression.</small></span></p>
+          <p className="v3-studio-contract"><CheckCircle2 size={17} /><span><strong>Vous validez avant impression.</strong><small>Nous vérifions le design, le QR et la zone NFC dans un BAT final.</small></span></p>
         </div>
       )}
       <div className="v3-buybox-summary" ref={summaryRef}>
         <div><span>{product.name}</span><strong>{formatMoney(product.price)}</strong></div>
-        <button type="button" onClick={add} disabled={logoPending || destinationInvalid}>{logoPending ? logoPendingLabel : destinationInvalid ? "Vérifier le lien" : added ? <><Check size={18} /> Ajouté</> : <>Ajouter au panier <ArrowRight size={18} /></>}</button>
+        <button type="button" onClick={add} disabled={logoPending}>{logoPending ? logoPendingLabel : !destinationReady ? <>Ajouter le lien <ArrowRight size={18} /></> : added ? <><Check size={18} /> Ajouté</> : <>Ajouter au panier <ArrowRight size={18} /></>}</button>
       </div>
       {(productOnly || compact) && (
         <aside className={`v3-mobile-product-cta ${initialCtaPassed && !summaryVisible ? "is-visible" : ""}`} aria-label="Résumé de la configuration">
-          {/* Sur téléphone, la scène reste tout en haut de la page : dès qu'on
-              descend dans les réglages, on ne voit plus ce que l'on modifie.
-              Ce bouton rouvre l'aperçu en grand, sans perdre sa place. */}
-          {onOpenPreview && (
-            <button type="button" className="v3-mobile-preview-open" onClick={onOpenPreview} aria-label="Voir mon design en grand">
-              <Eye aria-hidden="true" />
-              <span>Mon design</span>
-            </button>
-          )}
           <span><small>{product.kind === "pack" && composition ? compositionLabel(composition) : product.name.replace(/ · .+$/, "")}</small><strong>{formatMoney(product.price)}</strong></span>
-          <button type="button" onClick={add} disabled={logoPending || destinationInvalid}>{logoPending ? logoPendingLabel : destinationInvalid ? "Lien invalide" : added ? "Ajouté" : "Ajouter"} <ArrowRight /></button>
+          <button type="button" onClick={add} disabled={logoPending}>{logoPending ? logoPendingLabel : !destinationReady ? "Ajouter le lien" : added ? "Ajouté" : "Ajouter"} <ArrowRight /></button>
         </aside>
       )}
     </section>

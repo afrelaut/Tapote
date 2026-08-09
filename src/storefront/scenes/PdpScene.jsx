@@ -348,13 +348,16 @@ export default function PdpScene({
       )}
       {activeView === "studio" ? (
         <div className="v3-sector-scene-studio">
-          {/* Le repli reprend la composition exacte du studio — support à plat
-              et téléphone — pour que le chargement différé ne fasse ni
-              disparaître le téléphone ni sauter la mise en page. */}
+          {/* Safari exposait auparavant le support 2D et le remplaçait une
+              seconde plus tard par la 3D. Le module se charge désormais sous
+              un état neutre : aucun faux objet ne peut être pris pour le rendu
+              final pendant le téléchargement de Three.js. */}
           <Suspense fallback={(
-            <div className="tapote-product-studio is-pdp is-fallback" data-render-mode="static">
-              <div className="tapote-product-studio__fallback" aria-hidden="true">
-                {renderSupport({ surface: preview.surface, className: "tapote-product-studio__fallback-art" })}
+            <div className="tapote-product-studio is-pdp is-fallback is-loading" data-render-mode="loading" role="status" aria-label="Chargement de l’aperçu 3D">
+              <div className="tapote-product-studio__loading">
+                <span aria-hidden="true"><i /><i /><i /></span>
+                <strong>Votre Tapote prend forme</strong>
+                <small>Aperçu 3D en préparation…</small>
               </div>
               <DeviceFrame
                 actionId={preview.actionId}

@@ -68,7 +68,7 @@
   min-height: 100svh;
   display: grid;
   grid-template-columns: minmax(520px, .9fr) 1.1fr;
-  background: var(--paper-bright);
+  background: #0b0d12;
 }
 
 .pilot-login-copy {
@@ -77,10 +77,14 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
+  color: #fff;
+  background:
+    radial-gradient(circle at 86% 18%, rgb(36 88 255 / 27%), transparent 26rem),
+    linear-gradient(145deg, #0e1220, #090a0e 64%);
 }
 
 .pilot-login-heading {
-  margin: auto 0 64px;
+  margin: auto 0 38px;
   animation: pilot-rise .55s ease both;
 }
 
@@ -103,7 +107,7 @@
 .pilot-login-heading p {
   max-width: 520px;
   margin: 0;
-  color: var(--muted);
+  color: #b9c0cf;
   font-size: 17px;
   line-height: 1.65;
 }
@@ -112,9 +116,20 @@
   max-width: 650px;
 }
 
+.pilot-login-panel {
+  width: min(100%, 650px);
+  padding: 24px;
+  color: var(--ink);
+  background: rgb(250 249 246 / 98%);
+  border: 1px solid rgb(255 255 255 / 20%);
+  border-radius: 24px;
+  box-shadow: 0 28px 80px rgb(0 0 0 / 34%);
+  animation: pilot-rise .55s .08s ease both;
+}
+
 .pilot-auth-methods {
   width: fit-content;
-  margin: 0 0 22px;
+  margin: 0 0 20px;
   padding: 4px;
   display: flex;
   gap: 4px;
@@ -237,7 +252,8 @@
   color: #216b3e;
 }
 
-.pilot-login-copy > small {
+.pilot-login-panel > small {
+  display: block;
   margin-top: 20px;
   color: var(--muted);
   font-size: 13px;
@@ -2520,19 +2536,30 @@
   }
 
   .pilot-login-copy {
-    padding: 30px 24px;
+    min-height: 100svh;
+    padding: 24px 18px 30px;
+    justify-content: flex-start;
   }
 
   .pilot-login-heading {
-    margin-bottom: 46px;
+    margin: 62px 0 28px;
   }
 
   .pilot-login-heading h1 {
-    font-size: 52px;
+    margin: 14px 0 18px;
+    font-size: clamp(47px, 14vw, 58px);
   }
 
   .pilot-login-heading p {
-    font-size: 15px;
+    max-width: 440px;
+    color: #b9c0cf;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .pilot-login-panel {
+    padding: 20px;
+    border-radius: 22px;
   }
 
   .pilot-login-form > div {

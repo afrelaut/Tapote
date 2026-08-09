@@ -1,57 +1,10 @@
 import { useState } from "react";
-import { ArrowRight, Check, Clock3, Globe2, Layers3, Link2, MessageCircle, Plus, QrCode, Search, SmartphoneNfc, Zap } from "lucide-react";
+import { ArrowRight, Check, Clock3, Globe2, Layers3, Link2, Plus, QrCode, SmartphoneNfc, Zap } from "lucide-react";
 import { motion } from "motion/react";
 import { ACTIONS, formatMoney, PILOT_PLANS } from "../../../shared/catalog.js";
 import { SECTORS } from "../../storefront/sectorData.js";
-import { FAQ_GROUPS } from "../data/content.js";
-import { PilotMarketingSection } from "../marketing/MarketingSections.jsx";
 import { PilotLevelDemo } from "../marketing/PilotAppMock.jsx";
 import { SectorScene } from "../scenes/ProductScene.jsx";
-
-export function FaqPage() {
-  const [query, setQuery] = useState("");
-  const normalizedQuery = query.trim().toLocaleLowerCase("fr");
-  const visibleGroups = FAQ_GROUPS
-    .map((group) => ({
-      ...group,
-      items: group.items.filter(([question, answer]) => `${question} ${answer}`.toLocaleLowerCase("fr").includes(normalizedQuery)),
-    }))
-    .filter((group) => group.items.length);
-  const answerCount = FAQ_GROUPS.reduce((count, group) => count + group.items.length, 0);
-
-  return (
-    <main id="main-content" className="v3-faq-page">
-      <section className="v3-faq-page-hero">
-        <nav className="v3-breadcrumb" aria-label="Fil d’Ariane"><a href="/">Accueil</a><span>/</span><b>FAQ</b></nav>
-        <span className="v3-eyebrow v3-eyebrow-dark">QUESTIONS FRÉQUENTES · RÉPONSES CONCRÈTES</span>
-        <h1>Une réponse claire.<br />Avant de commander.</h1>
-        <p>Support, NFC, QR, personnalisation, Tapote Pilot, Pilot Pro, livraison et déploiement : les décisions utiles sont réunies ici.</p>
-        <label className="v3-faq-search">
-          <Search aria-hidden="true" />
-          <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Rechercher : BAT, NFC, livraison…" aria-label="Rechercher dans la FAQ" />
-          <small>{answerCount} réponses</small>
-        </label>
-      </section>
-      <div className="v3-faq-page-layout">
-        <aside aria-label="Thèmes de la FAQ">
-          <span>PAR THÈME</span>
-          {FAQ_GROUPS.map((group, index) => <a href={`#faq-${group.id}`} key={group.id}><b>0{index + 1}</b>{group.title}</a>)}
-          <a className="is-contact" href="mailto:aymeric@tapote.fr"><MessageCircle /> Poser une question</a>
-        </aside>
-        <div className="v3-faq-groups">
-          {visibleGroups.map((group, groupIndex) => (
-            <section id={`faq-${group.id}`} key={group.id}>
-              <header><span>0{FAQ_GROUPS.findIndex((candidate) => candidate.id === group.id) + 1}</span><h2>{group.title}</h2></header>
-              {group.items.map(([question, answer], itemIndex) => <details open={Boolean(normalizedQuery) && groupIndex === 0 && itemIndex === 0} key={question}><summary>{question}<Plus /></summary><p>{answer}</p></details>)}
-            </section>
-          ))}
-          {!visibleGroups.length && <section className="v3-faq-empty"><Search /><h2>Aucune réponse trouvée.</h2><p>Essayez un mot plus simple ou écrivez-nous directement.</p><a href="mailto:aymeric@tapote.fr">Poser la question <ArrowRight /></a></section>}
-        </div>
-      </div>
-      <section className="v3-faq-final"><span>ENCORE UN DOUTE ?</span><h2>Montrez-nous votre parcours client.</h2><p>Pour 10 supports ou plus, Tapote vous aide à choisir les formats, les emplacements et les destinations.</p><a href="/devis">Préparer mon projet <ArrowRight /></a></section>
-    </main>
-  );
-}
 
 export function PilotMarketingPage() {
   const pilotSteps = [
@@ -76,13 +29,12 @@ export function PilotMarketingPage() {
   ];
   return (
     <main id="main-content" className="v3-pilot-page">
-      <PilotMarketingSection pageDetail />
-
       <section className="v3-pilot-page-flow" id="pilot-flow" aria-labelledby="v3-pilot-flow-title">
         <div className="v3-pilot-page-flow-head">
-          <span className="v3-eyebrow">UN LIEN QUI RESTE PILOTABLE</span>
-          <h2 id="v3-pilot-flow-title">Le lien change.<br />Le support reste.</h2>
+          <span className="v3-eyebrow">TAPOTE PILOT · INCLUS</span>
+          <h1 id="v3-pilot-flow-title">Le lien change.<br />Le support reste.</h1>
           <p>Le client voit toujours le même Tapote. Avec Pilot Pro, vous changez simplement la page qu’il ouvre.</p>
+          <div className="v3-pilot-page-flow-actions"><a href="/connexion">Accéder à Tapote Pilot <ArrowRight /></a><span><Check /> Inclus avec chaque support</span></div>
         </div>
         <div className="v3-pilot-page-flow-grid">
           <div className="v3-pilot-page-steps">
@@ -153,10 +105,8 @@ export function PilotMarketingPage() {
 export function HowPage() {
   const destinations = [
     { id: "avis", label: "Avis Google", sectorId: "cafe", surface: "comptoir", brandName: "VOTRE MARQUE", theme: "nuit" },
-    { id: "menu", label: "Menu", sectorId: "restaurant", surface: "comptoir", brandName: "VOTRE MARQUE", theme: "nuit" },
-    { id: "reservation", label: "Réservation", sectorId: "salon", surface: "plaque", brandName: "VOTRE MARQUE", theme: "creme" },
-    { id: "wifi", label: "Wi-Fi", sectorId: "hotel", surface: "plaque", brandName: "VOTRE MARQUE", theme: "creme" },
-    { id: "contact", label: "Contact", sectorId: "artisan", surface: "carte", brandName: "VOTRE MARQUE", theme: "nuit" },
+    { id: "instagram", label: "Instagram · Plaque", sectorId: "salon", surface: "plaque", brandName: "VOTRE MARQUE", theme: "creme" },
+    { id: "linkedin", label: "LinkedIn · Card", sectorId: "immobilier", surface: "carte", brandName: "VOTRE MARQUE", theme: "nuit" },
   ];
   const [activeDestinationId, setActiveDestinationId] = useState(destinations[0].id);
   const activeDestination = destinations.find((destination) => destination.id === activeDestinationId) || destinations[0];
@@ -257,7 +207,6 @@ export function HowPage() {
             <div className="v3-how-channel-number">01</div>
             <SmartphoneNfc />
             <h3>Approcher le téléphone</h3>
-            <p>Au comptoir, à table ou carte en main : une notification apparaît, le client la touche.</p>
             <ul>
               <li><Check /> Actif sur la majorité des smartphones récents</li>
               <li><Check /> Aucun appairage ni application</li>
@@ -267,7 +216,6 @@ export function HowPage() {
             <div className="v3-how-channel-number">02</div>
             <QrCode />
             <h3>Scanner avec l’appareil photo</h3>
-            <p>Le chemin universel. Il prend le relais dès que le NFC n’est pas disponible.</p>
             <ul>
               <li><Check /> Le même lien et la même destination</li>
               <li><Check /> Intégré au design, toujours accessible</li>
@@ -280,11 +228,10 @@ export function HowPage() {
         <div className="v3-how-link-copy">
           <span className="v3-eyebrow">LE SUPPORT RESTE · LE LIEN ÉVOLUE</span>
           <h2 id="v3-how-link-title">Changez la destination.<br />Pas l’objet.</h2>
-          <p>Le NFC et le QR pointent vers une adresse Tapote stable. Pilot vous montre ce qu’elle ouvre ; Pilot Pro remplace cette page à distance, sans réimprimer le support.</p>
           <div className="v3-how-link-route" aria-label="Exemple de redirection Tapote">
-            <div><small>IMPRIMÉ SUR LE SUPPORT</small><strong>tapote.fr/t/votre-support</strong><span>reste identique</span></div>
+            <div><small>VOTRE TAPOTE</small><strong>NFC + QR</strong><span>ne changent pas</span></div>
             <ArrowRight aria-hidden="true" />
-            <div><small>DESTINATION ACTIVE</small><strong>{activeAction.name}</strong><span>modifiable à distance</span></div>
+            <div><small>LA PAGE QUI S’OUVRE</small><strong>{activeAction.name}</strong><span>modifiable avec Pilot Pro</span></div>
           </div>
         </div>
         <div className="v3-how-plan-panel">
@@ -299,7 +246,18 @@ export function HowPage() {
             </ul>
             <a href="/connexion">Accéder à Tapote Pilot <ArrowRight /></a>
           </div>
-          <p className="v3-how-pro-note"><strong>Pilot Pro</strong> ajoute les analyses, les exports et le multi-sites. <a href="/tapote-pilot">Comparer les usages <ArrowRight /></a></p>
+          <div className="v3-how-plan-card is-pro">
+            <span>OPTION AVANCÉE</span>
+            <h3>Tapote Pilot Pro</h3>
+            <strong>9 €<small> / mois</small></strong>
+            <ul>
+              <li><Check /> Changer la destination à distance</li>
+              <li><Check /> Analyser par période, lieu et support</li>
+              <li><Check /> Comparer plusieurs sites</li>
+              <li><Check /> Historique et exports</li>
+            </ul>
+            <a href="/tapote-pilot">Comparer Pilot et Pilot Pro <ArrowRight /></a>
+          </div>
         </div>
       </section>
 

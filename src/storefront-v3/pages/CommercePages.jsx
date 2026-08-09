@@ -1,14 +1,20 @@
-import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Check, CheckCircle2, CircleDollarSign, Link2, MapPin, PackageCheck, Plus, SmartphoneNfc, Sparkles, Star, X } from "lucide-react";
+import { useCallback, useRef, useState } from "react";
+import { ArrowRight, Check, CheckCircle2, ChevronDown, ChevronUp, CircleDollarSign, Link2, MapPin, PackageCheck, Plus, SmartphoneNfc, Sparkles, Star } from "lucide-react";
 import { ACTIONS, formatMoney, PRODUCTS } from "../../../shared/catalog.js";
 import { SECTORS } from "../../storefront/sectorData.js";
 import { compositionSurface, getProductId, makeCartItem } from "../commerce/cart.js";
 import { BuyBox } from "../commerce/ProductConfigurator.jsx";
 import { HOME_SCENES, PRODUCT_PAGES, SHOP_ITEMS, readyHeadlineForAction, taxLabel } from "../data/content.js";
-import { PilotAppMock } from "../marketing/PilotAppMock.jsx";
 import { NotFound } from "./LegalPages.jsx";
 import { ProductExamplesSection, ProductFaqSection, ProductOrderJourney, RelatedProducts, SectorSelector, WhyTapote } from "../marketing/MarketingSections.jsx";
-import { ProductScene, SectorScene } from "../scenes/ProductScene.jsx";
+import { SectorScene, ShopProductPreview } from "../scenes/ProductScene.jsx";
+import { ProductArt } from "../scenes/ProductArt.jsx";
+
+const SHOP_PREVIEW_DESTINATIONS = {
+  comptoir: { actionId: "avis", sectorId: "cafe" },
+  plaque: { actionId: "instagram", sectorId: "salon" },
+  carte: { actionId: "linkedin", sectorId: "immobilier" },
+};
 
 export function ShopPage({ onAdd, availableProductIds, initialPersonalization = "ready" }) {
   const [personalization, setPersonalization] = useState(initialPersonalization);
@@ -22,7 +28,7 @@ export function ShopPage({ onAdd, availableProductIds, initialPersonalization = 
     {
       id: personalization === "ready" ? "pack_duo_standard" : "pack_duo",
       title: "Pack Local",
-      eyebrow: "CAISSE + ENTRÉE",
+      eyebrow: "DUO COMPTOIR + PLAQUE",
       copy: "Un Comptoir pour le moment de paiement et une Plaque pour l’entrée ou la sortie.",
       count: 2,
       composition: { comptoir: 1, plaque: 1 },
@@ -56,12 +62,14 @@ export function ShopPage({ onAdd, availableProductIds, initialPersonalization = 
             const productId = getProductId(item.surface, personalization, 1);
             const product = PRODUCTS[productId];
             const scene = HOME_SCENES[item.surface];
+            const destination = SHOP_PREVIEW_DESTINATIONS[item.surface];
+            const previewSector = SECTORS.find((sector) => sector.id === destination.sectorId) || SECTORS[0];
             const preview = {
               surface: item.surface,
-              actionId: scene.nativeAction,
+              actionId: destination.actionId,
               brandName: personalization === "custom" ? scene.brandName : "tapote.",
               theme: scene.theme,
-              customHeadline: personalization === "custom" ? readyHeadlineForAction(scene.nativeAction) : "",
+              customHeadline: personalization === "custom" ? readyHeadlineForAction(destination.actionId) : "",
               personalization,
             };
             return (
@@ -71,7 +79,7 @@ export function ShopPage({ onAdd, availableProductIds, initialPersonalization = 
                   href={`/produits/${item.slug}?mode=${personalization}`}
                   aria-label={`Voir ${item.title} en mode ${personalization === "ready" ? "Prêt à poser" : "À votre image"}`}
                 >
-                  <ProductScene image={scene.image} alt={`${item.title} en situation`} preview={preview} compact />
+                  <ShopProductPreview preview={preview} sectorId={previewSector.id} sectorTitle={previewSector.title} />
                 </a>
                 <div className="v3-shop-card-copy">
                   <h2>{item.title}</h2>
@@ -116,7 +124,7 @@ export function ShopPage({ onAdd, availableProductIds, initialPersonalization = 
                     <span>{pack.count} POINTS D’ACTION · {personalization === "ready" ? "PRÊTS À SERVIR" : "À VOTRE IMAGE"}</span>
                     <h3>{pack.title}</h3>
                     <p>{pack.copy}</p>
-                    <div className="v3-pack-price-row"><strong>{formatMoney(product.price)} <small>{taxLabel}</small></strong><div><b>{formatMoney(Math.round(product.price / pack.count))} / support</b><span>{saving ? `${formatMoney(saving)} d’écart` : "prix groupé"}</span></div></div>
+                    <div className="v3-pack-price-row"><strong><b>{formatMoney(product.price)}</b><small>{taxLabel}</small></strong><div><b>{formatMoney(Math.round(product.price / pack.count))} / support</b><span>{saving ? `${formatMoney(saving)} d’écart` : "prix groupé"}</span></div></div>
                     <div className="v3-pack-saving"><CircleDollarSign /><strong>Composition prête</strong><span>· chaque destination reste indépendante</span></div>
                     <ul><li><CheckCircle2 /> NFC + QR testés un par un</li><li><CheckCircle2 /> Une identité cohérente</li><li><CheckCircle2 /> Tapote Pilot inclus</li></ul>
                     <button className="v3-shop-pack-configure" type="button" onClick={() => onAdd(makeCartItem(pack.id, "avis", { supportComposition: pack.composition }))}>{pack.cta} <Plus /></button>
@@ -149,6 +157,7 @@ export function ProductPage({ page, onAdd }) {
   const scene = HOME_SCENES[data?.key || "comptoir"];
   const defaultSectorId = data?.key === "carte" ? "artisan" : data?.key === "plaque" ? "salon" : "cafe";
   const requestedSector = SECTORS.find((sector) => sector.slug === params.get("activite") || sector.id === params.get("activite"));
+  const [preferredMode, setPreferredMode] = useState(requestedMode);
   const [productSector, setProductSector] = useState(
     requestedSector || SECTORS.find((sector) => sector.id === defaultSectorId) || SECTORS[0],
   );
@@ -162,32 +171,28 @@ export function ProductPage({ page, onAdd }) {
     count: 1,
   });
   const initialCtaRef = useRef(null);
-  // L'aperçu plein écran n'existe que sur téléphone : ailleurs, la scène reste
-  // visible en permanence à côté du configurateur.
-  const [previewSheetOpen, setPreviewSheetOpen] = useState(false);
-  useEffect(() => {
-    if (!previewSheetOpen) return undefined;
-    const closeOnEscape = (event) => { if (event.key === "Escape") setPreviewSheetOpen(false); };
-    document.addEventListener("keydown", closeOnEscape);
-    document.body.classList.add("v3-preview-sheet-open");
-    return () => {
-      document.removeEventListener("keydown", closeOnEscape);
-      document.body.classList.remove("v3-preview-sheet-open");
-    };
-  }, [previewSheetOpen]);
+  const [previewRevision, setPreviewRevision] = useState(0);
+  const [previewCollapsed, setPreviewCollapsed] = useState(false);
+  const handlePreviewChange = useCallback((nextPreview) => {
+    setProductPreview(nextPreview);
+    setPreferredMode(nextPreview.personalization);
+    // Deux noms d'animation alternés relancent le retour visuel sans remonter
+    // le canvas WebGL : le support reste stable pendant la saisie.
+    setPreviewRevision((revision) => revision + 1);
+  }, []);
   if (!data) return <NotFound />;
-  const activeMode = productPreview.personalization || requestedMode;
+  const activeMode = productPreview.personalization || preferredMode;
   const selectProductSector = (nextSector) => {
     setProductSector(nextSector);
     setProductPreview({
       surface: data.key,
       baseSurface: data.key,
       actionId: nextSector.actionIds[0],
-      brandName: requestedMode === "custom" ? "VOTRE MARQUE" : (nextSector.exampleBrand || "tapote."),
+      brandName: preferredMode === "custom" ? "VOTRE MARQUE" : (nextSector.exampleBrand || "tapote."),
       brandLogo: "",
       theme: data.key === "carte" ? "creme" : nextSector.id === "cafe" || nextSector.id === "restaurant" ? "nuit" : "creme",
       customHeadline: readyHeadlineForAction(nextSector.actionIds[0]),
-      personalization: requestedMode,
+      personalization: preferredMode,
       count: 1,
       composition: data.key === "plaque" ? { comptoir: 0, plaque: 1 } : data.key === "carte" ? { comptoir: 0, plaque: 0 } : { comptoir: 1, plaque: 0 },
     });
@@ -200,84 +205,74 @@ export function ProductPage({ page, onAdd }) {
           <h1 id="v3-product-title">{data.name}</h1>
           <p className="v3-product-lead">{data.description}</p>
         </header>
-        <div className="v3-product-gallery">
+        <div className={`v3-product-gallery${previewCollapsed ? " is-preview-collapsed" : ""}`} data-preview-update={previewRevision % 2}>
+          <div className="v3-mobile-live-preview-bar" aria-live="polite">
+            <span><i aria-hidden="true" /> Aperçu en direct</span>
+            <strong>{activeMode === "custom" ? "À votre image" : "Prêt à poser"}</strong>
+            <button
+              type="button"
+              className="v3-mobile-preview-size"
+              aria-expanded={!previewCollapsed}
+              aria-label={previewCollapsed ? "Agrandir l’aperçu" : "Réduire l’aperçu"}
+              onClick={() => setPreviewCollapsed((value) => !value)}
+            >
+              {previewCollapsed ? <ChevronDown aria-hidden="true" /> : <ChevronUp aria-hidden="true" />}
+              <b>{previewCollapsed ? "Agrandir" : "Réduire"}</b>
+            </button>
+          </div>
           <SectorScene
-            key={`${productSector.id}-${data.key}`}
             sector={productSector}
             preview={{ ...productPreview, surface: compositionSurface(productPreview.count || 1, productPreview.composition, data.key), baseSurface: data.key, count: productPreview.count || 1 }}
             className="v3-product-live-scene"
           />
+          {previewCollapsed && (
+            <div className={`v3-collapsed-product-thumb is-${data.key}`} aria-hidden="true">
+              <ProductArt {...productPreview} surface={data.key} />
+            </div>
+          )}
         </div>
         <div className="v3-product-buy-column">
           <div className="v3-product-sector-control">
             <SectorSelector sectorId={productSector.id} onSelect={selectProductSector} />
           </div>
           <BuyBox
-            key={`${data.key}-${productSector.id}`}
+            key={`${data.key}-${productSector.id}-${preferredMode}`}
             onAdd={onAdd}
             initialSurface={data.key}
             initialAction={productSector.id === (requestedSector?.id || defaultSectorId) ? requestedAction : productSector.actionIds[0]}
             initialCount={requestedCount}
-            initialPersonalization={requestedMode}
+            initialPersonalization={preferredMode}
             initialTheme={productPreview.theme || scene.theme}
-            initialBrandName={requestedMode === "custom" ? "VOTRE MARQUE" : (productSector.exampleBrand || "tapote.")}
+            initialBrandName={preferredMode === "custom" ? "VOTRE MARQUE" : (productSector.exampleBrand || "tapote.")}
             initialReadyHeadline={readyHeadlineForAction(productSector.id === (requestedSector?.id || defaultSectorId) ? requestedAction : productSector.actionIds[0])}
             targetId={productSector.id}
             title={`Configurez ${data.name}`}
             productOnly
-            onPreviewChange={setProductPreview}
+            onPreviewChange={handlePreviewChange}
             draftKey={`pdp:${data.key}`}
             stickyTriggerRef={initialCtaRef}
-            onOpenPreview={() => setPreviewSheetOpen(true)}
           />
         </div>
       </section>
-      {/* L'aperçu suit la configuration en direct : rouvert depuis n'importe
-          quel réglage, il montre l'état exact du support à cet instant. */}
-      {previewSheetOpen && (
-        <div className="v3-preview-sheet" role="dialog" aria-modal="true" aria-label={`Aperçu de ${data.name}`}>
-          <button type="button" className="v3-preview-sheet-backdrop" onClick={() => setPreviewSheetOpen(false)} aria-label="Fermer l’aperçu" />
-          <div className="v3-preview-sheet-panel">
-            <header>
-              <span><small>Votre configuration</small><strong>{data.name}</strong></span>
-              <button type="button" onClick={() => setPreviewSheetOpen(false)} aria-label="Fermer l’aperçu"><X /></button>
-            </header>
-            <SectorScene
-              key={`sheet-${productSector.id}-${data.key}`}
-              sector={productSector}
-              preview={{ ...productPreview, surface: compositionSurface(productPreview.count || 1, productPreview.composition, data.key), baseSurface: data.key, count: productPreview.count || 1 }}
-              className="v3-product-live-scene"
-            />
-            <button type="button" className="v3-preview-sheet-resume" onClick={() => setPreviewSheetOpen(false)}>Continuer la configuration <ArrowRight /></button>
-          </div>
-        </div>
-      )}
       <ProductExamplesSection data={data} mode={activeMode} />
       <section className="v3-section v3-product-details">
-        <div className="v3-section-heading"><span className="v3-eyebrow">L’ESSENTIEL</span><h2>Ce que vous recevez.</h2><p>Un support prêt pour son premier tap.</p></div>
+        <div className="v3-section-heading"><span className="v3-eyebrow">L’ESSENTIEL</span><h2>Prêt à poser.</h2></div>
         <div className="v3-product-detail-grid">
-          <article><SmartphoneNfc /><h3>Le support</h3><ul><li><Check /> {data.size}</li><li><Check /> {data.placements}</li>{data.technical.map((detail) => <li key={detail}><Check /> {detail}</li>)}</ul></article>
-          <article><Sparkles /><h3>Prêt à fonctionner</h3><p>{data.inBox}</p><ul><li><Check /> NFC configuré</li><li><Check /> QR associé</li><li><Check /> Tapote Pilot inclus</li></ul></article>
-          <article><MapPin /><h3>Les bons moments</h3><ul>{data.uses.map((use) => <li key={use}><Check /> {use}</li>)}</ul></article>
+          <article><SmartphoneNfc /><div><h3>{data.name}</h3><p>{data.placements}</p></div></article>
+          <article><Sparkles /><div><h3>NFC + QR testés</h3><p>Lien configuré avant l’envoi</p></div></article>
+          <article><MapPin /><div><h3>Tapote Pilot inclus</h3><p>Support et destination au même endroit</p></div></article>
         </div>
       </section>
       <ProductOrderJourney data={data} />
       {/* La moitié droite de cette section était vide : elle porte désormais
           l'écran réel de l'application, qui montre au lieu de raconter. */}
-      <section className="v3-pdp-pilot" aria-labelledby={`v3-${data.key}-pilot-title`}>
-        <div className="v3-pdp-pilot-copy">
+      <section className="v3-pdp-pilot-cta" aria-labelledby={`v3-${data.key}-pilot-title`}>
+        <div>
           <span className="v3-eyebrow">TAPOTE PILOT INCLUS</span>
-          <h2 id={`v3-${data.key}-pilot-title`}>Le support reste.<br />Sa destination évolue.</h2>
-          <p>Retrouvez {data.name} et vérifiez la destination qu’il ouvre. Avec Tapote Pilot Pro, remplacez ce lien à distance, sans réimprimer ni réencoder le support.</p>
-          <ul>
-            <li><Check /> Gestion des supports</li>
-            <li><Check /> Destination active visible</li>
-            <li><Check /> Accès inclus avec le produit</li>
-          </ul>
-          <a href="/connexion">Accéder à Tapote Pilot <ArrowRight /></a>
-          <p className="v3-pdp-pilot-pro"><strong>Pilot Pro</strong> ajoute le changement de destination à distance, les analyses par période et lieu, les exports et le multi-sites. <a href="/tapote-pilot">Comparer les usages <ArrowRight /></a></p>
+          <h2 id={`v3-${data.key}-pilot-title`}>Retrouvez ce support après la pose.</h2>
+          <p>Sa destination reste visible dans Pilot. Pilot Pro permet ensuite de la remplacer à distance.</p>
         </div>
-        <div className="v3-pdp-pilot-mock" role="img" aria-label="Aperçu de l’application Tapote Pilot"><PilotAppMock level="pilot" /></div>
+        <a href="/tapote-pilot">Découvrir Tapote Pilot <ArrowRight /></a>
       </section>
       <ProductFaqSection data={data} />
       <RelatedProducts current={data.key} />

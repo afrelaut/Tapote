@@ -413,6 +413,10 @@
   white-space: nowrap;
 }
 
+.v3-hero-3d__toolbar button.is-active small {
+  opacity: 1;
+}
+
 .v3-hero-3d__timeline {
   height: 2px;
   margin: 10px 5px 0;
@@ -1933,18 +1937,19 @@
 .v3-related-products > div:first-child h2 { margin: 13px 0 18px; font-family: "Archivo Black", sans-serif; font-size: clamp(24px, 2.45vw, 38px); line-height: .94; letter-spacing: -.055em; }
 .v3-related-products > div:first-child p { max-width: 480px; color: var(--v3-muted); font-size: 15px; line-height: 1.65; }
 .v3-related-products > div:last-child { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-.v3-related-products a { min-height: 260px; padding: 18px; align-content: end; gap: 12px; overflow: hidden; color: #fff; background: #111318; border: 1px solid #242c46; border-radius: 22px; transition: transform .2s var(--v3-ease), border-color .2s var(--v3-ease); }
-.v3-related-products a:hover { transform: translateY(-4px); border-color: #607de7; }
-.v3-related-products a.is-pack { padding: 28px; background: #285cff; border-color: #285cff; }
+.v3-related-products a { min-height: 260px; padding: 14px 14px 20px; align-content: end; gap: 10px; overflow: hidden; color: #111318; background: #f4f2ed; border: 1px solid #d9d4ca; border-radius: 22px; transition: transform .2s var(--v3-ease), border-color .2s var(--v3-ease), box-shadow .2s var(--v3-ease); }
+.v3-related-products a:hover { transform: translateY(-4px); border-color: #9baeff; box-shadow: 0 20px 50px rgb(31 42 70 / 10%); }
+.v3-related-products a.is-pack { padding: 14px 14px 20px; color: #fff; background: linear-gradient(145deg, #173fc1, #2a62ff); border-color: #285cff; }
 .v3-related-products a.is-pack > span:not(.v3-related-product-art),
 .v3-related-products a.is-pack > small { color: #fff; }
-.v3-related-products a > span:not(.v3-related-product-art) { margin: 0; color: #9db4ff; font-size: var(--v3-text-xs); font-weight: 850; letter-spacing: .08em; }
+.v3-related-products a > span:not(.v3-related-product-art) { margin: 0; color: #285cff; font-size: var(--v3-text-xs); font-weight: 850; letter-spacing: .08em; }
 .v3-related-products a > strong { font-family: "Archivo Black", sans-serif; font-size: 28px; line-height: .95; }
-.v3-related-products a > small { min-height: 56px; color: #c6ccda; font-size: 12px; line-height: 1.5; }
-.v3-related-products a > b { display: flex; align-items: center; gap: 7px; color: #fff; font-size: 12px; }
+.v3-related-products a > small { min-height: 56px; color: #656b75; font-size: 12px; line-height: 1.5; }
+.v3-related-products a > b { display: flex; align-items: center; gap: 7px; color: #111318; font-size: 12px; }
+.v3-related-products a.is-pack > b { color: #fff; }
 .v3-related-products a > b svg { width: 13px; }
-.v3-related-product-art { min-height: 205px; display: grid; place-items: center; overflow: hidden; background: #edf0f5; border-radius: 14px; }
-.v3-related-product-art .v3-product-art { width: min(82%, 260px); }
+.v3-related-product-art { min-height: 190px; display: grid; place-items: center; overflow: hidden; background: linear-gradient(145deg, #fff, #e5eaf3); border: 1px solid rgb(31 42 70 / 7%); border-radius: 14px; }
+.v3-related-product-art .v3-product-art { width: min(78%, 240px); }
 /* Les cartes Plaque/Card montrent une vraie photo produit ; le Pack Local
    n'affichait qu'un aplat de couleur, seule carte sans repère visuel. */
 .v3-related-product-art.is-pack-preview { display: flex; align-items: flex-end; justify-content: center; gap: 6px; background: #1f4fe0; }
@@ -1973,6 +1978,25 @@
   .v3-product-design-stage footer a { grid-column: 1 / -1; }
   .v3-related-products { grid-template-columns: minmax(0, 1fr); }
   .v3-related-products > div:last-child { grid-template-columns: 1fr; }
+  .v3-related-products a {
+    min-height: 246px;
+    grid-template-columns: minmax(240px, 44%) minmax(0, 1fr);
+    grid-template-rows: auto auto 1fr auto;
+    align-content: stretch;
+    column-gap: 22px;
+    padding: 14px 22px 14px 14px;
+  }
+  .v3-related-products a > .v3-related-product-art {
+    grid-column: 1;
+    grid-row: 1 / 5;
+    min-height: 216px;
+  }
+  .v3-related-products a > span:not(.v3-related-product-art),
+  .v3-related-products a > strong,
+  .v3-related-products a > small,
+  .v3-related-products a > b { grid-column: 2; }
+  .v3-related-products a > span:not(.v3-related-product-art) { align-self: end; }
+  .v3-related-products a > small { min-height: 0; }
 }
 
 @media (max-width: 520px) {
@@ -2287,8 +2311,22 @@
   .v3-product-faq h2 { font-size: 43px; }
   .v3-product-faq summary, .v3-faq-groups summary { min-height: 70px; font-size: 12px; }
   .v3-product-faq details p, .v3-faq-groups details p { margin-right: 20px; }
-  .v3-related-products a { min-height: 217px; }
-  .v3-related-product-art { min-height: 170px; }
+  .v3-related-products a,
+  .v3-related-products a.is-pack {
+    min-height: 0;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    padding: 14px 14px 20px;
+  }
+  .v3-related-products a > .v3-related-product-art,
+  .v3-related-products a > span:not(.v3-related-product-art),
+  .v3-related-products a > strong,
+  .v3-related-products a > small,
+  .v3-related-products a > b {
+    grid-column: 1;
+    grid-row: auto;
+  }
+  .v3-related-product-art { min-height: 180px; }
   .v3-faq-page-hero { min-height: 0; padding: 70px 18px; }
   .v3-faq-page-hero .v3-breadcrumb { margin-bottom: 38px; }
   .v3-faq-page-hero h1 { font-size: 58px; }

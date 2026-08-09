@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+import { resolveAppSurface } from "./route-surface.js";
 
 const PilotApp = lazy(() => import("./pilot/PilotApp.jsx"));
 const AccessApp = lazy(() => import("./access/AccessApp.jsx"));
@@ -6,9 +7,14 @@ const ManagementApp = lazy(() => import("./ManagementApp.jsx"));
 const StoreApp = lazy(() => import("./StorefrontV3.jsx"));
 
 export default function RouteApp() {
-  const pilotRoute = window.location.pathname === "/pilot" || window.location.pathname.startsWith("/pilot/");
-  const accessRoute = window.location.pathname === "/connexion" || window.location.pathname.startsWith("/connexion/");
-  const managementRoute = window.location.pathname === "/gestion" || window.location.pathname.startsWith("/gestion/");
+  const surface = resolveAppSurface({
+    hostname: window.location.hostname,
+    pathname: window.location.pathname,
+    development: import.meta.env.DEV,
+  });
+  const accessRoute = surface === "access";
+  const pilotRoute = surface === "pilot";
+  const managementRoute = surface === "management";
   const CurrentApp = accessRoute
     ? AccessApp
     : managementRoute

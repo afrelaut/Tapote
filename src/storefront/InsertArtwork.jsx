@@ -24,6 +24,16 @@ import "./insert-artwork.css";
 // (« Vous avez aimé / ? Tapotez. »).
 const NARROW_NBSP = " ";
 
+function markImportedLogoShape(event) {
+  const image = event.currentTarget;
+  const ratio = image.naturalWidth / Math.max(image.naturalHeight, 1);
+  const shape = ratio <= 1.35 ? "compact" : ratio >= 3 ? "wide" : "standard";
+  const logoBox = image.closest(".tp-insert-logo");
+  const insert = image.closest(".tp-insert");
+  if (logoBox) logoBox.dataset.logoShape = shape;
+  if (insert) insert.dataset.logoShape = shape;
+}
+
 function protectFrenchPunctuation(text) {
   return text
     .replace(/\s+([?!;:»])/g, `${NARROW_NBSP}$1`)
@@ -101,8 +111,8 @@ function PlatformLockup({ platformId }) {
 function NfcWaves() {
   return (
     <svg className="tp-insert-nfc-icon" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <rect width="7" height="12" x="2" y="6" rx="1.2" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M13 8.3a7.4 7.4 0 0 1 0 7.4M16.5 6.2a11.8 11.8 0 0 1 0 11.6M20 4.1a15.9 15.9 0 0 1 0 15.8" className="tp-insert-nfc-arcs" strokeWidth="1.6" />
+      <rect width="7" height="12" x="2" y="6" rx="1.2" stroke="currentColor" strokeWidth="2" />
+      <path d="M13 8.3a7.4 7.4 0 0 1 0 7.4M16.5 6.2a11.8 11.8 0 0 1 0 11.6M20 4.1a15.9 15.9 0 0 1 0 15.8" className="tp-insert-nfc-arcs" strokeWidth="2" />
     </svg>
   );
 }
@@ -115,9 +125,12 @@ function Wrapper({ isCard, children }) {
 
 function ActionMark({ actionId, ready = false }) {
   const glyph = platformGlyphForAction(actionId);
-  if (ready && glyph) return <PlatformLockup platformId={glyph} />;
-  if (actionId === "avis") return <GoogleStars />;
-  if (glyph) return <span className="tp-insert-platform"><PlatformGlyph id={glyph} /><b>{ACTIONS[actionId]?.name}</b></span>;
+  // Le service ouvert fait partie du message principal, quel que soit le mode
+  // de personnalisation. Les supports « à votre image » doivent donc montrer
+  // le même bloc-marque officiel que les modèles Tapote prêts à poser, et non
+  // un petit libellé générique difficile à lire dans les aperçus boutique.
+  if (glyph) return <PlatformLockup platformId={glyph} />;
+  if (actionId === "avis") return ready ? <GoogleWordmark /> : <GoogleStars />;
   return <span className="tp-insert-action-tag">{ACTIONS[actionId]?.badge || ACTIONS[actionId]?.name}</span>;
 }
 
@@ -222,14 +235,14 @@ export default function InsertArtwork({
             le pied de page reste donc solidaire de la colonne de gauche. */}
         <Wrapper isCard={isCard}>
           <header className="tp-insert-head">
-            {(isReady || brandLogo || showLogoSlot) && <span className="tp-insert-logo">
+            {(isReady || brandLogo || showLogoSlot) && <span className={`tp-insert-logo${brandLogo ? " is-uploaded" : ""}`}>
               {isReady
                 ? <img className="tp-insert-tapote-logo" src={readyLogo} alt="" />
                 : brandLogo
-                ? <img src={brandLogo} alt="" />
+                ? <img src={brandLogo} alt="" onLoad={markImportedLogoShape} />
                 : <BrandLogoPlaceholder />}
             </span>}
-            {showBrand && !isReady && <b className="tp-insert-brand">{brandName || "VOTRE MARQUE"}</b>}
+            {showBrand && !isReady && !brandLogo && <b className="tp-insert-brand">{brandName || "VOTRE MARQUE"}</b>}
             {!isReady && finalTagline && <span className="tp-insert-tagline">{finalTagline}</span>}
             {!isReady && finalContactLine && <span className="tp-insert-contact">{finalContactLine}</span>}
           </header>
@@ -238,7 +251,15 @@ export default function InsertArtwork({
             {/* Surtitre repris des fichiers d'impression ; la carte s'en passe,
                 faute de hauteur utile. */}
             {!isCard && !isReady && !finalTagline && <span className="tp-insert-overline">UN GESTE SUFFIT</span>}
-            {isReady && <div className="tp-insert-mark is-service"><ActionMark actionId={action.id} ready /></div>}
+            {/* La destination reste une information de premier niveau, y compris
+                sur une création à l'image du client. Une Plaque Instagram ou
+                une Card LinkedIn doit être reconnaissable avant même de lire
+                l'accroche, exactement comme la collection prête à poser. */}
+            {platformGlyphForAction(action.id) && (
+              <div className="tp-insert-mark is-service">
+                <ActionMark actionId={action.id} ready />
+              </div>
+            )}
             {/* Les lignes sont séparées par une vraie espace dans le DOM : sans
                 elle, le texte extrait recolle les mots (« Découvreznos »). Le
                 rendu reste sur deux lignes grâce au `display: block`. */}
@@ -250,9 +271,9 @@ export default function InsertArtwork({
                 </Fragment>
               ))}
             </p>
-            {!isReady && (
+            {!isReady && !platformGlyphForAction(action.id) && (
               <div className={`tp-insert-mark${action.id === "avis" ? " is-service" : ""}`}>
-                <ActionMark actionId={action.id} ready={action.id === "avis"} />
+                <ActionMark actionId={action.id} />
               </div>
             )}
             {action.id === "avis" && <GoogleStars />}
