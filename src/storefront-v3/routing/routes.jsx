@@ -1,8 +1,7 @@
-import { findSectorBySlug } from "../../storefront/sectorData.js";
 import { resolveProductPageSlug } from "../data/content.js";
 import { CartPage, CheckoutPage, ConfirmationPage, QuotePage } from "../pages/CheckoutPages.jsx";
 import { ProductPage, ShopPage } from "../pages/CommercePages.jsx";
-import { FaqPage, HowPage, PilotMarketingPage, SectorDirectoryPage, SectorLandingPage } from "../pages/InformationPages.jsx";
+import { FaqPage, HowPage, PilotMarketingPage } from "../pages/InformationPages.jsx";
 import { LandingPage } from "../pages/LandingPage.jsx";
 import { LegalPage, NotFound } from "../pages/LegalPages.jsx";
 
@@ -13,8 +12,6 @@ export function resolveStorefrontPage({
   addToCart,
   availableProductIds,
 }) {
-  const sectorPage = path.startsWith("/secteurs/") ? findSectorBySlug(path.split("/")[2]) : null;
-
   if (path === "/") return <LandingPage />;
   if (path === "/boutique" || path.startsWith("/categorie/")) {
     return <ShopPage onAdd={addToCart} availableProductIds={availableProductIds} />;
@@ -25,8 +22,6 @@ export function resolveStorefrontPage({
   if (path.startsWith("/produits/")) {
     return <ProductPage page={resolveProductPageSlug(path.split("/")[2])} onAdd={addToCart} />;
   }
-  if (path === "/secteurs") return <SectorDirectoryPage />;
-  if (sectorPage) return <SectorLandingPage sector={sectorPage} />;
   if (path === "/comment-ca-marche") return <HowPage />;
   if (path === "/tapote-pilot") return <PilotMarketingPage />;
   if (path === "/faq") return <FaqPage />;

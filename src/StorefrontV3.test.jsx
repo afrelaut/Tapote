@@ -87,6 +87,8 @@ describe("Boutique Tapote V3", () => {
     expect(screen.getByText(/Avis Vérifiés by Skeepers.*fin 2024/)).toBeVisible();
     expect(screen.queryByText(/Tapote Link/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/20\s*000|30\s*000/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Voir les recommandations par activité/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Solutions par métier/i })).not.toBeInTheDocument();
     expect(document.querySelectorAll("#main-content > section")).toHaveLength(9);
     expect(screen.getAllByRole("main")).toHaveLength(1);
   });
@@ -302,10 +304,12 @@ describe("Boutique Tapote V3", () => {
     expect(screen.getByRole("heading", { name: "Avant de commander." })).toBeVisible();
   });
 
-  it("rend les quinze secteurs visibles dans un répertoire commercial dédié", () => {
+  it("retire le répertoire des secteurs et toutes ses sous-pages", () => {
     renderRoute("/secteurs");
-    expect(document.querySelectorAll(".v3-sector-directory-category a")).toHaveLength(15);
-    expect(screen.getByRole("link", { name: /Artisans & services terrain/i })).toHaveAttribute("href", "/secteurs/artisans-services-terrain");
+    expect(screen.getByRole("heading", { level: 1, name: "Cette page n’existe pas." })).toBeVisible();
+    cleanup();
+    renderRoute("/secteurs/artisans-services-terrain");
+    expect(screen.getByRole("heading", { level: 1, name: "Cette page n’existe pas." })).toBeVisible();
   });
 
   it("démontre les destinations et garde Pilot Pro sans prix inventé", () => {

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ACTIONS, PRODUCTS } from "../../../shared/catalog.js";
 import { captureStorefrontAttribution, trackStorefrontEvent } from "../../storefront/analytics.js";
-import { findSectorBySlug } from "../../storefront/sectorData.js";
 import { CART_KEY, MAX_ITEM_QUANTITY, compositionLabel, itemFingerprint, loadCart, normalizedQuantity, physicalSupportCount } from "../commerce/cart.js";
 import { Shell } from "../layouts/StorefrontLayout.jsx";
 import { isKnownStorefrontPath, pageMetadata, setCanonicalUrl, setMetaContent } from "./metadata.js";
@@ -17,9 +16,6 @@ export default function StorefrontV3() {
   useEffect(() => {
     captureStorefrontAttribution();
     trackStorefrontEvent("page_view", { page_title: pageMetadata(path)[0] });
-    if (path.startsWith("/secteurs/") && findSectorBySlug(path.split("/")[2])) {
-      trackStorefrontEvent("view_sector", { sector_slug: path.split("/")[2] });
-    }
     const productSlug = path.match(/^\/produits\/(comptoir|plaque|carte)$/)?.[1];
     const productId = productSlug === "comptoir" ? "comptoir_standard"
       : productSlug === "plaque" ? "plaque_standard"

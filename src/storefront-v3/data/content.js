@@ -220,42 +220,6 @@ export const FAQ_GROUPS = [
   },
 ];
 
-export const PILOT_PROOF_TRACKS = [
-  {
-    title: "Avis au moment du paiement",
-    context: "Café, restaurant ou commerce",
-    sectorId: "cafe",
-    surface: "comptoir",
-    actionId: "avis",
-    theme: "nuit",
-    caption: "Aperçu natif Tapote Comptoir",
-    description: "Mesurer si le support est vu, compris et utilisé lorsque l’attention revient naturellement vers le comptoir.",
-    checks: ["Emplacement et lisibilité", "Lecture NFC + QR", "Interactions sur une période définie"],
-  },
-  {
-    title: "Réservation à l’accueil",
-    context: "Salon, cabinet ou établissement",
-    sectorId: "salon",
-    surface: "plaque",
-    actionId: "reservation",
-    theme: "creme",
-    caption: "Aperçu natif Tapote Plaque",
-    description: "Comparer l’entrée, l’accueil et la sortie pour trouver le moment où la réservation devient la plus naturelle.",
-    checks: ["Compréhension du message", "Comparaison des emplacements", "Destination et conversion documentées"],
-  },
-  {
-    title: "Contact en rendez-vous",
-    context: "Artisan, indépendant ou équipe terrain",
-    sectorId: "immobilier",
-    surface: "carte",
-    actionId: "contact",
-    theme: "creme",
-    caption: "Aperçu natif Tapote Card",
-    description: "Observer le passage de la carte physique au contact, au portfolio ou à la demande d’avis dans une vraie interaction.",
-    checks: ["Geste expliqué en quelques secondes", "Compatibilité iPhone + Android", "Retour qualitatif autorisé"],
-  },
-];
-
 export const SHOP_ITEMS = [
   {
     surface: "comptoir",

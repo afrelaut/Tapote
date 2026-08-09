@@ -3,24 +3,19 @@ import { lazy, Suspense } from "react";
 const PilotApp = lazy(() => import("./pilot/PilotApp.jsx"));
 const AccessApp = lazy(() => import("./access/AccessApp.jsx"));
 const ManagementApp = lazy(() => import("./ManagementApp.jsx"));
-const CaseStudiesApp = lazy(() => import("./CaseStudiesApp.jsx"));
 const StoreApp = lazy(() => import("./StorefrontV3.jsx"));
 
 export default function RouteApp() {
   const pilotRoute = window.location.pathname === "/pilot" || window.location.pathname.startsWith("/pilot/");
   const accessRoute = window.location.pathname === "/connexion" || window.location.pathname.startsWith("/connexion/");
   const managementRoute = window.location.pathname === "/gestion" || window.location.pathname.startsWith("/gestion/");
-  const normalizedPath = window.location.pathname.replace(/\/+$/, "");
-  const caseStudiesRoute = normalizedPath === "/cas-clients";
   const CurrentApp = accessRoute
     ? AccessApp
     : managementRoute
       ? ManagementApp
       : pilotRoute
         ? PilotApp
-        : caseStudiesRoute
-          ? CaseStudiesApp
-          : StoreApp;
+        : StoreApp;
   const loadingLabel = accessRoute
     ? "Ouverture de votre espace…"
     : managementRoute

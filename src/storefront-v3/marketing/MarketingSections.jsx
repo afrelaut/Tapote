@@ -204,7 +204,6 @@ export function SectorCommercialSection() {
           </a>
         ))}
       </div>
-      <a className="v3-home-uses-all" href="/secteurs">Voir les recommandations par activité <Grid3X3 /></a>
     </section>
   );
 }
@@ -418,7 +417,7 @@ export function ProductPilotProof({ data }) {
           <div><dt>Action testée</dt><dd>{proof.action}</dd></div>
           <div><dt>Contrôles</dt><dd>NFC, QR, compréhension et tenue</dd></div>
         </dl>
-        <div><a href="/preuves">Voir le protocole <ArrowRight /></a><a href="/devis">Proposer un terrain pilote</a></div>
+        <div><a href="/devis">Proposer un terrain pilote <ArrowRight /></a></div>
       </div>
       <div className="v3-product-pilot-stage" aria-label={`Visualisation de ${data.name} pour préparer un test terrain`}>
         <span>APERÇU NATIF · PAS UNE PHOTO NI UN CAS CLIENT</span>

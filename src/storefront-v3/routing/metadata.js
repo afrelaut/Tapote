@@ -1,4 +1,3 @@
-import { findSectorBySlug, SECTORS } from "../../storefront/sectorData.js";
 import { PRODUCT_PAGES, resolveProductPageSlug } from "../data/content.js";
 
 /* Google tronque les descriptions vers 158 caractères. Les fiches produit
@@ -19,11 +18,6 @@ export function pageMetadata(path) {
     if (product) return [`${product.name}${/nfc/i.test(product.name) ? "" : " NFC"} + QR | Tapote`, clampDescription(`${product.description} Prêt à poser ou à votre image, Tapote Pilot inclus.`)];
   }
   if (path === "/designs") return ["Designs NFC + QR | Tapote", "Découvrez les designs Tapote pour les avis, Instagram, Facebook, le Wi-Fi, les menus, les réservations et tous vos liens."];
-  if (path === "/secteurs") return [`Tapote pour votre secteur | ${SECTORS.length} usages concrets`, "Découvrez les supports NFC + QR et les usages Tapote adaptés à votre métier."];
-  if (path.startsWith("/secteurs/")) {
-    const sector = findSectorBySlug(path.split("/")[2]);
-    if (sector) return [`Tapote pour ${sector.title}`, `${sector.promise} ${sector.description}`];
-  }
   if (path === "/personnaliser") return ["Créer mon Tapote personnalisé", "Personnalisez Tapote Comptoir, Tapote Plaque ou Tapote Card : logo, textes, couleurs et action."];
   if (path === "/comment-ca-marche") return ["Comment fonctionne Tapote ?", "NFC, QR code, encodage et changement de destination à distance expliqués simplement."];
   if (path === "/tapote-pilot") return ["Tapote Pilot inclus et Pilot Pro | Tapote", "Tapote Pilot est inclus pour activer vos supports et suivre leurs destinations. Pilot Pro ajoute statistiques, périodes, lieux, exports et multi-sites."];
@@ -38,10 +32,9 @@ export function pageMetadata(path) {
 }
 
 export function isKnownStorefrontPath(path) {
-  if (["/", "/boutique", "/designs", "/secteurs", "/personnaliser", "/comment-ca-marche", "/tapote-pilot", "/faq", "/panier", "/devis", "/commande", "/commande/confirmee", "/mentions-legales", "/cgv", "/confidentialite"].includes(path)) return true;
+  if (["/", "/boutique", "/designs", "/personnaliser", "/comment-ca-marche", "/tapote-pilot", "/faq", "/panier", "/devis", "/commande", "/commande/confirmee", "/mentions-legales", "/cgv", "/confidentialite"].includes(path)) return true;
   if (["/categorie/chevalets-nfc", "/categorie/plaques-nfc", "/categorie/cartes-nfc", "/categorie/packs-nfc", "/categorie/packs"].includes(path)) return true;
   if (path.startsWith("/produits/")) return Boolean(PRODUCT_PAGES[resolveProductPageSlug(path.split("/")[2])]);
-  if (path.startsWith("/secteurs/")) return Boolean(findSectorBySlug(path.split("/")[2]));
   return false;
 }
 

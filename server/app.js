@@ -37,11 +37,9 @@ const storefrontPaths = new Set([
   "/",
   "/boutique",
   "/designs",
-  "/secteurs",
   "/personnaliser",
   "/comment-ca-marche",
   "/tapote-pilot",
-  "/preuves",
   "/faq",
   "/panier",
   "/devis",
@@ -59,32 +57,15 @@ const storefrontPaths = new Set([
   "/produits/chevalet",
   "/produits/plaque",
   "/produits/carte",
-  "/secteurs/cafes-bars",
-  "/secteurs/restaurants-traiteurs-food-trucks",
-  "/secteurs/boulangeries-patisseries",
-  "/secteurs/beaute-coiffure-bien-etre",
-  "/secteurs/cabinets-medicaux-paramedicaux",
-  "/secteurs/boutiques-commerces",
-  "/secteurs/hebergements-tourisme",
-  "/secteurs/auto-ecoles",
-  "/secteurs/garages-mobilite",
-  "/secteurs/artisans-services-terrain",
-  "/secteurs/agences-independants",
-  "/secteurs/sport-studios",
-  "/secteurs/bureaux-formation",
-  "/secteurs/evenements-culture-associations",
-  "/secteurs/animaux-soins",
 ]);
 
 const routeMeta = new Map([
   ["/", ["Supports NFC + QR prêts ou personnalisés | Tapote", "Tapote Comptoir, Tapote Plaque, Tapote Card et Pack Local, prêts à poser ou à votre image. Destination initiale configurée et Tapote Pilot inclus."]],
   ["/boutique", ["Boutique NFC + QR | Tapote", "Choisissez Tapote Comptoir, Tapote Plaque, Tapote Card ou Pack Local, en mode Prêt à poser ou À votre image."]],
   ["/designs", ["Designs Tapote pour chaque usage", "Comparez les designs Tapote pour avis, menu, réservation, réseaux sociaux, Wi-Fi, paiement et autres liens professionnels."]],
-  ["/secteurs", ["Tapote pour votre secteur | 15 usages concrets", "Trouvez le support NFC + QR, le placement et l’usage Tapote adaptés à votre métier."]],
   ["/personnaliser", ["Personnaliser votre Tapote", "Créez votre Tapote en direct avec votre logo, vos couleurs, vos textes et votre destination, puis commandez le visuel affiché."]],
   ["/comment-ca-marche", ["Comment fonctionne Tapote ?", "NFC ou QR : le client approche son téléphone et ouvre instantanément l’avis, le menu, la réservation ou le lien choisi."]],
   ["/tapote-pilot", ["Tapote Pilot inclus et Pilot Pro | Tapote", "Tapote Pilot est inclus pour gérer les supports et leurs destinations. Pilot Pro ajoute les analyses par période, support et lieu, l’historique et les exports CSV."]],
-  ["/preuves", ["Preuves et série pilote | Tapote", "Découvrez les protocoles Tapote pour tester les supports, le geste NFC + QR et les futurs résultats terrain sans chiffres inventés."]],
   ["/faq", ["FAQ Tapote | NFC, QR, produits et livraison", "Réponses détaillées sur les supports Tapote, le NFC, le QR, le Studio, Pilot, Pilot Pro, la livraison et les projets multi-sites."]],
   ["/produits/comptoir", ["Tapote Comptoir NFC + QR | Tapote", "Un support vertical pour déclencher avis, réservation, menu, Wi-Fi ou tout autre lien au comptoir."]],
   ["/produits/chevalet", ["Tapote Comptoir NFC + QR | Tapote", "Le support visible au comptoir pour ouvrir l’avis, la réservation, le menu, le Wi-Fi ou le lien utile."]],
@@ -104,35 +85,13 @@ const routeMeta = new Map([
   ["/commande/confirmee", ["Suivi de commande | Tapote", "Consultez la confirmation et le statut de votre commande Tapote."]],
 ]);
 
-const sectorMetaTitles = new Map([
-  ["cafes-bars", "Cafés & bars"],
-  ["restaurants-traiteurs-food-trucks", "Restaurants, traiteurs & food trucks"],
-  ["boulangeries-patisseries", "Boulangeries & pâtisseries"],
-  ["beaute-coiffure-bien-etre", "Beauté, coiffure & bien-être"],
-  ["cabinets-medicaux-paramedicaux", "Cabinets médicaux & paramédicaux"],
-  ["boutiques-commerces", "Boutiques & commerces"],
-  ["hebergements-tourisme", "Hébergements & tourisme"],
-  ["auto-ecoles", "Auto-écoles"],
-  ["garages-mobilite", "Garages & mobilité"],
-  ["artisans-services-terrain", "Artisans & services terrain"],
-  ["agences-independants", "Agences & indépendants"],
-  ["sport-studios", "Sport & studios"],
-  ["bureaux-formation", "Bureaux & formation"],
-  ["evenements-culture-associations", "Événements, culture & associations"],
-  ["animaux-soins", "Animaux & soins"],
-]);
-
 const privateStorefrontPrefixes = ["/panier", "/commande", "/connexion", "/gestion", "/pilot"];
 const normalizeStorefrontPath = (pathname) => (String(pathname || "/").split(/[?#]/, 1)[0].replace(/\/+$/, "") || "/");
 
 export function storefrontMetaForPath(pathname, publicUrl = "https://tapote.fr") {
   const normalized = normalizeStorefrontPath(pathname);
-  const sectorSlug = normalized.startsWith("/secteurs/") ? normalized.slice("/secteurs/".length) : "";
-  const sectorTitle = sectorMetaTitles.get(sectorSlug);
   const fallback = ["Page introuvable | Tapote", "Retrouvez les supports NFC + QR Tapote et choisissez le bon usage pour votre activité."];
-  const [title, description] = sectorTitle
-    ? [`Tapote pour ${sectorTitle} | NFC + QR`, `Découvrez le support, le placement et les usages Tapote recommandés pour ${sectorTitle.toLocaleLowerCase("fr-FR")}.`]
-    : routeMeta.get(normalized) || fallback;
+  const [title, description] = routeMeta.get(normalized) || fallback;
   const noindex = !isKnownFrontendPath(normalized) || privateStorefrontPrefixes.some((prefix) => normalized === prefix || normalized.startsWith(`${prefix}/`));
   const base = String(publicUrl || "https://tapote.fr").replace(/\/+$/, "");
   return {

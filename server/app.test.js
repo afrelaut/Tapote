@@ -76,17 +76,18 @@ describe("API Tapote", () => {
     expect(isKnownFrontendPath("/")).toBe(true);
     expect(isKnownFrontendPath("/boutique/")).toBe(true);
     expect(isKnownFrontendPath("/tapote-pilot")).toBe(true);
-    expect(isKnownFrontendPath("/preuves")).toBe(true);
+    expect(isKnownFrontendPath("/preuves")).toBe(false);
     expect(isKnownFrontendPath("/faq")).toBe(true);
-    expect(isKnownFrontendPath("/secteurs/auto-ecoles")).toBe(true);
+    expect(isKnownFrontendPath("/secteurs")).toBe(false);
+    expect(isKnownFrontendPath("/secteurs/auto-ecoles")).toBe(false);
+    expect(isKnownFrontendPath("/cas-clients")).toBe(false);
     expect(isKnownFrontendPath("/gestion/commandes")).toBe(true);
     expect(isKnownFrontendPath("/produits/invente")).toBe(false);
     expect(isKnownFrontendPath("/secteurs/invente")).toBe(false);
   });
 
-  it("sert des métadonnées produit et secteur exploitables sans JavaScript", () => {
+  it("sert des métadonnées produit exploitables sans JavaScript", () => {
     const product = storefrontMetaForPath("/produits/plaque?ignored=true", "https://tapote.fr");
-    const sector = storefrontMetaForPath("/secteurs/auto-ecoles", "https://tapote.fr/");
     const quote = storefrontMetaForPath("/devis", "https://tapote.fr");
     const pilotMarketing = storefrontMetaForPath("/tapote-pilot", "https://tapote.fr");
     const legal = storefrontMetaForPath("/cgv", "https://tapote.fr");
@@ -97,8 +98,6 @@ describe("API Tapote", () => {
 
     expect(product.title).toContain("Tapote Plaque");
     expect(product.canonical).toBe("https://tapote.fr/produits/plaque");
-    expect(sector.title).toContain("Auto-écoles");
-    expect(sector.canonical).toBe("https://tapote.fr/secteurs/auto-ecoles");
     expect(quote).toMatchObject({
       title: "Devis volume et multi-sites | Tapote",
       canonical: "https://tapote.fr/devis",
@@ -136,22 +135,19 @@ describe("API Tapote", () => {
     expect(pilotMarketing.text).toContain("<title>Tapote Pilot inclus et Pilot Pro | Tapote</title>");
     expect(pilotMarketing.headers["x-robots-tag"]).toBe("index,follow,max-image-preview:large");
 
-    for (const [path, title] of [
-      ["/preuves", "Preuves et série pilote | Tapote"],
-      ["/faq", "FAQ Tapote | NFC, QR, produits et livraison"],
-    ]) {
-      const publicPage = await request(app).get(path).set("Accept", "text/html");
-      expect(publicPage.status).toBe(200);
-      expect(publicPage.text).toContain(`<title>${title}</title>`);
-      expect(publicPage.headers["x-robots-tag"]).toBe("index,follow,max-image-preview:large");
-    }
+    const faq = await request(app).get("/faq").set("Accept", "text/html");
+    expect(faq.status).toBe(200);
+    expect(faq.text).toContain("<title>FAQ Tapote | NFC, QR, produits et livraison</title>");
+    expect(faq.headers["x-robots-tag"]).toBe("index,follow,max-image-preview:large");
 
-    const missing = await request(app).get("/secteurs/invente").set("Accept", "text/html");
-    expect(missing.status).toBe(404);
-    expect(missing.text).toContain("<title>Page introuvable | Tapote</title>");
-    expect(missing.text).toContain('name="robots" content="noindex,nofollow"');
-    expect(missing.headers["cache-control"]).toBe("no-store");
-    expect(missing.headers["x-robots-tag"]).toBe("noindex,nofollow");
+    for (const path of ["/secteurs", "/secteurs/auto-ecoles", "/preuves", "/cas-clients"]) {
+      const missing = await request(app).get(path).set("Accept", "text/html");
+      expect(missing.status, path).toBe(404);
+      expect(missing.text, path).toContain("<title>Page introuvable | Tapote</title>");
+      expect(missing.text, path).toContain('name="robots" content="noindex,nofollow"');
+      expect(missing.headers["cache-control"], path).toBe("no-store");
+      expect(missing.headers["x-robots-tag"], path).toBe("noindex,nofollow");
+    }
 
     const missingHead = await request(app).head("/produits/invente").set("Accept", "text/html");
     expect(missingHead.status).toBe(404);

@@ -1,12 +1,10 @@
 import { useState } from "react";
-import { ArrowRight, Check, CheckCircle2, Clock3, Clapperboard, ClipboardList, Globe2, Layers3, Link2, MapPin, MessageCircle, Plus, QrCode, Search, ShieldCheck, SmartphoneNfc, Zap } from "lucide-react";
+import { ArrowRight, Check, Clock3, Globe2, Layers3, Link2, MessageCircle, Plus, QrCode, Search, SmartphoneNfc, Zap } from "lucide-react";
 import { motion } from "motion/react";
 import { ACTIONS, formatMoney, PILOT_PLANS } from "../../../shared/catalog.js";
-import { SECTOR_CATEGORIES, SECTORS } from "../../storefront/sectorData.js";
-import { ProductArt } from "../scenes/ProductArt.jsx";
-import { FAQ_GROUPS, PILOT_PROOF_TRACKS } from "../data/content.js";
-import { productPathForSector, sectorPreviewFor } from "../data/sectorPresentation.js";
-import { FinalCommercialCta, HowStrip, PilotMarketingSection } from "../marketing/MarketingSections.jsx";
+import { SECTORS } from "../../storefront/sectorData.js";
+import { FAQ_GROUPS } from "../data/content.js";
+import { PilotMarketingSection } from "../marketing/MarketingSections.jsx";
 import { PilotLevelDemo } from "../marketing/PilotAppMock.jsx";
 import { SectorScene } from "../scenes/ProductScene.jsx";
 
@@ -51,141 +49,6 @@ export function FaqPage() {
         </div>
       </div>
       <section className="v3-faq-final"><span>ENCORE UN DOUTE ?</span><h2>Montrez-nous votre parcours client.</h2><p>Pour 10 supports ou plus, Tapote vous aide à choisir les formats, les emplacements et les destinations.</p><a href="/devis">Préparer mon projet <ArrowRight /></a></section>
-    </main>
-  );
-}
-
-export function ProofCenterPage() {
-  return (
-    <main id="main-content" className="v3-proof-center">
-      <section className="v3-proof-center-hero">
-        <div>
-          <nav className="v3-breadcrumb" aria-label="Fil d’Ariane"><a href="/">Accueil</a><span>/</span><b>Preuves</b></nav>
-          <span className="v3-eyebrow v3-eyebrow-dark">SÉRIE PILOTE · PREUVES PUBLIÉES AVEC MÉTHODE</span>
-          <h1>La preuve se gagne<br />sur le terrain.</h1>
-          <p>Pas de faux avis, de logos empruntés ou de chiffres sans base. Tapote documente le produit physique, le geste et le résultat avant de les transformer en cas client.</p>
-          <div><a href="/devis">Participer à la série pilote <ArrowRight /></a><a href="#protocoles">Voir les protocoles</a></div>
-        </div>
-        <aside aria-label="Niveaux de preuve Tapote">
-          <span><CheckCircle2 /><b>Déjà montrable</b><small>Tapote Studio, écrans synchronisés et parcours Tapote Pilot.</small></span>
-          <span><Clock3 /><b>En validation</b><small>Matières, résistance, pose et lecture sur échantillons.</small></span>
-          <span><Clapperboard /><b>À publier ensuite</b><small>Vidéo réelle, avis liés à une commande et résultats par secteur.</small></span>
-        </aside>
-      </section>
-      <section className="v3-proof-principles" aria-label="Règles de publication">
-        <span><ShieldCheck /><b>Aucune preuve inventée</b><small>Un statut clair pour chaque élément.</small></span>
-        <span><SmartphoneNfc /><b>Le geste est testé</b><small>NFC et QR sur appareils réels.</small></span>
-        <span><MapPin /><b>Le lieu est documenté</b><small>Contexte et emplacement visibles.</small></span>
-        <span><ClipboardList /><b>La mesure est définie</b><small>Période et indicateur annoncés.</small></span>
-      </section>
-      <section className="v3-proof-tracks" id="protocoles">
-        <header><span className="v3-eyebrow">TERRAINS PILOTES À DOCUMENTER</span><h2>Trois gestes.<br />Trois protocoles.</h2><p>Ces visualisations préparent les tests. Elles ne deviennent des cas clients qu’après installation, mesure et autorisation de publication.</p></header>
-        <div>
-          {PILOT_PROOF_TRACKS.map((track) => {
-            const sector = SECTORS.find((item) => item.id === track.sectorId) || SECTORS[0];
-            const preview = {
-              surface: track.surface,
-              actionId: track.actionId,
-              theme: track.theme,
-              brandName: "tapote.",
-              personalization: "ready",
-            };
-            return (
-            <article key={track.title}>
-              <figure><SectorScene sector={sector} preview={preview} compact /><figcaption>{track.caption}</figcaption></figure>
-              <div><span>{track.context.toUpperCase()}</span><h3>{track.title}</h3><p>{track.description} Le cas terrain reste à documenter.</p><ul>{track.checks.map((check) => <li key={check}><CheckCircle2 /> {check}</li>)}</ul></div>
-              <footer><Clock3 /><span><b>Série pilote à constituer</b><small>Aucun résultat revendiqué</small></span></footer>
-            </article>
-          )})}
-        </div>
-      </section>
-      <section className="v3-proof-publication">
-        <div><span className="v3-eyebrow v3-eyebrow-dark">FORMAT D’UN FUTUR CAS CLIENT</span><h2>Un résultat lisible.<br />Et vérifiable.</h2><p>Chaque publication reliera le contexte, l’objectif, la mesure et la voix du client. Le centre de preuves pourra grandir sans perdre en crédibilité.</p></div>
-        <ol>
-          <li><span>01</span><b>Le contexte</b><small>Secteur, lieu, support et emplacement réel</small></li>
-          <li><span>02</span><b>L’objectif</b><small>Avis, réservation, menu, contact ou autre action</small></li>
-          <li><span>03</span><b>La mesure</b><small>Période, interactions NFC + QR et comparaison utile</small></li>
-          <li><span>04</span><b>La voix client</b><small>Citation autorisée et reliée à une vraie commande</small></li>
-        </ol>
-      </section>
-      <section className="v3-proof-final"><span>VOUS AVEZ UN LIEU À ÉQUIPER ?</span><h2>Construisons le premier cas solide.</h2><p>Tapote cherche des situations réelles où l’emplacement, le geste et la destination peuvent être testés proprement.</p><a href="/devis">Proposer un terrain pilote <ArrowRight /></a></section>
-    </main>
-  );
-}
-
-export function SectorDirectoryPage() {
-  return (
-    <main id="main-content" className="v3-sector-directory">
-      <header className="v3-sector-directory-hero">
-        <span className="v3-eyebrow">15 MÉTIERS · 1 USAGE PRIORITAIRE PAR PAGE</span>
-        <h1>Le bon Tapote<br />pour votre activité.</h1>
-        <p>Choisissez votre métier pour voir l’action prioritaire, le meilleur emplacement et la composition recommandée.</p>
-      </header>
-      {SECTOR_CATEGORIES.map((category) => (
-        <section className="v3-sector-directory-category" aria-labelledby={`v3-sector-category-${category.replace(/\W+/g, "-")}`} key={category}>
-          <div><span>{category}</span><h2 id={`v3-sector-category-${category.replace(/\W+/g, "-")}`}>{category}</h2></div>
-          <div>
-            {SECTORS.filter((sector) => sector.category === category).map((sector) => (
-              <a href={`/secteurs/${sector.slug}`} key={sector.id}>
-                <img src={sector.image} alt="" loading="lazy" />
-                <span>{ACTIONS[sector.actionIds[0]].name} en priorité</span>
-                <strong>{sector.title}</strong>
-                <small>{sector.placement}</small>
-                <b>Voir la stratégie <ArrowRight /></b>
-              </a>
-            ))}
-          </div>
-        </section>
-      ))}
-      <FinalCommercialCta />
-    </main>
-  );
-}
-
-export function SectorLandingPage({ sector }) {
-  const preview = sectorPreviewFor(sector);
-  const recommendedHref = productPathForSector(sector);
-  const recommendation = sector.recommendedProductId === "carte"
-    ? { title: "Tapote Card", copy: "Le format poche pour les rendez-vous et le terrain.", composition: "1 Tapote Card · NFC + QR" }
-    : { title: "Pack Local", copy: "Le Comptoir pour agir sur place, la Plaque pour prolonger le geste à l’entrée ou au mur.", composition: "1 Tapote Comptoir + 1 Tapote Plaque" };
-  return (
-    <main id="main-content" className="v3-sector-landing">
-      <section className="v3-sector-landing-hero">
-        <div>
-          <nav className="v3-breadcrumb" aria-label="Fil d’Ariane"><a href="/">Accueil</a><span>/</span><a href="/secteurs">Secteurs</a><span>/</span><b>{sector.title}</b></nav>
-          <span className="v3-eyebrow">{sector.category}</span>
-          <h1>Tapote pour<br />{sector.title.toLowerCase()}.</h1>
-          <p>{sector.description}</p>
-          <div className="v3-sector-landing-actions"><a href={recommendedHref}>Voir la recommandation <ArrowRight /></a><a href="/devis">Projet multi-supports</a></div>
-          <div className="v3-sector-placement"><MapPin /><span><small>LE BON EMPLACEMENT</small><strong>{sector.placement}</strong></span></div>
-        </div>
-        <SectorScene sector={sector} preview={preview} className="v3-sector-landing-scene" />
-      </section>
-      <section className="v3-sector-action-strip" aria-label="Actions adaptées au secteur">
-        {sector.actionIds.map((actionId, index) => <article key={actionId}><span>0{index + 1}</span><div><small>{index === 0 ? "ACTION PRIORITAIRE" : "ACTION COMPLÉMENTAIRE"}</small><strong>{ACTIONS[actionId].name}</strong><p>{ACTIONS[actionId].campaignSubline || ACTIONS[actionId].subline}</p></div></article>)}
-      </section>
-      <section className="v3-section v3-sector-recommendation">
-        <div>
-          <span className="v3-eyebrow">RECOMMANDATION TAPOTE</span>
-          <h2>{recommendation.title}.<br />Pas un pack au hasard.</h2>
-          <p>{recommendation.copy}</p>
-          <blockquote>{sector.script}</blockquote>
-          <a href={recommendedHref}>Voir le produit et le prix <ArrowRight /></a>
-        </div>
-        <aside>
-          <span>COMPOSITION CONSEILLÉE</span>
-          <strong>{recommendation.composition}</strong>
-          <div><ProductArt surface={preview.surface} actionId={sector.actionIds[0]} brandName="VOTRE MARQUE" theme={preview.theme} personalization="custom" customHeadline={preview.customHeadline} /></div>
-          <ul><li><Check /> NFC + QR</li><li><Check /> Destination visible dans Pilot</li><li><Check /> BAT avant production</li></ul>
-        </aside>
-      </section>
-      <HowStrip />
-      <section className="v3-section v3-sector-commercial-check">
-        <div><span className="v3-eyebrow">POURQUOI CETTE STRATÉGIE</span><h2>Le support suit le parcours client.</h2></div>
-        <div><article><span>01</span><h3>Le moment</h3><p>{sector.placement}</p></article><article><span>02</span><h3>La phrase</h3><p>{sector.script}</p></article><article><span>03</span><h3>La suite</h3><p>Suivez le geste, puis faites évoluer la destination avec Tapote Pilot Pro.</p></article></div>
-      </section>
-      <PilotMarketingSection />
-      <FinalCommercialCta />
     </main>
   );
 }

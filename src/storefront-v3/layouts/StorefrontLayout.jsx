@@ -239,7 +239,7 @@ function Footer() {
       <div className="v3-footer-main">
         <div><Brand /><p>Transformez chaque visite<br />en la bonne action.</p><small>NFC + QR · Prêt à poser ou à votre image · Tapote Pilot inclus.</small></div>
         <div><strong>Acheter</strong><a href="/boutique">Toute la boutique</a><a href="/produits/comptoir">Tapote Comptoir</a><a href="/produits/plaque">Tapote Plaque</a><a href="/produits/carte">Tapote Card</a><a href="/boutique#packs">Pack Local</a></div>
-        <div><strong>Découvrir</strong><a href="/boutique">Choisir un support</a><a href="/comment-ca-marche">Comment ça marche</a><a href="/tapote-pilot">Tapote Pilot</a><a href="/secteurs">Solutions par métier</a><a href="/devis">Devis dès 10 supports</a></div>
+        <div><strong>Découvrir</strong><a href="/boutique">Choisir un support</a><a href="/comment-ca-marche">Comment ça marche</a><a href="/tapote-pilot">Tapote Pilot</a><a href="/devis">Devis dès 10 supports</a></div>
         <div><strong>Aide</strong><a href="/faq">Questions fréquentes</a><a href="mailto:aymeric@tapote.fr">Nous contacter</a><a href="/cgv">Livraison et garanties</a><a href="/confidentialite">Données et confidentialité</a><a href="/connexion">Accéder à Pilot</a></div>
       </div>
       <div className="v3-footer-bottom"><span>© 2026 Tapote</span><a href="/mentions-legales">Mentions légales</a><a href="/cgv">CGV</a><a href="/confidentialite">Confidentialité</a></div>
