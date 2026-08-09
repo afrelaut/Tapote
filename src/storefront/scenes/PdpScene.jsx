@@ -15,19 +15,29 @@ const ProductStudio3D = lazy(() => import("./ProductStudio3D.jsx"));
 // cette découpe, la moindre imprécision laisse l'interface déborder sur le
 // biseau ou sur la main.
 
+// Les scènes « fond vide » ne photographient pas leur propre téléphone : elles
+// superposent toutes le même calque main + téléphone du Restaurant. Leur
+// géométrie de verre est donc rigoureusement identique, et la déclarer une
+// seule fois évite qu'un fond ajouté plus tard reparte sans la sienne — ce qui
+// laissait l'écran se poser hors du cadre, verre blanc à l'appui.
+const COMPOSITED_PHONE_QUAD = [[0.46709, 0.25773], [0.69149, 0.21130], [0.95828, 0.69250], [0.71273, 0.77095]];
+
+const COMPOSITED_PHONE_SCENES = [
+  "/assets/products/tapote-bg-restaurant-live-screen-v1.webp",
+  "/assets/products/tapote-bg-cafe-empty-v3.webp",
+  "/assets/products/tapote-bg-boulangerie-empty-v2.png",
+  "/assets/products/tapote-bg-beaute-empty-v2.png",
+  "/assets/products/tapote-bg-agence-empty-v2.png",
+  "/assets/products/tapote-bg-sport-empty-v2.png",
+  "/assets/products/tapote-bg-evenement-empty-v2.png",
+  "/assets/products/tapote-bg-formation-empty-v2.png",
+];
+
 const PHONE_SCREEN_QUADS = {
   // Four measured intersections of the photographed glass edges. Keeping the
   // full quadrilateral (instead of approximating its centre) makes both the
   // browser chrome and the home indicator parallel to the physical phone.
-  "/assets/products/tapote-bg-restaurant-live-screen-v1.webp": [[0.46709, 0.25773], [0.69149, 0.21130], [0.95828, 0.69250], [0.71273, 0.77095]],
-  "/assets/products/tapote-bg-cafe-empty-v3.webp": [[0.46709, 0.25773], [0.69149, 0.21130], [0.95828, 0.69250], [0.71273, 0.77095]],
-  "/assets/products/tapote-bg-boulangerie-empty-v2.png": [[0.46709, 0.25773], [0.69149, 0.21130], [0.95828, 0.69250], [0.71273, 0.77095]],
-  "/assets/products/tapote-bg-agence-empty-v2.png": [[0.46709, 0.25773], [0.69149, 0.21130], [0.95828, 0.69250], [0.71273, 0.77095]],
-  "/assets/products/tapote-bg-sport-empty-v2.png": [[0.46709, 0.25773], [0.69149, 0.21130], [0.95828, 0.69250], [0.71273, 0.77095]],
-  "/assets/products/tapote-bg-evenement-empty-v2.png": [[0.46709, 0.25773], [0.69149, 0.21130], [0.95828, 0.69250], [0.71273, 0.77095]],
-  // La scène Coworking réutilise volontairement les pixels et la géométrie
-  // du téléphone Restaurant, superposés sur son propre fond vide.
-  "/assets/products/tapote-bg-formation-empty-v2.png": [[0.46709, 0.25773], [0.69149, 0.21130], [0.95828, 0.69250], [0.71273, 0.77095]],
+  ...Object.fromEntries(COMPOSITED_PHONE_SCENES.map((scene) => [scene, COMPOSITED_PHONE_QUAD])),
   // Contrairement aux autres scènes, le téléphone Café est davantage tourné
   // et ses quatre bords ne convergent pas autour d'un simple rectangle incliné.
   // Ces intersections suivent précisément la limite verre / écran de la photo :
@@ -56,12 +66,8 @@ const PHONE_SCREEN_CLIP_RADII = {
   // dynamique dépasse du verre sans modifier son haut, déjà correctement calé.
   "/assets/products/tapote-bg-cafe-v1.webp": [60, 60, 106, 76],
   "/assets/products/tapote-bg-cafe-restaurant-phone-v2.webp": [60, 60, 90, 90],
-  "/assets/products/tapote-bg-cafe-empty-v3.webp": [60, 60, 82, 76],
-  "/assets/products/tapote-bg-boulangerie-empty-v2.png": [60, 60, 82, 76],
-  "/assets/products/tapote-bg-agence-empty-v2.png": [60, 60, 82, 76],
-  "/assets/products/tapote-bg-sport-empty-v2.png": [60, 60, 82, 76],
-  "/assets/products/tapote-bg-evenement-empty-v2.png": [60, 60, 82, 76],
-  "/assets/products/tapote-bg-formation-empty-v2.png": [60, 60, 82, 76],
+  // Même calque, mêmes rayons que le quadrilatère partagé ci-dessus.
+  ...Object.fromEntries(COMPOSITED_PHONE_SCENES.map((scene) => [scene, [60, 60, 82, 76]])),
   "/assets/products/tapote-bg-restaurant-v1.webp": [60, 60, 80, 118],
   "/assets/products/tapote-bg-boulangerie-v1.webp": [60, 60, 95, 79],
   "/assets/products/tapote-bg-beaute-v1.webp": [60, 60, 90, 83.5],
@@ -325,6 +331,7 @@ export default function PdpScene({
       ref={sceneRef}
       className={`v3-sector-scene ${compact ? "is-compact is-fixed-preview" : "is-live-preview"} is-surface-${preview.surface} ${className}`}
       data-preview-mode={compact ? "fixed" : "live"}
+      data-scene-view={activeView}
       data-scene-engine="pdp"
       data-scene-budget={compact ? "compact" : "responsive"}
       aria-hidden={compact || undefined}

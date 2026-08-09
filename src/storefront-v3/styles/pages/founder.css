@@ -869,15 +869,34 @@
     object-position: 58% center;
   }
 
+  /* Sur téléphone le texte passe SOUS la scène, plus à côté d'elle. Le voile
+     latéral hérité de l'affichage large n'y protégeait donc plus aucune
+     lecture : il ne faisait qu'assombrir le support, posé à gauche, jusqu'à le
+     rendre illisible sur son fond déjà noir. Le voile se limite désormais à la
+     zone du texte, et libère complètement les 356 px de scène. */
   .v3-founder-scrim {
     right: 0;
     width: 100%;
-    background:
-      linear-gradient(0deg, rgb(4 5 8 / 96%) 0%, rgb(4 5 8 / 70%) 54%, rgb(4 5 8 / 18%) 100%),
-      linear-gradient(90deg, rgb(4 5 8 / 58%), transparent);
+    background: linear-gradient(
+      180deg,
+      rgb(4 5 8 / 0%) 0,
+      rgb(4 5 8 / 6%) 296px,
+      rgb(4 5 8 / 68%) 372px,
+      rgb(4 5 8 / 94%) 470px,
+      rgb(4 5 8 / 96%) 100%
+    );
   }
 
   .v3-hero-3d__toolbar {
+    display: none;
+  }
+
+  /* Les trois cartes flottantes sont ancrées sur toute la hauteur du héros, pas
+     sur les 356 px de scène : sur téléphone elles retombaient sur le titre et
+     sur le socle du support. Leurs trois promesses sont déjà tenues par la
+     bande de preuves qui suit immédiatement le héros — les répéter par-dessus
+     le produit coûtait la lisibilité des deux. */
+  .v3-hero-tech-cards {
     display: none;
   }
 
@@ -1440,6 +1459,19 @@
     transform: none;
   }
 
+  /* La lueur restait calée sur la moitié droite, héritée du cadrage large où le
+     support occupait ce côté. Sur téléphone il passe à gauche : il se retrouvait
+     hors de toute lumière, noir sur noir. La lueur couvre maintenant la scène
+     entière et s'ancre derrière le support. */
+  .v3-hero-3d__light {
+    left: 0;
+    height: 372px;
+    bottom: auto;
+    background:
+      radial-gradient(ellipse 62% 46% at 30% 48%, rgb(74 116 255 / 30%), transparent 70%),
+      radial-gradient(ellipse 48% 38% at 74% 32%, rgb(255 255 255 / 12%), transparent 72%);
+  }
+
   .v3-hero-product-object {
     left: 6%;
     top: 50%;
@@ -1543,8 +1575,22 @@
   background: #111318;
 }
 
+/* La photographie de mise en situation est carrée, et le téléphone occupe sa
+   moitié droite. Dès que la scène s'écarte du carré, `object-fit: cover` rogne
+   les côtés : le téléphone perd sa tranche droite, et l'écran projeté — qui le
+   suit fidèlement — disparaît avec elle. La vue garde donc le format de sa
+   source, et c'est la hauteur qui s'ajuste, jamais le cadrage. */
+/* Le plateau de la mise en situation est toujours carré : il est posé en absolu
+   et tire sa hauteur de `aspect-ratio: 1`. Donner au cadre une hauteur libre le
+   désaccordait de son plateau — la photographie débordait en haut et en bas, et
+   le téléphone y perdait sa tranche droite avec l'écran projeté dessus. Le
+   cadre reprend donc le carré de sa source. */
+.v3-product-live-scene[data-scene-view="context"] {
+  min-height: 0;
+  aspect-ratio: 1;
+}
+
 .v3-product-live-scene .v3-sector-scene-stage {
-  min-height: min(670px, 68vh);
   aspect-ratio: 1;
 }
 
@@ -1976,8 +2022,12 @@
 
 @media (max-width: 900px) {
   .v3-product-gallery { position: relative; top: auto; }
-  .v3-product-live-scene,
-  .v3-product-live-scene .v3-sector-scene-stage { min-height: 347px; }
+  /* La scène est le produit : sur téléphone l'objet 3D garde une hauteur utile
+     plutôt que la bande de 347 px qui l'écrasait contre le téléphone. La mise
+     en situation, elle, reste au format de sa photographie : l'étirer ferait
+     recadrer `object-fit: cover` et rognerait le téléphone photographié. */
+  .v3-product-live-scene[data-scene-view="studio"] { min-height: min(58vh, 430px); }
+  .v3-product-live-scene[data-scene-view="context"] { min-height: 0; }
   .v3-sector-commercial-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .v3-trust-roadmap,
   .v3-sector-directory-category,
@@ -2002,8 +2052,7 @@
 }
 
 @media (max-width: 520px) {
-  .v3-product-live-scene,
-  .v3-product-live-scene .v3-sector-scene-stage { min-height: 267px; }
+  .v3-product-live-scene[data-scene-view="studio"] { min-height: min(56vh, 412px); }
   .v3-product-live-scene { border-radius: 17px; }
   .v3-product-sector-control { padding: 9px; border-radius: 13px; }
   .v3-product-materials > div { grid-template-columns: 1fr; }

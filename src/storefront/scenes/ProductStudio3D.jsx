@@ -9,6 +9,7 @@ import {
   DirectionalLight,
   Group,
   LinearFilter,
+  LinearMipmapLinearFilter,
   Mesh,
   MeshBasicMaterial,
   MeshPhysicalMaterial,
@@ -34,6 +35,10 @@ const PRODUCT_LABELS = {
   carte: "Tapote Card",
 };
 
+// Facteur de capture de l'impression. Deux suffit : au-delà, la texture dépasse
+// les 4096 px que certains téléphones refusent encore, pour un gain invisible.
+const PRINT_TEXTURE_SCALE = 2;
+
 function supportsWebGl() {
   if (typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent || "")) return false;
   try {
@@ -47,12 +52,17 @@ function supportsWebGl() {
   }
 }
 
-function makePrintTexture(canvas) {
+// L'impression capturée est vue de biais et réduite : sans mipmaps elle
+// scintille sur les petits caractères, et sans anisotropie elle se délave sur
+// la tranche la plus inclinée. Les deux réglages coûtent une passe de
+// génération, une seule fois par texture.
+function makePrintTexture(canvas, maxAnisotropy) {
   const texture = new CanvasTexture(canvas);
   texture.colorSpace = SRGBColorSpace;
-  texture.minFilter = LinearFilter;
+  texture.generateMipmaps = true;
+  texture.minFilter = LinearMipmapLinearFilter;
   texture.magFilter = LinearFilter;
-  texture.anisotropy = 4;
+  texture.anisotropy = maxAnisotropy;
   texture.needsUpdate = true;
   return texture;
 }
@@ -245,10 +255,14 @@ export default function ProductStudio3D({
         await document.fonts?.ready;
         frameId = window.requestAnimationFrame(async () => {
           try {
+            // La source mesure 760 px de large : capturée à l'échelle 1, elle
+            // devenait la limite de netteté de tout l'objet, quel que soit le
+            // soin mis au rendu. Doubler la capture donne au texte imprimé et
+            // au QR la finesse attendue sur un écran de téléphone récent.
             const canvas = await toCanvas(source, {
               backgroundColor: primaryColor,
               cacheBust: true,
-              pixelRatio: 1,
+              pixelRatio: PRINT_TEXTURE_SCALE,
             });
             if (!cancelled) setCapturedArtwork({ key: artworkKey, canvas });
           } catch {
@@ -294,7 +308,12 @@ export default function ProductStudio3D({
     renderer.outputColorSpace = SRGBColorSpace;
     renderer.toneMapping = ACESFilmicToneMapping;
     renderer.toneMappingExposure = hero ? 1.12 : 1.18;
-    renderer.shadowMap.enabled = !mobile;
+    // L'ombre portée est ce qui pose l'objet sur son socle. Privée d'elle, la
+    // scène mobile donnait un support en lévitation, plat et sans matière —
+    // exactement l'inverse de ce que la 3D est censée prouver. Une seule carte
+    // d'ombre passe sans peine sur un téléphone récent ; seule sa définition
+    // s'adapte.
+    renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = PCFShadowMap;
 
     const scene = new Scene();
@@ -310,8 +329,8 @@ export default function ProductStudio3D({
     scene.add(new AmbientLight("#eef3ff", hero ? 1.3 : 1.75));
     const keyLight = new DirectionalLight("#ffffff", hero ? 5.6 : 5);
     keyLight.position.set(4.8, 6.2, 5.8);
-    keyLight.castShadow = !mobile;
-    keyLight.shadow.mapSize.set(1024, 1024);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.setScalar(mobile ? 1024 : 2048);
     keyLight.shadow.camera.near = 0.5;
     keyLight.shadow.camera.far = 22;
     scene.add(keyLight);
@@ -322,7 +341,7 @@ export default function ProductStudio3D({
     fillLight.position.set(0, -2.8, 4.2);
     scene.add(fillLight);
 
-    const texture = makePrintTexture(artworkCanvas);
+    const texture = makePrintTexture(artworkCanvas, renderer.capabilities.getMaxAnisotropy());
     const product = buildProduct(surface, texture, primaryColor);
     // Keep the physical relationship credible beside a ~147 mm smartphone:
     // Comptoir is roughly phone-height, Plaque slightly shorter, Card compact.
@@ -361,8 +380,8 @@ export default function ProductStudio3D({
         }),
       );
       pedestal.position.set(product.position.x, pedestalY, -0.15);
-      pedestal.receiveShadow = !mobile;
-      pedestal.castShadow = !mobile;
+      pedestal.receiveShadow = true;
+      pedestal.castShadow = true;
       scene.add(pedestal);
     }
 
@@ -377,7 +396,7 @@ export default function ProductStudio3D({
       );
       floor.rotation.x = -Math.PI / 2;
       floor.position.y = -1.74;
-      floor.receiveShadow = !mobile;
+      floor.receiveShadow = true;
       scene.add(floor);
     }
 

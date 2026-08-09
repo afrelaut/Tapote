@@ -1,5 +1,5 @@
-import { useRef, useState } from "react";
-import { ArrowRight, Check, CheckCircle2, CircleDollarSign, Link2, MapPin, PackageCheck, Plus, SmartphoneNfc, Sparkles, Star } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowRight, Check, CheckCircle2, CircleDollarSign, Link2, MapPin, PackageCheck, Plus, SmartphoneNfc, Sparkles, Star, X } from "lucide-react";
 import { ACTIONS, formatMoney, PRODUCTS } from "../../../shared/catalog.js";
 import { SECTORS } from "../../storefront/sectorData.js";
 import { compositionSurface, getProductId, makeCartItem } from "../commerce/cart.js";
@@ -162,6 +162,19 @@ export function ProductPage({ page, onAdd }) {
     count: 1,
   });
   const initialCtaRef = useRef(null);
+  // L'aperçu plein écran n'existe que sur téléphone : ailleurs, la scène reste
+  // visible en permanence à côté du configurateur.
+  const [previewSheetOpen, setPreviewSheetOpen] = useState(false);
+  useEffect(() => {
+    if (!previewSheetOpen) return undefined;
+    const closeOnEscape = (event) => { if (event.key === "Escape") setPreviewSheetOpen(false); };
+    document.addEventListener("keydown", closeOnEscape);
+    document.body.classList.add("v3-preview-sheet-open");
+    return () => {
+      document.removeEventListener("keydown", closeOnEscape);
+      document.body.classList.remove("v3-preview-sheet-open");
+    };
+  }, [previewSheetOpen]);
   if (!data) return <NotFound />;
   const activeMode = productPreview.personalization || requestedMode;
   const selectProductSector = (nextSector) => {
@@ -215,9 +228,30 @@ export function ProductPage({ page, onAdd }) {
             onPreviewChange={setProductPreview}
             draftKey={`pdp:${data.key}`}
             stickyTriggerRef={initialCtaRef}
+            onOpenPreview={() => setPreviewSheetOpen(true)}
           />
         </div>
       </section>
+      {/* L'aperçu suit la configuration en direct : rouvert depuis n'importe
+          quel réglage, il montre l'état exact du support à cet instant. */}
+      {previewSheetOpen && (
+        <div className="v3-preview-sheet" role="dialog" aria-modal="true" aria-label={`Aperçu de ${data.name}`}>
+          <button type="button" className="v3-preview-sheet-backdrop" onClick={() => setPreviewSheetOpen(false)} aria-label="Fermer l’aperçu" />
+          <div className="v3-preview-sheet-panel">
+            <header>
+              <span><small>Votre configuration</small><strong>{data.name}</strong></span>
+              <button type="button" onClick={() => setPreviewSheetOpen(false)} aria-label="Fermer l’aperçu"><X /></button>
+            </header>
+            <SectorScene
+              key={`sheet-${productSector.id}-${data.key}`}
+              sector={productSector}
+              preview={{ ...productPreview, surface: compositionSurface(productPreview.count || 1, productPreview.composition, data.key), baseSurface: data.key, count: productPreview.count || 1 }}
+              className="v3-product-live-scene"
+            />
+            <button type="button" className="v3-preview-sheet-resume" onClick={() => setPreviewSheetOpen(false)}>Continuer la configuration <ArrowRight /></button>
+          </div>
+        </div>
+      )}
       <ProductExamplesSection data={data} mode={activeMode} />
       <section className="v3-section v3-product-details">
         <div className="v3-section-heading"><span className="v3-eyebrow">L’ESSENTIEL</span><h2>Ce que vous recevez.</h2><p>Un support prêt pour son premier tap.</p></div>

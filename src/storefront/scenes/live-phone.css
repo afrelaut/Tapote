@@ -6,7 +6,12 @@
 .v3-live-phone-status { position: absolute; top: 3.2%; right: 7%; left: 7%; display: flex; align-items: center; gap: 5px; font-size: clamp(5px, .72vw, 9px); font-weight: 800; }
 .v3-live-phone-status i { margin-left: auto; width: 16%; height: 4px; background: repeating-linear-gradient(90deg, #111 0 2px, transparent 2px 4px); }
 .v3-live-phone-status b { font-size: inherit; }
-.v3-live-phone-browser { min-height: 16%; display: grid; grid-template-columns: auto 1fr auto; align-items: end; gap: 5px; padding-bottom: 6%; border-bottom: 1px solid #e4e6ea; font-size: clamp(6px, .8vw, 10px); }
+/* La barre de titre reprend les mesures d'iOS. L'écran vit dans un viewport
+   logique de 390 x 844 : ses hauteurs se posent donc en points réels, pas en
+   pourcentages. Une barre de 16 % faisait 74 pt là où iOS en réserve 44, et son
+   contenu calé en bas creusait encore l'écart avec l'heure : le titre flottait
+   au milieu du vide, ce qu'aucune application ne fait. */
+.v3-live-phone-browser { min-height: 44px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 5px; padding-bottom: 10px; border-bottom: 1px solid #e4e6ea; font-size: clamp(6px, .8vw, 10px); }
 .v3-live-phone-browser strong { text-align: center; }
 .v3-live-phone-browser i { font-style: normal; letter-spacing: .08em; }
 .v3-live-phone-content { flex: 1; display: flex; flex-direction: column; align-items: stretch; justify-content: center; text-align: left; }
@@ -269,7 +274,7 @@
 .v3-live-phone-status .is-battery { position: relative; width: 19px; height: 9px; margin-left: 0; display: block; box-sizing: border-box; background: transparent; border: 1.6px solid currentColor; border-radius: 2.5px; }
 .v3-live-phone-status .is-battery::before { content: ""; position: absolute; top: 1px; right: 1px; bottom: 1px; left: 1px; background: currentColor; border-radius: 1px; }
 .v3-live-phone-status .is-battery::after { content: ""; position: absolute; top: 2px; right: -3px; width: 2px; height: 4px; background: currentColor; border-radius: 0 2px 2px 0; }
-.v3-live-phone-browser { min-height: 52px; grid-template-columns: 28px minmax(0, 1fr) 28px; gap: 10px; padding-bottom: 14px; align-items: end; border-color: #e0e2e6; font-size: 15px; }
+.v3-live-phone-browser { min-height: 44px; grid-template-columns: 28px minmax(0, 1fr) 28px; gap: 10px; padding-bottom: 10px; align-items: center; border-color: #e0e2e6; font-size: 15px; }
 .v3-live-phone-browser > span { font-size: 28px; font-weight: 400; line-height: .7; }
 .v3-live-phone-browser i { font-size: 12px; }
 .v3-live-phone-content { padding-top: 22px; justify-content: flex-start; }

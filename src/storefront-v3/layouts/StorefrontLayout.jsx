@@ -150,11 +150,31 @@ function Header({ cartCount, compact = false }) {
               Boutique <ChevronDown />
             </button>
             <a className="v3-shop-mobile-link" href="/boutique" onClick={() => setOpen(false)}>Boutique</a>
+            {/* Le menu large montre le produit ; sa version téléphone n'en
+                donnait que le nom. Or c'est là que se fait l'essentiel des
+                visites : on y choisit un support sans jamais l'avoir vu. Chaque
+                entrée porte donc le même visuel que le grand menu. */}
             <div className="v3-mobile-products" aria-label="Produits Tapote">
-              <a href="/produits/comptoir" onClick={() => setOpen(false)}>Comptoir</a>
-              <a href="/produits/plaque" onClick={() => setOpen(false)}>Plaque</a>
-              <a href="/produits/carte" onClick={() => setOpen(false)}>Card</a>
-              <a href="/boutique#packs" onClick={() => setOpen(false)}>Pack Local</a>
+              {["comptoir", "plaque", "carte", "packs"].map((previewId) => {
+                const preview = SHOP_MENU_PREVIEWS[previewId];
+                return (
+                  <a href={preview.href} onClick={() => setOpen(false)} key={previewId}>
+                    <span className="v3-mobile-product-art" aria-hidden="true">
+                      <ProductArt
+                        surface={preview.surface}
+                        actionId={preview.actionId}
+                        brandName="tapote."
+                        theme={preview.theme}
+                        personalization="ready"
+                      />
+                    </span>
+                    <span className="v3-mobile-product-copy">
+                      <strong>{preview.title}</strong>
+                      <small>{preview.eyebrow}</small>
+                    </span>
+                  </a>
+                );
+              })}
             </div>
             <div className={shopMenuOpen ? "v3-shop-mega is-open" : "v3-shop-mega"} id="v3-shop-mega">
               <div className="v3-shop-mega-column">
