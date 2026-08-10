@@ -169,6 +169,22 @@ export const SHOP_MENU_PREVIEWS = {
     theme: "creme",
     customHeadline: "Réservez ici.",
   },
+  volume: {
+    isPack: true,
+    productId: "volume_10",
+    // Les pastilles ajoutent déjà le signe « × » : une valeur vide indique
+    // volontairement une quantité libre, sans suggérer de composition fixe.
+    composition: { comptoir: "", plaque: "", carte: "" },
+    eyebrow: "PROJET DÈS 10 SUPPORTS · SUR DEVIS",
+    title: "Composition libre",
+    detail: "Formats et quantités au choix selon votre projet.",
+    href: "/devis",
+    surface: "comptoir",
+    actionId: "avis",
+    brandName: "VOTRE MARQUE",
+    theme: "nuit",
+    customHeadline: "Votre projet, partout.",
+  },
 };
 
 export const HOME_SCENES = {

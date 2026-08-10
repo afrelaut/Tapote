@@ -5,7 +5,7 @@ import { SECTORS } from "../../storefront/sectorData.js";
 import { BuyBox } from "../commerce/ProductConfigurator.jsx";
 import { HOME_SCENES, PRODUCT_PAGES, readyHeadlineForAction } from "../data/content.js";
 import { NotFound } from "./LegalPages.jsx";
-import { ProductExamplesSection, ProductFaqSection, ProductOrderJourney, RelatedProducts, SectorSelector, WhyTapote } from "../marketing/MarketingSections.jsx";
+import { ProductFaqSection, ProductOrderJourney, RelatedProducts, SectorSelector, WhyTapote } from "../marketing/MarketingSections.jsx";
 import { SectorScene, ShopProductPreview } from "../scenes/ProductScene.jsx";
 import { ProductArt } from "../scenes/ProductArt.jsx";
 import { PackArt } from "../scenes/PackArt.jsx";
@@ -145,6 +145,11 @@ function ProductPageContent({ data, onAdd }) {
       productId: productPreview.productId,
     });
   };
+  const pilotPreview = {
+    comptoir: { actionId: "avis", theme: "nuit", label: "Avis Google" },
+    plaque: { actionId: "reservation", theme: "creme", label: "Réservation" },
+    carte: { actionId: "contact", theme: "nuit", label: "Contact" },
+  }[data.key];
   return (
     <main id="main-content" className="v3-pdp">
       <section className="v3-product-hero" aria-labelledby="v3-product-title">
@@ -207,7 +212,6 @@ function ProductPageContent({ data, onAdd }) {
           />
         </div>
       </section>
-      <ProductExamplesSection data={data} mode={activeMode} />
       <section className="v3-section v3-product-details">
         <div className="v3-section-heading"><span className="v3-eyebrow">L’ESSENTIEL</span><h2>Prêt à poser.</h2></div>
         <div className="v3-product-detail-grid">
@@ -217,15 +221,21 @@ function ProductPageContent({ data, onAdd }) {
         </div>
       </section>
       <ProductOrderJourney data={data} />
-      {/* La moitié droite de cette section était vide : elle porte désormais
-          l'écran réel de l'application, qui montre au lieu de raconter. */}
       <section className="v3-pdp-pilot-cta" aria-labelledby={`v3-${data.key}-pilot-title`}>
-        <div>
-          <span className="v3-eyebrow">TAPOTE PILOT INCLUS</span>
-          <h2 id={`v3-${data.key}-pilot-title`}>Retrouvez ce support après la pose.</h2>
-          <p>Sa destination reste visible dans Pilot. Pilot Pro permet ensuite de la remplacer à distance.</p>
+        <div className="v3-pdp-pilot-preview" aria-label={`${data.name} dans Tapote Pilot`}>
+          <header><span><i /> Tapote Pilot</span><b>Support actif</b></header>
+          <div>
+            <ProductArt surface={data.key} actionId={pilotPreview.actionId} theme={pilotPreview.theme} brandName="tapote." personalization="ready" />
+            <span><small>Destination actuelle</small><strong>{pilotPreview.label}</strong><em>tapote.fr/go/••••••</em></span>
+          </div>
+          <footer><Check /> Visible après la pose</footer>
         </div>
-        <a href="/tapote-pilot">Découvrir Tapote Pilot <ArrowRight /></a>
+        <div className="v3-pdp-pilot-copy">
+          <span className="v3-eyebrow">TAPOTE PILOT INCLUS</span>
+          <h2 id={`v3-${data.key}-pilot-title`}>Ce support reste visible dans Pilot.</h2>
+          <p>Sa destination est toujours claire. Avec Pro, remplacez le lien à distance.</p>
+          <a href="/tapote-pilot">Voir Tapote Pilot <ArrowRight /></a>
+        </div>
       </section>
       <ProductFaqSection data={data} />
       <RelatedProducts current={data.key} />

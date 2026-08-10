@@ -1239,7 +1239,7 @@
   }
 }
 
-@media (max-width: 940px) {
+@media (max-width: 980px) {
   .v3-header-actions .v3-header-primary { display: none; }
 }
 

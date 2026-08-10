@@ -22,6 +22,7 @@ export function pageMetadata(path) {
   if (path === "/comment-ca-marche") return ["Comment fonctionne Tapote ?", "NFC, QR code, encodage et changement de destination à distance expliqués simplement."];
   if (path === "/tapote-pilot") return ["Tapote Pilot inclus et Pilot Pro | Tapote", "Tapote Pilot est inclus pour activer vos supports et suivre leurs destinations. Pilot Pro ajoute statistiques, périodes, lieux, exports et multi-sites."];
   if (path === "/panier") return ["Votre panier | Tapote", "Vérifiez vos supports Tapote, leur composition, la livraison et les options."];
+  if (path === "/entreprises") return ["Tapote pour les entreprises et multi-sites", "Équipez 10 supports ou plus, plusieurs lieux ou un réseau avec une composition Tapote et une proposition adaptées."];
   if (path === "/devis") return ["Devis volume et multi-sites | Tapote", "Décrivez votre besoin de 10 supports ou plus et recevez une proposition Tapote claire et adaptée."];
   if (path.startsWith("/commande")) return ["Finaliser la commande | Tapote", "Finalisez votre commande professionnelle Tapote via Stripe."];
   if (path === "/mentions-legales") return ["Mentions légales | Tapote", "Informations relatives à l’éditeur, à la publication et à l’hébergement du site Tapote."];
@@ -31,7 +32,7 @@ export function pageMetadata(path) {
 }
 
 export function isKnownStorefrontPath(path) {
-  if (["/", "/boutique", "/designs", "/personnaliser", "/comment-ca-marche", "/tapote-pilot", "/panier", "/devis", "/commande", "/commande/confirmee", "/mentions-legales", "/cgv", "/confidentialite"].includes(path)) return true;
+  if (["/", "/boutique", "/designs", "/personnaliser", "/comment-ca-marche", "/tapote-pilot", "/entreprises", "/panier", "/devis", "/commande", "/commande/confirmee", "/mentions-legales", "/cgv", "/confidentialite"].includes(path)) return true;
   if (["/categorie/chevalets-nfc", "/categorie/plaques-nfc", "/categorie/cartes-nfc", "/categorie/packs-nfc", "/categorie/packs"].includes(path)) return true;
   if (path.startsWith("/produits/")) return Boolean(PRODUCT_PAGES[resolveProductPageSlug(path.split("/")[2])]);
   return false;

@@ -154,7 +154,19 @@ function Header({ cartCount, compact = false }) {
               if (!event.currentTarget.contains(event.relatedTarget)) scheduleShopMenuClose();
             }}
           >
-            <button ref={shopToggleRef} type="button" aria-expanded={shopMenuOpen} aria-controls="v3-shop-mega" onClick={() => setShopMenuOpen((value) => !value)}>
+            <button
+              ref={shopToggleRef}
+              type="button"
+              aria-expanded={shopMenuOpen}
+              aria-controls="v3-shop-mega"
+              onClick={(event) => {
+                // La souris ouvre déjà le menu au survol avant de produire le
+                // clic. Un second toggle le refermait aussitôt ; au clavier,
+                // le bouton conserve en revanche son comportement bascule.
+                if (event.detail === 0) setShopMenuOpen((value) => !value);
+                else openShopMenu();
+              }}
+            >
               Boutique <ChevronDown />
             </button>
             <a className="v3-mobile-custom-link" href="/personnaliser" onClick={() => setOpen(false)}>
@@ -169,7 +181,7 @@ function Header({ cartCount, compact = false }) {
             <div className="v3-mobile-quick-nav" aria-label="Découvrir Tapote">
               <a href="/comment-ca-marche" onClick={() => setOpen(false)}><strong>Comment ça marche</strong><small>Le geste NFC + QR</small></a>
               <a href="/tapote-pilot" onClick={() => setOpen(false)}><strong>Tapote Pilot</strong><small>Gérer mes supports</small></a>
-              <a href="/devis" onClick={() => setOpen(false)}><strong>Entreprises & devis</strong><small>Dès 10 supports</small></a>
+              <a href="/entreprises" onClick={() => setOpen(false)}><strong>Entreprises & devis</strong><small>Dès 10 supports</small></a>
             </div>
             {/* Le menu large montre le produit ; sa version téléphone n'en
                 donnait que le nom. Or c'est là que se fait l'essentiel des
@@ -208,7 +220,7 @@ function Header({ cartCount, compact = false }) {
               <div className="v3-shop-mega-column">
                 <strong>Projet</strong>
                 <a href="/personnaliser" onMouseEnter={() => openShopMenu("chevalet")} onFocus={() => openShopMenu("chevalet")}><span>Créer mon Tapote</span><small>Logo, couleurs et textes</small></a>
-                <a href="/devis" onMouseEnter={() => openShopMenu("equipe")} onFocus={() => openShopMenu("equipe")}><span>10 supports ou plus</span><small>Composition et devis</small></a>
+                <a href="/devis" onMouseEnter={() => openShopMenu("volume")} onFocus={() => openShopMenu("volume")}><span>10 supports ou plus</span><small>Composition et devis</small></a>
               </div>
               <a className={`v3-shop-mega-feature is-${activeShopPreview.surface}`} href={activeShopPreview.href}>
                 <span>{activeShopPreview.eyebrow}</span>
@@ -221,6 +233,9 @@ function Header({ cartCount, compact = false }) {
               </a>
             </div>
           </div>
+          <a className="v3-desktop-nav-link" href="/comment-ca-marche">Comment ça marche</a>
+          <a className="v3-desktop-nav-link" href="/tapote-pilot">Tapote Pilot</a>
+          <a className="v3-desktop-nav-link" href="/entreprises">Entreprises</a>
           <a className="v3-mobile-login" href="/connexion" onClick={() => setOpen(false)}><UserRound aria-hidden="true" /><span><strong>Espace Tapote Pilot</strong><small>Retrouver mes supports</small></span><ArrowRight aria-hidden="true" /></a>
         </nav>
         <div className="v3-header-actions">
@@ -243,7 +258,7 @@ function Footer() {
       <div className="v3-footer-main">
         <div><Brand /><p>Transformez chaque visite<br />en la bonne action.</p><small>NFC + QR · Prêt à poser ou à votre image · Tapote Pilot inclus.</small></div>
         <div><strong>Acheter</strong><a href="/boutique">Toute la gamme</a><a href="/produits/comptoir">Chevalet</a><a href="/produits/plaque">Plaque</a><a href="/produits/carte">Carte</a><a href="/produits/comptoir?offre=pack_essentiel_pret">Les packs</a></div>
-        <div><strong>Découvrir</strong><a href="/boutique">Choisir un support</a><a href="/comment-ca-marche">Comment ça marche</a><a href="/tapote-pilot">Tapote Pilot</a><a href="/devis">Devis dès 10 supports</a></div>
+        <div><strong>Découvrir</strong><a href="/boutique">Choisir un support</a><a href="/comment-ca-marche">Comment ça marche</a><a href="/tapote-pilot">Tapote Pilot</a><a href="/entreprises">Entreprises & devis</a></div>
         <div><strong>Aide</strong><a href="mailto:aymeric@tapote.fr">Nous contacter</a><a href="/cgv">Livraison et garanties</a><a href="/confidentialite">Données et confidentialité</a><a href="/connexion">Accéder à Pilot</a></div>
       </div>
       <div className="v3-footer-bottom"><span>© 2026 Tapote</span><a href="/mentions-legales">Mentions légales</a><a href="/cgv">CGV</a><a href="/confidentialite">Confidentialité</a></div>

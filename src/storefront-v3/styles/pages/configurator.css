@@ -127,10 +127,10 @@
 .v3-sector-panel-grid.v3-sector-chips {
   min-height: 0;
   padding: 0 4px 4px 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  align-items: start;
-  gap: 12px 18px;
+  display: block;
+  column-width: 220px;
+  column-count: 4;
+  column-gap: 18px;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -139,10 +139,13 @@
 }
 
 .v3-sector-panel-grid section {
+  width: 100%;
+  margin: 0 0 12px;
   min-width: 0;
-  display: grid;
+  display: inline-grid;
   align-content: start;
   gap: 3px;
+  break-inside: avoid;
 }
 
 .v3-sector-panel-grid section > span {
@@ -168,8 +171,11 @@
   font-size: var(--v3-text-xs);
   font-weight: 680;
   line-height: 1.25;
+  text-align: left;
   white-space: normal;
 }
+
+.v3-sector-panel-grid.v3-sector-chips button > span { min-width: 0; }
 
 .v3-sector-panel-grid.v3-sector-chips button::after { display: none; }
 

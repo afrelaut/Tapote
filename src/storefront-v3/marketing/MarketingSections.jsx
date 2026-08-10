@@ -4,7 +4,6 @@ import { formatMoney, PRODUCTS } from "../../../shared/catalog.js";
 import { SECTOR_CATEGORIES, SECTORS } from "../../storefront/sectorData.js";
 import { ProductArt } from "../scenes/ProductArt.jsx";
 import { PilotAppMock } from "./PilotAppMock.jsx";
-import { SectorScene } from "../scenes/ProductScene.jsx";
 import { PRODUCT_FAQ_COMMON, PRODUCT_FAQ_SPECIFIC, SHOP_ITEMS, STOREFRONT_FAQ, WHY_TAPOTE, readyHeadlineForAction, taxLabel } from "../data/content.js";
 
 export function OfferArchitectureSection() {
@@ -327,42 +326,6 @@ export function FinalCommercialCta() {
   );
 }
 
-export function ProductExamplesSection({ data, mode }) {
-  const exampleByProduct = {
-    comptoir: { sectorId: "cafe", actionId: "avis", theme: "nuit" },
-    plaque: { sectorId: "salon", actionId: "reservation", theme: "creme" },
-    carte: { sectorId: "immobilier", actionId: "contact", theme: "creme" },
-  };
-  const example = exampleByProduct[data.key] || exampleByProduct.comptoir;
-  const sector = SECTORS.find((item) => item.id === example.sectorId) || SECTORS[0];
-  const preview = {
-    surface: data.key,
-    actionId: example.actionId,
-    theme: example.theme,
-    brandName: mode === "custom" ? "VOTRE MARQUE" : "tapote.",
-    personalization: mode === "custom" ? "custom" : "ready",
-  };
-
-  return (
-    <section className="v3-section v3-product-examples" aria-labelledby={`v3-${data.key}-examples`}>
-      <div className="v3-section-heading">
-        <h2 id={`v3-${data.key}-examples`}>Voyez-le en situation.</h2>
-        <p>Le support et l’écran restent identiques, de l’aperçu à l’usage.</p>
-      </div>
-      <div className="v3-product-example-grid">
-        <figure className="v3-product-example-context">
-          <SectorScene sector={sector} preview={preview} compact />
-          <figcaption>En situation</figcaption>
-        </figure>
-        <figure className={`v3-product-example-art is-${data.key}`}>
-          <ProductArt {...preview} />
-          <figcaption>{data.name}</figcaption>
-        </figure>
-      </div>
-    </section>
-  );
-}
-
 export function RelatedProducts({ current }) {
   const related = SHOP_ITEMS.filter((item) => item.surface !== current).slice(0, 2);
   const packRecommendations = [
@@ -404,7 +367,11 @@ export function RelatedProducts({ current }) {
             {packRecommendations.map((pack, index) => (
               <a href={`/produits/comptoir?offre=${pack.readyId}`} key={pack.readyId}>
                 <span className="v3-related-pack-index" aria-hidden="true">0{index + 1}</span>
-                <span className="v3-related-pack-copy"><strong>{pack.name}</strong><small>{pack.composition}</small></span>
+                <span className="v3-related-pack-copy"><strong>{pack.name}</strong></span>
+                <span className="v3-related-pack-contents">
+                  <b>Inclus</b>
+                  <small>{pack.composition}</small>
+                </span>
                 <span className="v3-related-pack-prices">
                   <small><span>Prêt</span><b>{formatMoney(PRODUCTS[pack.readyId].price)}</b></small>
                   <small><span>À votre image</span><b>{formatMoney(PRODUCTS[pack.customId].price)}</b></small>
@@ -424,15 +391,34 @@ export function RelatedProducts({ current }) {
 }
 
 export function ProductOrderJourney({ data }) {
+  const preview = {
+    comptoir: { actionId: "avis", theme: "nuit", label: "Avis Google" },
+    plaque: { actionId: "reservation", theme: "creme", label: "Réservation" },
+    carte: { actionId: "contact", theme: "nuit", label: "Contact" },
+  }[data.key] || { actionId: "avis", theme: "nuit", label: "Votre lien" };
   const steps = [
-    { number: "01", icon: Palette, title: "Choisissez", copy: `Sélectionnez ${data.name}, l’action, le mode et la quantité. Le prix est visible avant l’ajout au panier.` },
-    { number: "02", icon: FileCheck2, title: "On prépare", copy: "Tapote associe la destination au NFC et au QR. En mode À votre image, vous validez le BAT avant production." },
-    { number: "03", icon: PackageCheck, title: "Vous posez", copy: "Le support arrive encodé et testé. Vous retrouvez sa destination active dans Tapote Pilot." },
+    { number: "01", icon: Palette, title: "Vous choisissez", copy: "Support, action et finition." },
+    { number: "02", icon: FileCheck2, title: "On configure", copy: "NFC et QR reliés au bon lien." },
+    { number: "03", icon: PackageCheck, title: "Vous posez", copy: "Testé et prêt au premier tap." },
   ];
   return (
-    <section className="v3-product-journey" aria-labelledby={`v3-${data.key}-journey-title`}>
-      <header><span className="v3-eyebrow">UN PARCOURS COURT</span><h2 id={`v3-${data.key}-journey-title`}>Vous choisissez.<br />On contrôle le reste.</h2><p>Trois étapes, du choix au premier tap.</p></header>
-      <ol>{steps.map(({ number, icon: Icon, title, copy }) => <li key={number}><span>{number}</span><Icon /><h3>{title}</h3><p>{copy}</p></li>)}</ol>
+    <section className={`v3-product-journey is-${data.key}`} aria-labelledby={`v3-${data.key}-journey-title`}>
+      <div className="v3-product-journey-visual" aria-label={`${data.name} configuré et prêt à poser`}>
+        <ProductArt
+          surface={data.key}
+          actionId={preview.actionId}
+          theme={preview.theme}
+          brandName="tapote."
+          personalization="ready"
+          customHeadline={readyHeadlineForAction(preview.actionId)}
+        />
+        <span><Check /> NFC + QR testés</span>
+        <small>{preview.label} · lien configuré</small>
+      </div>
+      <div className="v3-product-journey-content">
+        <header><span className="v3-eyebrow">DU CHOIX AU PREMIER TAP</span><h2 id={`v3-${data.key}-journey-title`}>Prêt, sans réglage technique.</h2></header>
+        <ol>{steps.map(({ number, icon: Icon, title, copy }) => <li key={number}><span>{number}</span><Icon /><div><h3>{title}</h3><p>{copy}</p></div></li>)}</ol>
+      </div>
     </section>
   );
 }

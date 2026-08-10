@@ -25,7 +25,7 @@ export function resolveStorefrontPage({
   if (path === "/comment-ca-marche") return <HowPage />;
   if (path === "/tapote-pilot") return <PilotMarketingPage />;
   if (path === "/panier") return <CartPage cart={cart} setCart={setCart} onAdd={addToCart} />;
-  if (path === "/devis") return <QuotePage />;
+  if (path === "/devis" || path === "/entreprises") return <QuotePage />;
   if (path === "/commande") return <CheckoutPage cart={cart} />;
   if (path === "/commande/confirmee") return <ConfirmationPage setCart={setCart} />;
   if (["/mentions-legales", "/cgv", "/confidentialite"].includes(path)) {

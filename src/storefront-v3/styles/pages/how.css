@@ -1105,6 +1105,301 @@
   }
 }
 
+/* --------------------------------------------------------------------------
+   PARCOURS ILLUSTRÉ — le geste et son résultat remplacent les grands panneaux
+   explicatifs. La page montre désormais le produit au lieu de répéter sa
+   promesse en titres surdimensionnés.
+   -------------------------------------------------------------------------- */
+
+.v3-how-page .v3-how-hero {
+  padding: clamp(42px, 4.8vw, 72px) clamp(24px, 6vw, 104px);
+  grid-template-columns: minmax(320px, .68fr) minmax(520px, 1.32fr);
+}
+
+.v3-how-page .v3-how-hero-copy h1 {
+  font-size: clamp(46px, 4.6vw, 72px);
+  line-height: .9;
+}
+
+.v3-how-page .v3-how-hero-copy > p {
+  font-size: clamp(16px, 1.1vw, 18px);
+}
+
+.v3-how-explainer {
+  padding: clamp(64px, 7vw, 104px) clamp(24px, 7vw, 120px);
+  color: #11131a;
+  background: linear-gradient(180deg, #fff, #f5f3ef);
+}
+
+.v3-how-explainer > header {
+  max-width: 1000px;
+}
+
+.v3-how-explainer > header h2 {
+  margin: 15px 0 13px;
+  font-family: "Archivo Black", sans-serif;
+  font-size: clamp(38px, 4vw, 58px);
+  line-height: .94;
+  letter-spacing: -.06em;
+}
+
+.v3-how-explainer > header p {
+  margin: 0;
+  color: #6b6e75;
+  font-size: clamp(15px, 1.15vw, 18px);
+}
+
+.v3-how-explainer-grid {
+  margin-top: clamp(34px, 4.3vw, 60px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 116px minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(12px, 1.7vw, 26px);
+}
+
+.v3-how-explainer-card {
+  min-width: 0;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #dfe1e6;
+  border-radius: 28px;
+  box-shadow: 0 24px 60px rgb(19 29 56 / 9%);
+}
+
+.v3-how-explainer-visual {
+  position: relative;
+  height: clamp(320px, 27vw, 410px);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 50% 50%, rgb(58 96 255 / 17%), transparent 42%),
+    linear-gradient(145deg, #eef2fb, #e8e9ed);
+}
+
+.v3-how-explainer-card.is-result .v3-how-explainer-visual {
+  background:
+    radial-gradient(circle at 50% 48%, rgb(42 83 229 / 26%), transparent 38%),
+    linear-gradient(145deg, #111725, #07090e);
+}
+
+.v3-how-explainer-card.is-support .v3-how-explainer-visual > div:first-child {
+  width: min(42%, 245px);
+  filter: drop-shadow(0 28px 22px rgb(18 26 48 / 24%));
+}
+
+.v3-how-explainer-card.is-support[data-surface="plaque"] .v3-how-explainer-visual > div:first-child { width: min(48%, 280px); }
+.v3-how-explainer-card.is-support[data-surface="carte"] .v3-how-explainer-visual > div:first-child { width: min(64%, 370px); }
+.v3-how-explainer-card.is-support .v3-product-art { width: 100%; }
+
+.v3-how-explainer-card.is-result .v3-how-explainer-visual > div:first-child {
+  width: 184px;
+  filter: drop-shadow(0 30px 28px rgb(0 0 0 / 48%));
+}
+
+.v3-how-explainer-card .tapote-device-frame.v3-live-phone-screen.is-standalone.v3-how-explainer-phone {
+  width: 184px;
+  margin: 0;
+}
+
+.v3-how-gesture-badges {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  left: 18px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.v3-how-gesture-badges span,
+.v3-how-opened {
+  min-height: 38px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #171a22;
+  background: rgb(255 255 255 / 88%);
+  border: 1px solid rgb(255 255 255 / 92%);
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 850;
+  box-shadow: 0 13px 32px rgb(22 30 52 / 14%);
+  backdrop-filter: blur(12px);
+}
+
+.v3-how-gesture-badges svg,
+.v3-how-opened svg { width: 16px; color: #2458ff; }
+
+.v3-how-opened {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+}
+
+.v3-how-explainer-card > footer {
+  min-height: 108px;
+  padding: 22px 26px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 17px;
+}
+
+.v3-how-explainer-card > footer > span {
+  color: #2458ff;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+
+.v3-how-explainer-card > footer h3 {
+  margin: 0 0 4px;
+  font-family: "Archivo Black", sans-serif;
+  font-size: clamp(22px, 1.8vw, 29px);
+  line-height: 1;
+  letter-spacing: -.045em;
+}
+
+.v3-how-explainer-card > footer p { margin: 0; color: #73767d; font-size: 13px; line-height: 1.4; }
+
+.v3-how-explainer-route {
+  display: grid;
+  place-items: center;
+  gap: 5px;
+  color: #2458ff;
+  text-align: center;
+}
+
+.v3-how-explainer-route::before,
+.v3-how-explainer-route::after {
+  content: "";
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #8fa6ff, transparent);
+}
+
+.v3-how-explainer-route i {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  background: #e8edff;
+  border-radius: 50%;
+}
+
+.v3-how-explainer-route svg { width: 21px; }
+.v3-how-explainer-route strong { margin-top: 3px; color: #262a35; font-size: 11px; }
+.v3-how-explainer-route small { color: #858a95; font-size: 9px; }
+
+.v3-how-page .v3-how-pilot-cta {
+  margin: clamp(24px, 4vw, 58px);
+  padding: clamp(28px, 3.5vw, 48px);
+  grid-template-columns: minmax(380px, .9fr) minmax(380px, 1.1fr);
+  gap: clamp(34px, 5vw, 78px);
+  background: radial-gradient(circle at 16% 50%, rgb(61 100 255 / 35%), transparent 30rem), #0b0e17;
+}
+
+.v3-how-pilot-preview {
+  min-width: 0;
+  overflow: hidden;
+  color: #131722;
+  background: #f7f8fb;
+  border: 1px solid rgb(255 255 255 / 24%);
+  border-radius: 20px;
+  box-shadow: 0 26px 60px rgb(0 0 0 / 25%);
+}
+
+.v3-how-pilot-preview > header,
+.v3-how-pilot-preview > footer {
+  min-height: 54px;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #e2e4e9;
+  font-size: 10px;
+  font-weight: 820;
+}
+
+.v3-how-pilot-preview > header span { display: flex; align-items: center; gap: 8px; }
+.v3-how-pilot-preview > header i { width: 8px; height: 8px; background: #31c889; border-radius: 50%; }
+.v3-how-pilot-preview > header b { color: #19835d; }
+
+.v3-how-pilot-preview > div {
+  min-height: 178px;
+  padding: 22px;
+  display: grid;
+  grid-template-columns: 145px minmax(0, 1fr);
+  align-items: center;
+  gap: 24px;
+}
+
+.v3-how-pilot-preview .v3-product-art { width: 108px; margin: auto; }
+.v3-how-pilot-preview .v3-product-carte { width: 145px; }
+.v3-how-pilot-preview > div > span { min-width: 0; display: grid; gap: 6px; }
+.v3-how-pilot-preview small { color: #7a7f89; font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.v3-how-pilot-preview strong { overflow: hidden; font-size: clamp(18px, 1.5vw, 24px); text-overflow: ellipsis; white-space: nowrap; }
+.v3-how-pilot-preview em { overflow: hidden; color: #2458ff; font-size: 10px; font-style: normal; text-overflow: ellipsis; white-space: nowrap; }
+.v3-how-pilot-preview > footer { justify-content: flex-start; gap: 8px; color: #565d69; border-top: 1px solid #e2e4e9; border-bottom: 0; }
+.v3-how-pilot-preview > footer svg { width: 15px; color: #28a875; }
+
+.v3-how-pilot-copy { max-width: 640px; }
+.v3-how-pilot-cta .v3-how-pilot-copy h2 { margin-top: 12px; font-size: clamp(36px, 4vw, 58px); }
+.v3-how-pilot-actions { margin-top: 25px; display: flex; flex-wrap: wrap; gap: 9px; }
+
+.v3-how-pilot-actions a {
+  min-height: 50px;
+  padding: 0 17px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  color: #10131b;
+  background: #fff;
+  border: 1px solid #fff;
+  border-radius: 11px;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.v3-how-pilot-actions a.is-secondary { color: #fff; background: transparent; border-color: rgb(255 255 255 / 24%); }
+.v3-how-pilot-actions svg { width: 16px; }
+
+@media (max-width: 980px) {
+  .v3-how-page .v3-how-hero { grid-template-columns: 1fr; }
+  .v3-how-explainer-grid { grid-template-columns: 1fr; }
+  .v3-how-explainer-route { grid-template-columns: 1fr auto auto auto 1fr; }
+  .v3-how-explainer-route::before,
+  .v3-how-explainer-route::after { width: 100%; }
+  .v3-how-page .v3-how-pilot-cta { grid-template-columns: 1fr; }
+  .v3-how-pilot-preview { width: min(100%, 680px); }
+}
+
+@media (max-width: 620px) {
+  .v3-how-page .v3-how-hero-copy h1 { font-size: clamp(44px, 13vw, 58px); }
+  .v3-how-explainer { padding: 54px 14px; }
+  .v3-how-explainer > header h2 { font-size: 42px; }
+  .v3-how-explainer-visual { height: 292px; }
+  .v3-how-explainer-card.is-support .v3-how-explainer-visual > div:first-child { width: min(45%, 170px); }
+  .v3-how-explainer-card.is-support[data-surface="plaque"] .v3-how-explainer-visual > div:first-child { width: min(52%, 195px); }
+  .v3-how-explainer-card.is-support[data-surface="carte"] .v3-how-explainer-visual > div:first-child { width: min(71%, 265px); }
+  .v3-how-explainer-card.is-result .v3-how-explainer-visual > div:first-child,
+  .v3-how-explainer-card .tapote-device-frame.v3-live-phone-screen.is-standalone.v3-how-explainer-phone { width: 128px; }
+  .v3-how-explainer-card > footer { min-height: 94px; padding: 19px; }
+  .v3-how-explainer-card > footer h3 { font-size: 23px; }
+  .v3-how-explainer-route { grid-template-columns: 1fr auto 1fr; }
+  .v3-how-explainer-route strong,
+  .v3-how-explainer-route small { display: none; }
+  .v3-how-page .v3-how-pilot-cta { margin: 14px; padding: 22px; }
+  .v3-how-pilot-preview > div { grid-template-columns: 98px minmax(0, 1fr); gap: 14px; }
+  .v3-how-pilot-preview .v3-product-art { width: 78px; }
+  .v3-how-pilot-preview .v3-product-carte { width: 98px; }
+  .v3-how-pilot-actions { display: grid; }
+  .v3-how-pilot-actions a { width: 100%; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .v3-how-hero a,
   .v3-how-destination-tabs button,
@@ -1580,4 +1875,33 @@
     margin-bottom: 28px;
     font-size: clamp(39px, 11vw, 50px);
   }
+}
+
+/* Les règles historiques ci-dessus restent nécessaires aux anciennes briques,
+   mais le nouveau parcours illustré garde le dernier mot sur son cadrage. */
+.v3-how-page .v3-how-hero {
+  padding: clamp(42px, 4.8vw, 72px) clamp(24px, 6vw, 104px);
+  grid-template-columns: minmax(320px, .68fr) minmax(520px, 1.32fr);
+}
+.v3-how-page .v3-how-hero-copy h1 { font-size: clamp(46px, 4.6vw, 72px); line-height: .9; }
+.v3-how-page .v3-how-hero-copy > p { font-size: clamp(16px, 1.1vw, 18px); }
+.v3-how-page .v3-how-pilot-cta {
+  margin: clamp(24px, 4vw, 58px);
+  padding: clamp(28px, 3.5vw, 48px);
+  grid-template-columns: minmax(380px, .9fr) minmax(380px, 1.1fr);
+  gap: clamp(34px, 5vw, 78px);
+  background: radial-gradient(circle at 16% 50%, rgb(61 100 255 / 35%), transparent 30rem), #0b0e17;
+}
+.v3-how-pilot-cta .v3-how-pilot-copy h2 { margin-top: 12px; font-size: clamp(36px, 4vw, 58px); }
+
+@media (max-width: 980px) {
+  .v3-how-page .v3-how-hero,
+  .v3-how-page .v3-how-pilot-cta { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 620px) {
+  .v3-how-page .v3-how-hero { padding: 38px 14px 52px; }
+  .v3-how-page .v3-how-hero-copy h1 { font-size: clamp(44px, 13vw, 58px); }
+  .v3-how-page .v3-how-pilot-cta { margin: 14px; padding: 22px; }
+  .v3-how-pilot-cta .v3-how-pilot-copy h2 { font-size: 34px; }
 }

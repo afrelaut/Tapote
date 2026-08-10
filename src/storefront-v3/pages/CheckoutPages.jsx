@@ -106,6 +106,7 @@ export function CheckoutPage({ cart }) {
 }
 
 export function QuotePage() {
+  const enterpriseRoute = window.location.pathname === "/entreprises";
   const emptyForm = {
     locationCount: "",
     volume: "",
@@ -171,7 +172,7 @@ export function QuotePage() {
   return (
     <main id="main-content" className="v3-quote-page">
       <section className="v3-quote-intro">
-        <nav className="v3-breadcrumb" aria-label="Fil d’Ariane"><a href="/">Accueil</a><span>/</span><b>Devis</b></nav>
+        <nav className="v3-breadcrumb" aria-label="Fil d’Ariane"><a href="/">Accueil</a><span>/</span><b>{enterpriseRoute ? "Entreprises" : "Devis"}</b></nav>
         <span className="v3-eyebrow v3-eyebrow-dark">10 SUPPORTS OU PLUS</span>
         <h1>Votre projet.<br />Un tarif clair.</h1>
         <p>Indiquez vos lieux, le volume et l’usage recherché. Nous préparons une proposition adaptée à votre projet.</p>
