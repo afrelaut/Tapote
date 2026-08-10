@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { ArrowRight, Check, Clock3, Globe2, Layers3, Link2, Plus, QrCode, SmartphoneNfc, Zap } from "lucide-react";
+import { ArrowRight, Check, Clock3, Globe2, Layers3, Link2, QrCode, SmartphoneNfc, Zap } from "lucide-react";
 import { motion } from "motion/react";
-import { ACTIONS, formatMoney, PILOT_PLANS } from "../../../shared/catalog.js";
+import { formatMoney, PILOT_PLANS } from "../../../shared/catalog.js";
 import { SECTORS } from "../../storefront/sectorData.js";
 import { PilotLevelDemo } from "../marketing/PilotAppMock.jsx";
 import { SectorScene } from "../scenes/ProductScene.jsx";
+import { readyHeadlineForAction } from "../data/content.js";
 
 export function PilotMarketingPage() {
   const pilotSteps = [
@@ -104,44 +105,42 @@ export function PilotMarketingPage() {
 
 export function HowPage() {
   const destinations = [
-    { id: "avis", label: "Avis Google", sectorId: "cafe", surface: "comptoir", brandName: "VOTRE MARQUE", theme: "nuit" },
-    { id: "instagram", label: "Instagram · Plaque", sectorId: "salon", surface: "plaque", brandName: "VOTRE MARQUE", theme: "creme" },
-    { id: "linkedin", label: "LinkedIn · Card", sectorId: "immobilier", surface: "carte", brandName: "VOTRE MARQUE", theme: "nuit" },
+    { id: "avis", label: "Avis Google", sectorId: "cafe", surface: "comptoir", theme: "nuit" },
+    { id: "instagram", label: "Instagram · Plaque", sectorId: "salon", surface: "plaque", theme: "creme" },
+    { id: "linkedin", label: "LinkedIn · Card", sectorId: "immobilier", surface: "carte", theme: "nuit" },
   ];
   const [activeDestinationId, setActiveDestinationId] = useState(destinations[0].id);
   const activeDestination = destinations.find((destination) => destination.id === activeDestinationId) || destinations[0];
   const activeSector = SECTORS.find((sector) => sector.id === activeDestination.sectorId) || SECTORS[0];
-  const activeAction = ACTIONS[activeDestination.id];
   const preview = {
     surface: activeDestination.surface,
     actionId: activeDestination.id,
-    brandName: activeDestination.brandName,
+    brandName: "tapote.",
     theme: activeDestination.theme,
-    customHeadline: activeAction.campaignHeadline,
-    customSubline: activeAction.campaignSubline,
     personalization: "ready",
+    customHeadline: readyHeadlineForAction(activeDestination.id),
   };
   return (
     <main id="main-content" className="v3-how-page">
       <header className="v3-how-hero">
         <div className="v3-how-hero-copy">
-          <span className="v3-eyebrow v3-eyebrow-dark">NFC + QR · AUCUNE APP À INSTALLER</span>
-          <h1>Un geste.<br />La bonne action.</h1>
-          <p>Votre client approche son téléphone. La page que vous avez choisie s’ouvre.</p>
+          <span className="v3-eyebrow v3-eyebrow-dark">UN GESTE · AUCUNE APP</span>
+          <h1>Approchez.<br />C’est ouvert.</h1>
+          <p>Avis, menu, réservation, Wi-Fi ou contact : votre client arrive directement au bon endroit.</p>
           <div className="v3-how-hero-actions">
-            <a href="/boutique">Voir les supports <ArrowRight /></a>
+            <a href="/boutique">Choisir mon Tapote <ArrowRight /></a>
           </div>
           <div className="v3-how-hero-proof" aria-label="Principaux avantages">
-            <span><Check /> iPhone & Android</span>
-            <span><Check /> QR de secours</span>
-            <span><Check /> Destination visible dans Pilot</span>
+            <span><Check /> NFC + QR</span>
+            <span><Check /> iPhone et Android</span>
+            <span><Check /> Tapote Pilot inclus</span>
           </div>
         </div>
 
         <div className="v3-how-live" id="demonstration">
           <motion.div
             className="v3-how-live-stage"
-            key={`${activeDestination.id}-${activeSector.id}`}
+            data-destination={activeDestination.id}
             initial={{ opacity: 0.5, scale: 0.985 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
@@ -164,134 +163,64 @@ export function HowPage() {
         </div>
       </header>
 
-      <div className="v3-how-proof-rail" aria-label="Fonctionnement de Tapote">
-        <span><SmartphoneNfc /> NFC sans contact</span>
-        <span><QrCode /> QR intégré</span>
-        <span><Globe2 /> Toute destination web</span>
-        <span><Link2 /> Tapote Pilot inclus</span>
-      </div>
-
-      <section className="v3-how-flow-section" aria-labelledby="v3-how-flow-title">
+      <section className="v3-how-steps" aria-labelledby="v3-how-steps-title">
         <header>
-          <span className="v3-eyebrow">LE GESTE EN TROIS SECONDES</span>
-          <h2 id="v3-how-flow-title">Du support au résultat.<br />Sans étape inutile.</h2>
+          <span className="v3-eyebrow">COMMENT ÇA MARCHE</span>
+          <h2 id="v3-how-steps-title">Trois secondes.<br />Trois étapes.</h2>
+          <p>Rien à télécharger, rien à expliquer.</p>
         </header>
-        <div className="v3-link-flow">
+        <div className="v3-how-step-grid">
           <article>
-            <span>01</span>
-            <SmartphoneNfc />
-            <div><small>LE GESTE</small><h3>Il tapote</h3><p>Le téléphone détecte la puce. Le QR reste juste à côté.</p></div>
+            <div><span>01</span><SmartphoneNfc /></div>
+            <h3>Approchez</h3>
+            <p>Le téléphone détecte le Tapote. La caméra peut aussi lire le QR.</p>
           </article>
-          <ArrowRight aria-hidden="true" />
           <article>
-            <span>02</span>
-            <Zap />
-            <div><small>LE LIEN</small><h3>Tapote dirige</h3><p>Le support retrouve la destination que vous avez activée.</p></div>
+            <div><span>02</span><Zap /></div>
+            <h3>Tapote dirige</h3>
+            <p>Le support retrouve instantanément la destination associée.</p>
           </article>
-          <ArrowRight aria-hidden="true" />
           <article>
-            <span>03</span>
-            <Globe2 />
-            <div><small>LE RÉSULTAT</small><h3>La bonne page s’ouvre</h3><p>Avis, menu, agenda, Wi-Fi ou contact. Sans application.</p></div>
+            <div><span>03</span><Globe2 /></div>
+            <h3>La page s’ouvre</h3>
+            <p>Votre client agit tout de suite, sans compte ni application.</p>
           </article>
         </div>
       </section>
 
-      <section className="v3-how-channels" aria-labelledby="v3-how-channels-title">
-        <div className="v3-how-channels-heading">
-          <span className="v3-eyebrow">DEUX CHEMINS · UN SEUL RÉSULTAT</span>
-          <h2 id="v3-how-channels-title">NFC quand le geste est naturel.<br />QR quand la caméra est plus simple.</h2>
-        </div>
-        <div className="v3-how-channel-grid">
+      <section className="v3-how-choice" aria-labelledby="v3-how-choice-title">
+        <header>
+          <span className="v3-eyebrow">DEUX GESTES · LE MÊME LIEN</span>
+          <h2 id="v3-how-choice-title">Tapoter ou scanner.<br />À chacun son réflexe.</h2>
+        </header>
+        <div className="v3-how-choice-grid">
           <article>
-            <div className="v3-how-channel-number">01</div>
             <SmartphoneNfc />
-            <h3>Approcher le téléphone</h3>
-            <ul>
-              <li><Check /> Actif sur la majorité des smartphones récents</li>
-              <li><Check /> Aucun appairage ni application</li>
-            </ul>
+            <div><h3>NFC</h3><p>Approchez le téléphone.</p></div>
           </article>
           <article>
-            <div className="v3-how-channel-number">02</div>
             <QrCode />
-            <h3>Scanner avec l’appareil photo</h3>
-            <ul>
-              <li><Check /> Le même lien et la même destination</li>
-              <li><Check /> Intégré au design, toujours accessible</li>
-            </ul>
+            <div><h3>QR</h3><p>Ouvrez l’appareil photo.</p></div>
           </article>
         </div>
+        <div className="v3-how-choice-result"><Globe2 /><span>Dans les deux cas</span><strong>{activeDestination.label}</strong></div>
       </section>
 
-      <section className="v3-how-link-system" id="pilot" aria-labelledby="v3-how-link-title">
-        <div className="v3-how-link-copy">
-          <span className="v3-eyebrow">LE SUPPORT RESTE · LE LIEN ÉVOLUE</span>
-          <h2 id="v3-how-link-title">Changez la destination.<br />Pas l’objet.</h2>
-          <div className="v3-how-link-route" aria-label="Exemple de redirection Tapote">
-            <div><small>VOTRE TAPOTE</small><strong>NFC + QR</strong><span>ne changent pas</span></div>
-            <ArrowRight aria-hidden="true" />
-            <div><small>LA PAGE QUI S’OUVRE</small><strong>{activeAction.name}</strong><span>modifiable avec Pilot Pro</span></div>
-          </div>
-        </div>
-        <div className="v3-how-plan-panel">
-          <div className="v3-how-plan-card is-included">
-            <span>INCLUS AVEC VOTRE SUPPORT</span>
-            <h3>Tapote Pilot</h3>
-            <strong>Inclus<small> avec le support</small></strong>
-            <ul>
-              <li><Check /> Voir la destination active</li>
-              <li><Check /> Conserver le même NFC + QR</li>
-              <li><Check /> Retrouver vos supports et destinations</li>
-            </ul>
-            <a href="/connexion">Accéder à Tapote Pilot <ArrowRight /></a>
-          </div>
-          <div className="v3-how-plan-card is-pro">
-            <span>OPTION AVANCÉE</span>
-            <h3>Tapote Pilot Pro</h3>
-            <strong>9 €<small> / mois</small></strong>
-            <ul>
-              <li><Check /> Changer la destination à distance</li>
-              <li><Check /> Analyser par période, lieu et support</li>
-              <li><Check /> Comparer plusieurs sites</li>
-              <li><Check /> Historique et exports</li>
-            </ul>
-            <a href="/tapote-pilot">Comparer Pilot et Pilot Pro <ArrowRight /></a>
-          </div>
-        </div>
-      </section>
-
-      <section className="v3-how-faq" aria-labelledby="v3-how-faq-title">
-        <header>
-          <span className="v3-eyebrow">QUESTIONS FRÉQUENTES</span>
-          <h2 id="v3-how-faq-title">Tout ce qu’il faut savoir avant de tapoter.</h2>
-        </header>
+      <section className="v3-how-pilot-cta" id="pilot" aria-labelledby="v3-how-pilot-title">
+        <div className="v3-how-pilot-icon"><Link2 /></div>
         <div>
-          <details>
-            <summary>Faut-il installer une application ? <Plus /></summary>
-            <p>Non. Le téléphone ouvre une page web avec son navigateur habituel. Aucune application Tapote n’est nécessaire côté client.</p>
-          </details>
-          <details>
-            <summary>Que se passe-t-il si le NFC ne fonctionne pas ? <Plus /></summary>
-            <p>Chaque support conserve un QR visible qui ouvre la même destination. Le client peut donc scanner avec son appareil photo.</p>
-          </details>
-          <details>
-            <summary>Puis-je changer le lien après réception ? <Plus /></summary>
-            <p>Oui, avec Tapote Pilot Pro. Pilot, inclus, affiche la page ouverte ; la remplacer à distance est une fonction Pro.</p>
-          </details>
-          <details>
-            <summary>Quelle page puis-je ouvrir ? <Plus /></summary>
-            <p>Toute adresse web valide : avis Google, menu, réservation, formulaire, Wi-Fi, réseaux sociaux, coordonnées ou page multi-liens.</p>
-          </details>
+          <span className="v3-eyebrow">TAPOTE PILOT INCLUS</span>
+          <h2 id="v3-how-pilot-title">Le support reste.<br />Sa destination peut évoluer.</h2>
+          <p>Retrouvez tous vos Tapote. Avec Pilot Pro, changez leurs liens à distance.</p>
         </div>
+        <a href="/tapote-pilot">Découvrir Tapote Pilot <ArrowRight /></a>
       </section>
 
       <section className="v3-how-final">
-        <span>À VOUS DE CHOISIR LE MOMENT</span>
-        <h2>Un support.<br />Le bon lien.</h2>
-        <p>Prêt à poser ou à votre image, toujours accessible en NFC et par QR.</p>
+        <span>PRÊT À COMMENCER ?</span>
+        <h2>Choisissez le support.<br />Tapote prépare le reste.</h2>
         <div>
-          <a href="/boutique">Voir les supports <ArrowRight /></a>
+          <a href="/boutique">Choisir mon Tapote <ArrowRight /></a>
           <a href="/devis" className="is-secondary">10 supports ou plus</a>
         </div>
       </section>

@@ -75,7 +75,7 @@ export default function FeatureShowcase3D() {
 
       <div className="v3-feature-3d-stage" data-feature={active.id} aria-live="polite">
         <div className="v3-feature-3d-orbit" aria-hidden="true"><i /><i /><i /></div>
-        <div className="v3-feature-3d-object" key={`object-${active.id}`} aria-hidden="true">
+        <div className="v3-feature-3d-object" aria-hidden="true">
           <ProductArt
             surface={active.surface}
             actionId={active.id}
@@ -85,7 +85,6 @@ export default function FeatureShowcase3D() {
           />
         </div>
         <DeviceFrame
-          key={`phone-${active.id}`}
           actionId={active.id}
           sectorId={active.sectorId}
           brandName="tapote."
@@ -93,7 +92,7 @@ export default function FeatureShowcase3D() {
           demonstration
           className="v3-feature-phone"
         />
-        <div className="v3-feature-3d-signal" key={`signal-${active.id}`} aria-hidden="true">
+        <div className="v3-feature-3d-signal" aria-hidden="true">
           <span><i /><i /><i /></span>
           <strong>NFC détecté</strong>
         </div>

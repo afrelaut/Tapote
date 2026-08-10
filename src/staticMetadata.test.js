@@ -16,15 +16,19 @@ describe("métadonnées publiques Tapote", () => {
       "https://tapote.fr/produits/plaque",
       "https://tapote.fr/produits/carte",
       "https://tapote.fr/boutique#packs",
+      "https://tapote.fr/boutique#packs",
+      "https://tapote.fr/boutique#packs",
     ]);
     expect(products.map((product) => [product.offers.lowPrice, product.offers.highPrice])).toEqual([
-      ["69.00", "89.00"],
-      ["59.00", "79.00"],
-      ["39.00", "59.00"],
-      ["119.00", "159.00"],
+      ["49.00", "59.00"],
+      ["29.00", "39.00"],
+      ["19.00", "29.00"],
+      ["79.00", "99.00"],
+      ["119.00", "149.00"],
+      ["179.00", "219.00"],
     ]);
     expect(products.every((product) => product.offers.availability === "https://schema.org/PreOrder")).toBe(true);
-    expect(html).toContain("Dès 39 €.");
+    expect(html).toContain("dès 19 €");
     expect(html).not.toContain("net de TVA");
     expect(html).not.toMatch(/AggregateRating|reviewCount|ratingValue/);
     expect(html).not.toContain("produits/chevalet#product");

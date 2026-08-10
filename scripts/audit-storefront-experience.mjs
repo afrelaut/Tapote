@@ -288,7 +288,12 @@ async function auditDesktopHeader(context) {
     label: element.textContent?.trim().replace(/\s+/g, " "),
     href: element.getAttribute("href") || "/boutique",
   })));
-  check("header-desktop-navigation-visible", await nav.isVisible() && links.length === 4, links);
+  const shopTrigger = nav.getByRole("button", { name: /Boutique/i });
+  check(
+    "header-desktop-navigation-visible",
+    await nav.isVisible() && await shopTrigger.isVisible() && links.length >= 1,
+    links,
+  );
   check("header-desktop-liens-uniques", new Set(links.map(({ href }) => href)).size === links.length, links);
   check("header-desktop-cta-commande", await page.locator('.v3-header-primary[href="/boutique"]').isVisible());
   check("header-desktop-connexion", await page.locator('.v3-login[href="/connexion"]').isVisible());
@@ -494,15 +499,20 @@ async function auditMobileProfile(browser, profile) {
   const productHrefs = await shop.locator('.v3-shop-grid a[href^="/produits/"]').evaluateAll((elements) => (
     [...new Set(elements.map((element) => element.getAttribute("href")?.split("?")[0]).filter(Boolean))]
   ));
+  const formatCards = shop.locator(".v3-shop-family:not(.is-packs) .v3-shop-card");
+  const packCards = shop.locator(".v3-shop-family.is-packs .v3-shop-card");
+  const finishChoices = shop.locator(".v3-shop-finish-prices");
   check(`mobile-${profile.name}-boutique-h1-unique`, shopMetrics.h1Count === 1, shopMetrics);
   check(`mobile-${profile.name}-boutique-sans-debordement`, shopMetrics.overflow <= 1, shopMetrics);
   check(`mobile-${profile.name}-boutique-trois-pdp`, productHrefs.length === 3, productHrefs);
-  const customButton = shop.getByRole("button", { name: /À votre image/ });
-  await customButton.click();
-  check(`mobile-${profile.name}-boutique-mode-custom`, await customButton.getAttribute("aria-pressed") === "true");
-  const packsButton = shop.getByRole("button", { name: /Pack Local/ });
-  await packsButton.click();
-  check(`mobile-${profile.name}-boutique-pack-local-unique`, await shop.locator(".v3-shop-pack-card").count() === 1);
+  check(`mobile-${profile.name}-boutique-trois-formats`, await formatCards.count() === 3);
+  check(`mobile-${profile.name}-boutique-trois-packs`, await packCards.count() === 3);
+  check(`mobile-${profile.name}-boutique-deux-finitions-par-offre`, await finishChoices.count() === 6);
+  check(
+    `mobile-${profile.name}-boutique-prix-prets-et-personnalises`,
+    await shop.getByText("Prêt à poser", { exact: true }).count() === 6
+      && await shop.getByText("À votre image", { exact: true }).count() === 6,
+  );
   await screenshot(shop, `08-boutique-mobile-${profile.width}.png`, { fullPage: false });
   flushShopErrors();
   await shop.close();
@@ -510,14 +520,7 @@ async function auditMobileProfile(browser, profile) {
   const product = await context.newPage();
   const flushProductErrors = await goto(product, profile.productPath, `pdp-mobile-${profile.name}`);
   const productMetrics = await layoutMetrics(product, "main");
-  // La destination est une donnée de production obligatoire : la recette doit
-  // désormais configurer un lien valide avant de tester l'ajout au panier.
-  const destinationField = product.getByRole("textbox", { name: /Lien obligatoire à ouvrir/i });
-  if (await destinationField.count() === 1) {
-    await destinationField.fill("https://example.com/tapote-audit");
-  }
   const add = product.getByRole("button", { name: /Ajouter au panier/i });
-  const addCount = await add.count();
   const productHeroCount = await product.locator(".v3-product-hero").count();
   const buyColumn = product.locator(".v3-product-buy-column");
   const intro = product.locator(".v3-product-intro");
@@ -531,7 +534,6 @@ async function auditMobileProfile(browser, profile) {
     h1: await product.getByRole("heading", { level: 1 }).first().textContent().catch(() => ""),
   });
   check(`mobile-${profile.name}-pdp-sans-debordement`, productMetrics.overflow <= 1, productMetrics);
-  check(`mobile-${profile.name}-pdp-un-seul-ajout`, addCount === 1);
   check(`mobile-${profile.name}-pdp-sept-blocs-maximum`, await product.locator("#main-content > section").count() <= 8);
   check(`mobile-${profile.name}-pdp-une-zone-achat`, await buyColumn.locator(".v3-buybox").count() === 1);
   check(
@@ -547,9 +549,19 @@ async function auditMobileProfile(browser, profile) {
   check(`mobile-${profile.name}-pdp-visuel-valide`, await product.locator(".v3-product-gallery .v3-sector-scene").count() >= 1);
   const sticky = product.locator(".v3-mobile-product-cta");
   check(`mobile-${profile.name}-pdp-sticky-cache-au-depart`, !await sticky.evaluate((element) => element.classList.contains("is-visible")));
-  await intro.evaluate((element) => {
-    window.scrollTo(0, window.scrollY + element.getBoundingClientRect().bottom + 24);
-  });
+  // La destination est une donnée de production obligatoire. Remplir le champ
+  // fait volontairement défiler Playwright jusqu'au configurateur : le contrôle
+  // du sticky « au départ » doit donc précéder cette interaction.
+  const destinationField = product.getByRole("textbox", { name: /Lien obligatoire à ouvrir/i });
+  if (await destinationField.count() === 1) {
+    await destinationField.fill("https://example.com/tapote-audit");
+  } else {
+    await intro.evaluate((element) => {
+      window.scrollTo(0, window.scrollY + element.getBoundingClientRect().bottom + 24);
+    });
+  }
+  const addCount = await add.count();
+  check(`mobile-${profile.name}-pdp-un-seul-ajout`, addCount === 1);
   await product.waitForFunction(() => document.querySelector(".v3-mobile-product-cta")?.classList.contains("is-visible"));
   check(`mobile-${profile.name}-pdp-sticky-apres-cta`, await sticky.evaluate((element) => element.classList.contains("is-visible")));
   await product.locator(".v3-buybox-summary").scrollIntoViewIfNeeded();

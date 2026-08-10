@@ -58,14 +58,16 @@ La formulation « action mesurable » ne peut être utilisée que pour une inter
 
 ### 3.2 Architecture physique
 
-La gamme publique comporte trois produits et un pack :
+La gamme publique comporte trois formats et trois packs :
 
 1. **Tapote Comptoir** ;
 2. **Tapote Plaque** ;
 3. **Tapote Card** ;
-4. **Pack Local**.
+4. **Essentiel** — 1 Comptoir + 1 Plaque + 1 Card ;
+5. **Comptoir** — 2 Comptoirs + 1 Plaque + 1 Card ;
+6. **Équipe** — 2 Comptoirs + 2 Plaques + 3 Cards.
 
-Le Pack Local est une composition commerciale de produits existants. Ce n’est pas une quatrième technologie ni une famille de produit distincte.
+Les packs sont des compositions commerciales des trois formats existants. Ils ne créent aucune technologie ni famille de produit supplémentaire.
 
 ### 3.3 Architecture logicielle
 
@@ -88,7 +90,7 @@ Il existe deux modes publics :
 - n’est pas un produit autonome ;
 - n’est pas une cinquième offre ;
 - n’a pas de prix autonome ;
-- ne doit pas être présenté dans le catalogue au même niveau que Comptoir, Plaque, Card ou Pack Local ;
+- ne doit pas être présenté dans le catalogue au même niveau que Comptoir, Plaque, Card ou les packs ;
 - ne crée pas un troisième mode commercial.
 
 Les anciens noms publics **Express**, **Signature**, **Prêt à servir**, **Personnaliser** comme niveau d’offre, **Card Builder** comme produit et **Studio Point d’action** comme produit sont abandonnés. Ils peuvent rester des noms internes de composants ou de méthodes uniquement si le visiteur ne les voit pas comme des offres supplémentaires.
@@ -101,7 +103,9 @@ Les anciens noms publics **Express**, **Signature**, **Prêt à servir**, **Pers
 | Produit | **Tapote Comptoir** | Caisse, accueil, table ou point de contact posé |
 | Produit | **Tapote Plaque** | Entrée, mur, miroir, porte ou point fixe |
 | Produit | **Tapote Card** | Rendez-vous, équipe, poche et terrain |
-| Pack | **Pack Local** | Un Tapote Comptoir + une Tapote Plaque |
+| Pack | **Essentiel** | Un Tapote Comptoir + une Tapote Plaque + une Tapote Card |
+| Pack | **Comptoir** | Deux Tapote Comptoir + une Tapote Plaque + une Tapote Card |
+| Pack | **Équipe** | Deux Tapote Comptoir + deux Tapote Plaque + trois Tapote Card |
 | Logiciel inclus | **Tapote Pilot** | Gestion des supports et de leurs destinations |
 | Option avancée | **Tapote Pilot Pro** | Organisation, analyse et pilotage avancés |
 | Étape de parcours | **Tapote Studio** | Personnalisation du mode À votre image |
@@ -111,8 +115,8 @@ Les anciens noms publics **Express**, **Signature**, **Prêt à servir**, **Pers
 Noms interdits comme offres publiques :
 
 - Tapote Link ;
+- Pack Local ;
 - Pack Parcours ;
-- Pack Équipe ;
 - Tapote Mini ;
 - Tapote Signature ;
 - Card Metal, Card Bois ou Card PVC comme produits autonomes ;
@@ -180,7 +184,7 @@ Les interfaces de démonstration doivent porter la mention :
 
 Aucun chiffre visible dans une démonstration ne constitue une preuve client.
 
-## 6. Produits et pack publics
+## 6. Formats et packs publics
 
 ### 6.1 Tapote Comptoir
 
@@ -206,25 +210,42 @@ Rôle :
 
 Le nom public reste **Tapote Card**. PVC, bois et métal sont des hypothèses de matière ou de finition, pas des produits publics autonomes. Seules les matières effectivement qualifiées et commandables peuvent apparaître dans le choix d’achat.
 
-### 6.4 Pack Local
+### 6.4 Pack Essentiel
 
 Composition :
 
 - 1 Tapote Comptoir ;
-- 1 Tapote Plaque.
+- 1 Tapote Plaque ;
+- 1 Tapote Card.
 
 Rôle :
 
-> Équiper deux moments complémentaires d’un même lieu : l’entrée et le comptoir.
+> Équiper les trois moments essentiels d’un premier lieu : comptoir, point fixe et rendez-vous.
 
-Le Pack Local peut utiliser le mode Prêt à poser ou À votre image. Il ne peut afficher une économie que si la comparaison avec les prix unitaires est exacte et que le prix a réellement été proposé.
+### 6.5 Pack Comptoir
 
-### 6.5 Offres non publiques
+Composition :
+
+- 2 Tapote Comptoir ;
+- 1 Tapote Plaque ;
+- 1 Tapote Card.
+
+### 6.6 Pack Équipe
+
+Composition :
+
+- 2 Tapote Comptoir ;
+- 2 Tapote Plaque ;
+- 3 Tapote Card.
+
+Chaque pack existe en mode Prêt à poser ou À votre image. Aucun prix barré ni économie ne doit être affiché sans prix de référence réellement pratiqué.
+
+### 6.7 Offres non publiques
 
 Restent hors catalogue public :
 
 - Pack Parcours ;
-- Pack Équipe ;
+- Pack Local ;
 - Tapote Mini ;
 - Card Metal autonome ;
 - Card Bois autonome ;
@@ -289,14 +310,18 @@ Les montants ci-dessous sont les prix actuels de référence. Une tâche de desi
 
 | Offre | Prêt à poser | À votre image | Statut |
 |---|---:|---:|---|
-| Tapote Card | 39 € | 59 € | Actuel, à valider économiquement et commercialement |
-| Tapote Plaque | 59 € | 79 € | Actuel, à valider économiquement et commercialement |
-| Tapote Comptoir | 69 € | 89 € | Actuel, à valider économiquement et commercialement |
-| Pack Local | 119 € | 159 € | Actuel, à valider économiquement et commercialement |
+| Tapote Card | 19 € | 29 € | Offre de lancement actuelle |
+| Tapote Plaque | 29 € | 39 € | Offre de lancement actuelle |
+| Tapote Comptoir | 49 € | 59 € | Offre de lancement actuelle |
+| Essentiel | 79 € | 99 € | 1 Comptoir + 1 Plaque + 1 Card |
+| Comptoir | 119 € | 149 € | 2 Comptoirs + 1 Plaque + 1 Card |
+| Équipe | 179 € | 219 € | 2 Comptoirs + 2 Plaques + 3 Cards |
 | Tapote Pilot | Inclus | Inclus | Décidé |
 | Tapote Pilot Pro | 9 €/mois ou 89 €/an | — | Hypothèse commerciale contrôlée, non validée |
 
-Les prix physiques ne deviennent validés qu’après :
+L’offre de lancement s’applique aux 50 premiers commerces ou jusqu’au 30 septembre 2026, au premier terme atteint. Cette règle est définie dans le catalogue typé partagé et ne doit pas être recopiée dans les composants.
+
+Les prix physiques ne deviennent validés économiquement qu’après :
 
 1. devis comparables aux volumes utiles ;
 2. prototype représentatif du produit vendu ;
@@ -445,13 +470,14 @@ Accueil
 │   ├── Tapote Comptoir
 │   ├── Tapote Plaque
 │   ├── Tapote Card
-│   └── Pack Local
+│   ├── Essentiel
+│   ├── Comptoir
+│   └── Équipe
 ├── Comment ça marche
 ├── Tapote Pilot
 │   ├── Pilot inclus
 │   └── Pilot Pro
 ├── Entreprises & devis
-├── FAQ
 ├── Connexion / espace Pilot
 ├── Panier / commande
 └── Pages légales
@@ -472,17 +498,16 @@ Ordre recommandé :
 
 1. promesse et geste Tapote ;
 2. engagements vérifiés ;
-3. Comptoir, Plaque, Card et Pack Local avec prix ;
+3. Comptoir, Plaque, Card et les trois packs avec prix ;
 4. démonstration du geste NFC + QR ;
 5. fonctionnement ;
 6. Prêt à poser / À votre image ;
 7. matière et fabrication prouvées ;
 8. Tapote Pilot inclus / Pilot Pro optionnel ;
 9. preuve réelle ou statut série pilote ;
-10. FAQ ;
-11. Entreprises & devis ;
-12. CTA final ;
-13. footer.
+10. Entreprises & devis ;
+11. CTA final ;
+12. footer.
 
 Aucune section ne doit exister uniquement pour imiter VKARD. Chaque section doit répondre à une objection Tapote réelle.
 
@@ -493,7 +518,9 @@ La boutique expose uniquement :
 - Tapote Comptoir ;
 - Tapote Plaque ;
 - Tapote Card ;
-- Pack Local.
+- Essentiel ;
+- Comptoir ;
+- Équipe.
 
 Chaque fiche produit doit conserver :
 
@@ -532,7 +559,7 @@ Cette règle reste applicable tant qu’une décision commerciale ultérieure ne
 | Pilot parfois présenté comme payant pour changer une destination | **Interdit.** Le changement de destination fait partie de Pilot inclus. |
 | Trois niveaux Express / Personnaliser / Signature | **Remplacés** par Prêt à poser / À votre image. |
 | Tapote Studio, Card Builder ou Signature comme produits | **Interdit.** Studio est une étape ; aucun moteur de personnalisation n’est un produit autonome. |
-| Pack Local + Pack Parcours + Pack Équipe | **Seul Pack Local est public.** |
+| Pack Local + Pack Parcours + Pack Équipe | **Pack Local et Pack Parcours sont retirés. Essentiel, Comptoir et Équipe sont publics.** |
 | Trois produits physiques contre six produits industriels | **Trois produits publics seulement** : Comptoir, Plaque, Card. Les variantes restent recherche ou pré-série. |
 | Card PVC, Bois et Metal comme références publiques | **Tapote Card reste le nom public.** Une matière n’est affichée que si elle est qualifiée et disponible. |
 | Prix uniques contre doubles prix | **Deux prix par offre physique**, selon Prêt à poser / À votre image. |
@@ -619,14 +646,14 @@ Les points suivants ne doivent pas être tranchés implicitement :
 - origine et allégations environnementales ;
 - délais et garanties contractuels ;
 - nombre et contenu des pages secteur à maintenir ;
-- route canonique dédiée ou section Boutique pour Pack Local.
+- routes et compositions canoniques des packs Essentiel, Comptoir et Équipe.
 
 ## 15. Contrôle avant toute publication
 
 Avant chaque mise en ligne qui touche l’offre :
 
 1. comparer les noms, produits, modes et prix à ce document ;
-2. rechercher toute occurrence de `Tapote Link`, `Pack Parcours`, `Pack Équipe`, `Tapote Mini`, `Tapote Signature`, `Express` ou `Prêt à servir` utilisée comme offre publique ;
+2. rechercher toute occurrence de `Tapote Link`, `Pack Local`, `Pack Parcours`, `Tapote Mini`, `Tapote Signature`, `Express` ou `Prêt à servir` utilisée comme offre publique ;
 3. vérifier qu’aucune tâche de design n’a modifié l’offre ;
 4. vérifier que toute donnée de démonstration est étiquetée ;
 5. vérifier qu’aucun faux avis, client, chiffre ou logo n’est présent ;

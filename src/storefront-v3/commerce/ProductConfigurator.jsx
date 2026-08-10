@@ -1,14 +1,16 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { ArrowRight, Camera, Check, CheckCircle2, Globe2, Pipette, Sparkles, Upload, X } from "lucide-react";
-import { ACTIONS, formatMoney, PRODUCTS } from "../../../shared/catalog.js";
+import { ArrowRight, Camera, Check, CheckCircle2, ChevronDown, Eye, Globe2, Layers3, Minus, Pipette, Plus, Sparkles, Upload, X } from "lucide-react";
+import { ACTIONS, calculateProductPrice, formatMoney, PRODUCTS } from "../../../shared/catalog.js";
 import { prepareLogoFile, readFileAsDataUrl } from "../../storefront/logoFile.js";
 import { extractLogoPalette, pickScreenColor } from "../../brandColors.js";
 import { DEFAULT_THEME, DEVICE_THEMES, THEME_LABELS, readableInk, resolveThemeId } from "../../deviceThemes.js";
 import { trackStorefrontEvent } from "../../storefront/analytics.js";
 import { friendlyUploadError, readUploadPayload } from "../../storefront/uploadResponse.js";
-import { CONFIG_DRAFT_PREFIX, cacheLogoPreview, compositionLabel, compositionSurface, getCachedLogoPreview, getProductId, loadConfigDraft, makeCartItem } from "./cart.js";
+import { CONFIG_DRAFT_PREFIX, cacheLogoPreview, compositionLabel, compositionSurface, getCachedLogoPreview, loadConfigDraft, makeCartItem } from "./cart.js";
 import { ACTION_ORDER, FEATURED_ACTION_IDS, READY_ACTION_IDS, campaignHeadlineForAction, readyHeadlineForAction } from "../data/content.js";
 import { DEFAULT_BLOCK_COLOR_MODE, resolveBlockPalette } from "../../storefront/actionPalettes.js";
+import { PackArt } from "../scenes/PackArt.jsx";
+import { ProductArt } from "../scenes/ProductArt.jsx";
 
 function isValidHttpsUrl(value) {
   try {
@@ -17,26 +19,6 @@ function isValidHttpsUrl(value) {
   } catch {
     return false;
   }
-}
-
-function CompositionPicker({ count, composition, onChange, labelId }) {
-  if (count !== 2) return null;
-  const choices = [
-    { label: "1 Comptoir + 1 Plaque", value: { comptoir: 1, plaque: 1 } },
-    { label: "2 Comptoirs", value: { comptoir: 2, plaque: 0 } },
-    { label: "2 Plaques", value: { comptoir: 0, plaque: 2 } },
-  ];
-  return (
-    <div className="v3-field-block" role="group" aria-labelledby={labelId}>
-      <span className="v3-field-label" id={labelId}><b aria-hidden="true">↳</b><span>Composition</span></span>
-      <div className="v3-choice-row v3-choice-row-three">
-        {choices.map((choice) => {
-          const selected = choice.value.comptoir === composition.comptoir && choice.value.plaque === composition.plaque;
-          return <button type="button" className={selected ? "is-selected" : ""} aria-pressed={selected} onClick={() => onChange(choice.value)} key={choice.label}>{choice.label}</button>;
-        })}
-      </div>
-    </div>
-  );
 }
 
 function ReadyDesignPicker({ onChange, theme }) {
@@ -82,20 +64,62 @@ function ReadyDesignPicker({ onChange, theme }) {
   );
 }
 
-export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "avis", initialCount = 1, initialComposition, initialPersonalization = "ready", initialTheme = DEFAULT_THEME, initialBrandName = "VOTRE MARQUE", initialReadyHeadline = "", targetId = "cafe", title = "Choisissez votre Tapote.", productOnly = false, compact = false, allowAllSurfaces = false, lockPersonalization = false, onPreviewChange, draftKey = "", stickyTriggerRef }) {
+const OFFER_FAMILIES = Object.freeze({
+  chevalet: { label: "Chevalet", detail: "Caisse et accueil", ready: "chevalet_pret", custom: "chevalet_personnalise" },
+  plaque: { label: "Plaque", detail: "Entrée et mur", ready: "plaque_prete", custom: "plaque_personnalisee" },
+  carte: { label: "Carte", detail: "Poche et terrain", ready: "carte_prete", custom: "carte_personnalisee" },
+  essentiel: { label: "Essentiel", detail: "1 + 1 + 1", ready: "pack_essentiel_pret", custom: "pack_essentiel" },
+  comptoir: { label: "Comptoir", detail: "2 + 1 + 1", ready: "pack_comptoir_pret", custom: "pack_comptoir" },
+  equipe: { label: "Équipe", detail: "2 + 2 + 3", ready: "pack_equipe_pret", custom: "pack_equipe" },
+});
+
+function offerFamilyFromProductId(productId, surface = "comptoir") {
+  const match = Object.entries(OFFER_FAMILIES).find(([, ids]) => ids.ready === productId || ids.custom === productId);
+  if (match) return match[0];
+  return surface === "plaque" || surface === "carte" ? surface : "chevalet";
+}
+
+const PACK_SURFACES = Object.freeze([
+  { id: "comptoir", label: "Chevalet" },
+  { id: "plaque", label: "Plaque" },
+  { id: "carte", label: "Carte" },
+]);
+
+function packUnitsFromComposition(composition = {}) {
+  return PACK_SURFACES.flatMap(({ id, label }) => (
+    Array.from({ length: composition[id] || 0 }, (_, index) => ({
+      key: `${id}-${index + 1}`,
+      surface: id,
+      label: `${label} ${index + 1}`,
+    }))
+  ));
+}
+
+export function BuyBox({ onAdd, initialProductId = "", initialSurface = "comptoir", initialAction = "avis", initialCount = 1, initialComposition, initialPersonalization = "ready", initialTheme = DEFAULT_THEME, initialBrandName = "VOTRE MARQUE", initialReadyHeadline = "", targetId = "cafe", title = "Choisissez votre Tapote.", productOnly = false, compact = false, allowAllSurfaces = false, lockPersonalization = false, onPreviewChange, onExpandPreview, draftKey = "", stickyTriggerRef }) {
   const restoredDraft = useMemo(() => initialPersonalization === "custom" || draftKey.startsWith("cart:") ? loadConfigDraft(draftKey) : null, [draftKey, initialPersonalization]);
   const restoredTheme = resolveThemeId(restoredDraft?.theme || initialTheme);
   const restoredThemeColors = DEVICE_THEMES[restoredTheme];
   const [personalization, setPersonalization] = useState(initialPersonalization);
+  const [offerFamily, setOfferFamily] = useState(() => offerFamilyFromProductId(initialProductId, initialSurface));
   const [surface, setSurface] = useState(initialSurface);
-  const restoredCount = [1, 2].includes(Number(restoredDraft?.count)) ? Number(restoredDraft.count) : initialCount;
+  const restoredCount = [1, 2, 3, 4, 5].includes(Number(restoredDraft?.count)) ? Number(restoredDraft.count) : initialCount;
   const [count, setCount] = useState(restoredCount);
   const [actionId, setActionId] = useState(ACTIONS[restoredDraft?.actionId] ? restoredDraft.actionId : initialAction);
   const [composition, setComposition] = useState(
     restoredDraft?.composition
     || initialComposition
-    || (restoredCount === 2 ? { comptoir: 1, plaque: 1 } : { comptoir: 1, plaque: 0 }),
+    || (initialSurface === "carte"
+      ? { comptoir: 0, carte: 1 }
+      : restoredCount === 2
+        ? { comptoir: 2, carte: 1 }
+        : { comptoir: 1, carte: 1 }),
   );
+  const [packDesignMode, setPackDesignMode] = useState(restoredDraft?.packDesignMode === "individual" ? "individual" : "shared");
+  const [customizationPath, setCustomizationPath] = useState(restoredDraft?.customizationPath === "self" ? "self" : "assisted");
+  const [activePackUnit, setActivePackUnit] = useState(restoredDraft?.activePackUnit || "comptoir-1");
+  const [supportDesigns, setSupportDesigns] = useState(restoredDraft?.supportDesigns || {});
+  const [studioPreviewTab, setStudioPreviewTab] = useState("pack");
+  const [mobileStudioSection, setMobileStudioSection] = useState("identity");
   const [brandName, setBrandName] = useState(restoredDraft?.brandName || "");
   const [brandLogoId, setBrandLogoId] = useState(restoredDraft?.brandLogoId || "");
   const [brandLogo, setBrandLogo] = useState(() => getCachedLogoPreview(restoredDraft?.brandLogoId));
@@ -135,7 +159,6 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
   const destinationInputRef = useRef(null);
   const supportLabelId = useId();
   const quantityLabelId = useId();
-  const compositionLabelId = useId();
   const linkLabelId = useId();
   const designLabelId = useId();
   const [initialCtaPassed, setInitialCtaPassed] = useState(false);
@@ -172,11 +195,13 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
   const [logoStatus, setLogoStatus] = useState(restoredDraft?.brandLogoId ? "success" : "idle");
   const [logoError, setLogoError] = useState("");
   const [added, setAdded] = useState(false);
-  const isCard = surface === "carte";
-  const safeCount = isCard ? 1 : count;
-  const quantityChoices = [1, 2];
-  const productId = getProductId(surface, personalization, safeCount);
+  const activeFamily = OFFER_FAMILIES[offerFamily];
+  const productId = activeFamily[personalization];
   const product = PRODUCTS[productId];
+  const safeCount = count;
+  const configuredPrice = calculateProductPrice(productId, composition) ?? product.price;
+  const packUnits = useMemo(() => product.kind === "pack" ? packUnitsFromComposition(composition) : [], [composition, product.kind]);
+  const resolvedActivePackUnit = packUnits.some((unit) => unit.key === activePackUnit) ? activePackUnit : packUnits[0]?.key || "";
   const readyColors = DEVICE_THEMES[resolveThemeId(theme)];
   const availableActions = ACTION_ORDER
     .filter((id) => personalization !== "ready" || READY_ACTION_IDS.includes(id))
@@ -208,9 +233,104 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
     : logoStatus === "error"
       ? "Finaliser l’envoi du logo"
       : "Logo à retransmettre";
+  const currentSupportDesign = {
+    surface,
+    actionId,
+    destinationUrl,
+    brandName,
+    brandLogoId,
+    brandLogo,
+    logoFileName,
+    logoStatus,
+    signageId,
+    signageFileName,
+    signageStatus,
+    tagline,
+    contactLine,
+    blockColorMode,
+    theme,
+    primaryColor,
+    secondaryColor,
+    textColor,
+    customHeadline,
+    customSubline,
+    customTapLabel,
+  };
+  const liveSupportDesigns = packUnits.map((unit) => {
+    const saved = packDesignMode === "individual" ? supportDesigns[unit.key] : null;
+    const design = packDesignMode === "individual" && unit.key !== resolvedActivePackUnit
+      ? (saved || currentSupportDesign)
+      : currentSupportDesign;
+    return { ...design, brandLogo: design.brandLogo || getCachedLogoPreview(design.brandLogoId) || "", key: unit.key, label: unit.label, surface: unit.surface };
+  });
+  const persistableSupportDesigns = Object.fromEntries(liveSupportDesigns.map((entry) => {
+    const design = { ...entry };
+    const key = design.key;
+    delete design.key;
+    delete design.label;
+    delete design.brandLogo;
+    return [key, design];
+  }));
+  const persistableSupportDesignsKey = JSON.stringify(persistableSupportDesigns);
+  const applySupportDesign = (design = {}) => {
+    setActionId(ACTIONS[design.actionId] ? design.actionId : "avis");
+    setDestinationUrl(design.destinationUrl || "");
+    setDestinationTouched(false);
+    setBrandName(design.brandName || "");
+    setBrandLogoId(design.brandLogoId || "");
+    setBrandLogo(design.brandLogo || getCachedLogoPreview(design.brandLogoId) || "");
+    setLogoFileName(design.logoFileName || "");
+    setLogoStatus(design.logoStatus || (design.brandLogoId ? "success" : "idle"));
+    setLogoError("");
+    setSignageId(design.signageId || "");
+    setSignageFileName(design.signageFileName || "");
+    setSignageStatus(design.signageStatus || (design.signageId ? "success" : "idle"));
+    setSignageError("");
+    setTagline(design.tagline || "");
+    setContactLine(design.contactLine || "");
+    setBlockColorMode(design.blockColorMode === "marque" ? "marque" : DEFAULT_BLOCK_COLOR_MODE);
+    const nextTheme = resolveThemeId(design.theme || theme);
+    setTheme(nextTheme);
+    setPrimaryColor(design.primaryColor || DEVICE_THEMES[nextTheme].paper);
+    setSecondaryColor(design.secondaryColor || DEVICE_THEMES[nextTheme].accent);
+    setTextColor(design.textColor || DEVICE_THEMES[nextTheme].ink);
+    setCustomHeadline(design.customHeadline || "");
+    setCustomSubline(design.customSubline || "");
+    setCustomTapLabel(design.customTapLabel || "");
+  };
+  const selectPackUnit = (unit) => {
+    markConfigurationStarted();
+    const savedCurrent = { ...currentSupportDesign, surface };
+    const nextDesign = supportDesigns[unit.key] || { ...savedCurrent, surface: unit.surface };
+    setSupportDesigns((current) => ({ ...current, [resolvedActivePackUnit]: savedCurrent }));
+    setActivePackUnit(unit.key);
+    setSurface(unit.surface);
+    applySupportDesign(nextDesign);
+    setStudioPreviewTab("support");
+    onExpandPreview?.();
+  };
+  const selectPackDesignMode = (mode) => {
+    markConfigurationStarted();
+    if (mode === "individual") {
+      const seeded = Object.fromEntries(packUnits.map((unit) => [unit.key, { ...currentSupportDesign, surface: unit.surface }]));
+      setSupportDesigns((current) => ({ ...seeded, ...current, [resolvedActivePackUnit]: { ...currentSupportDesign, surface } }));
+      setActivePackUnit(resolvedActivePackUnit);
+    }
+    setPackDesignMode(mode);
+  };
+  const selectCustomizationPath = (path) => {
+    markConfigurationStarted();
+    setCustomizationPath(path);
+    setMobileStudioSection("identity");
+    if (path === "assisted") {
+      setPackDesignMode("shared");
+      setStudioPreviewTab("pack");
+    }
+  };
   const selectPersonalization = (value) => {
     markConfigurationStarted();
     setPersonalization(value);
+    if (value === "custom") setMobileStudioSection("identity");
     if (value === "custom" && personalization !== "custom" && !colorsManuallyEdited && !brandLogo) {
       const palette = DEVICE_THEMES.creme;
       setTheme("creme");
@@ -221,39 +341,51 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
       setActionId("avis");
     }
   };
+  const selectOfferFamily = (value) => {
+    markConfigurationStarted();
+    const nextId = OFFER_FAMILIES[value][personalization];
+    const nextProduct = PRODUCTS[nextId];
+    const nextComposition = { ...nextProduct.defaultComposition };
+    setOfferFamily(value);
+    const nextSurface = nextProduct.kind === "pack" ? "comptoir" : nextProduct.baseProductId;
+    setSurface(nextSurface);
+    setComposition(nextComposition);
+    setCount(nextProduct.kind === "pack"
+      ? nextProduct.supportCount
+      : nextComposition[nextProduct.baseProductId]);
+    setPackDesignMode("shared");
+    setSupportDesigns({});
+    setActivePackUnit(`${nextSurface}-1`);
+    setStudioPreviewTab(nextProduct.kind === "pack" ? "pack" : "support");
+  };
+  const adjustComposition = (surfaceId, delta) => {
+    markConfigurationStarted();
+    const minimum = product.defaultComposition[surfaceId] || 0;
+    setComposition((current) => {
+      const next = Math.max(minimum, Math.min(20, (current[surfaceId] || 0) + delta));
+      const nextComposition = { ...current, [surfaceId]: next };
+      setCount(nextComposition.comptoir + nextComposition.plaque + nextComposition.carte);
+      return nextComposition;
+    });
+  };
+  const supportArticle = (surfaceId) => (surfaceId === "comptoir" ? "un" : "une");
   const selectAction = (value) => {
     markConfigurationStarted();
     setActionId(value);
   };
-  const previewSurface = compositionSurface(safeCount, composition, surface);
+  // Un pack doit montrer le format choisi par le client, pas toujours son
+  // premier chevalet. La composition reste complète dans le panier, tandis
+  // que `surface` désigne uniquement l'objet actuellement agrandi.
+  const previewSurface = product.kind === "pack" ? surface : compositionSurface(safeCount, composition, surface);
   useEffect(() => {
-    onPreviewChange?.({ surface: previewSurface, baseSurface: surface, actionId, brandName: previewBrandName, brandLogo: previewBrandLogo, tagline: personalization === "custom" ? tagline : "", contactLine: personalization === "custom" ? contactLine : "", blockColorMode, theme, primaryColor: previewPrimaryColor, secondaryColor: previewSecondaryColor, textColor: previewTextColor, customHeadline: previewHeadline, customSubline: personalization === "custom" ? customSubline : "", customTapLabel: personalization === "custom" ? customTapLabel : "", personalization, count: safeCount, composition, productId, productName: product.name, price: product.price });
-  }, [actionId, blockColorMode, composition, contactLine, customSubline, customTapLabel, onPreviewChange, personalization, previewBrandLogo, previewBrandName, previewHeadline, previewPrimaryColor, previewSecondaryColor, previewSurface, previewTextColor, product.name, product.price, productId, safeCount, surface, tagline, theme]);
+    onPreviewChange?.({ surface: previewSurface, baseSurface: surface, actionId, brandName: previewBrandName, brandLogo: previewBrandLogo, tagline: personalization === "custom" ? tagline : "", contactLine: personalization === "custom" ? contactLine : "", blockColorMode, theme, primaryColor: previewPrimaryColor, secondaryColor: previewSecondaryColor, textColor: previewTextColor, customHeadline: previewHeadline, customSubline: personalization === "custom" ? customSubline : "", customTapLabel: personalization === "custom" ? customTapLabel : "", personalization, customizationPath, count: safeCount, composition, productId, productName: product.name, price: configuredPrice, packDesignMode, supportDesigns: packDesignMode === "individual" ? JSON.parse(persistableSupportDesignsKey) : undefined });
+  }, [actionId, blockColorMode, composition, configuredPrice, contactLine, customSubline, customTapLabel, customizationPath, onPreviewChange, packDesignMode, personalization, persistableSupportDesignsKey, previewBrandLogo, previewBrandName, previewHeadline, previewPrimaryColor, previewSecondaryColor, previewSurface, previewTextColor, product.name, productId, safeCount, surface, tagline, theme]);
   useEffect(() => {
     if (!draftKey || personalization !== "custom") return;
     try {
-      window.sessionStorage.setItem(`${CONFIG_DRAFT_PREFIX}${draftKey}`, JSON.stringify({ actionId, count: safeCount, composition, brandName, brandLogoId, logoFileName, signageId, signageFileName, tagline, contactLine, blockColorMode, theme, customHeadline, customSubline, customTapLabel, destinationUrl, primaryColor, secondaryColor, textColor }));
+      window.sessionStorage.setItem(`${CONFIG_DRAFT_PREFIX}${draftKey}`, JSON.stringify({ productId, actionId, count: safeCount, composition, customizationPath, packDesignMode, activePackUnit: resolvedActivePackUnit, supportDesigns: JSON.parse(persistableSupportDesignsKey), brandName, brandLogoId, logoFileName, signageId, signageFileName, tagline, contactLine, blockColorMode, theme, customHeadline, customSubline, customTapLabel, destinationUrl, primaryColor, secondaryColor, textColor }));
     } catch { /* A full browser storage area must never block configuration or checkout. */ }
-  }, [actionId, blockColorMode, brandLogoId, brandName, composition, contactLine, signageId, signageFileName, customHeadline, customSubline, customTapLabel, destinationUrl, draftKey, logoFileName, personalization, primaryColor, safeCount, secondaryColor, tagline, textColor, theme]);
-  const selectCount = (value) => {
-    markConfigurationStarted();
-    setCount(value);
-    if (productOnly && initialSurface === "comptoir") {
-      setComposition({ comptoir: value, plaque: 0 });
-    } else if (productOnly && initialSurface === "plaque") {
-      setComposition({ comptoir: 0, plaque: value });
-    } else if (value === 1) {
-      setComposition(surface === "plaque" ? { comptoir: 0, plaque: 1 } : { comptoir: 1, plaque: 0 });
-    } else {
-      setComposition({ comptoir: 1, plaque: 1 });
-    }
-  };
-  const selectSurface = (value) => {
-    markConfigurationStarted();
-    setSurface(value);
-    if (value === "carte") return;
-    if (count > 1) setComposition(value === "plaque" ? { comptoir: 0, plaque: count } : { comptoir: count, plaque: 0 });
-  };
+  }, [actionId, blockColorMode, brandLogoId, brandName, composition, contactLine, signageId, signageFileName, customHeadline, customSubline, customTapLabel, customizationPath, destinationUrl, draftKey, logoFileName, packDesignMode, personalization, persistableSupportDesignsKey, primaryColor, productId, resolvedActivePackUnit, safeCount, secondaryColor, tagline, textColor, theme]);
   const uploadLogo = async (event) => {
     const selectedFile = event.target.files?.[0];
     if (!selectedFile) return;
@@ -353,6 +485,9 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
     const wasAdded = onAdd(makeCartItem(productId, actionId, {
       targetId,
       supportComposition: composition,
+      customizationPath: personalization === "custom" ? customizationPath : "ready",
+      packDesignMode: product.kind === "pack" && personalization === "custom" ? packDesignMode : "shared",
+      supportDesigns: product.kind === "pack" && personalization === "custom" && packDesignMode === "individual" ? JSON.parse(persistableSupportDesignsKey) : undefined,
       brandName: personalization === "custom" ? brandName : "",
       brandLogoId: personalization === "custom" ? brandLogoId : "",
       logoFileName: personalization === "custom" ? logoFileName : "",
@@ -374,75 +509,214 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
     setAdded(true);
     window.setTimeout(() => setAdded(false), 1500);
   };
-  // La page unifiée garde volontairement la même ossature quand on passe à la
-  // carte. La carte est vendue à l'unité, mais l'étape quantité reste visible
-  // pour éviter un changement brutal du configurateur.
-  const showSupports = !productOnly && (!isCard || allowAllSurfaces);
-  const showQuantity = !isCard || allowAllSurfaces;
+  // La première carte est à 29 €, puis chaque carte supplémentaire à 20 €.
+  // La quantité fait donc partie de la composition calculée côté serveur.
+  const showSupports = allowAllSurfaces || productOnly;
+  const showQuantity = true;
   const supportStep = 1;
-  const quantityStep = showSupports ? 2 : 1;
-  const linkStep = (showSupports ? 1 : 0) + (showQuantity ? 1 : 0) + 1;
-  const designStep = linkStep + 1;
+  const designStep = 2;
+  const quantityStep = 3;
+  const linkStep = 4;
+  const renderIdentityFields = () => (
+    <>
+      <div className="v3-identity-grid">
+        <input value={brandName} onChange={(event) => setBrandName(event.target.value.slice(0, 28))} placeholder="Nom de votre entreprise" aria-label="Nom de votre entreprise" />
+        <label className={`v3-logo-upload is-${logoStatus}`}>
+          <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml,.svg" onChange={uploadLogo} disabled={logoStatus === "loading"} />
+          <Upload size={17} />
+          <span><strong>{logoStatus === "loading" ? "Envoi sécurisé…" : brandLogo ? "Remplacer le logo" : "Ajouter votre logo"}</strong><small>Facultatif · PNG, JPG, WebP ou SVG.</small></span>
+        </label>
+      </div>
+      {brandLogo && <div className="v3-uploaded-logo"><img src={brandLogo} alt="Aperçu du logo importé" /><span><strong>{logoFileName}</strong><small>{logoStatus === "success" ? "Logo reçu · aperçu à jour" : logoStatus === "error" ? "Aperçu à jour · envoi à relancer" : "Aperçu à jour"}</small></span><button type="button" onClick={removeLogo} aria-label="Retirer le logo"><X size={15} /></button></div>}
+      {logoError && <p className="v3-upload-error" role="alert">{logoError} Sélectionnez-le à nouveau pour relancer l’envoi.</p>}
+      {!brandLogo && (
+        <details className="v3-signage-step">
+          <summary>Je n’ai pas encore de fichier logo</summary>
+          <label className={`v3-signage-upload is-${signageStatus} ${signageId ? "is-filled" : ""}`}>
+            <input type="file" accept="image/png,image/jpeg,image/webp" onChange={uploadSignage} disabled={signageStatus === "loading"} />
+            <Camera size={17} aria-hidden="true" />
+            <span><strong>{signageStatus === "loading" ? "Envoi sécurisé…" : signageId ? "Photo reçue" : "Photographier mon enseigne"}</strong><small>{signageId ? "Le tracé sera proposé dans le BAT" : "Tapote pourra préparer un tracé propre."}</small></span>
+          </label>
+          {signageId && <div className="v3-uploaded-logo"><i className="v3-signage-thumb" aria-hidden="true"><Camera size={16} /></i><span><strong>{signageFileName}</strong><small>Jointe à la commande</small></span><button type="button" onClick={removeSignage} aria-label="Retirer la photo d’enseigne"><X size={15} /></button></div>}
+          {signageError && <p className="v3-upload-error" role="alert">{signageError}</p>}
+        </details>
+      )}
+    </>
+  );
   return (
     <section id={productOnly ? "configurer" : undefined} className={`v3-buybox ${compact ? "is-compact" : ""} ${productOnly ? "is-product-only" : ""}`} aria-label="Configurer l’achat">
       <div className="v3-buybox-intro">
         <span className="v3-buybox-kicker"><Sparkles size={14} aria-hidden="true" /> Tapote Studio</span>
         <h2>{title}</h2>
-        <p>Chaque choix s’affiche instantanément dans l’aperçu.</p>
       </div>
-      <div className={`v3-core-choice-grid ${showSupports && showQuantity ? "" : "is-single"}`}>
+      <div className="v3-core-choice-grid is-single">
         {showSupports && (
           <div className="v3-field-block" role="group" aria-labelledby={supportLabelId}>
-            <span className="v3-field-label" id={supportLabelId}><b>{supportStep}</b><span>Support</span></span>
-            <div className={`v3-choice-row ${allowAllSurfaces ? "v3-choice-row-three" : ""}`}>
-              <button type="button" aria-label="Tapote Comptoir" aria-pressed={surface === "comptoir"} className={surface === "comptoir" ? "is-selected" : ""} onClick={() => selectSurface("comptoir")}><strong>Tapote Comptoir</strong></button>
-              <button type="button" aria-label="Tapote Plaque" aria-pressed={surface === "plaque"} className={surface === "plaque" ? "is-selected" : ""} onClick={() => selectSurface("plaque")}><strong>Tapote Plaque</strong></button>
-              {allowAllSurfaces && <button type="button" aria-label="Tapote Card" aria-pressed={surface === "carte"} className={surface === "carte" ? "is-selected" : ""} onClick={() => selectSurface("carte")}><strong>Tapote Card</strong></button>}
+            <span className="v3-field-label" id={supportLabelId}><b>{supportStep}</b><span>Choisissez votre offre</span></span>
+            <div className="v3-offer-family-choice">
+              {Object.entries(OFFER_FAMILIES).map(([key, family]) => {
+                const selected = offerFamily === key;
+                const candidate = PRODUCTS[family[personalization]];
+                return (
+                  <button type="button" key={key} aria-pressed={selected} className={`${selected ? "is-selected" : ""} ${candidate.kind === "pack" ? "is-pack" : ""}`.trim()} onClick={() => selectOfferFamily(key)}>
+                    <span><strong>{family.label}</strong><small>{family.detail}</small></span>
+                    <b>{formatMoney(candidate.price)}</b>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
+        <div className="v3-field-block v3-mode-field" role="group" aria-labelledby={designLabelId}>
+          <span className="v3-field-label" id={designLabelId}><b>{designStep}</b><span>Choisissez la finition</span></span>
+          {!lockPersonalization && <div className="v3-design-choice">
+            <button type="button" aria-pressed={personalization === "ready"} className={personalization === "ready" ? "is-selected" : ""} onClick={() => selectPersonalization("ready")}>
+              <span><strong>Prêt à poser</strong><small>Design Tapote, configuré pour votre lien</small></span>
+            </button>
+            <button type="button" aria-pressed={personalization === "custom"} className={personalization === "custom" ? "is-selected" : ""} onClick={() => selectPersonalization("custom")}>
+              <span><strong>À votre image</strong><small>Logo, couleurs et textes personnalisés</small></span>
+            </button>
+          </div>}
+          {personalization === "ready" && (
+            <ReadyDesignPicker
+              onChange={applyTheme}
+              theme={theme}
+            />
+          )}
+          {personalization === "custom" && (
+            <div className="v3-customization-path" role="group" aria-label="Choisir qui prépare le design">
+              <span>Comment voulez-vous avancer ?</span>
+              <div>
+                <button type="button" className={customizationPath === "assisted" ? "is-selected" : ""} aria-pressed={customizationPath === "assisted"} onClick={() => selectCustomizationPath("assisted")}>
+                  <Sparkles aria-hidden="true" />
+                  <span><strong>Tapote le fait pour moi</strong><small>Logo ou idée, puis BAT avant impression</small></span>
+                  <em>Recommandé</em>
+                </button>
+                <button type="button" className={customizationPath === "self" ? "is-selected" : ""} aria-pressed={customizationPath === "self"} onClick={() => selectCustomizationPath("self")}>
+                  <Pipette aria-hidden="true" />
+                  <span><strong>Je personnalise moi-même</strong><small>Accéder à tous les réglages du Studio</small></span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
         {showQuantity && (
           <div className="v3-field-block" role="group" aria-labelledby={quantityLabelId}>
-            <span className="v3-field-label" id={quantityLabelId}><b>{quantityStep}</b><span>Quantité</span></span>
-            {isCard ? (
-              <div className="v3-card-quantity" aria-label={`1 carte NFC · ${formatMoney(product.price)}`}>
-                <span>
-                  <strong>1</strong>
-                  <span><small>carte NFC</small><b>à l’unité</b></span>
-                  <CheckCircle2 aria-hidden="true" />
-                </span>
-                <p><b>Vendue à l’unité</b><span>Pour plusieurs cartes, ajoutez celle-ci puis ajustez la quantité dans le panier.</span></p>
-              </div>
-            ) : (
-              <div className="v3-quantity-choice">
-                {/* Le prix du lot est affiché sur l'option : le visiteur compare
-                    sans avoir à changer de choix pour découvrir le tarif. */}
-                {quantityChoices.map((value) => {
-                  const optionId = getProductId(surface, personalization, value);
-                  const optionPrice = formatMoney(PRODUCTS[optionId].price);
-                  const optionName = value === 1 ? "support" : "Pack Local";
-                  return (
+            <span className="v3-field-label" id={quantityLabelId}><b>{quantityStep}</b><span>{product.kind === "pack" ? "Composition du pack" : "Quantité"}</span></span>
+            <div className="v3-composition-editor">
+              {(product.kind === "pack" ? ["comptoir", "plaque", "carte"] : [product.baseProductId]).map((surfaceId) => {
+                const labels = { comptoir: "Chevalet", plaque: "Plaque", carte: "Carte" };
+                const minimum = product.defaultComposition[surfaceId] || 0;
+                const value = composition[surfaceId] || 0;
+                return (
+                  <div key={surfaceId}>
+                    <span><strong>{labels[surfaceId]}</strong><small>{value === minimum ? "Inclus" : `+ ${value - minimum}`}</small></span>
+                    <div>
+                      <button type="button" onClick={() => adjustComposition(surfaceId, -1)} disabled={value <= minimum} aria-label={`Retirer ${supportArticle(surfaceId)} ${labels[surfaceId].toLowerCase()}`}><Minus /></button>
+                      <b>{value}</b>
+                      <button type="button" onClick={() => adjustComposition(surfaceId, 1)} aria-label={`Ajouter ${supportArticle(surfaceId)} ${labels[surfaceId].toLowerCase()}`}><Plus /></button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {product.kind === "pack" && (
+              <div className="v3-pack-preview-choice" role="group" aria-label="Choisir le support affiché dans l’aperçu">
+                <span><Eye aria-hidden="true" /> Support affiché</span>
+                <div>
+                  {[{ id: "comptoir", label: "Chevalet" }, { id: "plaque", label: "Plaque" }, { id: "carte", label: "Carte" }].map((item) => (
                     <button
                       type="button"
-                      aria-label={`${value === 1 ? "1 support" : "Pack Local, 2 supports"} · ${optionPrice}`}
-                      aria-pressed={count === value}
-                      className={count === value ? "is-selected" : ""}
-                      onClick={() => selectCount(value)}
-                      key={value}
+                      key={item.id}
+                      aria-pressed={surface === item.id}
+                      className={surface === item.id ? "is-selected" : ""}
+                      onClick={() => {
+                        markConfigurationStarted();
+                        setSurface(item.id);
+                        onExpandPreview?.();
+                      }}
                     >
-                      <strong>{value}</strong>
-                      <span>{optionName}</span>
-                      <b>{optionPrice}</b>
-                      {value === 2 && <em>Le plus choisi</em>}
+                      {item.label}
                     </button>
-                  );
-                })}
+                  ))}
+                </div>
+              </div>
+            )}
+            {product.kind === "pack" && (
+              <div className={`v3-studio-pack-panel is-composition-preview${personalization === "custom" && customizationPath === "assisted" ? " is-assisted-compact" : ""}`}>
+                {personalization === "custom" && customizationPath === "assisted" ? (
+                  <div className="v3-assisted-pack-heading"><Layers3 size={16} /><span><strong>Votre pack</strong><small>Le même design sur chaque support</small></span></div>
+                ) : (
+                  <div className="v3-studio-pack-tabs" role="group" aria-label="Vue de la personnalisation">
+                    <button type="button" className={studioPreviewTab === "pack" ? "is-selected" : ""} aria-pressed={studioPreviewTab === "pack"} onClick={() => setStudioPreviewTab("pack")}><Layers3 size={15} /> Pack complet</button>
+                    <button type="button" className={studioPreviewTab === "support" ? "is-selected" : ""} aria-pressed={studioPreviewTab === "support"} onClick={() => setStudioPreviewTab("support")}><Eye size={15} /> Support en cours</button>
+                  </div>
+                )}
+                <div className={`v3-studio-pack-preview is-${personalization === "custom" && customizationPath === "assisted" ? "pack" : studioPreviewTab}`}>
+                  {(personalization === "custom" && customizationPath === "assisted") || studioPreviewTab === "pack" ? (
+                    <PackArt
+                      productId={productId}
+                      composition={composition}
+                      actionId={actionId}
+                      brandName={previewBrandName}
+                      brandLogo={previewBrandLogo}
+                      theme={theme}
+                      personalization={personalization}
+                      primaryColor={previewPrimaryColor}
+                      secondaryColor={previewSecondaryColor}
+                      textColor={previewTextColor}
+                      blockColorMode={blockColorMode}
+                      customHeadline={previewHeadline}
+                      customSubline={customSubline}
+                      customTapLabel={customTapLabel}
+                      supportDesigns={personalization === "custom" && packDesignMode === "individual" ? liveSupportDesigns : undefined}
+                      className="is-studio-overview"
+                    />
+                  ) : (
+                    <ProductArt
+                      surface={surface}
+                      actionId={actionId}
+                      brandName={previewBrandName}
+                      brandLogo={previewBrandLogo}
+                      theme={theme}
+                      personalization={personalization}
+                      primaryColor={previewPrimaryColor}
+                      secondaryColor={previewSecondaryColor}
+                      textColor={previewTextColor}
+                      blockColorMode={blockColorMode}
+                      customHeadline={previewHeadline}
+                      customSubline={customSubline}
+                      customTapLabel={customTapLabel}
+                    />
+                  )}
+                </div>
+                {personalization === "custom" && customizationPath === "self" && (
+                  <div className="v3-pack-design-mode" role="group" aria-label="Appliquer le design au pack">
+                    <button type="button" className={packDesignMode === "shared" ? "is-selected" : ""} aria-pressed={packDesignMode === "shared"} onClick={() => selectPackDesignMode("shared")}><strong>Même design partout</strong><small>Le choix le plus simple</small></button>
+                    <button type="button" className={packDesignMode === "individual" ? "is-selected" : ""} aria-pressed={packDesignMode === "individual"} onClick={() => selectPackDesignMode("individual")}><strong>Différencier les supports</strong><small>Un design et un lien par Tapote</small></button>
+                  </div>
+                )}
+                {personalization === "custom" && customizationPath === "self" && packDesignMode === "individual" && (
+                  <div className="v3-pack-unit-picker" role="group" aria-label="Support du pack à personnaliser">
+                    <span>Vous modifiez</span>
+                    <div>
+                      {packUnits.map((unit) => (
+                        <button type="button" key={unit.key} className={resolvedActivePackUnit === unit.key ? "is-selected" : ""} aria-pressed={resolvedActivePackUnit === unit.key} onClick={() => selectPackUnit(unit)}>{unit.label}</button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {personalization === "custom" && customizationPath === "assisted" && (
+                  <details className="v3-pack-advanced-choice">
+                    <summary>Vous voulez des designs différents ?</summary>
+                    <div><p>Le Studio avancé permet de personnaliser chaque support et chaque lien séparément.</p><button type="button" onClick={() => { selectCustomizationPath("self"); selectPackDesignMode("individual"); }}>Configurer support par support <ArrowRight size={15} /></button></div>
+                  </details>
+                )}
               </div>
             )}
           </div>
         )}
       </div>
-      <CompositionPicker count={safeCount} composition={composition} onChange={setComposition} labelId={compositionLabelId} />
       <div className="v3-field-block v3-field-destination">
         <span className="v3-field-label" id={linkLabelId}><b>{linkStep}</b><span>Action</span></span>
         {/* Le menu déroulant natif rompait la logique du configurateur : les
@@ -502,66 +776,29 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
           </label>
         </div>
       </div>
-      <div className="v3-field-block v3-mode-field" role="group" aria-labelledby={designLabelId}>
-        <span className="v3-field-label" id={designLabelId}><b>{designStep}</b><span>Mode</span></span>
-        {!lockPersonalization && <div className="v3-design-choice">
-          <button type="button" aria-pressed={personalization === "ready"} className={personalization === "ready" ? "is-selected" : ""} onClick={() => selectPersonalization("ready")}>
-            <span><strong>Prêt à poser</strong><small>Le design Tapote, livré tel quel</small></span>
-          </button>
-          <button type="button" aria-pressed={personalization === "custom"} className={personalization === "custom" ? "is-selected" : ""} onClick={() => selectPersonalization("custom")}>
-            <span><strong>À votre image</strong><small>Votre logo, vos couleurs, vos textes</small></span>
-          </button>
-        </div>}
-        {personalization === "ready" && (
-          <ReadyDesignPicker
-            onChange={applyTheme}
-            theme={theme}
-          />
-        )}
-      </div>
       {personalization === "ready" && !compact && !productOnly && <div className="v3-field-block v3-personalization-panel v3-campaign-design-panel"><span className="v3-field-label">Design Tapote recommandé</span><div className="v3-campaign-design-note"><Sparkles /><span><strong>{campaignHeadlineForAction(actionId)}</strong><small>Composition optimisée automatiquement pour {ACTIONS[actionId].name}.</small></span><a href="/">Voir la collection <ArrowRight /></a></div></div>}
-      {personalization === "custom" && (
-        <div className="v3-field-block v3-branding-fields v3-personalization-panel v3-live-studio">
-          <div className="v3-studio-heading"><span><Sparkles size={15} /><strong>Votre design</strong></span><small><i aria-hidden="true" /> Aperçu en direct</small></div>
-          <div className="v3-studio-section">
-            <div className="v3-studio-title-row"><span className="v3-field-label">Votre identité</span><small>Nom et logo imprimés sur le support.</small></div>
-            <div className="v3-identity-grid">
-              <input value={brandName} onChange={(event) => setBrandName(event.target.value.slice(0, 28))} placeholder="Nom de votre entreprise" aria-label="Nom de votre entreprise" />
-              <label className={`v3-logo-upload is-${logoStatus}`}>
-                <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml,.svg" onChange={uploadLogo} disabled={logoStatus === "loading"} />
-                <Upload size={17} />
-                <span><strong>{logoStatus === "loading" ? "Envoi sécurisé…" : brandLogo ? "Remplacer le logo" : "Ajouter votre logo"}</strong><small>PNG, JPG, WebP ou SVG · 2 Mo max.</small></span>
-              </label>
-            </div>
-            {brandLogo && <div className="v3-uploaded-logo"><img src={brandLogo} alt="Aperçu du logo importé" /><span><strong>{logoFileName}</strong><small>{logoStatus === "success" ? "Logo reçu · aperçu à jour" : logoStatus === "error" ? "Aperçu à jour · envoi à relancer" : "Aperçu à jour"}</small></span><button type="button" onClick={removeLogo} aria-label="Retirer le logo"><X size={15} /></button></div>}
-            {logoError && <p className="v3-upload-error" role="alert">{logoError} Sélectionnez-le à nouveau pour relancer l’envoi.</p>}
-            {/* Sans fichier de logo, le client photographie son enseigne : c'est
-                la matière dont Tapote Studio a besoin pour tracer son identité
-                avant le bon à tirer. */}
-            {!brandLogo && (
-              <details className="v3-signage-step">
-                <summary>Je n’ai pas encore de fichier logo</summary>
-                <label className={`v3-signage-upload is-${signageStatus} ${signageId ? "is-filled" : ""}`}>
-                  <input type="file" accept="image/png,image/jpeg,image/webp" onChange={uploadSignage} disabled={signageStatus === "loading"} />
-                  <Camera size={17} aria-hidden="true" />
-                  <span>
-                    <strong>{signageStatus === "loading" ? "Envoi sécurisé…" : signageId ? "Photo reçue" : "Photographier mon enseigne"}</strong>
-                    <small>{signageId ? "Le tracé vous sera proposé avec le bon à tirer" : "Tapote pourra vous proposer un tracé propre."}</small>
-                  </span>
-                </label>
-                {signageId && (
-                  <div className="v3-uploaded-logo">
-                    <i className="v3-signage-thumb" aria-hidden="true"><Camera size={16} /></i>
-                    <span><strong>{signageFileName}</strong><small>Jointe à la commande · jamais imprimée telle quelle</small></span>
-                    <button type="button" onClick={removeSignage} aria-label="Retirer la photo d’enseigne"><X size={15} /></button>
-                  </div>
-                )}
-                {signageError && <p className="v3-upload-error" role="alert">{signageError}</p>}
-              </details>
-            )}
+      {personalization === "custom" && customizationPath === "assisted" && (
+        <div id="tapote-studio-fields" className="v3-field-block v3-personalization-panel v3-assisted-design">
+          <div className="v3-assisted-design-heading">
+            <span><Sparkles size={18} aria-hidden="true" /><strong>Confiez-nous votre design</strong></span>
+            <small>Ajoutez seulement ce que vous avez. Nous préparons le reste et vous validez le BAT.</small>
           </div>
-          <div className="v3-studio-section">
-            <div className="v3-studio-title-row"><span className="v3-field-label">Vos textes</span><small>Les deux lignes principales suffisent dans la plupart des cas.</small></div>
+          {renderIdentityFields()}
+          <div className="v3-assisted-design-footer">
+            <span><CheckCircle2 size={17} aria-hidden="true" /><small>Aucune compétence graphique nécessaire.</small></span>
+            <button type="button" onClick={() => { setCustomizationPath("self"); setMobileStudioSection("identity"); }}>Ouvrir les réglages avancés <ArrowRight size={16} /></button>
+          </div>
+        </div>
+      )}
+      {personalization === "custom" && customizationPath === "self" && (
+        <div id="tapote-studio-fields" className="v3-field-block v3-branding-fields v3-personalization-panel v3-live-studio">
+          <div className="v3-studio-heading"><span><Sparkles size={15} /><strong>Votre design</strong></span><small><i aria-hidden="true" /> Aperçu en direct</small></div>
+          <div className={`v3-studio-section v3-studio-accordion ${mobileStudioSection === "identity" ? "is-mobile-open" : ""}`}>
+            <button type="button" className="v3-studio-title-row" aria-expanded={mobileStudioSection === "identity"} onClick={() => setMobileStudioSection("identity")}><span className="v3-field-label">Votre identité</span><small>{brandName || (brandLogo ? "Logo ajouté" : "Nom et logo")}</small><ChevronDown aria-hidden="true" /></button>
+            {renderIdentityFields()}
+          </div>
+          <div className={`v3-studio-section v3-studio-accordion ${mobileStudioSection === "copy" ? "is-mobile-open" : ""}`}>
+            <button type="button" className="v3-studio-title-row" aria-expanded={mobileStudioSection === "copy"} onClick={() => setMobileStudioSection("copy")}><span className="v3-field-label">Vos textes</span><small>{customHeadline || "Message et phrase secondaire"}</small><ChevronDown aria-hidden="true" /></button>
             <div className="v3-live-copy-fields">
               <label className="is-wide"><span>Message principal <em>{customHeadline.length}/64</em></span><input value={customHeadline} onChange={(event) => setCustomHeadline(event.target.value.slice(0, 64))} placeholder={campaignHeadlineForAction(actionId)} aria-label="Message principal imprimé" /></label>
               <label className="is-wide"><span>Phrase secondaire <em>{customSubline.length}/90</em></span><input value={customSubline} onChange={(event) => setCustomSubline(event.target.value.slice(0, 90))} placeholder={ACTIONS[actionId].campaignSubline || ACTIONS[actionId].subline} aria-label="Phrase secondaire imprimée" /></label>
@@ -576,8 +813,8 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
             </details>
           </div>
 
-          <div className="v3-studio-section">
-            <div className="v3-studio-title-row"><span className="v3-field-label">Couleurs du support</span><small>Chaque réglage indique exactement la zone imprimée qu’il modifie.</small></div>
+          <div className={`v3-studio-section v3-studio-accordion ${mobileStudioSection === "colors" ? "is-mobile-open" : ""}`}>
+            <button type="button" className="v3-studio-title-row" aria-expanded={mobileStudioSection === "colors"} onClick={() => setMobileStudioSection("colors")}><span className="v3-field-label">Couleurs du support</span><small>{THEME_LABELS[theme]} · pavé {blockColorMode === "marque" ? "personnalisé" : "assorti"}</small><ChevronDown aria-hidden="true" /></button>
             <span className="v3-studio-subheading">Raccourcis Noir / Clair</span>
             <div className="v3-theme-choice" role="group" aria-label="Déclinaison de couleur">
               {Object.keys(DEVICE_THEMES).map((themeId) => {
@@ -650,12 +887,12 @@ export function BuyBox({ onAdd, initialSurface = "comptoir", initialAction = "av
         </div>
       )}
       <div className="v3-buybox-summary" ref={summaryRef}>
-        <div><span>{product.name}</span><strong>{formatMoney(product.price)}</strong></div>
+        <div><span>{product.name}</span><strong>{formatMoney(configuredPrice)}</strong></div>
         <button type="button" onClick={add} disabled={logoPending}>{logoPending ? logoPendingLabel : !destinationReady ? <>Ajouter le lien <ArrowRight size={18} /></> : added ? <><Check size={18} /> Ajouté</> : <>Ajouter au panier <ArrowRight size={18} /></>}</button>
       </div>
       {(productOnly || compact) && (
         <aside className={`v3-mobile-product-cta ${initialCtaPassed && !summaryVisible ? "is-visible" : ""}`} aria-label="Résumé de la configuration">
-          <span><small>{product.kind === "pack" && composition ? compositionLabel(composition) : product.name.replace(/ · .+$/, "")}</small><strong>{formatMoney(product.price)}</strong></span>
+          <span><small>{product.kind === "pack" && composition ? compositionLabel(composition) : product.name.replace(/ · .+$/, "")}</small><strong>{formatMoney(configuredPrice)}</strong></span>
           <button type="button" onClick={add} disabled={logoPending}>{logoPending ? logoPendingLabel : !destinationReady ? "Ajouter le lien" : added ? "Ajouté" : "Ajouter"} <ArrowRight /></button>
         </aside>
       )}

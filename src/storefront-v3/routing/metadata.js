@@ -12,7 +12,7 @@ const clampDescription = (text) => {
 
 export function pageMetadata(path) {
   if (path === "/") return ["Tapote — le bon geste, au bon moment", "Comptoir, plaque et carte NFC + QR pour ouvrir l’avis, le menu, la réservation ou le lien utile. Boutique simple ou personnalisation en direct."];
-  if (path === "/boutique" || path.startsWith("/categorie/")) return ["Boutique NFC + QR | Tapote", "Tapote Comptoir, Tapote Plaque, Tapote Card et Pack Local, prêts à poser ou à votre image."];
+  if (path === "/boutique" || path.startsWith("/categorie/")) return ["Boutique NFC + QR | Tapote", "Chevalet, Plaque, Carte et packs Tapote : prêts à poser ou entièrement à votre image, avec NFC, QR et Tapote Pilot inclus."];
   if (path.startsWith("/produits/")) {
     const product = PRODUCT_PAGES[resolveProductPageSlug(path.split("/")[2])];
     if (product) return [`${product.name}${/nfc/i.test(product.name) ? "" : " NFC"} + QR | Tapote`, clampDescription(`${product.description} Prêt à poser ou à votre image, Tapote Pilot inclus.`)];

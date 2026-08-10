@@ -16,6 +16,23 @@ const basePreview = {
 };
 
 describe("moteur de scène PDP", () => {
+  it("n'affiche aucun faux téléphone pendant le chargement différé de la 3D", () => {
+    const { container } = render(
+      <PdpScene
+        image="/assets/products/tapote-bg-cafe-v1.webp"
+        alt="Scène café"
+        preview={basePreview}
+        sectorId="cafe"
+        sectorTitle="Cafés & bars"
+        renderSupport={() => <div />}
+      />,
+    );
+
+    const loading = screen.getByRole("status", { name: "Chargement de l’aperçu 3D" });
+    expect(loading).toHaveAttribute("data-render-mode", "loading");
+    expect(container.querySelector(".tapote-device-frame")).not.toBeInTheDocument();
+  });
+
   it("garde le support et l’écran synchronisés", () => {
     const renderSupport = ({ surface, className }) => <div className={className} data-testid="support">{surface}</div>;
     const { rerender } = render(

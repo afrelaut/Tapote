@@ -1,4 +1,4 @@
-import { ACTIONS, PRODUCTS } from "../../../shared/catalog.js";
+import { ACTIONS, calculateProductPrice, isPublicProductId, PRODUCTS } from "../../../shared/catalog.js";
 import { DEFAULT_THEME, normalizeHexColor, resolveThemeId } from "../../deviceThemes.js";
 import { DEFAULT_BLOCK_COLOR_MODE } from "../../storefront/actionPalettes.js";
 
@@ -11,10 +11,11 @@ export const CONFIG_DRAFT_PREFIX = "tapote-config-draft-v2:";
 const LOGO_PREVIEW_PREFIX = "tapote-logo-preview-v1:";
 
 export function getProductId(surface, personalization, count = 1) {
-  const suffix = personalization === "ready" ? "_standard" : "";
-  if (count === 2) return `pack_duo${suffix}`;
-  if (count === 5) return `pack_cinq${suffix}`;
-  return `${surface}${suffix}`;
+  const suffix = personalization === "ready" ? "pret" : "personnalise";
+  if (surface === "carte") return `carte_${suffix === "pret" ? "prete" : "personnalisee"}`;
+  if (surface === "plaque") return `plaque_${suffix === "pret" ? "prete" : "personnalisee"}`;
+  if (count > 1) return personalization === "ready" ? "pack_comptoir_pret" : "pack_comptoir";
+  return `chevalet_${suffix}`;
 }
 
 export function previewId(productId) {
@@ -35,7 +36,7 @@ export function loadCart() {
     // style graphique qui n'existe plus : on les normalise ici plutôt que de
     // laisser le serveur les refuser.
     return parsed
-      .filter((item) => PRODUCTS[item.productId] && ACTIONS[item.actionId])
+      .filter((item) => isPublicProductId(item.productId) && ACTIONS[item.actionId])
       // eslint-disable-next-line no-unused-vars -- la déstructuration sert à écarter le champ obsolète
       .map(({ designStyle, ...item }) => ({ ...item, theme: resolveThemeId(item.theme) }));
   } catch {
@@ -49,6 +50,28 @@ export function itemFingerprint(item) {
 
 export function makeCartItem(productId, actionId, options = {}) {
   const product = PRODUCTS[productId];
+  const supportDesigns = options.packDesignMode === "individual" && options.supportDesigns && typeof options.supportDesigns === "object"
+    ? Object.fromEntries(Object.entries(options.supportDesigns).slice(0, 50).map(([key, design = {}]) => [key, {
+      surface: ["comptoir", "plaque", "carte"].includes(design.surface) ? design.surface : "comptoir",
+      actionId: ACTIONS[design.actionId] ? design.actionId : actionId,
+      destinationUrl: design.destinationUrl || "",
+      brandName: design.brandName || "",
+      brandLogoId: design.brandLogoId || "",
+      logoFileName: design.logoFileName || "",
+      signageId: design.signageId || "",
+      signageFileName: design.signageFileName || "",
+      tagline: design.tagline || "",
+      contactLine: design.contactLine || "",
+      blockColorMode: design.blockColorMode || DEFAULT_BLOCK_COLOR_MODE,
+      theme: design.theme || DEFAULT_THEME,
+      primaryColor: normalizeHexColor(design.primaryColor, ""),
+      secondaryColor: normalizeHexColor(design.secondaryColor, ""),
+      textColor: normalizeHexColor(design.textColor, ""),
+      customHeadline: design.customHeadline || "",
+      customSubline: design.customSubline || "",
+      customTapLabel: design.customTapLabel || "",
+    }]))
+    : undefined;
   return {
     productId,
     actionId,
@@ -70,37 +93,43 @@ export function makeCartItem(productId, actionId, options = {}) {
     tagline: options.tagline || "",
     contactLine: options.contactLine || "",
     blockColorMode: options.blockColorMode || DEFAULT_BLOCK_COLOR_MODE,
-    ...(product.kind === "pack" ? { supportComposition: options.supportComposition || product.defaultComposition } : {}),
+    customizationPath: ["ready", "assisted", "self"].includes(options.customizationPath) ? options.customizationPath : "ready",
+    packDesignMode: options.packDesignMode === "individual" ? "individual" : "shared",
+    ...(supportDesigns ? { supportDesigns } : {}),
+    ...(product.defaultComposition ? { supportComposition: options.supportComposition || product.defaultComposition } : {}),
   };
+}
+
+export function cartItemUnitPrice(item) {
+  return calculateProductPrice(item.productId, item.supportComposition) ?? 0;
 }
 
 export function physicalSupportCount(cart) {
   return cart.reduce((sum, item) => (
-    sum + (PRODUCTS[item.productId]?.supportCount || 1) * normalizedQuantity(item.quantity)
+    sum + (((item.supportComposition?.comptoir || 0) + (item.supportComposition?.plaque || 0) + (item.supportComposition?.carte || 0))
+      || PRODUCTS[item.productId]?.supportCount || 1) * normalizedQuantity(item.quantity)
   ), 0);
 }
 
 export function compositionLabel(composition) {
   if (!composition) return "";
   const parts = [];
-  if (composition.comptoir) parts.push(`${composition.comptoir} Comptoir${composition.comptoir > 1 ? "s" : ""}`);
-  if (composition.plaque) parts.push(`${composition.plaque} Plaque${composition.plaque > 1 ? "s" : ""}`);
+  if (composition.comptoir) parts.push(`${composition.comptoir} chevalet${composition.comptoir > 1 ? "s" : ""}`);
+  if (composition.plaque) parts.push(`${composition.plaque} plaque${composition.plaque > 1 ? "s" : ""}`);
+  if (composition.carte) parts.push(`${composition.carte} carte${composition.carte > 1 ? "s" : ""}`);
   return parts.join(" + ");
 }
 
 export function compositionSurface(count, composition, fallback = "comptoir") {
-  if (count <= 1 || !composition) return fallback;
-  // Deux supports, qu'ils soient identiques ("2 Comptoirs") ou mixtes ("1
-  // Comptoir + 1 Plaque"), doivent se voir dans l'aperçu : la scène "mix"
-  // rend deux objets, jamais un seul, quel que soit le duo commandé.
-  if ((composition.comptoir || 0) + (composition.plaque || 0) === 2) return "mix";
-  return composition.plaque > 0 ? "plaque" : "comptoir";
+  if (!composition) return fallback;
+  if (composition.comptoir > 0) return "comptoir";
+  if (composition.plaque > 0) return "plaque";
+  return "carte";
 }
 
 function compositionParam(composition) {
   if (!composition) return "";
-  if (composition.comptoir > 0 && composition.plaque > 0) return "mix";
-  return composition.plaque > 0 ? "plaques" : "chevalets";
+  return `${composition.comptoir || 0}-${composition.plaque || 0}-${composition.carte || 0}`;
 }
 
 export function getCachedLogoPreview(uploadId) {
@@ -123,11 +152,13 @@ export function loadConfigDraft(draftKey) {
 
 export function cartEditDescriptor(item, index) {
   const product = PRODUCTS[item.productId];
-  const count = product.supportCount || 1;
   const composition = item.supportComposition || product.defaultComposition;
-  const surface = product.kind === "pack"
-    ? composition?.plaque === count ? "plaque" : "comptoir"
-    : product.baseProductId;
+  const count = product.kind === "card"
+    ? composition?.carte || 1
+    : product.kind === "pack"
+      ? composition?.comptoir || 1
+      : 1;
+  const surface = product.kind === "pack" ? "comptoir" : product.baseProductId;
   const slug = surface === "comptoir" ? "chevalet" : surface;
   const draftKey = `cart:${index}`;
   const params = new URLSearchParams({
@@ -136,10 +167,8 @@ export function cartEditDescriptor(item, index) {
     edit: String(index),
     draft: draftKey,
   });
-  if (count > 1) {
-    params.set("count", String(count));
-    params.set("composition", compositionParam(composition));
-  }
+  params.set("count", String(count));
+  params.set("composition", compositionParam(composition));
   return { href: `/produits/${slug}?${params.toString()}`, draftKey, count, composition };
 }
 
@@ -149,9 +178,17 @@ export function saveCartItemAsDraft(item, descriptor) {
       actionId: item.actionId,
       count: descriptor.count,
       composition: descriptor.composition,
+      customizationPath: item.customizationPath || "ready",
+      packDesignMode: item.packDesignMode || "shared",
+      supportDesigns: item.supportDesigns || {},
       brandName: item.brandName || "",
       brandLogoId: item.brandLogoId || "",
       logoFileName: item.logoFileName || "",
+      signageId: item.signageId || "",
+      signageFileName: item.signageFileName || "",
+      tagline: item.tagline || "",
+      contactLine: item.contactLine || "",
+      blockColorMode: item.blockColorMode || DEFAULT_BLOCK_COLOR_MODE,
       theme: item.theme || DEFAULT_THEME,
       customHeadline: item.customHeadline || "",
       customSubline: item.customSubline || "",

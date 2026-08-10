@@ -27,6 +27,27 @@ const optionalHttpsUrl = z.string().trim().max(500).optional().default("").super
     context.addIssue({ code: "custom", message: "Le lien indiqué n’est pas valide." });
   }
 });
+const optionalUploadId = z.uuid().optional().or(z.literal(""));
+const supportDesignSchema = z.object({
+  surface: z.enum(["comptoir", "plaque", "carte"]),
+  actionId: z.enum(actionIds),
+  destinationUrl: optionalHttpsUrl,
+  brandName: optionalText(60),
+  brandLogoId: optionalUploadId,
+  logoFileName: optionalText(120),
+  signageId: optionalUploadId,
+  signageFileName: optionalText(120),
+  tagline: optionalText(48),
+  contactLine: optionalText(48),
+  blockColorMode: z.enum(["action", "marque"]).optional().default("action"),
+  theme: themeSchema,
+  primaryColor: optionalHexColor,
+  secondaryColor: optionalHexColor,
+  textColor: optionalHexColor,
+  customHeadline: optionalText(64),
+  customSubline: optionalText(90),
+  customTapLabel: optionalText(32),
+}).strict();
 
 const cartItemSchema = z.object({
   productId: z.enum(productIds),
@@ -45,11 +66,23 @@ const cartItemSchema = z.object({
   customSubline: optionalText(90),
   customTapLabel: optionalText(32),
   destinationUrl: optionalHttpsUrl,
-  brandLogoId: z.uuid().optional().or(z.literal("")),
+  brandLogoId: optionalUploadId,
   logoFileName: optionalText(120),
+  signageId: optionalUploadId,
+  signageFileName: optionalText(120),
+  tagline: optionalText(48),
+  contactLine: optionalText(48),
+  blockColorMode: z.enum(["action", "marque"]).optional().default("action"),
+  customizationPath: z.enum(["ready", "assisted", "self"]).optional().default("ready"),
+  packDesignMode: z.enum(["shared", "individual"]).optional().default("shared"),
+  supportDesigns: z.record(z.string().regex(/^(comptoir|plaque|carte)-[1-9][0-9]?$/), supportDesignSchema)
+    .refine((designs) => Object.keys(designs).length <= 50, "Trop de supports personnalisés.")
+    .optional()
+    .default({}),
   supportComposition: z.object({
-    comptoir: z.coerce.number().int().min(0).max(5),
-    plaque: z.coerce.number().int().min(0).max(5),
+    comptoir: z.coerce.number().int().min(0).max(50),
+    plaque: z.coerce.number().int().min(0).max(50),
+    carte: z.coerce.number().int().min(0).max(50),
   }).strict().optional(),
 }).strict();
 

@@ -12,7 +12,7 @@ import { randomUUID, timingSafeEqual } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { ACTIONS, calculateShipping, isPublicProductId, matchingIdentityKey, PRODUCTS } from "../shared/catalog.js";
+import { ACTIONS, calculateProductPrice, calculateShipping, isPublicProductId, LAUNCH_OFFER, matchingIdentityKey, PRODUCTS, PUBLIC_PRODUCT_IDS } from "../shared/catalog.js";
 import { getProductionChecks } from "./config.js";
 import { checkoutSchema, checkoutStatusSchema, leadSchema, parseRequest, pilotActivationSchema, tapoteRedirectSchema } from "./validation.js";
 
@@ -60,8 +60,8 @@ const storefrontPaths = new Set([
 ]);
 
 const routeMeta = new Map([
-  ["/", ["Supports NFC + QR prêts ou personnalisés | Tapote", "Tapote Comptoir, Tapote Plaque, Tapote Card et Pack Local, prêts à poser ou à votre image. Destination initiale configurée et Tapote Pilot inclus."]],
-  ["/boutique", ["Boutique NFC + QR | Tapote", "Choisissez Tapote Comptoir, Tapote Plaque, Tapote Card ou Pack Local, en mode Prêt à poser ou À votre image."]],
+  ["/", ["Supports NFC + QR prêts ou personnalisés | Tapote", "Chevalet, Plaque, Carte et packs Tapote, prêts à poser ou à votre image. Destination initiale configurée et Tapote Pilot inclus."]],
+  ["/boutique", ["Boutique NFC + QR | Tapote", "Choisissez un Chevalet, une Plaque, une Carte ou l’un des trois packs, prêt à poser ou entièrement à votre image."]],
   ["/designs", ["Designs Tapote pour chaque usage", "Comparez les designs Tapote pour avis, menu, réservation, réseaux sociaux, Wi-Fi, paiement et autres liens professionnels."]],
   ["/personnaliser", ["Personnaliser votre Tapote", "Créez votre Tapote en direct avec votre logo, vos couleurs, vos textes et votre destination, puis commandez le visuel affiché."]],
   ["/comment-ca-marche", ["Comment fonctionne Tapote ?", "NFC ou QR : le client approche son téléphone et ouvre instantanément l’avis, le menu, la réservation ou le lien choisi."]],
@@ -74,8 +74,8 @@ const routeMeta = new Map([
   ["/categorie/chevalets-nfc", ["Tapote Comptoir NFC + QR | Tapote", "Découvrez Tapote Comptoir en mode Prêt à poser ou À votre image."]],
   ["/categorie/plaques-nfc", ["Tapote Plaque NFC + QR | Tapote", "Découvrez Tapote Plaque en mode Prêt à poser ou À votre image."]],
   ["/categorie/cartes-nfc", ["Tapote Card NFC + QR | Tapote", "Découvrez Tapote Card en mode Prêt à poser ou À votre image."]],
-  ["/categorie/packs-nfc", ["Pack Local NFC + QR | Tapote", "Équipez deux points de contact avec un Tapote Comptoir et une Tapote Plaque coordonnés."]],
-  ["/categorie/packs", ["Pack Local NFC + QR | Tapote", "Équipez deux points de contact avec un Tapote Comptoir et une Tapote Plaque coordonnés."]],
+  ["/categorie/packs-nfc", ["Packs NFC + QR | Tapote", "Comparez les packs Essentiel, Comptoir et Équipe avec Chevalet, Plaque et Carte dans une même finition."]],
+  ["/categorie/packs", ["Packs NFC + QR | Tapote", "Comparez les packs Essentiel, Comptoir et Équipe avec Chevalet, Plaque et Carte dans une même finition."]],
   ["/devis", ["Devis volume et multi-sites | Tapote", "Décrivez votre besoin de 10 supports ou plus et recevez une proposition Tapote claire, sans engagement et adaptée à vos lieux."]],
   ["/mentions-legales", ["Mentions légales | Tapote", "Consultez les informations relatives à l’éditeur, à la publication et à l’hébergement du site Tapote."]],
   ["/cgv", ["Conditions générales de vente B2B | Tapote", "Consultez les conditions applicables aux commandes professionnelles de supports NFC + QR Tapote."]],
@@ -573,14 +573,20 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
     response.set("Cache-Control", "public, max-age=30, stale-while-revalidate=120");
     try {
       const persisted = await repository.getStorefrontCatalog?.();
-      const products = (persisted?.length ? persisted : Object.values(PRODUCTS).map((product) => ({
-        productId: product.id,
-        name: product.name,
-        price: product.price,
-        online: true,
-        availableStock: null,
-      }))).filter((product) => isPublicProductId(product.productId));
-      return response.json({ products });
+      const persistedById = new Map((persisted || []).map((product) => [product.productId, product]));
+      const products = PUBLIC_PRODUCT_IDS.map((productId) => {
+        const product = PRODUCTS[productId];
+        const published = persistedById.get(productId);
+        return {
+          productId,
+          name: product.name,
+          price: product.price,
+          online: persisted?.length ? Boolean(published?.online) : true,
+          availableStock: published?.availableStock ?? null,
+          composition: product.defaultComposition,
+        };
+      });
+      return response.json({ products, offer: LAUNCH_OFFER });
     } catch (error) {
       return next(error);
     }
@@ -629,7 +635,7 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
       const retiredItem = items.find((item) => !isPublicProductId(item.productId));
       if (retiredItem) {
         return response.status(409).json({
-          error: "Une ancienne référence de ce panier n’est plus commandable. Retirez-la puis choisissez Tapote Comptoir, Tapote Plaque, Tapote Card ou Pack Local.",
+          error: "Une ancienne référence de ce panier n’est plus commandable. Retirez-la puis choisissez un Chevalet, une Plaque, une Carte ou l’un des trois packs actuels.",
         });
       }
       const eligibleSupports = items.filter((item) => {
@@ -665,24 +671,28 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
             logoFileName: matchingSupport.logoFileName,
           }
           : item;
-        if (effectiveItem.brandLogoId) {
-          const logo = await repository.getUpload(effectiveItem.brandLogoId);
-          if (!logo) return response.status(400).json({ error: "Un logo du panier n’est plus disponible. Importe-le de nouveau." });
+        const uploadIds = new Set([
+          effectiveItem.brandLogoId,
+          effectiveItem.signageId,
+          ...Object.values(effectiveItem.supportDesigns || {}).flatMap((design) => [design.brandLogoId, design.signageId]),
+        ].filter(Boolean));
+        for (const uploadId of uploadIds) {
+          const upload = await repository.getUpload(uploadId);
+          if (!upload) return response.status(400).json({ error: "Un fichier du panier n’est plus disponible. Importez-le de nouveau." });
         }
         const action = ACTIONS[effectiveItem.actionId];
         if (product.requiresSupportOrder && !hasEligibleSupport) {
           return response.status(400).json({ error: `${product.name} est réservée aux commandes contenant une plaque ou un chevalet.` });
         }
-        if (product.kind === "pack") {
-          const composition = effectiveItem.supportComposition || product.defaultComposition;
-          const supportTotal = composition.comptoir + composition.plaque;
-          if (supportTotal !== product.supportCount) {
-            return response.status(400).json({ error: `La composition de ${product.name} doit contenir exactement ${product.supportCount} supports.` });
-          }
+        const composition = effectiveItem.supportComposition || product.defaultComposition;
+        const unitAmount = calculateProductPrice(product.id, composition);
+        if (unitAmount === null) {
+          return response.status(400).json({ error: `La composition de ${product.name} n’est pas valide.` });
         }
         validItems.push({
           product,
           action,
+          unitAmount,
           quantity: effectiveItem.quantity,
           customization: {
             brandName: effectiveItem.brandName,
@@ -697,15 +707,28 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
             destinationUrl: effectiveItem.destinationUrl || customer.destinationUrl,
             brandLogoId: effectiveItem.brandLogoId || null,
             logoFileName: effectiveItem.logoFileName,
-            supportComposition: product.kind === "pack"
-              ? (effectiveItem.supportComposition || product.defaultComposition)
-              : null,
+            signageId: effectiveItem.signageId || null,
+            signageFileName: effectiveItem.signageFileName,
+            tagline: effectiveItem.tagline,
+            contactLine: effectiveItem.contactLine,
+            blockColorMode: effectiveItem.blockColorMode,
+            customizationPath: effectiveItem.customizationPath,
+            packDesignMode: effectiveItem.packDesignMode,
+            supportDesigns: effectiveItem.supportDesigns,
+            supportComposition: composition,
           },
         });
       }
 
       const physicalSupportTotal = validItems.reduce(
-        (sum, { product, quantity }) => sum + (product.supportCount || 1) * quantity,
+        (sum, { product, quantity, customization }) => {
+          const configuredSupports = customization.supportComposition
+            ? (customization.supportComposition.comptoir || 0)
+              + (customization.supportComposition.plaque || 0)
+              + (customization.supportComposition.carte || 0)
+            : product.supportCount || 1;
+          return sum + configuredSupports * quantity;
+        },
         0,
       );
       if (physicalSupportTotal >= 10) {
@@ -726,14 +749,14 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
         }
       }
 
-      const orderItems = validItems.map(({ product, action, quantity, customization }) => ({
+      const orderItems = validItems.map(({ product, action, quantity, customization, unitAmount }) => ({
         productId: product.id,
         actionId: action.id,
         quantity,
-        unitAmount: product.price,
+        unitAmount,
         customization,
       }));
-      const subtotal = validItems.reduce((sum, { product, quantity }) => sum + product.price * quantity, 0);
+      const subtotal = validItems.reduce((sum, { unitAmount, quantity }) => sum + unitAmount * quantity, 0);
       const shippingAmount = calculateShipping(subtotal);
 
       // Fail closed before persisting anything. A checkout disabled by missing
@@ -772,11 +795,11 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
         return response.json({ demo: true, url: `${returnUrl}/commande/confirmee?session_id=${encodeURIComponent(demoId)}` });
       }
 
-      const lineItems = validItems.map(({ product, action, quantity, customization }) => ({
+      const lineItems = validItems.map(({ product, action, quantity, customization, unitAmount }) => ({
         quantity,
         price_data: {
           currency: "eur",
-          unit_amount: product.price,
+          unit_amount: unitAmount,
           tax_behavior: config.stripeTaxBehavior,
           product_data: {
             name: `${product.name} · ${action.name}`,

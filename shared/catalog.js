@@ -22,7 +22,267 @@ export const matchingIdentityKey = (item = {}) => JSON.stringify({
   customTapLabel: item.customTapLabel || "",
 });
 
+/**
+ * @typedef {{comptoir: number, plaque: number, carte: number}} ProductComposition
+ * @typedef {{
+ *   id: string,
+ *   name: string,
+ *   shortName: string,
+ *   price: number,
+ *   online: boolean,
+ *   public: boolean,
+ *   kind: "pack" | "card" | "support" | "addon",
+ *   defaultComposition?: ProductComposition,
+ * }} CatalogProduct
+ */
+
+export const LAUNCH_OFFER = Object.freeze({
+  maximumBusinesses: 50,
+  endsOn: "2026-09-30",
+  rule: "first_limit_reached",
+});
+
+export const PRODUCT_OPTIONS = Object.freeze({
+  ready: Object.freeze({ additionalStand: 4000, additionalPlaque: 2000, additionalCard: 1500 }),
+  custom: Object.freeze({ additionalStand: 5000, additionalPlaque: 3000, additionalCard: 2000 }),
+});
+
+/** @type {Record<string, CatalogProduct & Record<string, unknown>>} */
 export const PRODUCTS = {
+  chevalet_pret: {
+    id: "chevalet_pret",
+    baseProductId: "comptoir",
+    personalization: "ready",
+    kind: "support",
+    name: "Chevalet prêt à poser",
+    shortName: "Chevalet",
+    price: 4900,
+    supportCount: 1,
+    defaultComposition: { comptoir: 1, plaque: 0, carte: 0 },
+    description: "Le chevalet Tapote, configuré et prêt à être posé.",
+    format: "1 chevalet prêt à poser · NFC + QR",
+    badge: "Prêt à poser",
+    previewType: "portrait",
+    recommendedFor: "Caisse, accueil et table",
+    online: true,
+    public: true,
+  },
+  chevalet_personnalise: {
+    id: "chevalet_personnalise",
+    baseProductId: "comptoir",
+    personalization: "custom",
+    kind: "support",
+    name: "Chevalet personnalisé",
+    shortName: "Chevalet",
+    price: 5900,
+    supportCount: 1,
+    defaultComposition: { comptoir: 1, plaque: 0, carte: 0 },
+    description: "Un chevalet de comptoir personnalisé, prêt à déclencher la bonne action.",
+    format: "1 chevalet personnalisé · NFC + QR",
+    badge: "Comptoir",
+    previewType: "portrait",
+    recommendedFor: "Caisse, accueil et table",
+    online: true,
+    public: true,
+  },
+  plaque_prete: {
+    id: "plaque_prete",
+    baseProductId: "plaque",
+    personalization: "ready",
+    kind: "support",
+    name: "Plaque prête à poser",
+    shortName: "Plaque",
+    price: 2900,
+    supportCount: 1,
+    defaultComposition: { comptoir: 0, plaque: 1, carte: 0 },
+    description: "La plaque Tapote, configurée et prête à être fixée.",
+    format: "1 plaque prête à poser · NFC + QR",
+    badge: "Prête à poser",
+    previewType: "square",
+    recommendedFor: "Entrée, mur et miroir",
+    online: true,
+    public: true,
+  },
+  plaque_personnalisee: {
+    id: "plaque_personnalisee",
+    baseProductId: "plaque",
+    personalization: "custom",
+    kind: "support",
+    name: "Plaque personnalisée",
+    shortName: "Plaque",
+    price: 3900,
+    supportCount: 1,
+    defaultComposition: { comptoir: 0, plaque: 1, carte: 0 },
+    description: "Une plaque personnalisée pour un point de contact fixe, au mur ou à l’entrée.",
+    format: "1 plaque personnalisée · NFC + QR",
+    badge: "Point fixe",
+    previewType: "square",
+    recommendedFor: "Entrée, mur et miroir",
+    online: true,
+    public: true,
+  },
+  carte_prete: {
+    id: "carte_prete",
+    baseProductId: "carte",
+    personalization: "ready",
+    kind: "card",
+    name: "Carte prête à l’emploi",
+    shortName: "Carte",
+    price: 1900,
+    supportCount: 1,
+    defaultComposition: { comptoir: 0, plaque: 0, carte: 1 },
+    description: "La carte Tapote au format poche, configurée et prête à servir.",
+    format: "1 carte prête à l’emploi · NFC + QR",
+    badge: "Prête à l’emploi",
+    previewType: "landscape",
+    recommendedFor: "Rendez-vous et terrain",
+    online: true,
+    public: true,
+  },
+  carte_personnalisee: {
+    id: "carte_personnalisee",
+    baseProductId: "carte",
+    personalization: "custom",
+    kind: "card",
+    name: "Carte personnalisée",
+    shortName: "Carte",
+    price: 2900,
+    supportCount: 1,
+    defaultComposition: { comptoir: 0, plaque: 0, carte: 1 },
+    description: "Une carte NFC personnalisée, prête à ouvrir le lien choisi.",
+    format: "1 carte personnalisée · NFC + QR",
+    badge: "Format poche",
+    previewType: "landscape",
+    recommendedFor: "Rendez-vous et terrain",
+    online: true,
+    public: true,
+  },
+  pack_essentiel_pret: {
+    id: "pack_essentiel_pret",
+    baseProductId: "comptoir",
+    personalization: "ready",
+    kind: "pack",
+    name: "Essentiel · Prêt à poser",
+    shortName: "Essentiel",
+    price: 7900,
+    supportCount: 3,
+    defaultComposition: { comptoir: 1, plaque: 1, carte: 1 },
+    description: "1 chevalet + 1 plaque + 1 carte au design Tapote.",
+    format: "1 chevalet + 1 plaque + 1 carte · NFC + QR",
+    badge: "Pack prêt",
+    previewType: "pack",
+    recommendedFor: "Un lieu équipé en trois formats",
+    online: true,
+    public: true,
+  },
+  pack_essentiel: {
+    id: "pack_essentiel",
+    baseProductId: "comptoir",
+    personalization: "custom",
+    kind: "pack",
+    name: "Essentiel",
+    shortName: "Essentiel",
+    price: 9900,
+    supportCount: 3,
+    defaultComposition: { comptoir: 1, plaque: 1, carte: 1 },
+    description: "1 chevalet + 1 plaque + 1 carte personnalisés.",
+    format: "1 chevalet + 1 plaque + 1 carte · NFC + QR",
+    badge: "Lancement",
+    previewType: "portrait",
+    recommendedFor: "Un premier point de contact complet",
+    online: true,
+    public: true,
+  },
+  pack_comptoir_pret: {
+    id: "pack_comptoir_pret",
+    baseProductId: "comptoir",
+    personalization: "ready",
+    kind: "pack",
+    name: "Comptoir · Prêt à poser",
+    shortName: "Comptoir",
+    price: 11900,
+    supportCount: 4,
+    defaultComposition: { comptoir: 2, plaque: 1, carte: 1 },
+    description: "2 chevalets + 1 plaque + 1 carte au design Tapote.",
+    format: "2 chevalets + 1 plaque + 1 carte · NFC + QR",
+    badge: "Pack prêt",
+    previewType: "pack",
+    recommendedFor: "Caisse, accueil et entrée",
+    online: true,
+    public: true,
+  },
+  pack_comptoir: {
+    id: "pack_comptoir",
+    baseProductId: "comptoir",
+    personalization: "custom",
+    kind: "pack",
+    name: "Comptoir",
+    shortName: "Comptoir",
+    price: 14900,
+    supportCount: 4,
+    defaultComposition: { comptoir: 2, plaque: 1, carte: 1 },
+    description: "2 chevalets + 1 plaque + 1 carte personnalisés.",
+    format: "2 chevalets + 1 plaque + 1 carte · NFC + QR",
+    badge: "Comptoir",
+    previewType: "portrait",
+    recommendedFor: "Caisse, accueil et table",
+    online: true,
+    public: true,
+  },
+  pack_equipe_pret: {
+    id: "pack_equipe_pret",
+    baseProductId: "comptoir",
+    personalization: "ready",
+    kind: "pack",
+    name: "Équipe · Prêt à poser",
+    shortName: "Équipe",
+    price: 17900,
+    supportCount: 7,
+    defaultComposition: { comptoir: 2, plaque: 2, carte: 3 },
+    description: "2 chevalets + 2 plaques + 3 cartes au design Tapote.",
+    format: "2 chevalets + 2 plaques + 3 cartes · NFC + QR",
+    badge: "Pack prêt",
+    previewType: "pack",
+    recommendedFor: "Équipe, accueil et terrain",
+    online: true,
+    public: true,
+  },
+  pack_equipe: {
+    id: "pack_equipe",
+    baseProductId: "comptoir",
+    personalization: "custom",
+    kind: "pack",
+    name: "Équipe",
+    shortName: "Équipe",
+    price: 21900,
+    supportCount: 7,
+    defaultComposition: { comptoir: 2, plaque: 2, carte: 3 },
+    description: "2 chevalets + 2 plaques + 3 cartes personnalisés.",
+    format: "2 chevalets + 2 plaques + 3 cartes · NFC + QR",
+    badge: "Équipe",
+    previewType: "portrait",
+    recommendedFor: "Équipe et terrain",
+    online: true,
+    public: true,
+  },
+  carte: {
+    id: "carte",
+    baseProductId: "carte",
+    personalization: "custom",
+    kind: "card",
+    name: "Carte personnalisée seule",
+    shortName: "Carte personnalisée",
+    price: 2900,
+    supportCount: 1,
+    defaultComposition: { comptoir: 0, carte: 1 },
+    description: "Une carte NFC personnalisée, prête à ouvrir le lien choisi.",
+    format: "1 carte personnalisée · NFC + QR",
+    badge: "À l’unité",
+    previewType: "landscape",
+    recommendedFor: "Équipe et terrain",
+    online: false,
+    public: false,
+  },
   plaque_standard: {
     id: "plaque_standard",
     baseProductId: "plaque",
@@ -36,7 +296,8 @@ export const PRODUCTS = {
     badge: "Prête à poser",
     previewType: "square",
     recommendedFor: "Avis, réseaux et réservation",
-    public: true,
+    online: false,
+    public: false,
   },
   plaque: {
     id: "plaque",
@@ -51,7 +312,8 @@ export const PRODUCTS = {
     badge: "Mur ou comptoir",
     previewType: "square",
     recommendedFor: "Avis, réseaux et réservation",
-    public: true,
+    online: false,
+    public: false,
   },
   comptoir_standard: {
     id: "comptoir_standard",
@@ -66,7 +328,8 @@ export const PRODUCTS = {
     badge: "Prêt à poser",
     previewType: "portrait",
     recommendedFor: "Caisse, accueil et table",
-    public: true,
+    online: false,
+    public: false,
   },
   comptoir: {
     id: "comptoir",
@@ -81,7 +344,8 @@ export const PRODUCTS = {
     badge: "Le plus choisi",
     previewType: "portrait",
     recommendedFor: "Caisse, accueil et table",
-    public: true,
+    online: false,
+    public: false,
   },
   carte_standard: {
     id: "carte_standard",
@@ -96,22 +360,8 @@ export const PRODUCTS = {
     badge: "Petit prix",
     previewType: "landscape",
     recommendedFor: "Équipe et terrain",
-    public: true,
-  },
-  carte: {
-    id: "carte",
-    baseProductId: "carte",
-    personalization: "custom",
-    kind: "card",
-    name: "Tapote Card",
-    shortName: "Tapote Card",
-    price: 5900,
-    description: "Votre Tapote de poche pour le terrain, les visites et les équipes.",
-    format: "Support mobile · finition confirmée avant production · NFC + QR",
-    badge: "Mobile",
-    previewType: "landscape",
-    recommendedFor: "Équipe et terrain",
-    public: true,
+    online: false,
+    public: false,
   },
   pack_duo_standard: {
     id: "pack_duo_standard",
@@ -129,7 +379,8 @@ export const PRODUCTS = {
     badge: "Parcours essentiel",
     defaultAction: "avis",
     features: ["1 Comptoir + 1 Plaque", "Design Tapote prêt", "Deux destinations initiales possibles"],
-    public: true,
+    online: false,
+    public: false,
   },
   pack_duo: {
     id: "pack_duo",
@@ -147,7 +398,8 @@ export const PRODUCTS = {
     badge: "Le plus choisi",
     defaultAction: "avis",
     features: ["1 Comptoir + 1 Plaque", "Logo, couleurs et textes personnalisables", "Deux destinations initiales possibles"],
-    public: true,
+    online: false,
+    public: false,
   },
   pack_cinq_standard: {
     id: "pack_cinq_standard",
@@ -165,6 +417,7 @@ export const PRODUCTS = {
     badge: "Meilleur prix",
     defaultAction: "avis",
     features: ["2 Comptoirs + 3 Plaques", "Design Tapote prêt", "Liens distincts possibles"],
+    online: false,
     public: false,
   },
   pack_cinq: {
@@ -183,6 +436,7 @@ export const PRODUCTS = {
     badge: "Meilleur prix",
     defaultAction: "avis",
     features: ["2 Comptoirs + 3 Plaques", "Identité cohérente", "Liens distincts possibles"],
+    online: false,
     public: false,
   },
   carte_assortie: {
@@ -200,15 +454,52 @@ export const PRODUCTS = {
     badge: "Avec un support",
     previewType: "landscape",
     recommendedFor: "Équipe et terrain",
+    online: false,
     public: false,
   },
 };
 
 export const PUBLIC_PRODUCT_IDS = Object.freeze(
-  Object.values(PRODUCTS).filter((product) => product.public).map((product) => product.id),
+  Object.values(PRODUCTS).filter((product) => product.public && product.online).map((product) => product.id),
 );
 
 export const isPublicProductId = (productId) => PUBLIC_PRODUCT_IDS.includes(productId);
+
+export const normalizeProductComposition = (productId, composition) => {
+  const product = PRODUCTS[productId];
+  if (!product) return null;
+  const source = composition || product.defaultComposition;
+  if (!source) return null;
+  const comptoir = Number(source.comptoir);
+  const plaque = Number(source.plaque);
+  const carte = Number(source.carte);
+  if (![comptoir, plaque, carte].every((value) => Number.isInteger(value) && value >= 0)) return null;
+  return { comptoir, plaque, carte };
+};
+
+export const calculateProductPrice = (productId, composition) => {
+  const product = PRODUCTS[productId];
+  if (!product || !isPublicProductId(productId)) return null;
+  const normalized = normalizeProductComposition(productId, composition);
+  if (!normalized) return null;
+  const { comptoir, plaque, carte } = normalized;
+  const minimum = product.defaultComposition;
+  if (!minimum || comptoir < minimum.comptoir || plaque < minimum.plaque || carte < minimum.carte) return null;
+
+  const isPack = product.kind === "pack";
+  if (!isPack) {
+    const expectedSurface = product.baseProductId;
+    if ((expectedSurface !== "comptoir" && comptoir !== 0)
+      || (expectedSurface !== "plaque" && plaque !== 0)
+      || (expectedSurface !== "carte" && carte !== 0)) return null;
+  }
+
+  const optionPrices = PRODUCT_OPTIONS[product.personalization === "ready" ? "ready" : "custom"];
+  return product.price
+    + ((comptoir - minimum.comptoir) * optionPrices.additionalStand)
+    + ((plaque - minimum.plaque) * optionPrices.additionalPlaque)
+    + ((carte - minimum.carte) * optionPrices.additionalCard);
+};
 
 export const MULTISITE_TIERS = [
   { quantity: 10, price: null, label: "Sur devis" },
