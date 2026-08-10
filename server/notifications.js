@@ -32,7 +32,9 @@ function lineTotal(item) {
 function renderComposition(composition) {
   if (!composition || typeof composition !== "object") return "";
   const parts = [];
-  if (composition.comptoir) parts.push(`${composition.comptoir} Tapote Comptoir${composition.comptoir > 1 ? "s" : ""}`);
+  if (composition.comptoir) parts.push(`${composition.comptoir} chevalet${composition.comptoir > 1 ? "s" : ""}`);
+  if (composition.carte) parts.push(`${composition.carte} carte${composition.carte > 1 ? "s" : ""}`);
+  // Conservé uniquement pour les e-mails d'anciennes commandes.
   if (composition.plaque) parts.push(`${composition.plaque} Tapote Plaque${composition.plaque > 1 ? "s" : ""}`);
   return parts.join(" + ");
 }

@@ -10,60 +10,51 @@ import { PRODUCT_FAQ_COMMON, PRODUCT_FAQ_SPECIFIC, SHOP_ITEMS, STOREFRONT_FAQ, W
 export function OfferArchitectureSection() {
   const offers = [
     {
-      id: "comptoir",
-      productId: "comptoir_standard",
-      eyebrow: "CHEVALET · POSE LIBRE",
-      title: "Tapote Comptoir",
-      copy: "Le support visible au moment du paiement, de l’accueil ou du service.",
+      id: "chevalet",
+      productId: "chevalet_pret",
+      customProductId: "chevalet_personnalise",
+      eyebrow: "CAISSE · ACCUEIL · TABLE",
+      title: "Chevalet",
+      copy: "Le support posé, visible au moment où le téléphone est déjà en main.",
       href: "/produits/comptoir",
-      cta: "Voir Tapote Comptoir",
+      cta: "Voir le Chevalet",
       surface: "comptoir",
       actionId: "avis",
       theme: "nuit",
     },
     {
       id: "plaque",
-      productId: "plaque_standard",
-      eyebrow: "POINT FIXE · FORMAT PLAQUE",
-      title: "Tapote Plaque",
-      copy: "Le point d’action fixe qui reste lisible à l’entrée, au mur ou sur un miroir.",
+      productId: "plaque_prete",
+      customProductId: "plaque_personnalisee",
+      eyebrow: "ENTRÉE · MUR · POINT FIXE",
+      title: "Plaque",
+      copy: "Un point d’action fixe qui reste naturellement visible.",
       href: "/produits/plaque",
-      cta: "Voir Tapote Plaque",
+      cta: "Voir la Plaque",
       surface: "plaque",
       actionId: "instagram",
       theme: "creme",
     },
     {
       id: "carte",
-      productId: "carte_standard",
-      eyebrow: "FORMAT POCHE · MOBILE",
-      title: "Tapote Card",
-      copy: "Le format poche pour les rendez-vous, les visites et les équipes terrain.",
+      productId: "carte_prete",
+      customProductId: "carte_personnalisee",
+      eyebrow: "POCHE · RENDEZ-VOUS · TERRAIN",
+      title: "Carte",
+      copy: "Le format poche pour partager le bon lien en rendez-vous ou sur le terrain.",
       href: "/produits/carte",
-      cta: "Voir Tapote Card",
+      cta: "Voir la carte",
       surface: "carte",
       actionId: "linkedin",
       theme: "creme",
-    },
-    {
-      id: "pack-local",
-      productId: "pack_duo_standard",
-      eyebrow: "DUO COMPTOIR + PLAQUE",
-      title: "Pack Local",
-      copy: "Un Comptoir et une Plaque pour couvrir deux moments complémentaires dans un même lieu.",
-      href: "/boutique#packs",
-      cta: "Voir le Pack Local",
-      surface: "pack",
-      actionId: "avis",
-      theme: "nuit",
     },
   ];
   return (
     <section className="v3-home-products" aria-labelledby="v3-offer-title">
       <div className="v3-home-section-head">
         <span className="v3-eyebrow">LA GAMME TAPOTE</span>
-        <h2 id="v3-offer-title">Quatre choix.<br />Le prix tout de suite.</h2>
-        <p>Chaque prix comprend le support, le NFC, le QR, la destination initiale et l’accès à Tapote Pilot.</p>
+        <h2 id="v3-offer-title">À chaque usage,<br />son format.</h2>
+        <p>Choisissez l’objet adapté à votre lieu. NFC, QR et Tapote Pilot sont inclus dans chaque offre.</p>
       </div>
       <div className="v3-home-product-grid">
         {offers.map((offer, index) => (
@@ -71,14 +62,7 @@ export function OfferArchitectureSection() {
             <a className="v3-home-product-visual" href={offer.href} aria-label={offer.cta}>
               <span>{offer.eyebrow}</span>
               <div aria-hidden="true">
-                {offer.surface === "pack"
-                  ? (
-                    <>
-                      <ProductArt surface="comptoir" actionId="avis" brandName="tapote." theme="nuit" personalization="ready" className="is-pack-comptoir" />
-                      <ProductArt surface="plaque" actionId="avis" brandName="tapote." theme="creme" personalization="ready" className="is-pack-plaque" />
-                    </>
-                  )
-                  : <ProductArt surface={offer.surface} actionId={offer.actionId} brandName="tapote." theme={offer.theme} personalization="ready" />}
+                <ProductArt surface={offer.surface} actionId={offer.actionId} brandName="tapote." theme={offer.theme} personalization="custom" />
               </div>
             </a>
             <div className="v3-home-product-copy">
@@ -86,14 +70,42 @@ export function OfferArchitectureSection() {
               <h3>{offer.title}</h3>
               <p>{offer.copy}</p>
               <div>
-                <strong>À partir de {formatMoney(PRODUCTS[offer.productId].price)} <small>{taxLabel}</small></strong>
+                <strong>
+                  <span>Prêt à poser {formatMoney(PRODUCTS[offer.productId].price)}</span>
+                  <small>À votre image {formatMoney(PRODUCTS[offer.customProductId].price)} · {taxLabel}</small>
+                </strong>
                 <a href={offer.href}>{offer.cta} <ArrowRight /></a>
               </div>
             </div>
           </article>
         ))}
       </div>
-      <a className="v3-home-products-all" href="/boutique">Voir les quatre offres <ArrowRight /></a>
+      <div className="v3-home-pack-prices" id="packs" aria-label="Prix des packs Tapote">
+        <header>
+          <div>
+            <span><Layers3 aria-hidden="true" /> PACKS TAPOTE</span>
+            <strong>Choisissez votre couverture.</strong>
+          </div>
+          <small>Prêt à poser ou entièrement à votre image.</small>
+        </header>
+        {[
+          { name: "Essentiel", readyId: "pack_essentiel_pret", customId: "pack_essentiel", composition: "1 chevalet · 1 plaque · 1 carte" },
+          { name: "Comptoir", readyId: "pack_comptoir_pret", customId: "pack_comptoir", composition: "2 chevalets · 1 plaque · 1 carte", featured: true },
+          { name: "Équipe", readyId: "pack_equipe_pret", customId: "pack_equipe", composition: "2 chevalets · 2 plaques · 3 cartes" },
+        ].map((pack) => (
+          <a className={pack.featured ? "is-featured" : undefined} href={`/produits/comptoir?offre=${pack.readyId}`} key={pack.readyId}>
+            {pack.featured && <em>LE PLUS CHOISI</em>}
+            <span>{pack.composition}</span>
+            <strong>{pack.name}</strong>
+            <small><b>Dès {formatMoney(PRODUCTS[pack.readyId].price)}</b><span>{formatMoney(PRODUCTS[pack.customId].price)} à votre image</span></small>
+            <ArrowRight aria-hidden="true" />
+          </a>
+        ))}
+        <a className="v3-home-products-all" href="/boutique">
+          <span><b>Comparer les offres</b><small>3 formats · 3 packs</small></span>
+          <ArrowRight />
+        </a>
+      </div>
     </section>
   );
 }
@@ -353,6 +365,16 @@ export function ProductExamplesSection({ data, mode }) {
 
 export function RelatedProducts({ current }) {
   const related = SHOP_ITEMS.filter((item) => item.surface !== current).slice(0, 2);
+  const packRecommendations = [
+    { name: "Essentiel", readyId: "pack_essentiel_pret", customId: "pack_essentiel", composition: "1 chevalet · 1 plaque · 1 carte" },
+    { name: "Comptoir", readyId: "pack_comptoir_pret", customId: "pack_comptoir", composition: "2 chevalets · 1 plaque · 1 carte" },
+    { name: "Équipe", readyId: "pack_equipe_pret", customId: "pack_equipe", composition: "2 chevalets · 2 plaques · 3 cartes" },
+  ];
+  const offerBySurface = {
+    comptoir: { productId: "chevalet_pret", name: "Chevalet" },
+    plaque: { productId: "plaque_prete", name: "Plaque" },
+    carte: { productId: "carte_prete", name: "Carte" },
+  };
   const previews = {
     comptoir: { actionId: "avis", theme: "nuit" },
     plaque: { actionId: "instagram", theme: "creme" },
@@ -363,23 +385,39 @@ export function RelatedProducts({ current }) {
       <div><span className="v3-eyebrow">AUTRES SUPPORTS</span><h2 id="v3-related-title">À chaque lieu, le bon format.</h2><p>Complétez votre parcours seulement si un autre point de contact le justifie.</p></div>
       <div>
         {related.map((item) => (
-          <a href={`/produits/${item.slug}`} key={item.surface}>
+          <a href={`/produits/${item.slug}?offre=${offerBySurface[item.surface].productId}`} key={item.surface}>
             <span className="v3-related-product-art" aria-hidden="true">
               <ProductArt surface={item.surface} actionId={previews[item.surface].actionId} theme={previews[item.surface].theme} personalization="ready" brandName="tapote." />
             </span>
             <span>{item.eyebrow}</span>
-            <strong>{item.title}</strong>
+            <strong>{offerBySurface[item.surface].name}</strong>
             <small>{item.promise}</small>
-            <b>Découvrir <ArrowRight /></b>
+            <b>Dès {formatMoney(PRODUCTS[offerBySurface[item.surface].productId].price)} <ArrowRight /></b>
           </a>
         ))}
-        <a className="is-pack" href="/boutique#packs">
-          <span className="v3-related-product-art is-pack-preview" aria-hidden="true">
-            <ProductArt surface="comptoir" actionId="avis" theme="nuit" personalization="ready" brandName="tapote." />
-            <ProductArt surface="plaque" actionId="avis" theme="creme" personalization="ready" brandName="tapote." />
-          </span>
-          <span>DEUX POINTS DE CONTACT</span><strong>Pack Local</strong><small>Un Comptoir et une Plaque avec une identité cohérente.</small><b>Voir le pack <ArrowRight /></b>
-        </a>
+        <article className="v3-related-pack-selector">
+          <header>
+            <Layers3 aria-hidden="true" />
+            <div><span>LES PACKS</span><strong>Les trois formats, déjà réunis.</strong></div>
+          </header>
+          <div className="v3-related-pack-list">
+            {packRecommendations.map((pack, index) => (
+              <a href={`/produits/comptoir?offre=${pack.readyId}`} key={pack.readyId}>
+                <span className="v3-related-pack-index" aria-hidden="true">0{index + 1}</span>
+                <span className="v3-related-pack-copy"><strong>{pack.name}</strong><small>{pack.composition}</small></span>
+                <span className="v3-related-pack-prices">
+                  <small><span>Prêt</span><b>{formatMoney(PRODUCTS[pack.readyId].price)}</b></small>
+                  <small><span>À votre image</span><b>{formatMoney(PRODUCTS[pack.customId].price)}</b></small>
+                </span>
+                <ArrowRight aria-hidden="true" />
+              </a>
+            ))}
+          </div>
+          <a className="v3-related-pack-cta" href="/boutique#packs">
+            <span>Comparer les formats et les packs</span>
+            <ArrowRight aria-hidden="true" />
+          </a>
+        </article>
       </div>
     </section>
   );

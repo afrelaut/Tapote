@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ACTIONS, PRODUCTS } from "../../../shared/catalog.js";
 import { captureStorefrontAttribution, trackStorefrontEvent } from "../../storefront/analytics.js";
-import { CART_KEY, MAX_ITEM_QUANTITY, compositionLabel, itemFingerprint, loadCart, normalizedQuantity, physicalSupportCount } from "../commerce/cart.js";
+import { CART_KEY, MAX_ITEM_QUANTITY, cartItemUnitPrice, compositionLabel, itemFingerprint, loadCart, normalizedQuantity, physicalSupportCount } from "../commerce/cart.js";
 import { Shell } from "../layouts/StorefrontLayout.jsx";
 import { isKnownStorefrontPath, pageMetadata, setCanonicalUrl, setMetaContent } from "./metadata.js";
 import { resolveStorefrontPage } from "./routes.jsx";
@@ -17,9 +17,8 @@ export default function StorefrontV3() {
     captureStorefrontAttribution();
     trackStorefrontEvent("page_view", { page_title: pageMetadata(path)[0] });
     const productSlug = path.match(/^\/produits\/(comptoir|plaque|carte)$/)?.[1];
-    const productId = productSlug === "comptoir" ? "comptoir_standard"
-      : productSlug === "plaque" ? "plaque_standard"
-        : productSlug === "carte" ? "carte_standard"
+    const productId = productSlug === "comptoir" ? "pack_essentiel"
+      : productSlug === "carte" ? "carte"
           : null;
     if (productId && PRODUCTS[productId]) {
       trackStorefrontEvent("view_item", {
@@ -33,7 +32,7 @@ export default function StorefrontV3() {
   useEffect(() => {
     if (path === "/panier") {
       trackStorefrontEvent("view_cart", {
-        value: cart.reduce((sum, item) => sum + PRODUCTS[item.productId].price * item.quantity, 0) / 100,
+        value: cart.reduce((sum, item) => sum + cartItemUnitPrice(item) * item.quantity, 0) / 100,
         currency: "EUR",
         item_count: physicalSupportCount(cart),
       });
@@ -99,7 +98,7 @@ export default function StorefrontV3() {
       action_id: normalized.actionId,
       personalization: product.personalization,
       quantity: normalized.quantity,
-      value: product.price * normalized.quantity / 100,
+      value: cartItemUnitPrice(normalized) * normalized.quantity / 100,
       currency: "EUR",
       update: Number.isInteger(options.replaceIndex),
     });

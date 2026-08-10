@@ -97,10 +97,10 @@ export const taxLabel = import.meta.env.VITE_LEGAL_TAX_LABEL || "TVA non applica
 export const shippingPolicyReady = import.meta.env.VITE_SHIPPING_POLICY_READY === "true";
 
 export const SHOP_MENU_PREVIEWS = {
-  comptoir: {
-    eyebrow: "CHEVALET · POSE LIBRE",
-    title: "Tapote Comptoir",
-    detail: "Le support héros pour déclencher un avis, une réservation ou une commande au bon moment.",
+  chevalet: {
+    eyebrow: "DÈS 49 € · PRÊT / PERSONNALISÉ",
+    title: "Chevalet",
+    detail: "Le support posé pour la caisse, l’accueil ou la table.",
     href: "/produits/comptoir",
     surface: "comptoir",
     actionId: "avis",
@@ -109,20 +109,20 @@ export const SHOP_MENU_PREVIEWS = {
     customHeadline: "Votre avis compte.",
   },
   plaque: {
-    eyebrow: "POINT FIXE · PLAQUE",
-    title: "Tapote Plaque",
-    detail: "Un point de contact fixe, lisible et toujours disponible dans le parcours client.",
+    eyebrow: "DÈS 29 € · PRÊTE / PERSONNALISÉE",
+    title: "Plaque",
+    detail: "Le point de contact fixe pour l’entrée, le mur ou le miroir.",
     href: "/produits/plaque",
     surface: "plaque",
     actionId: "instagram",
     brandName: "VOTRE MARQUE",
     theme: "creme",
-    customHeadline: "Réservez ici.",
+    customHeadline: "Les coulisses ? Tapotez.",
   },
   carte: {
-    eyebrow: "FORMAT POCHE · MOBILE",
-    title: "Tapote Card",
-    detail: "Une carte NFC au vrai format portefeuille pour partager un contact ou recueillir un avis.",
+    eyebrow: "DÈS 19 € · PRÊTE / PERSONNALISÉE",
+    title: "Carte",
+    detail: "Le format poche pour les rendez-vous et le terrain.",
     href: "/produits/carte",
     surface: "carte",
     actionId: "linkedin",
@@ -130,16 +130,44 @@ export const SHOP_MENU_PREVIEWS = {
     theme: "creme",
     customHeadline: "Gardons le contact.",
   },
-  packs: {
-    eyebrow: "DUO COMPTOIR + PLAQUE",
-    title: "Pack Local",
-    detail: "Un Comptoir et une Plaque coordonnés, avec une destination indépendante par support.",
-    href: "/boutique#packs",
+  essentiel: {
+    isPack: true,
+    productId: "pack_essentiel_pret",
+    eyebrow: "3 FORMATS · DÈS 79 €",
+    title: "Essentiel",
+    detail: "1 chevalet + 1 plaque + 1 carte.",
+    href: "/produits/comptoir?offre=pack_essentiel",
     surface: "comptoir",
     actionId: "avis",
     brandName: "VOTRE MARQUE",
     theme: "nuit",
     customHeadline: "Votre avis compte.",
+  },
+  comptoir: {
+    isPack: true,
+    productId: "pack_comptoir_pret",
+    eyebrow: "4 SUPPORTS · DÈS 119 €",
+    title: "Comptoir",
+    detail: "2 chevalets + 1 plaque + 1 carte.",
+    href: "/produits/comptoir?offre=pack_comptoir",
+    surface: "comptoir",
+    actionId: "avis",
+    brandName: "VOTRE MARQUE",
+    theme: "nuit",
+    customHeadline: "Votre avis compte.",
+  },
+  equipe: {
+    isPack: true,
+    productId: "pack_equipe_pret",
+    eyebrow: "7 SUPPORTS · DÈS 179 €",
+    title: "Équipe",
+    detail: "2 chevalets + 2 plaques + 3 cartes.",
+    href: "/produits/comptoir?offre=pack_equipe",
+    surface: "comptoir",
+    actionId: "contact",
+    brandName: "VOTRE MARQUE",
+    theme: "creme",
+    customHeadline: "Réservez ici.",
   },
 };
 
@@ -171,7 +199,7 @@ export const HOME_SCENES = {
 };
 
 export const STOREFRONT_FAQ = [
-  ["Tapote Studio est-il un produit séparé ?", "Non. Tapote Studio intervient uniquement pendant la personnalisation d’un Comptoir, d’une Plaque, d’une Card ou d’un Pack Local. Le support reste toujours le produit acheté."],
+  ["Tapote Studio est-il un produit séparé ?", "Non. Tapote Studio sert à personnaliser un Chevalet, une Plaque, une Carte ou l’un des trois packs. Le support reste toujours le produit acheté."],
   ["Le NFC fonctionne-t-il sans application ?", "Oui. Sur un téléphone compatible, le client approche son appareil de la zone indiquée. Le QR code reste présent comme solution de secours."],
   ["Puis-je changer la destination après la livraison ?", "Oui, avec Tapote Pilot Pro. Tapote Pilot est inclus pour retrouver vos supports et voir la destination active ; le remplacement du lien à distance, sans réimprimer ni réencoder, fait partie de l’option Pro."],
   ["Quelle différence entre Tapote Pilot et Pilot Pro ?", "Tapote Pilot couvre l’activation, les supports et le suivi des destinations. Pilot Pro ajoute le changement de lien à distance, les statistiques, périodes, lieux, équipes, exports et multi-sites."],

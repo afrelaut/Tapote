@@ -27,7 +27,7 @@ const legalEnv = {
 };
 
 const cart = [{
-  productId: "comptoir",
+  productId: "pack_essentiel",
   actionId: "avis",
   quantity: 1,
   brandName: "Café Test",
@@ -219,16 +219,17 @@ describe("API Tapote", () => {
     const context = makeContext();
     context.repository.durable = true;
     context.repository.getStorefrontCatalog = vi.fn(async () => [{
-      productId: "comptoir",
-      name: "Le Chevalet A6",
-      price: 3900,
+      productId: "pack_essentiel",
+      name: "Essentiel",
+      price: 5900,
       online: false,
       availableStock: null,
     }]);
 
     const catalog = await request(context.app).get("/api/catalog");
     expect(catalog.status).toBe(200);
-    expect(catalog.body.products[0]).toEqual(expect.objectContaining({ productId: "comptoir", online: false }));
+    expect(catalog.body.products.find(({ productId }) => productId === "pack_essentiel"))
+      .toEqual(expect.objectContaining({ productId: "pack_essentiel", online: false }));
 
     const checkout = await request(context.app).post("/api/checkout").send(checkoutBody());
     expect(checkout.status).toBe(409);
@@ -236,7 +237,7 @@ describe("API Tapote", () => {
     expect(context.repository.orders.size).toBe(0);
   });
 
-  it("n’expose dans le catalogue public que les trois supports et Pack Local", async () => {
+  it("expose les trois formats et les trois packs dans les deux finitions", async () => {
     const context = makeContext();
     context.repository.getStorefrontCatalog = vi.fn(async () => []);
 
@@ -244,19 +245,29 @@ describe("API Tapote", () => {
     const productIds = catalog.body.products.map((product) => product.productId);
 
     expect(catalog.status).toBe(200);
-    expect(productIds).toEqual(expect.arrayContaining([
-      "comptoir_standard",
-      "comptoir",
-      "plaque_standard",
-      "plaque",
-      "carte_standard",
-      "carte",
-      "pack_duo_standard",
-      "pack_duo",
-    ]));
-    expect(productIds).not.toContain("pack_cinq");
-    expect(productIds).not.toContain("pack_cinq_standard");
-    expect(productIds).not.toContain("carte_assortie");
+    expect(productIds).toEqual([
+      "chevalet_pret", "chevalet_personnalise",
+      "plaque_prete", "plaque_personnalisee",
+      "carte_prete", "carte_personnalisee",
+      "pack_essentiel_pret", "pack_essentiel",
+      "pack_comptoir_pret", "pack_comptoir",
+      "pack_equipe_pret", "pack_equipe",
+    ]);
+    expect(catalog.body.products.map(({ productId, price, composition }) => ({ productId, price, composition }))).toEqual([
+      { productId: "chevalet_pret", price: 4900, composition: { comptoir: 1, plaque: 0, carte: 0 } },
+      { productId: "chevalet_personnalise", price: 5900, composition: { comptoir: 1, plaque: 0, carte: 0 } },
+      { productId: "plaque_prete", price: 2900, composition: { comptoir: 0, plaque: 1, carte: 0 } },
+      { productId: "plaque_personnalisee", price: 3900, composition: { comptoir: 0, plaque: 1, carte: 0 } },
+      { productId: "carte_prete", price: 1900, composition: { comptoir: 0, plaque: 0, carte: 1 } },
+      { productId: "carte_personnalisee", price: 2900, composition: { comptoir: 0, plaque: 0, carte: 1 } },
+      { productId: "pack_essentiel_pret", price: 7900, composition: { comptoir: 1, plaque: 1, carte: 1 } },
+      { productId: "pack_essentiel", price: 9900, composition: { comptoir: 1, plaque: 1, carte: 1 } },
+      { productId: "pack_comptoir_pret", price: 11900, composition: { comptoir: 2, plaque: 1, carte: 1 } },
+      { productId: "pack_comptoir", price: 14900, composition: { comptoir: 2, plaque: 1, carte: 1 } },
+      { productId: "pack_equipe_pret", price: 17900, composition: { comptoir: 2, plaque: 2, carte: 3 } },
+      { productId: "pack_equipe", price: 21900, composition: { comptoir: 2, plaque: 2, carte: 3 } },
+    ]);
+    expect(catalog.body.offer).toEqual({ maximumBusinesses: 50, endsOn: "2026-09-30", rule: "first_limit_reached" });
   });
 
   it("renvoie Stripe vers l’origine active du storefront en développement", async () => {
@@ -309,7 +320,7 @@ describe("API Tapote", () => {
     expect(stripe.checkout.sessions.retrieve).toHaveBeenCalledTimes(1);
   });
 
-  it("facture la carte personnalisée 59 € et la livraison sous 69 €", async () => {
+  it("facture la carte personnalisée seule 29 € et la livraison sous 69 €", async () => {
     const stripe = {
       checkout: { sessions: {
         create: vi.fn(async () => ({ id: "cs_test_shipping", url: "https://checkout.stripe.test/shipping" })),
@@ -318,17 +329,17 @@ describe("API Tapote", () => {
     };
     const { app } = makeContext({}, stripe);
     const body = checkoutBody("aa58b0a4-0c28-4a1b-a2c4-40fc8dc87a59");
-    body.items = [{ ...cart[0], productId: "carte" }];
+    body.items = [{ ...cart[0], productId: "carte_personnalisee" }];
 
     const response = await request(app).post("/api/checkout").send(body);
 
     expect(response.status).toBe(200);
     const checkout = stripe.checkout.sessions.create.mock.calls[0][0];
-    expect(checkout.line_items[0].price_data.unit_amount).toBe(5900);
+    expect(checkout.line_items[0].price_data.unit_amount).toBe(2900);
     expect(checkout.shipping_options[0].shipping_rate_data.fixed_amount.amount).toBe(490);
   });
 
-  it("facture Tapote Comptoir personnalisé 89 € avec livraison offerte", async () => {
+  it("facture les trois packs dans les deux finitions", async () => {
     const stripe = {
       checkout: { sessions: {
         create: vi.fn(async () => ({ id: "cs_test_comptoir_price", url: "https://checkout.stripe.test/comptoir" })),
@@ -336,13 +347,23 @@ describe("API Tapote", () => {
       } },
     };
     const { app } = makeContext({}, stripe);
-    const response = await request(app).post("/api/checkout").send(checkoutBody("ba58b0a4-0c28-4a1b-a2c4-40fc8dc87a60"));
-
-    expect(response.status).toBe(200);
-    const checkout = stripe.checkout.sessions.create.mock.calls[0][0];
-    expect(checkout.line_items[0].price_data.unit_amount).toBe(8900);
+    const cases = [
+      ["pack_essentiel_pret", 7900, { comptoir: 1, plaque: 1, carte: 1 }],
+      ["pack_essentiel", 9900, { comptoir: 1, plaque: 1, carte: 1 }],
+      ["pack_comptoir_pret", 11900, { comptoir: 2, plaque: 1, carte: 1 }],
+      ["pack_comptoir", 14900, { comptoir: 2, plaque: 1, carte: 1 }],
+      ["pack_equipe_pret", 17900, { comptoir: 2, plaque: 2, carte: 3 }],
+      ["pack_equipe", 21900, { comptoir: 2, plaque: 2, carte: 3 }],
+    ];
+    for (const [index, [productId, amount, supportComposition]] of cases.entries()) {
+      const body = checkoutBody(`ba58b0a4-0c28-4a1b-a2c4-40fc8dc87a${60 + index}`);
+      body.items = [{ ...cart[0], productId, supportComposition }];
+      const response = await request(app).post("/api/checkout").send(body);
+      expect(response.status).toBe(200);
+      expect(stripe.checkout.sessions.create.mock.calls[index][0].line_items[0].price_data.unit_amount).toBe(amount);
+    }
+    const checkout = stripe.checkout.sessions.create.mock.calls[5][0];
     expect(checkout.shipping_options[0].shipping_rate_data.fixed_amount.amount).toBe(0);
-    expect(checkout.shipping_options[0].shipping_rate_data.delivery_estimate).toBeUndefined();
     expect(checkout.custom_text.shipping_address.message).toMatch(/prépare un BAT/i);
     expect(checkout.tax_id_collection).toEqual({ enabled: true });
     expect(checkout.invoice_creation).toMatchObject({
@@ -351,7 +372,7 @@ describe("API Tapote", () => {
     });
   });
 
-  it("facture les versions prêtes à servir 59 €, 69 € et 39 €", async () => {
+  it("recalcule côté serveur les suppléments du pack prêt à poser", async () => {
     const stripe = {
       checkout: { sessions: {
         create: vi.fn(async () => ({ id: "cs_test_ready_prices", url: "https://checkout.stripe.test/ready" })),
@@ -359,64 +380,40 @@ describe("API Tapote", () => {
       } },
     };
     const { app } = makeContext({}, stripe);
-    const body = checkoutBody("ca58b0a4-0c28-4a1b-a2c4-40fc8dc87a63");
-    body.items = [
-      { ...cart[0], productId: "plaque_standard" },
-      { ...cart[0], productId: "comptoir_standard" },
-      { ...cart[0], productId: "carte_standard" },
-    ];
-
-    const response = await request(app).post("/api/checkout").send(body);
-
-    expect(response.status).toBe(200);
-    const checkout = stripe.checkout.sessions.create.mock.calls[0][0];
-    expect(checkout.line_items.map((item) => item.price_data.unit_amount)).toEqual([5900, 6900, 3900]);
-    expect(checkout.shipping_options[0].shipping_rate_data.fixed_amount.amount).toBe(0);
-    expect(checkout.shipping_options[0].shipping_rate_data.delivery_estimate).toBeUndefined();
-    expect(checkout.custom_text.shipping_address.message).toMatch(/configur.+test.+avant expédition/i);
-  });
-
-  it("applique les deux prix publics du Pack Local", async () => {
-    const stripe = {
-      checkout: { sessions: {
-        create: vi.fn(async ({ line_items: lineItems }) => ({
-          id: `cs_test_pack_${lineItems[0].price_data.product_data.metadata.productId}`,
-          url: "https://checkout.stripe.test/pack",
-        })),
-        retrieve: vi.fn(),
-      } },
-    };
-    const { app } = makeContext({}, stripe);
     const cases = [
-      ["pack_duo_standard", 11900, { comptoir: 1, plaque: 1 }, 0],
-      ["pack_duo", 15900, { comptoir: 1, plaque: 1 }, 0],
+      [3, 15900],
+      [4, 19900],
+      [5, 23900],
     ];
-
-    for (const [index, [productId, amount, supportComposition, shipping]] of cases.entries()) {
-      const body = checkoutBody(`da58b0a4-0c28-4a1b-a2c4-40fc8dc87a${70 + index}`);
-      body.items = [{ ...cart[0], productId, supportComposition }];
+    for (const [index, [stands, amount]] of cases.entries()) {
+      const body = checkoutBody(`ca58b0a4-0c28-4a1b-a2c4-40fc8dc87a${70 + index}`);
+      body.items = [{
+        ...cart[0],
+        productId: "pack_comptoir_pret",
+        supportComposition: { comptoir: stands, plaque: 1, carte: 1 },
+      }];
       const response = await request(app).post("/api/checkout").send(body);
       expect(response.status).toBe(200);
       const checkout = stripe.checkout.sessions.create.mock.calls[index][0];
       expect(checkout.line_items[0].price_data.unit_amount).toBe(amount);
-      expect(checkout.line_items[0].price_data.product_data.metadata.supportComposition).toBe(JSON.stringify(supportComposition));
-      expect(checkout.shipping_options[0].shipping_rate_data.fixed_amount.amount).toBe(shipping);
+      expect(checkout.line_items[0].price_data.product_data.metadata.supportComposition)
+        .toBe(JSON.stringify({ comptoir: stands, plaque: 1, carte: 1 }));
     }
   });
 
-  it("refuse une composition de pack qui ne contient pas exactement le nombre de supports annoncé", async () => {
+  it("refuse une composition inférieure au contenu du pack", async () => {
     const { app } = makeContext({ ALLOW_DEMO_CHECKOUT: "true" });
     const body = checkoutBody("ea58b0a4-0c28-4a1b-a2c4-40fc8dc87a64");
     body.items = [{
       ...cart[0],
-      productId: "pack_duo",
-      supportComposition: { comptoir: 1, plaque: 0 },
+      productId: "pack_comptoir",
+      supportComposition: { comptoir: 1, plaque: 1, carte: 1 },
     }];
 
     const response = await request(app).post("/api/checkout").send(body);
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toMatch(/exactement 2 supports/i);
+    expect(response.body.error).toMatch(/composition.*pas valide/i);
   });
 
   it("redirige les commandes de 10 supports ou plus vers un devis", async () => {
@@ -424,9 +421,9 @@ describe("API Tapote", () => {
     const body = checkoutBody("fa58b0a4-0c28-4a1b-a2c4-40fc8dc87a71");
     body.items = [{
       ...cart[0],
-      productId: "pack_duo",
-      quantity: 5,
-      supportComposition: { comptoir: 1, plaque: 1 },
+      productId: "pack_essentiel",
+      quantity: 4,
+      supportComposition: { comptoir: 1, plaque: 1, carte: 1 },
     }];
 
     const response = await request(app).post("/api/checkout").send(body);
@@ -443,7 +440,7 @@ describe("API Tapote", () => {
       } },
     };
     const { app } = makeContext({}, stripe);
-    const retiredProductIds = ["pack_cinq_standard", "pack_cinq", "carte_assortie"];
+    const retiredProductIds = ["pack_duo", "pack_duo_standard", "carte_standard", "plaque", "plaque_standard", "comptoir", "comptoir_standard", "pack_cinq_standard", "pack_cinq", "carte_assortie"];
 
     for (const [index, productId] of retiredProductIds.entries()) {
       const body = checkoutBody(`fa58b0a4-0c28-4a1b-a2c4-40fc8dc87a${65 + index}`);
@@ -453,6 +450,15 @@ describe("API Tapote", () => {
       expect(response.body.error).toMatch(/ancienne référence.*plus commandable/i);
     }
     expect(stripe.checkout.sessions.create).not.toHaveBeenCalled();
+  });
+
+  it("refuse tout prix envoyé par le navigateur", async () => {
+    const { app } = makeContext({ ALLOW_DEMO_CHECKOUT: "true" });
+    const body = checkoutBody("fa58b0a4-0c28-4a1b-a2c4-40fc8dc87a90");
+    body.items = [{ ...cart[0], price: 1, unitAmount: 1 }];
+    const response = await request(app).post("/api/checkout").send(body);
+    expect(response.status).toBe(400);
+    expect(response.body.error).toMatch(/unrecognized keys|champs non autorisés/i);
   });
 
   it("déduplique les événements Stripe signés", async () => {

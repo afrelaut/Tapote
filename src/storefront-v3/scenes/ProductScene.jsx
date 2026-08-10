@@ -25,6 +25,7 @@ export function ProductScene({
     secondaryColor: sceneColors.accent,
     textColor: sceneColors.ink,
   };
+  delete scenePreview.key;
 
   return (
     <PdpScene
@@ -76,6 +77,7 @@ export function ShopProductPreview({ preview, sectorId = "", sectorTitle = "" })
     secondaryColor: sceneColors.accent,
     textColor: sceneColors.ink,
   };
+  delete scenePreview.key;
 
   return (
     <div

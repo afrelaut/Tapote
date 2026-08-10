@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { AlertTriangle, ArrowRight, CheckCircle2, ChevronDown, Menu, ShieldCheck, ShoppingBag, UserRound, X } from "lucide-react";
 import { ProductArt } from "../scenes/ProductArt.jsx";
+import { PackArt } from "../scenes/PackArt.jsx";
 import { SHOP_MENU_PREVIEWS } from "../data/content.js";
 
 function Brand() {
@@ -15,12 +16,19 @@ function UtilityBar() {
   );
 }
 
+function MenuOfferArt({ preview, className = "" }) {
+  if (!preview?.isPack) {
+    return <ProductArt surface={preview.surface} actionId={preview.actionId} brandName="tapote." theme={preview.theme} personalization="custom" />;
+  }
+  return <PackArt productId={preview.productId} composition={preview.composition} className={className} />;
+}
+
 const MOBILE_MENU_FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 function Header({ cartCount, compact = false }) {
   const [open, setOpen] = useState(false);
   const [shopMenuOpen, setShopMenuOpen] = useState(false);
-  const [activeShopPreviewId, setActiveShopPreviewId] = useState("comptoir");
+  const [activeShopPreviewId, setActiveShopPreviewId] = useState("chevalet");
   const headerRef = useRef(null);
   const navigationRef = useRef(null);
   const shopMenuRef = useRef(null);
@@ -29,7 +37,7 @@ function Header({ cartCount, compact = false }) {
   const toggleRef = useRef(null);
   const returnFocusRef = useRef(null);
   const menuId = useId();
-  const activeShopPreview = SHOP_MENU_PREVIEWS[activeShopPreviewId] || SHOP_MENU_PREVIEWS.comptoir;
+  const activeShopPreview = SHOP_MENU_PREVIEWS[activeShopPreviewId] || SHOP_MENU_PREVIEWS.chevalet;
   const cancelShopMenuClose = () => {
     if (shopCloseTimerRef.current) {
       window.clearTimeout(shopCloseTimerRef.current);
@@ -149,83 +157,63 @@ function Header({ cartCount, compact = false }) {
             <button ref={shopToggleRef} type="button" aria-expanded={shopMenuOpen} aria-controls="v3-shop-mega" onClick={() => setShopMenuOpen((value) => !value)}>
               Boutique <ChevronDown />
             </button>
-            <a className="v3-shop-mobile-link" href="/boutique" onClick={() => setOpen(false)}>
-              <span><strong>Toute la boutique</strong><small>Comparer les supports et les deux finitions</small></span>
-              <ArrowRight aria-hidden="true" />
-            </a>
-            {/* Le menu large montre le produit ; sa version téléphone n'en
-                donnait que le nom. Or c'est là que se fait l'essentiel des
-                visites : on y choisit un support sans jamais l'avoir vu. Chaque
-                entrée porte donc le même visuel que le grand menu. */}
-            <div className="v3-mobile-products" aria-label="Produits Tapote">
-              {["comptoir", "plaque", "carte", "packs"].map((previewId) => {
-                const preview = SHOP_MENU_PREVIEWS[previewId];
-                return (
-                  <a href={preview.href} onClick={() => setOpen(false)} key={previewId}>
-                    <span className={`v3-mobile-product-art ${previewId === "packs" ? "is-pack-composition" : ""}`} aria-hidden="true">
-                      {previewId === "packs" ? (
-                        <>
-                          <ProductArt surface="comptoir" actionId="avis" brandName="tapote." theme="nuit" personalization="ready" className="is-pack-comptoir" />
-                          <ProductArt surface="plaque" actionId="instagram" brandName="tapote." theme="creme" personalization="ready" className="is-pack-plaque" />
-                        </>
-                      ) : (
-                        <ProductArt
-                          surface={preview.surface}
-                          actionId={preview.actionId}
-                          brandName="tapote."
-                          theme={preview.theme}
-                          personalization="ready"
-                        />
-                      )}
-                    </span>
-                    <span className="v3-mobile-product-copy">
-                      <strong>{preview.title}</strong>
-                      <small>{preview.eyebrow}</small>
-                    </span>
-                  </a>
-                );
-              })}
-            </div>
             <a className="v3-mobile-custom-link" href="/personnaliser" onClick={() => setOpen(false)}>
               <img className="v3-mobile-custom-mark" src="/brand/tapote-mark.svg" alt="" aria-hidden="true" />
               <span><strong>Créer mon Tapote</strong><small>Logo, couleurs et textes dans Tapote Studio</small></span>
               <ArrowRight aria-hidden="true" />
             </a>
+            <a className="v3-shop-mobile-link" href="/boutique" onClick={() => setOpen(false)}>
+              <span><strong>Toute la boutique</strong><small>3 formats, 3 packs et deux finitions</small></span>
+              <ArrowRight aria-hidden="true" />
+            </a>
+            <div className="v3-mobile-quick-nav" aria-label="Découvrir Tapote">
+              <a href="/comment-ca-marche" onClick={() => setOpen(false)}><strong>Comment ça marche</strong><small>Le geste NFC + QR</small></a>
+              <a href="/tapote-pilot" onClick={() => setOpen(false)}><strong>Tapote Pilot</strong><small>Gérer mes supports</small></a>
+              <a href="/devis" onClick={() => setOpen(false)}><strong>Entreprises & devis</strong><small>Dès 10 supports</small></a>
+            </div>
+            {/* Le menu large montre le produit ; sa version téléphone n'en
+                donnait que le nom. Or c'est là que se fait l'essentiel des
+                visites : on y choisit un support sans jamais l'avoir vu. Chaque
+                entrée porte donc le même visuel que le grand menu. */}
+            <div className="v3-mobile-products" aria-label="Produits Tapote">
+              {["chevalet", "plaque", "carte", "essentiel", "comptoir", "equipe"].map((previewId) => {
+                const preview = SHOP_MENU_PREVIEWS[previewId];
+                return (
+                  <a href={preview.href} onClick={() => setOpen(false)} key={previewId}>
+                    <span className={preview.isPack ? "v3-mobile-product-art is-pack-composition" : "v3-mobile-product-art"} aria-hidden="true">
+                      <MenuOfferArt preview={preview} />
+                    </span>
+                    <span className="v3-mobile-product-copy">
+                      <strong>{preview.title}</strong>
+                      <small>{preview.eyebrow}</small>
+                      <em>Choisir <ArrowRight aria-hidden="true" /></em>
+                    </span>
+                  </a>
+                );
+              })}
+            </div>
             <div className={shopMenuOpen ? "v3-shop-mega is-open" : "v3-shop-mega"} id="v3-shop-mega">
               <div className="v3-shop-mega-column">
-                <strong>Les supports</strong>
-                <a href="/produits/comptoir" onMouseEnter={() => openShopMenu("comptoir")} onFocus={() => openShopMenu("comptoir")}><span>Tapote Comptoir</span><small>Caisse · accueil · table</small></a>
-                <a href="/produits/plaque" onMouseEnter={() => openShopMenu("plaque")} onFocus={() => openShopMenu("plaque")}><span>Tapote Plaque</span><small>Entrée · mur · miroir</small></a>
-                <a href="/produits/carte" onMouseEnter={() => openShopMenu("carte")} onFocus={() => openShopMenu("carte")}><span>Tapote Card</span><small>Terrain · rendez-vous</small></a>
+                <strong>Les trois formats</strong>
+                <a href="/produits/comptoir" onMouseEnter={() => openShopMenu("chevalet")} onFocus={() => openShopMenu("chevalet")}><span>Chevalet · dès 49 €</span><small>Caisse, accueil et table</small></a>
+                <a href="/produits/plaque" onMouseEnter={() => openShopMenu("plaque")} onFocus={() => openShopMenu("plaque")}><span>Plaque · dès 29 €</span><small>Entrée, mur et point fixe</small></a>
+                <a href="/produits/carte" onMouseEnter={() => openShopMenu("carte")} onFocus={() => openShopMenu("carte")}><span>Carte · dès 19 €</span><small>Rendez-vous et terrain</small></a>
               </div>
               <div className="v3-shop-mega-column">
-                <strong>Deux modes</strong>
-                <a href="/boutique" onMouseEnter={() => openShopMenu("comptoir")} onFocus={() => openShopMenu("comptoir")}><span>Prêt à poser</span><small>Composition Tapote prête à commander</small></a>
-                <a href="/personnaliser" onMouseEnter={() => openShopMenu("plaque")} onFocus={() => openShopMenu("plaque")}><span>À votre image</span><small>Personnalisation dans Tapote Studio</small></a>
+                <strong>Les trois packs</strong>
+                <a href="/produits/comptoir?offre=pack_essentiel_pret" onMouseEnter={() => openShopMenu("essentiel")} onFocus={() => openShopMenu("essentiel")}><span>Essentiel · dès 79 €</span><small>1 chevalet + 1 plaque + 1 carte</small></a>
+                <a href="/produits/comptoir?offre=pack_comptoir_pret" onMouseEnter={() => openShopMenu("comptoir")} onFocus={() => openShopMenu("comptoir")}><span>Comptoir · dès 119 €</span><small>2 chevalets + 1 plaque + 1 carte</small></a>
+                <a href="/produits/comptoir?offre=pack_equipe_pret" onMouseEnter={() => openShopMenu("equipe")} onFocus={() => openShopMenu("equipe")}><span>Équipe · dès 179 €</span><small>2 chevalets + 2 plaques + 3 cartes</small></a>
               </div>
               <div className="v3-shop-mega-column">
-                <strong>Packs & entreprises</strong>
-                <a href="/boutique#packs" onMouseEnter={() => openShopMenu("packs")} onFocus={() => openShopMenu("packs")}><span>Pack Local</span><small>Comptoir + Plaque</small></a>
-                <a href="/devis" onMouseEnter={() => openShopMenu("packs")} onFocus={() => openShopMenu("packs")}><span>10 supports ou plus</span><small>Composition et devis</small></a>
+                <strong>Projet</strong>
+                <a href="/personnaliser" onMouseEnter={() => openShopMenu("chevalet")} onFocus={() => openShopMenu("chevalet")}><span>Créer mon Tapote</span><small>Logo, couleurs et textes</small></a>
+                <a href="/devis" onMouseEnter={() => openShopMenu("equipe")} onFocus={() => openShopMenu("equipe")}><span>10 supports ou plus</span><small>Composition et devis</small></a>
               </div>
               <a className={`v3-shop-mega-feature is-${activeShopPreview.surface}`} href={activeShopPreview.href}>
                 <span>{activeShopPreview.eyebrow}</span>
-                <div className={`v3-shop-mega-product ${activeShopPreviewId === "packs" ? "is-pack-composition" : ""}`} aria-hidden="true">
-                  {activeShopPreviewId === "packs" ? (
-                    <>
-                      <ProductArt surface="comptoir" actionId="avis" brandName="tapote." theme="nuit" personalization="ready" className="is-pack-comptoir" />
-                      <ProductArt surface="plaque" actionId="instagram" brandName="tapote." theme="creme" personalization="ready" className="is-pack-plaque" />
-                    </>
-                  ) : (
-                    <ProductArt
-                      key={activeShopPreviewId}
-                      surface={activeShopPreview.surface}
-                      actionId={activeShopPreview.actionId}
-                      brandName="tapote."
-                      theme={activeShopPreview.theme}
-                      personalization="ready"
-                    />
-                  )}
+                <div className={activeShopPreview.isPack ? "v3-shop-mega-product is-pack-composition" : "v3-shop-mega-product"} aria-hidden="true">
+                  <MenuOfferArt key={activeShopPreviewId} preview={activeShopPreview} className="is-mega" />
                 </div>
                 <strong>{activeShopPreview.title}</strong>
                 <em>{activeShopPreview.detail}</em>
@@ -233,9 +221,6 @@ function Header({ cartCount, compact = false }) {
               </a>
             </div>
           </div>
-          <a className="v3-mobile-nav-row" href="/comment-ca-marche" onClick={() => setOpen(false)}><span><strong>Comment ça marche</strong><small>Comprendre le geste NFC + QR</small></span><ArrowRight aria-hidden="true" /></a>
-          <a className="v3-mobile-nav-row" href="/tapote-pilot" onClick={() => setOpen(false)}><span><strong>Tapote Pilot</strong><small>Gérer vos supports et leurs destinations</small></span><ArrowRight aria-hidden="true" /></a>
-          <a className="v3-mobile-nav-row" href="/devis" onClick={() => setOpen(false)}><span><strong>Entreprises & devis</strong><small>Accompagnement dès 10 supports</small></span><ArrowRight aria-hidden="true" /></a>
           <a className="v3-mobile-login" href="/connexion" onClick={() => setOpen(false)}><UserRound aria-hidden="true" /><span><strong>Espace Tapote Pilot</strong><small>Retrouver mes supports</small></span><ArrowRight aria-hidden="true" /></a>
         </nav>
         <div className="v3-header-actions">
@@ -257,7 +242,7 @@ function Footer() {
     <footer className="v3-footer">
       <div className="v3-footer-main">
         <div><Brand /><p>Transformez chaque visite<br />en la bonne action.</p><small>NFC + QR · Prêt à poser ou à votre image · Tapote Pilot inclus.</small></div>
-        <div><strong>Acheter</strong><a href="/boutique">Toute la boutique</a><a href="/produits/comptoir">Tapote Comptoir</a><a href="/produits/plaque">Tapote Plaque</a><a href="/produits/carte">Tapote Card</a><a href="/boutique#packs">Pack Local</a></div>
+        <div><strong>Acheter</strong><a href="/boutique">Toute la gamme</a><a href="/produits/comptoir">Chevalet</a><a href="/produits/plaque">Plaque</a><a href="/produits/carte">Carte</a><a href="/produits/comptoir?offre=pack_essentiel_pret">Les packs</a></div>
         <div><strong>Découvrir</strong><a href="/boutique">Choisir un support</a><a href="/comment-ca-marche">Comment ça marche</a><a href="/tapote-pilot">Tapote Pilot</a><a href="/devis">Devis dès 10 supports</a></div>
         <div><strong>Aide</strong><a href="mailto:aymeric@tapote.fr">Nous contacter</a><a href="/cgv">Livraison et garanties</a><a href="/confidentialite">Données et confidentialité</a><a href="/connexion">Accéder à Pilot</a></div>
       </div>

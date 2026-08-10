@@ -4,7 +4,7 @@ import { ACTIONS, calculateShipping, formatMoney, PRODUCTS, SHIPPING } from "../
 import { THEME_LABELS, resolveThemeId } from "../../deviceThemes.js";
 import { trackStorefrontEvent } from "../../storefront/analytics.js";
 import { ProductArt } from "../scenes/ProductArt.jsx";
-import { cartEditDescriptor, compositionLabel, getCachedLogoPreview, itemFingerprint, physicalSupportCount, previewId, saveCartItemAsDraft } from "../commerce/cart.js";
+import { cartEditDescriptor, cartItemUnitPrice, compositionLabel, getCachedLogoPreview, itemFingerprint, physicalSupportCount, previewId, saveCartItemAsDraft } from "../commerce/cart.js";
 import { shippingPolicyReady, taxLabel } from "../data/content.js";
 
 function CartLine({ item, index, onQuantity, onRemove }) {
@@ -27,7 +27,7 @@ function CartLine({ item, index, onQuantity, onRemove }) {
           {item.brandName && <div><dt>Marque</dt><dd>{item.brandName}</dd></div>}
           <div><dt>Destination</dt><dd className={item.destinationUrl ? "is-ready" : "is-pending"}>{item.destinationUrl ? "Lien configuré" : "À préciser avant production"}</dd></div>
         </dl>
-        <strong>{formatMoney(product.price * item.quantity)}</strong>
+        <strong>{formatMoney(cartItemUnitPrice(item) * item.quantity)}</strong>
       </div>
       {onQuantity && <div className="v3-cart-actions">{edit && <a className="v3-cart-edit" href={edit.href} onClick={() => saveCartItemAsDraft(item, edit)}><FileCheck2 /> Modifier</a>}<div className="v3-cart-quantity"><button type="button" onClick={() => onQuantity(-1)} disabled={item.quantity <= 1} aria-label={`Diminuer la quantité de ${cartTitle}`}><Minus /></button><b aria-label={`Quantité ${item.quantity}`}>{item.quantity}</b><button type="button" onClick={() => onQuantity(1)} aria-label={`Augmenter la quantité de ${cartTitle}`}><Plus /></button></div><button className="v3-cart-remove" type="button" onClick={onRemove} aria-label={`Supprimer ${cartTitle} du panier`}><Trash2 /> Supprimer</button></div>}
     </article>
@@ -35,7 +35,7 @@ function CartLine({ item, index, onQuantity, onRemove }) {
 }
 
 function OrderSummary({ cart, action }) {
-  const subtotal = cart.reduce((sum, item) => sum + PRODUCTS[item.productId].price * item.quantity, 0);
+  const subtotal = cart.reduce((sum, item) => sum + cartItemUnitPrice(item) * item.quantity, 0);
   const shipping = shippingPolicyReady ? calculateShipping(subtotal) : 0;
   const freeShippingRemaining = Math.max(0, SHIPPING.freeThreshold - subtotal);
   const hasCustom = cart.some((item) => ["custom", "matched"].includes(PRODUCTS[item.productId].personalization));
@@ -52,7 +52,7 @@ export function CartPage({ cart, setCart }) {
       quantity: Math.max(0, nextQuantity),
       quantity_change: delta,
       currency: "EUR",
-      value: Math.max(0, nextQuantity) * PRODUCTS[item.productId].price / 100,
+      value: Math.max(0, nextQuantity) * cartItemUnitPrice(item) / 100,
     });
     return current
       .map((entry, itemIndex) => itemIndex === index ? { ...entry, quantity: nextQuantity } : entry)
@@ -65,7 +65,7 @@ export function CartPage({ cart, setCart }) {
       product_id: item.productId,
       quantity: item.quantity,
       currency: "EUR",
-      value: item.quantity * PRODUCTS[item.productId].price / 100,
+      value: item.quantity * cartItemUnitPrice(item) / 100,
     });
     return current.filter((_, itemIndex) => itemIndex !== index);
   });
@@ -74,7 +74,7 @@ export function CartPage({ cart, setCart }) {
   return (
     <main id="main-content" className="v3-purchase-page">
       <header><span className="v3-eyebrow">VOTRE COMMANDE</span><h1>Votre panier.</h1><p>Vérifiez votre choix avant de continuer.</p></header>
-      {!cart.length ? <section className="v3-empty-cart"><ShoppingBag /><h2>Votre panier est vide.</h2><p>Commencez par le support le plus utile à votre activité.</p><a href="/boutique">Voir les produits <ArrowRight /></a></section> : <div className="v3-purchase-layout"><section className="v3-cart-lines">{cart.map((item, index) => <CartLine item={item} index={index} onQuantity={(delta) => changeQuantity(index, delta)} onRemove={() => removeItem(index)} key={`${itemFingerprint(item)}-${index}`} />)}{requiresQuote && <div className="v3-volume-notice"><Layers3 /><span><strong>{supportTotal} supports : un devis sera plus juste.</strong><small>À partir de 10, nous vérifions la composition, les lieux et les coûts avant de vous proposer le tarif le plus juste.</small></span></div>}</section><OrderSummary cart={cart} action={requiresQuote ? <a className="v3-primary-cta" href="/devis">Demander un devis <ArrowRight /></a> : <a className="v3-primary-cta" href="/commande" onClick={() => trackStorefrontEvent("begin_checkout", { value: cart.reduce((sum, item) => sum + PRODUCTS[item.productId].price * item.quantity, 0) / 100, currency: "EUR", item_count: physicalSupportCount(cart) })}>Continuer vers la commande <ArrowRight /></a>} /></div>}
+      {!cart.length ? <section className="v3-empty-cart"><ShoppingBag /><h2>Votre panier est vide.</h2><p>Commencez par le support le plus utile à votre activité.</p><a href="/boutique">Voir les produits <ArrowRight /></a></section> : <div className="v3-purchase-layout"><section className="v3-cart-lines">{cart.map((item, index) => <CartLine item={item} index={index} onQuantity={(delta) => changeQuantity(index, delta)} onRemove={() => removeItem(index)} key={`${itemFingerprint(item)}-${index}`} />)}{requiresQuote && <div className="v3-volume-notice"><Layers3 /><span><strong>{supportTotal} supports : un devis sera plus juste.</strong><small>À partir de 10, nous vérifions la composition, les lieux et les coûts avant de vous proposer le tarif le plus juste.</small></span></div>}</section><OrderSummary cart={cart} action={requiresQuote ? <a className="v3-primary-cta" href="/devis">Demander un devis <ArrowRight /></a> : <a className="v3-primary-cta" href="/commande" onClick={() => trackStorefrontEvent("begin_checkout", { value: cart.reduce((sum, item) => sum + cartItemUnitPrice(item) * item.quantity, 0) / 100, currency: "EUR", item_count: physicalSupportCount(cart) })}>Continuer vers la commande <ArrowRight /></a>} /></div>}
     </main>
   );
 }

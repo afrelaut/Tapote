@@ -127,12 +127,17 @@ const encodingStatusMeta = {
 };
 
 const productPrices = {
+  [PRODUCTS.pack_essentiel.name]: PRODUCTS.pack_essentiel.price / 100,
+  [PRODUCTS.pack_comptoir.name]: PRODUCTS.pack_comptoir.price / 100,
+  [PRODUCTS.pack_equipe.name]: PRODUCTS.pack_equipe.price / 100,
+  [PRODUCTS.carte.name]: PRODUCTS.carte.price / 100,
+  // Les lignes suivantes restent nécessaires pour afficher les commandes
+  // historiques sans rendre les références de nouveau achetables.
   [PRODUCTS.comptoir_standard.name]: PRODUCTS.comptoir_standard.price / 100,
   [PRODUCTS.comptoir.name]: PRODUCTS.comptoir.price / 100,
   [PRODUCTS.plaque_standard.name]: PRODUCTS.plaque_standard.price / 100,
   [PRODUCTS.plaque.name]: PRODUCTS.plaque.price / 100,
   [PRODUCTS.carte_standard.name]: PRODUCTS.carte_standard.price / 100,
-  [PRODUCTS.carte.name]: PRODUCTS.carte.price / 100,
   [PRODUCTS.pack_duo_standard.name]: PRODUCTS.pack_duo_standard.price / 100,
   [PRODUCTS.pack_duo.name]: PRODUCTS.pack_duo.price / 100,
   [PRODUCTS.pack_cinq_standard.name]: PRODUCTS.pack_cinq_standard.price / 100,
@@ -165,17 +170,10 @@ const initialData = {
     { id: "s5", sku: "BOX-A6-KRAFT", name: "Étui kraft A6", category: "Packaging", stock: 23, reserved: 8, threshold: 20, incoming: 0, eta: "—" },
   ],
   storefront: [
-    { id: "p1", name: PRODUCTS.comptoir_standard.name, price: PRODUCTS.comptoir_standard.price / 100, online: true, stockId: "s1", sales: 18, conversion: "5,1 %" },
-    { id: "p2", name: PRODUCTS.comptoir.name, price: PRODUCTS.comptoir.price / 100, online: true, stockId: "s1", sales: 24, conversion: "4,8 %" },
-    { id: "p3", name: PRODUCTS.plaque_standard.name, price: PRODUCTS.plaque_standard.price / 100, online: true, stockId: "s4", sales: 15, conversion: "4,6 %" },
-    { id: "p4", name: PRODUCTS.plaque.name, price: PRODUCTS.plaque.price / 100, online: true, stockId: "s4", sales: 12, conversion: "3,9 %" },
-    { id: "p5", name: PRODUCTS.carte_standard.name, price: PRODUCTS.carte_standard.price / 100, online: true, stockId: "s3", sales: 21, conversion: "5,5 %" },
-    { id: "p6", name: PRODUCTS.carte.name, price: PRODUCTS.carte.price / 100, online: true, stockId: "s3", sales: 18, conversion: "5,2 %" },
-    { id: "p7", name: PRODUCTS.pack_duo_standard.name, price: PRODUCTS.pack_duo_standard.price / 100, online: true, stockId: "s2", sales: 11, conversion: "4,1 %" },
-    { id: "p8", name: PRODUCTS.pack_duo.name, price: PRODUCTS.pack_duo.price / 100, online: true, stockId: "s2", sales: 14, conversion: "4,4 %" },
-    { id: "p9", name: PRODUCTS.pack_cinq_standard.name, price: PRODUCTS.pack_cinq_standard.price / 100, online: true, stockId: "s2", sales: 7, conversion: "3,2 %" },
-    { id: "p10", name: PRODUCTS.pack_cinq.name, price: PRODUCTS.pack_cinq.price / 100, online: true, stockId: "s2", sales: 9, conversion: "3,6 %" },
-    { id: "p11", name: PRODUCTS.carte_assortie.name, price: PRODUCTS.carte_assortie.price / 100, online: true, stockId: "s3", sales: 8, conversion: "2,8 %" },
+    { id: "p1", name: PRODUCTS.pack_essentiel.name, price: PRODUCTS.pack_essentiel.price / 100, online: true, stockId: "s1", sales: 0, conversion: "—" },
+    { id: "p2", name: PRODUCTS.pack_comptoir.name, price: PRODUCTS.pack_comptoir.price / 100, online: true, stockId: "s1", sales: 0, conversion: "—" },
+    { id: "p3", name: PRODUCTS.pack_equipe.name, price: PRODUCTS.pack_equipe.price / 100, online: true, stockId: "s1", sales: 0, conversion: "—" },
+    { id: "p4", name: PRODUCTS.carte.name, price: PRODUCTS.carte.price / 100, online: true, stockId: "s3", sales: 0, conversion: "—" },
   ],
   activity: [
     { id: "a1", icon: "order", text: "La commande TPT-1048 est passée en assemblage", time: "Il y a 12 min" },
@@ -1599,7 +1597,12 @@ export default function TapoteManagementApp() {
       {stockReceipt && data.inventory.some((item) => item.id === stockReceipt.stockId) && <StockReceiptModal item={data.inventory.find((item) => item.id === stockReceipt.stockId)} suggestedQuantity={stockReceipt.suggestedQuantity} onClose={() => setStockReceipt(null)} onReceive={(quantity) => receiveStock(stockReceipt.stockId, quantity)} />}
       {settingsOpen && <SettingsModal access={access} settings={data.settings} onClose={() => setSettingsOpen(false)} onSync={() => refreshData()} syncing={syncing} lastSyncedAt={lastSyncedAt} onSignOut={async () => { await signOutManager(); setSettingsOpen(false); setAuthState("signedOut"); }} />}
       <div className={cx("pilot-sync-status", syncing && "is-visible")} aria-hidden={!syncing}><LoaderCircle className="is-spinning" size={15} />Synchronisation Supabase</div>
-      <div className={cx("pilot-toast", toast && "is-visible")} role="status"><CheckCircle2 size={17} />{toast}</div>
+      {toast && (
+        <div className="pilot-toast is-visible" role="status">
+          <CheckCircle2 size={17} />
+          {toast}
+        </div>
+      )}
     </div>
   );
 }

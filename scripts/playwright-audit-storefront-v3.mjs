@@ -204,20 +204,31 @@ const home = await auditPage(desktop, "/", "landing-desktop", async (page) => {
   assert("cta-boutique-landing", await page.locator('.v3-founder-actions a[href="/boutique"]').isVisible());
   assert("aucun-cta-demonstration-redondant", await page.locator('.v3-founder-actions a[href="/comment-ca-marche"]').count() === 0);
   assert("scene-dynamique-ou-fallback", await page.locator(".v3-hero-3d, .v3-founder-static-fallback").count() === 1);
-  assert("quatre-offres-publiques", await page.locator(".v3-home-products article").count() === 4);
+  assert("landing-trois-formats-et-prix", (
+    await page.locator(".v3-immersive-pack__legend button").count() === 3
+    && /49\s*€.*59\s*€/s.test(await page.locator(".v3-immersive-pack").innerText())
+  ));
   assert("aucune-preuve-inventee", !/20[ .]?000 entreprises|30[ .]?000 clients|fabriqué en france/i.test(await page.locator("main").innerText()));
   await page.screenshot({ path: path.join(outputDir, "01-landing-desktop.png"), fullPage: false });
 });
 await home.close();
 
 const shop = await auditPage(desktop, "/boutique", "boutique-desktop", async (page) => {
+  const formats = page.locator(".v3-shop-family").first();
   assert("boutique-trois-formats", (
-    await page.getByRole("heading", { name: /Tapote Comptoir/i }).count() >= 1
-    && await page.getByRole("heading", { name: /Tapote Plaque/i }).count() >= 1
-    && await page.getByRole("heading", { name: /Tapote Card/i }).count() >= 1
+    await formats.locator(".v3-shop-card").count() === 3
+    && await formats.getByRole("heading", { name: /^Chevalet$/i }).count() === 1
+    && await formats.getByRole("heading", { name: /^Plaque$/i }).count() === 1
+    && await formats.getByRole("heading", { name: /^Carte$/i }).count() === 1
   ));
-  await page.getByRole("button", { name: /^Pack Local$/i }).click();
-  assert("boutique-packs", await page.locator("#packs").count() === 1);
+  const packs = page.locator(".v3-shop-family.is-packs");
+  assert("boutique-packs", (
+    await packs.count() === 1
+    && await packs.locator(".v3-shop-card.is-pack").count() === 3
+    && await packs.getByRole("heading", { name: /^Pack Essentiel$/i }).count() === 1
+    && await packs.getByRole("heading", { name: /^Pack Comptoir$/i }).count() === 1
+    && await packs.getByRole("heading", { name: /^Pack Équipe$/i }).count() === 1
+  ));
   await page.screenshot({ path: path.join(outputDir, "02-boutique-desktop.png"), fullPage: false });
 });
 await shop.close();

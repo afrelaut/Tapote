@@ -113,7 +113,7 @@ export default function Hero3D() {
     <div className="v3-hero-3d" data-scene-engine="hero-css-3d" data-active-product={surface}>
       <div className="v3-hero-3d__light" aria-hidden="true" />
       <div className="v3-hero-3d__stage">
-        <HeroProductObject key={`product-${surface}`} surface={surface} />
+        <HeroProductObject surface={surface} />
         <DeviceFrame
           key={`phone-${surface}`}
           actionId={product.actionId}
@@ -124,8 +124,8 @@ export default function Hero3D() {
           demonstration
           className="v3-hero-gesture-phone"
         />
-        <div className="v3-hero-gesture-nfc" aria-hidden="true" key={`nfc-${surface}`}><i /><i /><i /><span>NFC détecté</span></div>
-        <div className="v3-hero-tech-cards" aria-hidden="true" key={`tech-${surface}`}>
+        <div key={`nfc-${surface}`} className="v3-hero-gesture-nfc" aria-hidden="true"><i /><i /><i /><span>NFC détecté</span></div>
+        <div key={`cards-${surface}`} className="v3-hero-tech-cards" aria-hidden="true">
           <div className="v3-hero-tech-card is-detect">
             <i><SmartphoneNfc /></i>
             <span><small>GESTE NFC</small><strong>Support détecté</strong><em>Sans application</em></span>

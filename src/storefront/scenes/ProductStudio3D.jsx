@@ -242,12 +242,18 @@ export default function ProductStudio3D({
   // logo et les textes, l'objet 3D restait au design Tapote générique alors que
   // le client venait de personnaliser son support.
   const artworkKey = [surface, actionId, primaryColor, accentColor, textColor, personalization, brandName, brandLogo, brandMotif, tagline, contactLine, blockColorMode, customHeadline, customSubline, customTapLabel].join(":");
-  const ready = readyArtworkKey === artworkKey;
+  const exactReady = readyArtworkKey === artworkKey;
+  const hasRenderedScene = Boolean(readyArtworkKey);
   const [eligible, setEligible] = useState(() => (
     typeof window !== "undefined"
     && (typeof window.matchMedia !== "function" || !window.matchMedia("(prefers-reduced-motion: reduce)").matches)
     && supportsWebGl()
   ));
+  const renderMode = exactReady
+    ? "webgl"
+    : eligible
+      ? hasRenderedScene ? "updating" : "loading"
+      : "static";
 
   useEffect(() => {
     if (!eligible) return undefined;
@@ -270,7 +276,18 @@ export default function ProductStudio3D({
               cacheBust: true,
               pixelRatio: PRINT_TEXTURE_SCALE,
             });
-            if (!cancelled) setCapturedArtwork({ key: artworkKey, canvas });
+            if (!cancelled) {
+              setCapturedArtwork({
+                key: artworkKey,
+                canvas,
+                config: {
+                  surface,
+                  primaryColor,
+                  accentColor,
+                  personalization,
+                },
+              });
+            }
           } catch {
             // The static artwork stays available when browser capture is not
             // supported; WebGL starts only after the exact texture is ready.
@@ -286,7 +303,7 @@ export default function ProductStudio3D({
       cancelled = true;
       window.cancelAnimationFrame(frameId);
     };
-  }, [accentColor, actionId, artworkKey, eligible, primaryColor, surface, textColor]);
+  }, [accentColor, actionId, artworkKey, eligible, personalization, primaryColor, surface, textColor]);
 
   useEffect(() => {
     if (typeof window.matchMedia !== "function") return undefined;
@@ -299,15 +316,24 @@ export default function ProductStudio3D({
   useEffect(() => {
     const host = hostRef.current;
     const canvas = canvasRef.current;
-    const artworkCanvas = capturedArtwork?.key === artworkKey ? capturedArtwork.canvas : null;
-    if (!host || !canvas || !eligible || !artworkCanvas) return undefined;
+    const artworkCanvas = capturedArtwork?.canvas;
+    const renderConfig = capturedArtwork?.config;
+    if (!host || !canvas || !eligible || !artworkCanvas || !renderConfig) return undefined;
+    const renderArtworkKey = capturedArtwork.key;
+    const renderSurface = renderConfig.surface;
+    const renderPrimaryColor = renderConfig.primaryColor;
+    const renderAccentColor = renderConfig.accentColor;
+    const renderPersonalization = renderConfig.personalization;
     const mobile = window.matchMedia("(max-width: 760px)").matches;
     const budget = mobile ? SCENE_BUDGETS.mobile : SCENE_BUDGETS.desktop;
     const renderer = new WebGLRenderer({
       canvas,
       alpha: true,
       antialias: budget.antialias,
-      powerPreference: "high-performance",
+      // WebKit mobile réalloue agressivement les contextes demandant le GPU
+      // haute performance. La préférence par défaut conserve le même rendu
+      // mais évite les pertes de contexte lors d'un changement de secteur.
+      powerPreference: mobile ? "default" : "high-performance",
     });
     renderer.outputColorSpace = SRGBColorSpace;
     renderer.toneMapping = ACESFilmicToneMapping;
@@ -338,7 +364,7 @@ export default function ProductStudio3D({
     keyLight.shadow.camera.near = 0.5;
     keyLight.shadow.camera.far = 22;
     scene.add(keyLight);
-    const rimLight = new DirectionalLight(accentColor, hero ? 2.2 : 0.85);
+    const rimLight = new DirectionalLight(renderAccentColor, hero ? 2.2 : 0.85);
     rimLight.position.set(-5.5, 1.4, 3.8);
     scene.add(rimLight);
     const fillLight = new DirectionalLight("#c6d5ff", 2.2);
@@ -346,39 +372,40 @@ export default function ProductStudio3D({
     scene.add(fillLight);
 
     const texture = makePrintTexture(artworkCanvas, renderer.capabilities.getMaxAnisotropy());
-    const product = buildProduct(surface, texture, primaryColor);
+    const product = buildProduct(renderSurface, texture, renderPrimaryColor);
     // Keep the physical relationship credible beside a ~147 mm smartphone:
     // Comptoir is roughly phone-height, Plaque slightly shorter, Card compact.
-    const baseScale = surface === "carte" ? 0.82 : surface === "plaque" ? 0.84 : 0.88;
-    const heroScale = surface === "comptoir" ? 1.08 : surface === "plaque" ? 0.74 : 0.64;
+    const baseScale = renderSurface === "carte" ? 0.82 : renderSurface === "plaque" ? 0.84 : 0.88;
+    const heroScale = renderSurface === "comptoir" ? 1.08 : renderSurface === "plaque" ? 0.74 : 0.64;
     // Le support est le produit vendu : il doit dominer la scène. Le téléphone
     // n'est là que pour prouver le geste, pas pour voler la vedette.
-    const sceneScale = hero ? (mobile ? heroScale * 0.94 : heroScale * 1.06) : (mobile ? 0.96 : 1.06);
+    const mobileProductScale = renderPersonalization === "custom" ? 1.1 : 1.02;
+    const sceneScale = hero ? (mobile ? heroScale * 0.94 : heroScale * 1.06) : (mobile ? mobileProductScale : 1.06);
     const finalScale = sceneScale * baseScale;
     product.scale.setScalar(finalScale);
     // Sur mobile le téléphone occupe la moitié droite du cadre : l'objet se
     // décale vers la gauche pour rester entier et lisible à côté de lui.
     const objectX = hero
       ? (mobile ? 0.42 : 0.72)
-      : surface === "carte"
-        ? (mobile ? -0.76 : -0.46)
-        : (mobile ? -0.52 : -0.30);
+      : renderSurface === "carte"
+        ? (mobile ? (renderPersonalization === "custom" ? -0.84 : -0.78) : -0.46)
+        : (mobile ? (renderPersonalization === "custom" ? -0.65 : -0.56) : -0.30);
     // Le socle du chevalet reste posé dans le cadre. L'ancien décalage initial
     // de +0,34 faisait d'abord apparaître l'objet trop haut, avant que la boucle
     // d'animation ne le redescende progressivement.
-    const restingObjectY = surface === "comptoir" ? (hero ? 0.18 : -0.04) : surface === "carte" ? 0.02 : 0.05;
+    const restingObjectY = renderSurface === "comptoir" ? (hero ? 0.18 : -0.04) : renderSurface === "carte" ? 0.02 : 0.05;
     const objectY = restingObjectY;
     product.position.set(objectX, objectY, 0);
     product.rotation.set(
-      surface === "carte" ? -0.12 : -0.025,
-      surface === "plaque" ? -0.24 : surface === "carte" ? -0.38 : -0.3,
-      surface === "carte" ? -0.08 : 0.015,
+      renderSurface === "carte" ? -0.12 : -0.025,
+      renderSurface === "plaque" ? -0.24 : renderSurface === "carte" ? -0.38 : -0.3,
+      renderSurface === "carte" ? -0.08 : 0.015,
     );
     scene.add(product);
 
     const pedestalY = hero
-      ? surface === "plaque" ? -0.98 : surface === "carte" ? -0.78 : -0.68
-      : surface === "comptoir" ? -1.62 : -1.48;
+      ? renderSurface === "plaque" ? -0.98 : renderSurface === "carte" ? -0.78 : -0.68
+      : renderSurface === "comptoir" ? -1.62 : -1.48;
     if (!hero) {
       const pedestal = new Mesh(
         new CylinderGeometry(2.42, 2.58, 0.22, 72),
@@ -412,7 +439,7 @@ export default function ProductStudio3D({
 
     if (hero) {
       const contactShadow = new Mesh(
-        new PlaneGeometry(surface === "carte" ? 3.15 : 2.65, surface === "carte" ? 1.2 : 1.05),
+        new PlaneGeometry(renderSurface === "carte" ? 3.15 : 2.65, renderSurface === "carte" ? 1.2 : 1.05),
         new MeshBasicMaterial({ color: "#000000", transparent: true, opacity: 0.38, depthWrite: false }),
       );
       contactShadow.rotation.x = -Math.PI / 2;
@@ -444,6 +471,10 @@ export default function ProductStudio3D({
       renderer.setSize(width, height, false);
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
+      // Sur téléphone la scène est volontairement figée après sa première
+      // frame. Un redimensionnement (rotation, barre Safari) doit toutefois
+      // repeindre immédiatement le même objet, sans relancer une animation.
+      if (mobile && rendered) renderer.render(scene, camera);
       host.dataset.pixelRatio = pixelRatio.toFixed(2);
     };
 
@@ -457,17 +488,17 @@ export default function ProductStudio3D({
       if (stopped) return;
       timer.update(timestamp);
       const elapsed = timer.getElapsed();
-      const baseRotationY = surface === "plaque" ? -0.24 : surface === "carte" ? -0.38 : -0.3;
-      const baseRotationX = surface === "carte" ? -0.12 : -0.025;
+      const baseRotationY = renderSurface === "plaque" ? -0.24 : renderSurface === "carte" ? -0.38 : -0.3;
+      const baseRotationX = renderSurface === "carte" ? -0.12 : -0.025;
       product.rotation.y += ((baseRotationY + (pointerX * 0.28)) - product.rotation.y) * 0.045;
       product.rotation.x += ((baseRotationX - (pointerY * 0.12)) - product.rotation.x) * 0.045;
       product.position.y += ((restingObjectY + (Math.sin(elapsed * 0.68) * 0.035)) - product.position.y) * 0.08;
       renderer.render(scene, camera);
       if (!rendered) {
         rendered = true;
-        setReadyArtworkKey(artworkKey);
+        setReadyArtworkKey(renderArtworkKey);
       }
-      frameId = window.requestAnimationFrame(render);
+      if (!mobile) frameId = window.requestAnimationFrame(render);
     };
 
     const onContextLost = (event) => {
@@ -481,7 +512,9 @@ export default function ProductStudio3D({
     resizeObserver.observe(host);
     if (!mobile) host.addEventListener("pointermove", onPointerMove, { passive: true });
     canvas.addEventListener("webglcontextlost", onContextLost);
-    frameId = window.requestAnimationFrame(render);
+    // Peint la première frame dans le même cycle que le remplacement de la
+    // texture. Safari ne peut plus exposer un canvas vide entre deux choix.
+    render(typeof performance !== "undefined" ? performance.now() : 0);
 
     return () => {
       stopped = true;
@@ -491,14 +524,14 @@ export default function ProductStudio3D({
       canvas.removeEventListener("webglcontextlost", onContextLost);
       disposeScene(scene, renderer, timer, environmentTarget);
     };
-  }, [accentColor, artworkKey, capturedArtwork, eligible, hero, primaryColor, surface]);
+  }, [capturedArtwork, eligible, hero]);
 
   return (
     <div
       ref={hostRef}
-      className={`tapote-product-studio ${hero ? "is-hero" : "is-pdp"} ${ready ? "is-live" : "is-fallback"} ${className}`}
+      className={`tapote-product-studio ${hero ? "is-hero" : "is-pdp"} is-${renderMode} ${exactReady ? "is-live is-ready" : "is-fallback"} ${className}`}
       data-scene-engine="product-studio"
-      data-render-mode={ready ? "webgl" : "static"}
+      data-render-mode={renderMode}
       aria-label={`Aperçu 3D natif de ${PRODUCT_LABELS[surface] || PRODUCT_LABELS.comptoir}`}
     >
       <div
@@ -531,7 +564,7 @@ export default function ProductStudio3D({
       {/* Sans WebGL éligible (VM, GPU désactivé, reduced-motion) l'objet 3D ne
           rend jamais : ce repli montre le vrai produit à plat plutôt qu'un
           cadre vide, seul le téléphone flottant restant sinon visible. */}
-      {!ready && (eligible ? (
+      {!exactReady && (eligible ? (
         <div className="tapote-product-studio__loading" role="status" aria-label="Chargement de l’aperçu 3D">
           <span aria-hidden="true"><i /><i /><i /></span>
           <strong>Votre Tapote prend forme</strong>

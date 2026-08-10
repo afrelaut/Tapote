@@ -300,6 +300,18 @@ export default function PdpScene({
   const activeView = compact || mixedPack ? "context" : viewMode;
 
   useLayoutEffect(() => {
+    if (!image || activeView === "context") return undefined;
+    // L'image de mise en situation n'existe pas encore dans le DOM tant que
+    // l'utilisateur reste sur l'objet 3D. On la précharge explicitement afin
+    // que le premier clic n'affiche jamais un fond vide, notamment sur Safari
+    // iOS et lors d'un changement rapide de secteur.
+    const preload = document.createElement("img");
+    preload.decoding = "async";
+    preload.src = image;
+    return undefined;
+  }, [activeView, image]);
+
+  useLayoutEffect(() => {
     if (activeView !== "context") return undefined;
     const stage = sceneRef.current?.querySelector(".v3-sector-scene-stage");
     const frame = sceneRef.current?.querySelector(".tapote-device-frame");
@@ -331,6 +343,7 @@ export default function PdpScene({
       ref={sceneRef}
       className={`v3-sector-scene ${compact ? "is-compact is-fixed-preview" : "is-live-preview"} is-surface-${preview.surface} ${className}`}
       data-preview-mode={compact ? "fixed" : "live"}
+      data-personalization={preview.personalization || "ready"}
       data-scene-view={activeView}
       data-scene-engine="pdp"
       data-scene-budget={compact ? "compact" : "responsive"}
@@ -359,21 +372,6 @@ export default function PdpScene({
                 <strong>Votre Tapote prend forme</strong>
                 <small>Aperçu 3D en préparation…</small>
               </div>
-              <DeviceFrame
-                actionId={preview.actionId}
-                sectorId={sectorId}
-                sectorTitle={sectorTitle}
-                brandName={preview.brandName}
-                brandLogo={preview.brandLogo}
-                primaryColor={preview.primaryColor}
-                secondaryColor={preview.secondaryColor}
-                textColor={preview.textColor}
-                personalization={preview.personalization}
-                destinationUrl={preview.destinationUrl}
-                accentColor={preview.secondaryColor}
-                embedded={false}
-                className="tapote-studio-device"
-              />
             </div>
           )}
           >

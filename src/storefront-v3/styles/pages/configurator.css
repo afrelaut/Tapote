@@ -77,10 +77,11 @@
   top: 79px;
   right: 0;
   left: 0;
-  max-height: min(58vh, 480px);
+  max-height: min(430px, calc(100dvh - 190px));
   padding: 13px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   background: #fff;
   border: 1px solid #d9d4ca;
   border-radius: 16px;
@@ -88,15 +89,8 @@
   animation: v3-sector-panel-in .2s cubic-bezier(.2, .8, .2, 1) both;
 }
 
-/* L'en-tête reste visible pendant le défilement : le bouton de fermeture ne
-   doit jamais sortir du champ quand la liste est longue. */
 .v3-sector-panel > .v3-sector-panel-head {
-  position: sticky;
-  z-index: 1;
-  top: -13px;
-  margin-top: -13px;
-  padding-top: 13px;
-  background: #fff;
+  flex: 0 0 auto;
 }
 
 .v3-sector-panel[hidden] { display: none; }
@@ -131,12 +125,16 @@
 .v3-sector-panel-head button svg { width: 15px; }
 
 .v3-sector-panel-grid.v3-sector-chips {
-  padding: 0;
+  min-height: 0;
+  padding: 0 4px 4px 0;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   align-items: start;
   gap: 12px 18px;
-  overflow: visible;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   border: 0;
 }
 
