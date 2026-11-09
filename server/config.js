@@ -68,6 +68,9 @@ export function loadConfig(env = process.env) {
     logLevel: String(env.LOG_LEVEL || (isProduction ? "info" : "debug")).trim(),
     outboxIntervalMs: Math.max(2_000, readNumber(env.OUTBOX_INTERVAL_MS, 10_000)),
     jarvisReadToken: String(env.JARVIS_READ_TOKEN || "").trim(),
+    cronSecret: String(env.CRON_SECRET || "").trim(),
+    databasePoolMax: Math.max(1, Math.floor(readNumber(env.DATABASE_POOL_MAX, 10))),
+    databaseCaCertPath: String(env.DATABASE_CA_CERT_PATH || "").trim(),
   };
 }
 

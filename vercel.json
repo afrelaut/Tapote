@@ -1,0 +1,51 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "installCommand": "npm ci",
+  "buildCommand": "npm run build && mv dist/index.html dist/_app.html",
+  "outputDirectory": "dist",
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 30,
+      "includeFiles": "{dist/_app.html,deploy/certs/**}"
+    }
+  },
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "www.tapote.fr" }],
+      "destination": "https://tapote.fr/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "pilot.tapote.fr" }],
+      "destination": "https://tapote.fr/pilot",
+      "permanent": true
+    },
+    {
+      "source": "/((?!a/|api/health$).*)",
+      "has": [{ "type": "host", "value": "t.tapote.fr" }],
+      "destination": "https://tapote.fr/",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "gestion.tapote.fr" }],
+      "destination": "/gestion",
+      "permanent": false
+    },
+    {
+      "source": "/gestion/:path*",
+      "has": [{ "type": "host", "value": "tapote.fr" }],
+      "destination": "https://gestion.tapote.fr/gestion",
+      "permanent": false
+    }
+  ],
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/api/index" }
+  ],
+  "crons": [
+    { "path": "/api/cron/outbox", "schedule": "0 6 * * *" }
+  ]
+}

@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
 import pg from "pg";
 
 const { Pool } = pg;
@@ -148,8 +149,12 @@ class PostgresRepository {
   constructor(config) {
     this.pool = new Pool({
       connectionString: config.databaseUrl,
-      ssl: config.databaseSsl ? { rejectUnauthorized: true } : false,
-      max: 10,
+      // Sur Docker, NODE_EXTRA_CA_CERTS fournit l'autorité racine Supabase.
+      // Sur Vercel (serverless), elle est passée explicitement via ce fichier.
+      ssl: config.databaseSsl
+        ? { rejectUnauthorized: true, ...(config.databaseCaCertPath ? { ca: readFileSync(config.databaseCaCertPath, "utf8") } : {}) }
+        : false,
+      max: config.databasePoolMax ?? 10,
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 8_000,
       application_name: "tapote-api",

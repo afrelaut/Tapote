@@ -42,3 +42,6 @@ designs/print-ready/**/_*.html
 # Étape intermédiaire : polices embarquées mais texte encore vivant. L'imprimeur
 # refuse ce format, et le laisser dans le dépôt invite à l'envoyer par erreur.
 designs/print-ready/svg/*-autonome.svg
+
+# Vercel (build local)
+.vercel/

@@ -332,7 +332,12 @@ function normalizeClientError(body) {
   };
 }
 
-export function createApp({ config, repository, storage, logger, outboxWorker, stripe: injectedStripe, storefrontHtml: injectedStorefrontHtml } = {}) {
+// Sur un serveur classique, setImmediate suffit. Sur Vercel, la fonction est
+// gelée dès la réponse envoyée : l'hôte injecte alors un `defer` basé sur
+// waitUntil pour que les e-mails et le comptage des taps aillent au bout.
+const defaultDefer = (task) => setImmediate(() => { void task(); });
+
+export function createApp({ config, repository, storage, logger, outboxWorker, stripe: injectedStripe, storefrontHtml: injectedStorefrontHtml, loadStorefrontHtml, defer = defaultDefer } = {}) {
   const stripe = injectedStripe ?? (config.stripeSecretKey ? new Stripe(config.stripeSecretKey) : null);
   const app = express();
   const checkoutLimiter = limiter(60 * 60 * 1_000, 20, "Trop de tentatives de paiement. Réessayez dans quelques minutes.");
@@ -391,7 +396,7 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
       if (update) {
         const result = await repository.recordStripeEvent(update);
         request.log.info({ stripeEventId: event.id, type: event.type, duplicate: result.duplicate }, "Webhook Stripe traité");
-        if (!result.duplicate) setImmediate(() => void outboxWorker.runOnce());
+        if (!result.duplicate) defer(() => outboxWorker.runOnce());
       }
       return response.json({ received: true });
     } catch (error) {
@@ -487,8 +492,8 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
       if (!link.active) {
         return response.status(410).type("html").send(redirectErrorPage("Lien en pause", "Ce produit a été temporairement désactivé par son établissement."));
       }
-      setImmediate(() => {
-        void repository.recordTapEvent({
+      defer(() => {
+        return repository.recordTapEvent({
           tapoteLinkId: link.id,
           source: parsed.data.source,
           deviceFamily: deviceFamily(request.headers["user-agent"]),
@@ -900,8 +905,25 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
     if (config.isProduction && !repository.durable) return response.status(503).json({ error: "Le formulaire est temporairement indisponible." });
     try {
       await repository.createLead(parsed.data);
-      setImmediate(() => void outboxWorker.runOnce());
+      defer(() => outboxWorker.runOnce());
       return response.status(201).json({ ok: true });
+    } catch (error) {
+      return next(error);
+    }
+  });
+
+  // Filet de sécurité serverless : Vercel Cron rejoue les notifications en
+  // attente ou en échec. Vercel envoie « Authorization: Bearer CRON_SECRET ».
+  app.get("/api/cron/outbox", async (request, response, next) => {
+    const expected = config.cronSecret ? `Bearer ${config.cronSecret}` : "";
+    const received = String(request.headers.authorization || "");
+    const authorized = Boolean(expected)
+      && received.length === expected.length
+      && timingSafeEqual(Buffer.from(received), Buffer.from(expected));
+    if (!authorized) return response.status(401).json({ error: "Non autorisé." });
+    try {
+      await outboxWorker.runOnce();
+      return response.json({ ok: true });
     } catch (error) {
       return next(error);
     }
@@ -923,7 +945,7 @@ export function createApp({ config, repository, storage, logger, outboxWorker, s
   app.use(async (request, response, next) => {
     if (!config.isProduction || !["GET", "HEAD"].includes(request.method) || !request.accepts("html")) return next();
     try {
-      storefrontTemplate ||= await readFile(join(distDir, "index.html"), "utf8");
+      storefrontTemplate ||= loadStorefrontHtml ? await loadStorefrontHtml(request) : await readFile(join(distDir, "index.html"), "utf8");
       const knownFrontendPath = isKnownFrontendPath(request.path);
       const meta = storefrontMetaForPath(request.path, config.publicUrl);
       response.set({
